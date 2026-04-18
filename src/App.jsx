@@ -76,12 +76,65 @@ function GuestChip({ guest, tableId, onRemove }) {
 }
 
 // ─── ADD/EDIT GUEST MODAL ─────────────────────────────────────────────────────
-function GuestModal({ guest, eventId, onSave, onClose }) {
+function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[] }) {
   const [name,setName]=useState(guest?.name||"");
   const [phone,setPhone]=useState(guest?.phone||"");
   const [rsvp,setRsvp]=useState(guest?.rsvp||"pending");
   const [count,setCount]=useState(guest?.guest_count||1);
+  const [dupGuest,setDupGuest]=useState(null);
   const isEdit=!!guest?.id;
+
+  const handleSave=()=>{
+    if(!name.trim())return;
+    // בדיקת כפילות רק בהוספה חדשה
+    if(!isEdit){
+      const nameClean=name.trim().toLowerCase();
+      const phoneClean=phone.trim().replace(/\D/g,"");
+      const found=existingGuests.find(g=>{
+        const nameMatch=g.name.trim().toLowerCase()===nameClean;
+        const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean;
+        return nameMatch||phoneMatch;
+      });
+      if(found){setDupGuest(found);return;}
+    }
+    onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count});
+  };
+
+  // מודל כפילות
+  if(dupGuest){
+    return(
+      <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
+          <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
+          <div style={{width:60,height:60,borderRadius:18,background:"#FFF8E1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 14px"}}>🔍</div>
+          <div style={{fontWeight:900,fontSize:18,color:C.text,textAlign:"center",marginBottom:6}}>מצאנו אורח דומה!</div>
+          <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:18}}>כבר קיים אורח עם שם או טלפון זהה</div>
+          {/* כרטיס האורח הקיים */}
+          <div style={{background:C.blueXL,borderRadius:14,padding:"14px 16px",marginBottom:20,border:`1.5px solid ${C.border}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8}}>האורח הקיים</div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:40,height:40,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>{dupGuest.name[0]}</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:C.text}}>{dupGuest.name}</div>
+                {dupGuest.phone&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>📞 {dupGuest.phone}</div>}
+                <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                  {dupGuest.rsvp==="confirmed"?"✅ מגיע":dupGuest.rsvp==="declined"?"❌ לא מגיע":"⏳ ממתין"}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <button onClick={()=>onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count},true)} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              ➕ הוסף כאורח חדש בנפרד
+            </button>
+            <button onClick={()=>setDupGuest(null)} style={{width:"100%",background:"#fff",color:C.text,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              ← חזרה לטופס
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
@@ -111,7 +164,7 @@ function GuestModal({ guest, eventId, onSave, onClose }) {
           ))}
         </div>
 
-        <button onClick={()=>name.trim()&&onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count})} disabled={!name.trim()}
+        <button onClick={handleSave} disabled={!name.trim()}
           style={{width:"100%",background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#E8EEFF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
           {isEdit?"שמור שינויים ✓":"הוסף אורח ✓"}
         </button>
@@ -825,7 +878,7 @@ function SeatingApp({ user, event, onBack }) {
             {icon:"📊",label:"ייבוא אורחים",nav:"import"},
             {icon:"🖨️",label:"חיפוש אורח",nav:"receipt"},
             {icon:"➕",label:"הוסף אורח",nav:"add"},
-            {icon:"🪑➕",label:"הוסף שולחן",nav:"addTable"},
+            {icon:"💰",label:"ניהול תקציב",nav:"budget"},
             {icon:"⚙️",label:"הגדרות",nav:"settings"},
           ].map(item=>(
             <Card key={item.nav}
@@ -847,7 +900,7 @@ function SeatingApp({ user, event, onBack }) {
           : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>← חזרה</button>
         }
         <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="settings"?"⚙️ הגדרות":event.name}
+          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="settings"?"⚙️ הגדרות":event.name}
         </span>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
       </div>
@@ -872,12 +925,15 @@ function SeatingApp({ user, event, onBack }) {
             <button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 14px ${C.blueL}44`}}>
               ➕ הוסף אורח חדש
             </button>
+            <button onClick={()=>setScreen("contacts")} style={{width:"100%",background:C.surface,color:C.blue,border:`2px solid ${C.blueL}`,borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              📱 ייבא מאנשי קשר
+            </button>
             <button onClick={()=>{loadAll();setScreen("home");}} style={{width:"100%",background:"transparent",color:C.blue,border:`2px solid ${C.border}`,borderRadius:14,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:10}}>
               סיום ✓
             </button>
           </div>
         )}
-        {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>}
+        {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>}
         {screen==="rsvp"&&(
           <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
@@ -894,6 +950,7 @@ function SeatingApp({ user, event, onBack }) {
             </div>
             {[...guests,...tables.flatMap(t=>t.guests||[])].map(g=>(
               <Card key={g.id} style={{padding:"12px 14px",marginBottom:10}}>
+                {/* שורת שם */}
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                   <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
                   <div style={{flex:1}}>
@@ -901,7 +958,8 @@ function SeatingApp({ user, event, onBack }) {
                     {g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}
                   </div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                {/* כפתורי RSVP */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
                   {[["confirmed","✓ מגיע","#F0FFF6",C.success],["pending","⏳ ממתין",C.blueXL,C.blue],["declined","✗ לא מגיע","#FEF2F2",C.danger]].map(([v,l,bg,col])=>(
                     <button key={v} onClick={async()=>{
                       await sb.from("guests").update({rsvp:v}).eq("id",g.id);
@@ -912,6 +970,15 @@ function SeatingApp({ user, event, onBack }) {
                     </button>
                   ))}
                 </div>
+                {/* כפתור מחיקה */}
+                <button onClick={async()=>{
+                  if(!window.confirm(`למחוק את "${g.name}" מהרשימה?`))return;
+                  await sb.from("guests").delete().eq("id",g.id);
+                  setGuests(gs=>gs.filter(x=>x.id!==g.id));
+                  setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).filter(x=>x.id!==g.id)})));
+                }} style={{width:"100%",background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:10,padding:"8px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",color:C.danger,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  🗑️ מחק אורח
+                </button>
               </Card>
             ))}
           </div>
@@ -960,6 +1027,8 @@ function SeatingApp({ user, event, onBack }) {
           </div>
         )}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={e=>setScreen("home")}/>}
+        {screen==="budget"&&<BudgetScreen event={event}/>}
+        {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
         {screen==="settings"&&(
           <div style={{padding:24,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <Card style={{padding:16,marginBottom:14}}>
@@ -1033,6 +1102,268 @@ function SeatingApp({ user, event, onBack }) {
   </div>);
 }
 
+// ─── BUDGET SCREEN ────────────────────────────────────────────────────────────
+function BudgetScreen({ event }) {
+  const CATS = ["אולם","קייטרינג","צילום","מוזיקה","פרחים","הלבשה","הסעות","מתנות","אחר"];
+  const [items,setItems]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState({name:"",amount:"",type:"expense",category:"אחר",paid:false,note:""});
+  const [saving,setSaving]=useState(false);
+
+  useEffect(()=>{
+    sb.from("budget_items").select("*").eq("event_id",event.id).order("created_at",{ascending:false})
+      .then(({data})=>{setItems(data||[]);setLoading(false);});
+  },[event.id]);
+
+  const totalExpense=items.filter(i=>i.type==="expense").reduce((s,i)=>s+Number(i.amount),0);
+  const totalIncome=items.filter(i=>i.type==="income").reduce((s,i)=>s+Number(i.amount),0);
+  const totalPaid=items.filter(i=>i.type==="expense"&&i.paid).reduce((s,i)=>s+Number(i.amount),0);
+  const balance=totalIncome-totalExpense;
+
+  const save=async()=>{
+    if(!form.name.trim()||!form.amount)return;
+    setSaving(true);
+    const{data}=await sb.from("budget_items").insert({...form,amount:Number(form.amount),event_id:event.id}).select().single();
+    if(data)setItems(prev=>[data,...prev]);
+    setForm({name:"",amount:"",type:"expense",category:"אחר",paid:false,note:""});
+    setShowForm(false);setSaving(false);
+  };
+
+  const togglePaid=async(item)=>{
+    await sb.from("budget_items").update({paid:!item.paid}).eq("id",item.id);
+    setItems(prev=>prev.map(i=>i.id===item.id?{...i,paid:!i.paid}:i));
+  };
+
+  const deleteItem=async(id)=>{
+    await sb.from("budget_items").delete().eq("id",id);
+    setItems(prev=>prev.filter(i=>i.id!==id));
+  };
+
+  return(
+    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16,paddingBottom:80}}>
+
+      {/* סיכום */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+        <Card style={{padding:"14px",borderTop:`3px solid ${C.danger}`}}>
+          <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>סה״כ הוצאות</div>
+          <div style={{fontSize:22,fontWeight:900,color:C.danger}}>₪{totalExpense.toLocaleString()}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:3}}>שולם: ₪{totalPaid.toLocaleString()}</div>
+        </Card>
+        <Card style={{padding:"14px",borderTop:`3px solid ${C.success}`}}>
+          <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>סה״כ הכנסות</div>
+          <div style={{fontSize:22,fontWeight:900,color:C.success}}>₪{totalIncome.toLocaleString()}</div>
+          <div style={{fontSize:11,color:balance>=0?C.success:C.danger,marginTop:3,fontWeight:700}}>
+            יתרה: {balance>=0?"+ ":"- "}₪{Math.abs(balance).toLocaleString()}
+          </div>
+        </Card>
+      </div>
+
+      {/* פס התקדמות תשלום */}
+      {totalExpense>0&&<Card style={{padding:"12px 14px",marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6}}>
+          <span>שולם מתוך הוצאות</span>
+          <span style={{fontWeight:700,color:C.blue}}>{Math.round(totalPaid/totalExpense*100)}%</span>
+        </div>
+        <div style={{height:8,background:C.blueXL,borderRadius:4,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${Math.min(100,totalPaid/totalExpense*100)}%`,background:`linear-gradient(90deg,${C.success},#4AE89A)`,borderRadius:4,transition:"width .5s"}}/>
+        </div>
+      </Card>}
+
+      {/* כפתור הוספה */}
+      <button onClick={()=>setShowForm(f=>!f)} style={{width:"100%",background:showForm?"#FEF2F2":`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:showForm?C.danger:"#fff",border:showForm?`2px solid ${C.danger}30`:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        {showForm?"✕ סגור":"➕ הוסף פריט"}
+      </button>
+
+      {/* טופס הוספה */}
+      {showForm&&<Card style={{padding:16,marginBottom:16,border:`1.5px solid ${C.blueL}`}}>
+        {/* סוג */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+          {[["expense","💸 הוצאה"],["income","💵 הכנסה"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setForm(f=>({...f,type:v}))} style={{background:form.type===v?(v==="expense"?C.danger:C.success):"#f5f5f5",color:form.type===v?"#fff":C.text,border:"none",borderRadius:12,padding:"10px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+          ))}
+        </div>
+        {/* שם */}
+        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="שם הפריט (למשל: צלם)"
+          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
+        {/* סכום */}
+        <input value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} placeholder="סכום (₪)" type="number"
+          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
+        {/* קטגוריה */}
+        {form.type==="expense"&&<div style={{marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>קטגוריה</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {CATS.map(c=>(
+              <button key={c} onClick={()=>setForm(f=>({...f,category:c}))} style={{background:form.category===c?C.blueM:C.blueXL,color:form.category===c?"#fff":C.text,border:`1px solid ${form.category===c?C.blueM:C.border}`,borderRadius:20,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{c}</button>
+            ))}
+          </div>
+        </div>}
+        {/* שולם */}
+        {form.type==="expense"&&<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,background:C.blueXL,borderRadius:11,padding:"10px 14px"}}>
+          <input type="checkbox" id="paid" checked={form.paid} onChange={e=>setForm(f=>({...f,paid:e.target.checked}))} style={{width:18,height:18,cursor:"pointer"}}/>
+          <label htmlFor="paid" style={{fontSize:14,fontWeight:600,color:C.text,cursor:"pointer"}}>✅ שולם כבר</label>
+        </div>}
+        <button onClick={save} disabled={saving||!form.name.trim()||!form.amount} style={{width:"100%",background:form.name.trim()&&form.amount?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#E8EEFF",color:form.name.trim()&&form.amount?"#fff":C.muted,border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+          {saving?"שומר...":"שמור פריט ✓"}
+        </button>
+      </Card>}
+
+      {/* רשימת פריטים */}
+      {loading?<div style={{display:"flex",justifyContent:"center",padding:32}}><Spinner size={32}/></div>:
+        items.length===0?<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48}}>💰</div><p style={{color:C.muted,fontSize:14,marginTop:8}}>אין עדיין פריטים</p></div>:
+        items.map(item=>(
+          <Card key={item.id} style={{padding:"12px 14px",marginBottom:10,opacity:item.paid?.7:1,border:`1.5px solid ${item.type==="income"?C.success+"44":item.paid?C.border:C.border}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:40,height:40,borderRadius:12,background:item.type==="income"?"#F0FFF6":"#FEF2F2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+                {item.type==="income"?"💵":"💸"}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:14,fontWeight:700,color:C.text}}>{item.name}</span>
+                  {item.paid&&<span style={{fontSize:10,background:"#F0FFF6",color:C.success,borderRadius:100,padding:"1px 7px",fontWeight:700}}>✓ שולם</span>}
+                </div>
+                {item.category&&<div style={{fontSize:11,color:C.muted,marginTop:1}}>{item.category}</div>}
+              </div>
+              <div style={{textAlign:"left",flexShrink:0}}>
+                <div style={{fontSize:16,fontWeight:900,color:item.type==="income"?C.success:C.danger}}>
+                  {item.type==="income"?"+":"-"}₪{Number(item.amount).toLocaleString()}
+                </div>
+              </div>
+            </div>
+            {item.type==="expense"&&<div style={{display:"flex",gap:8,marginTop:10}}>
+              <button onClick={()=>togglePaid(item)} style={{flex:1,background:item.paid?"#F0FFF6":C.blueXL,color:item.paid?C.success:C.blue,border:`1px solid ${item.paid?C.success+"44":C.border}`,borderRadius:10,padding:"7px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                {item.paid?"✓ שולם":"סמן כשולם"}
+              </button>
+              <button onClick={()=>deleteItem(item.id)} style={{background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:10,padding:"7px 12px",fontSize:13,cursor:"pointer",color:C.danger,fontFamily:"inherit",fontWeight:700}}>🗑️</button>
+            </div>}
+            {item.type==="income"&&<div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+              <button onClick={()=>deleteItem(item.id)} style={{background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:10,padding:"6px 12px",fontSize:12,cursor:"pointer",color:C.danger,fontFamily:"inherit",fontWeight:700}}>🗑️ מחק</button>
+            </div>}
+          </Card>
+        ))
+      }
+    </div>
+  );
+}
+
+// ─── CONTACTS SCREEN ──────────────────────────────────────────────────────────
+function ContactsScreen({ event, onAdd }) {
+  const [contacts,setContacts]=useState([]);
+  const [selected,setSelected]=useState(new Set());
+  const [search,setSearch]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [supported,setSupported]=useState(true);
+
+  const loadContacts=async()=>{
+    if(!("contacts" in navigator&&"ContactsManager" in window)){setSupported(false);return;}
+    setLoading(true);
+    try{
+      const props=["name","tel"];
+      const list=await navigator.contacts.select(props,{multiple:true});
+      const parsed=list.map((c,i)=>({id:i,name:(c.name&&c.name[0])||"",phone:(c.tel&&c.tel[0])||""})).filter(c=>c.name.trim());
+      setContacts(parsed);
+    }catch(e){setSupported(false);}
+    setLoading(false);
+  };
+
+  const toggleSelect=(id)=>{
+    setSelected(prev=>{const s=new Set(prev);s.has(id)?s.delete(id):s.add(id);return s;});
+  };
+
+  const selectAll=()=>{
+    const filtered=contacts.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+    if(selected.size===filtered.length)setSelected(new Set());
+    else setSelected(new Set(filtered.map(c=>c.id)));
+  };
+
+  const handleAdd=()=>{
+    const toAdd=contacts.filter(c=>selected.has(c.id));
+    if(toAdd.length>0)onAdd(toAdd);
+  };
+
+  const filtered=contacts.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+
+  if(!supported||contacts.length===0){
+    return(
+      <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:20}}>
+        {!supported?(
+          <>
+            <div style={{textAlign:"center",padding:"30px 0 20px"}}>
+              <div style={{fontSize:52,marginBottom:12}}>📱</div>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:8}}>ייבוא מאנשי קשר</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:20,lineHeight:1.7}}>
+                דפדפן זה לא תומך בגישה לאנשי קשר ישירות.<br/>
+                השתמש ב-Chrome על Android או הוסף ידנית.
+              </div>
+            </div>
+            <div style={{background:C.blueXL,borderRadius:14,padding:16,marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>💡 הדבק שמות ידנית</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם אחד בכל שורה, אפשר להוסיף טלפון אחרי פסיק</div>
+              <textarea id="manualContacts" placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543"}
+                style={{width:"100%",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:11,padding:12,fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",minHeight:140,boxSizing:"border-box",resize:"vertical",marginBottom:10}}/>
+              <button onClick={()=>{
+                const text=document.getElementById("manualContacts").value;
+                const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);
+                const parsed=lines.map((l,i)=>{const parts=l.split(",");return{id:i,name:parts[0].trim(),phone:parts[1]?.trim()||""};}).filter(c=>c.name.length>1);
+                if(parsed.length>0)onAdd(parsed);
+              }} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                ➕ הוסף לרשימה
+              </button>
+            </div>
+          </>
+        ):(
+          <div style={{textAlign:"center",padding:"40px 0"}}>
+            <div style={{fontSize:52,marginBottom:12}}>📱</div>
+            <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:8}}>טעינת אנשי קשר</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:24}}>לחץ לפתיחת אנשי הקשר בטלפון</div>
+            <button onClick={loadContacts} disabled={loading} style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px 32px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:8}}>
+              {loading?<><Spinner size={18} color="#fff"/>טוען...</>:"📲 פתח אנשי קשר"}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return(
+    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",display:"flex",flexDirection:"column",height:"calc(100vh - 108px)"}}>
+      {/* חיפוש + בחר הכל */}
+      <div style={{padding:"12px 16px",background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש שם..."
+          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:13,color:C.muted}}>{selected.size} נבחרו מתוך {filtered.length}</span>
+          <button onClick={selectAll} style={{background:C.blueXL,color:C.blue,border:`1px solid ${C.border}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            {selected.size===filtered.length&&filtered.length>0?"בטל הכל":"בחר הכל"}
+          </button>
+        </div>
+      </div>
+
+      {/* רשימה */}
+      <div style={{flex:1,overflowY:"auto",padding:"8px 16px"}}>
+        {filtered.map(c=>(
+          <div key={c.id} onClick={()=>toggleSelect(c.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",marginBottom:8,borderRadius:14,background:selected.has(c.id)?C.blueXL:C.surface,border:`1.5px solid ${selected.has(c.id)?C.blueL:C.border}`,cursor:"pointer",transition:"all .15s"}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:selected.has(c.id)?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#E8EEFF",color:selected.has(c.id)?"#fff":C.text,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,flexShrink:0,transition:"all .15s"}}>
+              {selected.has(c.id)?"✓":c.name[0]}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.text}}>{c.name}</div>
+              {c.phone&&<div style={{fontSize:11,color:C.muted,marginTop:1}}>{c.phone}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* כפתור הוספה */}
+      {selected.size>0&&<div style={{padding:"12px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={handleAdd} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.blueL}44`}}>
+          ➕ הוסף {selected.size} אורחים לרשימה
+        </button>
+      </div>}
+    </div>
+  );
+}
+
 // ─── ADD TABLE MODAL ──────────────────────────────────────────────────────────
 function AddTableModal({ onConfirm, onClose }) {
   const [name,setName]=useState(""),[type,setType]=useState("round");
@@ -1101,18 +1432,47 @@ function InvitePage({ code }) {
   const [rsvp,setRsvp]=useState(null);
   const [submitting,setSubmitting]=useState(false);
   const [submitted,setSubmitted]=useState(false);
+  // duplicate detection
+  const [dupGuest,setDupGuest]=useState(null); // the existing guest found
+  const [showDupModal,setShowDupModal]=useState(false);
 
   useEffect(()=>{
     sb.from("events").select("*").eq("invite_code",code).eq("invite_active",true).single()
       .then(({data})=>{setEvent(data||null);setLoading(false);});
   },[code]);
 
+  const doInsert=async()=>{
+    const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null});
+    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
+  };
+
+  const doUpdate=async()=>{
+    await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null}).eq("id",dupGuest.id);
+    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
+  };
+
   const submit=async()=>{
     if(!firstName.trim()||!rsvp)return;
     setSubmitting(true);
     const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
-    await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null});
-    setSubmitted(true);setSubmitting(false);
+    // בדוק כפילות לפי שם או טלפון
+    let query=sb.from("guests").select("*").eq("event_id",event.id);
+    const nameClean=fullName.trim().toLowerCase();
+    const phoneClean=phone.trim();
+    const{data:existing}=await query;
+    const found=(existing||[]).find(g=>{
+      const nameMatch=g.name.trim().toLowerCase()===nameClean;
+      const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean.replace(/\D/g,"");
+      return nameMatch||phoneMatch;
+    });
+    if(found){
+      setDupGuest(found);
+      setShowDupModal(true);
+      setSubmitting(false);
+      return;
+    }
+    await doInsert();
   };
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#111"}}><Spinner size={40} color="#fff"/></div>);
@@ -1138,6 +1498,47 @@ function InvitePage({ code }) {
     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${d}T${t}/${d}T${t}&location=${encodeURIComponent(event.venue_address||"")}`,"_blank");
   };
 
+  // ── מודל כפילות ──
+  const DupModal=()=>(
+    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(13,27,75,.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'Heebo',sans-serif",direction:"rtl"}}>
+      <div style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,animation:"slideUp .3s ease both"}}>
+        <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
+        {/* אייקון */}
+        <div style={{width:60,height:60,borderRadius:18,background:"#FFF8E1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🔍</div>
+        <div style={{fontWeight:900,fontSize:19,color:"#0D1B4B",textAlign:"center",marginBottom:6}}>מצאנו אורח דומה!</div>
+        <div style={{fontSize:13,color:"#6B7DB3",textAlign:"center",marginBottom:20}}>קיים כבר ברשימה אורח עם שם או טלפון זהה</div>
+
+        {/* כרטיס האורח הקיים */}
+        <div style={{background:"#F0F4FF",borderRadius:14,padding:"14px 16px",marginBottom:22,border:"1.5px solid #D6E0FF"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#6B7DB3",marginBottom:6}}>האורח הקיים</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#2952C8,#4A7AFF)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>{dupGuest?.name?.[0]}</div>
+            <div>
+              <div style={{fontSize:15,fontWeight:800,color:"#0D1B4B"}}>{dupGuest?.name}</div>
+              {dupGuest?.phone&&<div style={{fontSize:12,color:"#6B7DB3",marginTop:2}}>📞 {dupGuest.phone}</div>}
+              <div style={{fontSize:12,color:"#6B7DB3",marginTop:2}}>
+                סטטוס: {dupGuest?.rsvp==="confirmed"?"✅ מגיע":dupGuest?.rsvp==="declined"?"❌ לא מגיע":"⏳ ממתין"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* כפתורות */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <button onClick={doUpdate} style={{width:"100%",background:"linear-gradient(135deg,#2952C8,#4A7AFF)",color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            ✏️ עדכן את הסטטוס שלו
+          </button>
+          <button onClick={doInsert} style={{width:"100%",background:"#fff",color:"#0D1B4B",border:"1.5px solid #D6E0FF",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            ➕ הוסף כאורח חדש בנפרד
+          </button>
+          <button onClick={()=>{setShowDupModal(false);setSubmitting(false);}} style={{width:"100%",background:"transparent",color:"#6B7DB3",border:"none",borderRadius:14,padding:"10px",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
+            ← חזרה לטופס
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if(submitted){
     return(
       <div style={{minHeight:"100vh",background:tmpl.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Heebo',sans-serif",direction:"rtl",padding:20,position:"relative"}}>
@@ -1155,7 +1556,8 @@ function InvitePage({ code }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
+      {showDupModal&&<DupModal/>}
 
       <div style={{position:"relative",height:"55vw",maxHeight:360,minHeight:240,overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
