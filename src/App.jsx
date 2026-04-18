@@ -164,7 +164,7 @@ function HamburgerMenu({ onOpenAuth, onClose }) {
             <a key={item.label} href={item.href} onClick={onClose} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 20px",textDecoration:"none",color:C.text,fontSize:15,fontWeight:600,borderBottom:`1px solid ${C.border}`,transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background=C.blueXL} onMouseLeave={e=>e.currentTarget.style.background="none"}>
               <span style={{fontSize:20,width:28,textAlign:"center"}}>{item.icon}</span>
               {item.label}
-              <span style={{marginRight:"auto",color:C.muted,fontSize:16}}><-</span>
+              <span style={{marginRight:"auto",color:C.muted,fontSize:16}}>&lt;-</span>
             </a>
           ))}
         </div>
@@ -219,7 +219,7 @@ function LandingPage({ onOpenAuth }) {
           ))}
         </div>
         <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.border}`,borderRadius:12,padding:"8px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה</button>
-        <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:12,padding:"9px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.blueL}44`}}>הרשמה בחינם <-</button>
+        <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:12,padding:"9px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.blueL}44`}}>הרשמה בחינם &lt;-</button>
         {/* Hamburger */}
         <button onClick={()=>setMenuOpen(true)} style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:10,width:40,height:40,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0}}>
           <span style={{width:18,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
@@ -285,7 +285,7 @@ function LandingPage({ onOpenAuth }) {
                 <div style={{padding:"18px 18px 20px",background:C.surface}}>
                   <h3 style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:6}}>{ev.emoji} {ev.title}</h3>
                   <p style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
-                  <span style={{fontSize:13,color:C.blueL,fontWeight:700,cursor:"pointer"}}>למידע נוסף <-</span>
+                  <span style={{fontSize:13,color:C.blueL,fontWeight:700,cursor:"pointer"}}>למידע נוסף &lt;-</span>
                 </div>
               </div>
             ))}
@@ -351,7 +351,7 @@ function LandingPage({ onOpenAuth }) {
                   <li key={f} style={{display:"flex",alignItems:"center",gap:9,fontSize:14,color:C.text}}><span style={{width:21,height:21,borderRadius:"50%",background:C.blueXL,color:C.blue,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>✓</span>{f}</li>
                 ))}
               </ul>
-              <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:13,padding:"12px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>התחל בחינם <-</button>
+              <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:13,padding:"12px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>התחל בחינם &lt;-</button>
             </Card>
             <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s .1s,transform .6s .1s",background:`linear-gradient(145deg,${C.blue},${C.blueM})`,borderRadius:24,padding:"42px 34px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",inset:0,opacity:.07,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"14px 14px"}}/>
@@ -364,7 +364,7 @@ function LandingPage({ onOpenAuth }) {
                     <li key={f} style={{display:"flex",alignItems:"center",gap:9,fontSize:14,color:"rgba(255,255,255,.88)"}}><span style={{width:21,height:21,borderRadius:"50%",background:"rgba(255,255,255,.2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0}}>✓</span>{f}</li>
                   ))}
                 </ul>
-                <button onClick={()=>onOpenAuth("register")} style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"2px solid rgba(255,255,255,.3)",borderRadius:13,padding:"12px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>לפרטים על Pro <-</button>
+                <button onClick={()=>onOpenAuth("register")} style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"2px solid rgba(255,255,255,.3)",borderRadius:13,padding:"12px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>לפרטים על Pro &lt;-</button>
               </div>
             </div>
           </div>
@@ -476,7 +476,7 @@ function LandingPage({ onOpenAuth }) {
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   const [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[pass,setPass]=useState(""),[err,setErr]=useState(""),[load,setLoad]=useState(false);
   const submit=async()=>{setErr("");setLoad(true);try{if(mode==="login"){const{data,error}=await sb.auth.signInWithPassword({email,password:pass});if(error)throw error;onAuth(data.user);}else{const{data,error}=await sb.auth.signUp({email,password:pass});if(error)throw error;if(data.user&&!data.user.email_confirmed_at)setErr("✅ נשלח מייל אימות!");else onAuth(data.user);}}catch(e){setErr(e.message==="Invalid login credentials"?"❌ אימייל או סיסמה שגויים":e.message);}setLoad(false);};
-  return(<><div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)"}}/><div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}><div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/><div style={{textAlign:"center",marginBottom:24}}><div style={{width:52,height:52,borderRadius:15,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:24,marginBottom:10}}>*</div><div style={{fontWeight:900,fontSize:20,color:C.blue}}>Sidor-IL</div><div style={{fontSize:12,color:C.muted,marginTop:2}}>סידורי הושבה חכמים</div></div><div style={{display:"flex",background:C.blueXL,borderRadius:14,padding:4,marginBottom:20}}>{[["login","כניסה"],["register","הרשמה"]].map(([v,l])=>(<button key={v} onClick={()=>{setMode(v);setErr("");}} style={{flex:1,padding:"10px 0",borderRadius:11,background:mode===v?C.surface:"transparent",border:"none",fontWeight:700,fontSize:14,color:mode===v?C.blue:C.muted,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>{l}</button>))}</div><div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/><input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה (מינימום 6 תווים)" onKeyDown={e=>e.key==="Enter"&&submit()} style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/></div>{err&&<div style={{background:err.startsWith("✅")?"#F0FFF6":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?C.success:C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?C.success:C.danger,marginBottom:12}}>{err}</div>}<Btn primary full onClick={submit} disabled={load||!email||!pass} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:16}}>{load?<><Spinner size={18} color="#fff"/>מעבד...</>:mode==="login"?"כניסה <-":"צור חשבון <-"}</Btn><p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:16}}>{mode==="login"?"אין חשבון? ":"יש חשבון? "}<span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span></p></div></>);
+  return(<><div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)"}}/><div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}><div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/><div style={{textAlign:"center",marginBottom:24}}><div style={{width:52,height:52,borderRadius:15,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:24,marginBottom:10}}>*</div><div style={{fontWeight:900,fontSize:20,color:C.blue}}>Sidor-IL</div><div style={{fontSize:12,color:C.muted,marginTop:2}}>סידורי הושבה חכמים</div></div><div style={{display:"flex",background:C.blueXL,borderRadius:14,padding:4,marginBottom:20}}>{[["login","כניסה"],["register","הרשמה"]].map(([v,l])=>(<button key={v} onClick={()=>{setMode(v);setErr("");}} style={{flex:1,padding:"10px 0",borderRadius:11,background:mode===v?C.surface:"transparent",border:"none",fontWeight:700,fontSize:14,color:mode===v?C.blue:C.muted,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>{l}</button>))}</div><div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/><input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה (מינימום 6 תווים)" onKeyDown={e=>e.key==="Enter"&&submit()} style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/></div>{err&&<div style={{background:err.startsWith("✅")?"#F0FFF6":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?C.success:C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?C.success:C.danger,marginBottom:12}}>{err}</div>}<Btn primary full onClick={submit} disabled={load||!email||!pass} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:16}}>{load?<><Spinner size={18} color="#fff"/>מעבד...</>:mode==="login"?"כניסה &lt;-":"צור חשבון &lt;-"}</Btn><p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:16}}>{mode==="login"?"אין חשבון? ":"יש חשבון? "}<span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span></p></div></>);
 }
 
 // - EVENT PICKER -
@@ -575,7 +575,7 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         <textarea value={form.welcome_text} onChange={e=>setForm(f=>({...f,welcome_text:e.target.value}))} placeholder="אנו שמחים להזמין אתכם לחגוג איתנו..."
           style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",minHeight:70,resize:"vertical",marginBottom:14}}/>
 
-        <Btn primary full disabled={creating||!form.name.trim()} onClick={create}>{creating?"יוצר...":"✨ צור אירוע <-"}</Btn>
+        <Btn primary full disabled={creating||!form.name.trim()} onClick={create}>{creating?"יוצר...":"✨ צור אירוע &lt;-"}</Btn>
       </Card>}
 
       {loading?<div style={{display:"flex",justifyContent:"center",padding:48}}><Spinner size={36}/></div>
@@ -890,8 +890,8 @@ function SeatingApp({ user, event, onBack }) {
       {/* TOP BAR -- changes per screen */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
         {screen==="home"
-          ? <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}><- הכל</button>
-          : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}><- חזרה</button>
+          ? <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>&lt;- הכל</button>
+          : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>&lt;- חזרה</button>
         }
         <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
           {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="settings"?"⚙ הגדרות":event.name}
@@ -1014,7 +1014,7 @@ function SeatingApp({ user, event, onBack }) {
               const toInsert=lines.map(l=>{const parts=l.split(",");return{name:parts[0].trim(),phone:parts[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);
               if(toInsert.length>0){setSaving(true);await sb.from("guests").insert(toInsert);await loadAll();setSaving(false);setScreen("home");}
             }} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
-              ייבא וסיים <-
+              ייבא וסיים &lt;-
             </button>
           </div>
         )}
@@ -1037,7 +1037,7 @@ function SeatingApp({ user, event, onBack }) {
 
   return(<div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
     <header style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"0 18px",height:54,position:"sticky",top:0,zIndex:90,display:"flex",alignItems:"center",gap:12}}>
-      <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}><- הכל</button>
+      <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>&lt;- הכל</button>
       <span style={{fontWeight:800,fontSize:15,color:"#fff",flex:1}}>{event.name}</span>
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
       <div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋"],["guests","👥"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,.25)":"transparent",color:"#fff",border:`1px solid ${view===v?"rgba(255,255,255,.4)":"rgba(255,255,255,.2)"}`,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>))}</div>
@@ -1049,7 +1049,7 @@ function SeatingApp({ user, event, onBack }) {
       <aside style={{width:250,background:C.surface,borderLeft:`1px solid ${C.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {selTable?(<div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
           <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,background:C.blueXL}}>
-            <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:C.blue,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",padding:0,marginBottom:10}}><- חזרה</button>
+            <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:C.blue,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",padding:0,marginBottom:10}}>&lt;- חזרה</button>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontWeight:800,fontSize:15,color:C.text}}>{selTable.name}</span><span style={{background:sColor(selTable)+"22",color:sColor(selTable),borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px"}}>{(selTable.guests||[]).length}/{selTable.seats}</span></div>
             <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${pct(selTable)}%`,background:`linear-gradient(90deg,${C.blueM},${C.blueL})`,borderRadius:3,transition:"width .3s"}}/></div>
           </div>
@@ -1313,7 +1313,7 @@ function InvitePage({ code }) {
 
           <button onClick={submit} disabled={!firstName.trim()||!rsvp||submitting}
             style={{width:"100%",background:firstName.trim()&&rsvp?"#1B3A8C":"#ccc",color:"#fff",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:firstName.trim()&&rsvp?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
-            {submitting?"שולח...":"שלח אישור <-"}
+            {submitting?"שולח...":"שלח אישור &lt;-"}
           </button>
         </div>
 
@@ -1423,4 +1423,4 @@ export default function Root() {
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
   <SeatingApp user={user} event={event} onBack={()=>setEvent(null)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
-                                        }
+}
