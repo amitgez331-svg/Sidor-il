@@ -76,12 +76,65 @@ function GuestChip({ guest, tableId, onRemove }) {
 }
 
 // ─── ADD/EDIT GUEST MODAL ─────────────────────────────────────────────────────
-function GuestModal({ guest, eventId, onSave, onClose }) {
+function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[] }) {
   const [name,setName]=useState(guest?.name||"");
   const [phone,setPhone]=useState(guest?.phone||"");
   const [rsvp,setRsvp]=useState(guest?.rsvp||"pending");
   const [count,setCount]=useState(guest?.guest_count||1);
+  const [dupGuest,setDupGuest]=useState(null);
   const isEdit=!!guest?.id;
+
+  const handleSave=()=>{
+    if(!name.trim())return;
+    // בדיקת כפילות רק בהוספה חדשה
+    if(!isEdit){
+      const nameClean=name.trim().toLowerCase();
+      const phoneClean=phone.trim().replace(/\D/g,"");
+      const found=existingGuests.find(g=>{
+        const nameMatch=g.name.trim().toLowerCase()===nameClean;
+        const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean;
+        return nameMatch||phoneMatch;
+      });
+      if(found){setDupGuest(found);return;}
+    }
+    onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count});
+  };
+
+  // מודל כפילות
+  if(dupGuest){
+    return(
+      <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
+          <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
+          <div style={{width:60,height:60,borderRadius:18,background:"#FFF8E1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 14px"}}>🔍</div>
+          <div style={{fontWeight:900,fontSize:18,color:C.text,textAlign:"center",marginBottom:6}}>מצאנו אורח דומה!</div>
+          <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:18}}>כבר קיים אורח עם שם או טלפון זהה</div>
+          {/* כרטיס האורח הקיים */}
+          <div style={{background:C.blueXL,borderRadius:14,padding:"14px 16px",marginBottom:20,border:`1.5px solid ${C.border}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8}}>האורח הקיים</div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:40,height:40,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>{dupGuest.name[0]}</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:C.text}}>{dupGuest.name}</div>
+                {dupGuest.phone&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>📞 {dupGuest.phone}</div>}
+                <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                  {dupGuest.rsvp==="confirmed"?"✅ מגיע":dupGuest.rsvp==="declined"?"❌ לא מגיע":"⏳ ממתין"}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <button onClick={()=>onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count},true)} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              ➕ הוסף כאורח חדש בנפרד
+            </button>
+            <button onClick={()=>setDupGuest(null)} style={{width:"100%",background:"#fff",color:C.text,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              ← חזרה לטופס
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
@@ -111,7 +164,7 @@ function GuestModal({ guest, eventId, onSave, onClose }) {
           ))}
         </div>
 
-        <button onClick={()=>name.trim()&&onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count})} disabled={!name.trim()}
+        <button onClick={handleSave} disabled={!name.trim()}
           style={{width:"100%",background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#E8EEFF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
           {isEdit?"שמור שינויים ✓":"הוסף אורח ✓"}
         </button>
@@ -877,7 +930,7 @@ function SeatingApp({ user, event, onBack }) {
             </button>
           </div>
         )}
-        {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>}
+        {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>}
         {screen==="rsvp"&&(
           <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
@@ -894,6 +947,7 @@ function SeatingApp({ user, event, onBack }) {
             </div>
             {[...guests,...tables.flatMap(t=>t.guests||[])].map(g=>(
               <Card key={g.id} style={{padding:"12px 14px",marginBottom:10}}>
+                {/* שורת שם */}
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                   <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
                   <div style={{flex:1}}>
@@ -901,7 +955,8 @@ function SeatingApp({ user, event, onBack }) {
                     {g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}
                   </div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                {/* כפתורי RSVP */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
                   {[["confirmed","✓ מגיע","#F0FFF6",C.success],["pending","⏳ ממתין",C.blueXL,C.blue],["declined","✗ לא מגיע","#FEF2F2",C.danger]].map(([v,l,bg,col])=>(
                     <button key={v} onClick={async()=>{
                       await sb.from("guests").update({rsvp:v}).eq("id",g.id);
@@ -912,6 +967,15 @@ function SeatingApp({ user, event, onBack }) {
                     </button>
                   ))}
                 </div>
+                {/* כפתור מחיקה */}
+                <button onClick={async()=>{
+                  if(!window.confirm(`למחוק את "${g.name}" מהרשימה?`))return;
+                  await sb.from("guests").delete().eq("id",g.id);
+                  setGuests(gs=>gs.filter(x=>x.id!==g.id));
+                  setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).filter(x=>x.id!==g.id)})));
+                }} style={{width:"100%",background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:10,padding:"8px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",color:C.danger,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  🗑️ מחק אורח
+                </button>
               </Card>
             ))}
           </div>
@@ -1101,18 +1165,47 @@ function InvitePage({ code }) {
   const [rsvp,setRsvp]=useState(null);
   const [submitting,setSubmitting]=useState(false);
   const [submitted,setSubmitted]=useState(false);
+  // duplicate detection
+  const [dupGuest,setDupGuest]=useState(null); // the existing guest found
+  const [showDupModal,setShowDupModal]=useState(false);
 
   useEffect(()=>{
     sb.from("events").select("*").eq("invite_code",code).eq("invite_active",true).single()
       .then(({data})=>{setEvent(data||null);setLoading(false);});
   },[code]);
 
+  const doInsert=async()=>{
+    const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null});
+    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
+  };
+
+  const doUpdate=async()=>{
+    await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null}).eq("id",dupGuest.id);
+    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
+  };
+
   const submit=async()=>{
     if(!firstName.trim()||!rsvp)return;
     setSubmitting(true);
     const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
-    await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null});
-    setSubmitted(true);setSubmitting(false);
+    // בדוק כפילות לפי שם או טלפון
+    let query=sb.from("guests").select("*").eq("event_id",event.id);
+    const nameClean=fullName.trim().toLowerCase();
+    const phoneClean=phone.trim();
+    const{data:existing}=await query;
+    const found=(existing||[]).find(g=>{
+      const nameMatch=g.name.trim().toLowerCase()===nameClean;
+      const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean.replace(/\D/g,"");
+      return nameMatch||phoneMatch;
+    });
+    if(found){
+      setDupGuest(found);
+      setShowDupModal(true);
+      setSubmitting(false);
+      return;
+    }
+    await doInsert();
   };
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#111"}}><Spinner size={40} color="#fff"/></div>);
@@ -1138,6 +1231,47 @@ function InvitePage({ code }) {
     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${d}T${t}/${d}T${t}&location=${encodeURIComponent(event.venue_address||"")}`,"_blank");
   };
 
+  // ── מודל כפילות ──
+  const DupModal=()=>(
+    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(13,27,75,.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'Heebo',sans-serif",direction:"rtl"}}>
+      <div style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,animation:"slideUp .3s ease both"}}>
+        <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
+        {/* אייקון */}
+        <div style={{width:60,height:60,borderRadius:18,background:"#FFF8E1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🔍</div>
+        <div style={{fontWeight:900,fontSize:19,color:"#0D1B4B",textAlign:"center",marginBottom:6}}>מצאנו אורח דומה!</div>
+        <div style={{fontSize:13,color:"#6B7DB3",textAlign:"center",marginBottom:20}}>קיים כבר ברשימה אורח עם שם או טלפון זהה</div>
+
+        {/* כרטיס האורח הקיים */}
+        <div style={{background:"#F0F4FF",borderRadius:14,padding:"14px 16px",marginBottom:22,border:"1.5px solid #D6E0FF"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#6B7DB3",marginBottom:6}}>האורח הקיים</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#2952C8,#4A7AFF)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>{dupGuest?.name?.[0]}</div>
+            <div>
+              <div style={{fontSize:15,fontWeight:800,color:"#0D1B4B"}}>{dupGuest?.name}</div>
+              {dupGuest?.phone&&<div style={{fontSize:12,color:"#6B7DB3",marginTop:2}}>📞 {dupGuest.phone}</div>}
+              <div style={{fontSize:12,color:"#6B7DB3",marginTop:2}}>
+                סטטוס: {dupGuest?.rsvp==="confirmed"?"✅ מגיע":dupGuest?.rsvp==="declined"?"❌ לא מגיע":"⏳ ממתין"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* כפתורות */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <button onClick={doUpdate} style={{width:"100%",background:"linear-gradient(135deg,#2952C8,#4A7AFF)",color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            ✏️ עדכן את הסטטוס שלו
+          </button>
+          <button onClick={doInsert} style={{width:"100%",background:"#fff",color:"#0D1B4B",border:"1.5px solid #D6E0FF",borderRadius:14,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            ➕ הוסף כאורח חדש בנפרד
+          </button>
+          <button onClick={()=>{setShowDupModal(false);setSubmitting(false);}} style={{width:"100%",background:"transparent",color:"#6B7DB3",border:"none",borderRadius:14,padding:"10px",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
+            ← חזרה לטופס
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if(submitted){
     return(
       <div style={{minHeight:"100vh",background:tmpl.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Heebo',sans-serif",direction:"rtl",padding:20,position:"relative"}}>
@@ -1155,7 +1289,8 @@ function InvitePage({ code }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
+      {showDupModal&&<DupModal/>}
 
       <div style={{position:"relative",height:"55vw",maxHeight:360,minHeight:240,overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
