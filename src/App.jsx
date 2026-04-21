@@ -275,13 +275,20 @@ function LandingPage({ onOpenAuth }) {
 
       {/* NAV */}
       <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,background:"#fff",borderBottom:`1px solid ${C.border}`,height:66,display:"flex",alignItems:"center",padding:"0 5vw",gap:12,boxShadow:scrolled?"0 2px 16px rgba(26,63,163,.07)":"none",transition:"box-shadow .3s"}}>
-        {/* לוגו */}
-        <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
-          <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:"#fff",fontWeight:900}}>◈</div>
-          <span style={{fontWeight:900,fontSize:19,color:C.blue,letterSpacing:"-.02em"}}>Sidor-IL</span>
-        </div>
+        {/* המבורגר — ראשון = הכי ימני */}
+        <button onClick={()=>setMenuOpen(true)}
+          style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:8,width:38,height:38,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0}}>
+          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
+          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
+          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
+        </button>
+        {/* כניסה */}
+        <button onClick={()=>onOpenAuth("login")}
+          style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"7px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+          כניסה
+        </button>
         {/* קישורים — גלויים רק בדסקטופ */}
-        <div style={{display:"flex",gap:6,marginRight:"auto",alignItems:"center"}}>
+        <div style={{flex:1,display:"flex",gap:6,alignItems:"center",justifyContent:"flex-end"}}>
           {[["#","ראשי"],["#features","פיצ'רים"],["#how","איך עובד"],["#pricing","מחירים"],["#contact","צור קשר"]].map(([h,l])=>(
             <a key={h} href={h} className="nav-link"
               style={{color:C.text,textDecoration:"none",fontSize:14,fontWeight:600,padding:"6px 12px",borderRadius:8,display:"none",transition:"background .15s"}}
@@ -289,52 +296,100 @@ function LandingPage({ onOpenAuth }) {
               onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.text;}}>{l}</a>
           ))}
         </div>
-        {/* כפתור כניסה בלבד */}
-        <button onClick={()=>onOpenAuth("login")}
-          style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"7px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
-          כניסה
-        </button>
-        {/* המבורגר — תמיד מימין */}
-        <button onClick={()=>setMenuOpen(true)}
-          style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:8,width:38,height:38,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0}}>
-          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
-          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
-          <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
-        </button>
+        {/* לוגו — משמאל */}
+        <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
+          <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:"#fff",fontWeight:900}}>◈</div>
+          <span style={{fontWeight:900,fontSize:19,color:C.blue,letterSpacing:"-.02em"}}>Sidor-IL</span>
+        </div>
       </nav>
 
       {menuOpen&&<HamburgerMenu onOpenAuth={onOpenAuth} onClose={()=>setMenuOpen(false)}/>}
 
       {/* HERO */}
-      <section style={{minHeight:"100vh",display:"flex",alignItems:"center",padding:"100px 6vw 60px",background:C.surface,position:"relative",overflow:"hidden"}}>
+      <section style={{minHeight:"92vh",display:"flex",alignItems:"center",padding:"100px 6vw 60px",background:"linear-gradient(135deg,#F0F4FF 0%,#E8EEFF 50%,#F5F8FF 100%)",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",width:500,height:500,borderRadius:"50%",background:"rgba(74,122,255,.06)",top:-100,left:-100,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",width:300,height:300,borderRadius:"50%",background:"rgba(41,82,200,.05)",bottom:-50,right:"10%",pointerEvents:"none"}}/>
         <div style={{position:"absolute",top:0,right:0,left:0,height:4,background:`linear-gradient(90deg,${C.blue},${C.blueL},${C.blue})`}}/>
-        <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse 60% 70% at 100% 50%,rgba(74,122,255,.07),transparent),radial-gradient(ellipse 40% 40% at 0% 85%,rgba(26,63,163,.04),transparent)`}}/>
-        {[{w:320,h:320,t:70,l:50},{w:230,h:230,t:110,l:90},{w:190,h:190,b:50,r:"7%"}].map((c,i)=>(
-          <div key={i} style={{position:"absolute",width:c.w,height:c.h,borderRadius:"50%",border:`1.5px solid rgba(74,122,255,.1)`,top:c.t,left:c.l,bottom:c.b,right:c.r,animation:`float 8s ${i}s ease-in-out infinite`}}/>
-        ))}
-        <div style={{position:"relative",zIndex:1,maxWidth:580,animation:"fadeUp .7s ease both"}}>
-          <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(40px,5.5vw,72px)",fontWeight:800,lineHeight:1.08,color:C.text,letterSpacing:"-.03em",marginBottom:20}}>
-            ניהול אירוע מושלם,<br/>
-            <span style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>בלי כאבי ראש</span>
-          </h1>
-          <p style={{fontSize:17,color:C.muted,lineHeight:1.75,marginBottom:34}}>ממשק מתקדם לתכנון וניהול אירוע מושלם — סידורי הושבה, אישורי הגעה, ניהול מוזמנים ופתק הושבה.</p>
-          <div style={{display:"flex",gap:13,flexWrap:"wrap",marginBottom:50}}>
-            <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"16px 34px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 8px 28px rgba(74,122,255,.45)`,display:"flex",alignItems:"center",gap:8}}>🚀 הרשמה בחינם</button>
-            <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.border}`,borderRadius:14,padding:"15px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>צפו בהדגמה</button>
+        <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:1080,margin:"0 auto",display:"flex",alignItems:"center",gap:48,flexWrap:"wrap"}}>
+          {/* טקסט */}
+          <div style={{flex:1,minWidth:280,animation:"fadeUp .7s ease both"}}>
+            <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(36px,4.5vw,64px)",fontWeight:800,lineHeight:1.08,color:C.text,letterSpacing:"-.03em",marginBottom:20}}>
+              ניהול אירוע מושלם,<br/>
+              <span style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>בלי כאבי ראש</span>
+            </h1>
+            <p style={{fontSize:17,color:C.muted,lineHeight:1.75,marginBottom:34}}>ממשק מתקדם לתכנון וניהול אירוע מושלם — סידורי הושבה, אישורי הגעה, ניהול מוזמנים ופתק הושבה.</p>
+            <div style={{display:"flex",gap:13,flexWrap:"wrap"}}>
+              <button onClick={()=>onOpenAuth("register")} style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"16px 34px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 8px 28px rgba(74,122,255,.45)`}}>🚀 הרשמה בחינם</button>
+              <button onClick={()=>onOpenAuth("login")} style={{background:"#fff",color:C.blue,border:`2px solid ${C.border}`,borderRadius:14,padding:"15px 26px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>צפו בהדגמה</button>
+            </div>
           </div>
-          <div style={{display:"flex",gap:32,flexWrap:"wrap",paddingTop:32,borderTop:`1px solid ${C.border}`}}>
-            {[["2M+","אורחים"],["4.9★","דירוג"],["2 דק'","הגדרה"]].map(([n,l])=>(
-              <div key={l}><div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,color:C.blue,lineHeight:1}}>{n}</div><div style={{fontSize:12,color:C.muted,marginTop:3,fontWeight:600}}>{l}</div></div>
-            ))}
+          {/* טלפון mockup */}
+          <div style={{flexShrink:0,display:"flex",justifyContent:"center"}}>
+            <div style={{width:235,height:490,borderRadius:38,background:"#111",padding:8,boxShadow:"0 40px 90px rgba(13,27,75,.3),0 8px 24px rgba(13,27,75,.15)",position:"relative",border:"1px solid #333"}}>
+              <div style={{position:"absolute",top:13,left:"50%",transform:"translateX(-50%)",width:9,height:9,borderRadius:"50%",background:"#222",zIndex:10,border:"1px solid #444"}}/>
+              <div style={{borderRadius:30,overflow:"hidden",height:"100%",background:"#f9f9f9",display:"flex",flexDirection:"column",direction:"rtl"}}>
+                <div style={{height:190,position:"relative",overflow:"hidden",background:"linear-gradient(160deg,#1B3A8C,#4A7AFF)"}}>
+                  <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.55))"}}/>
+                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#fff",padding:12}}>
+                    <div style={{fontSize:19,fontWeight:900,textShadow:"0 2px 8px rgba(0,0,0,.6)",letterSpacing:1}}>עמית & אורנה</div>
+                    <div style={{fontSize:11,opacity:.9,marginTop:3,fontWeight:600}}>מתחתנים</div>
+                  </div>
+                </div>
+                <div style={{flex:1,background:"#fff",borderRadius:"14px 14px 0 0",marginTop:-12,padding:"12px 10px",overflow:"hidden"}}>
+                  <div style={{textAlign:"center",borderBottom:"1px solid #eee",paddingBottom:8,marginBottom:8}}>
+                    <div style={{fontSize:9.5,color:"#555",fontWeight:600}}>יום חמישי, 30 באפריל 2026</div>
+                    <div style={{fontSize:20,fontWeight:900,color:"#111",lineHeight:1.1,marginTop:1}}>19:30</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אצולת העמק עפולה</div>
+                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 שנקין עפולה</div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:8}}>
+                    {[["🔗","שתפו"],["📅","יומן"],["🚗","נווט"]].map(([ic,t])=>(
+                      <div key={t} style={{background:"#f7f7f7",border:"1px solid #eee",borderRadius:8,padding:"5px 2px",textAlign:"center"}}>
+                        <div style={{fontSize:13}}>{ic}</div>
+                        <div style={{fontSize:8,color:"#555",fontWeight:600,marginTop:1}}>{t}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{background:"#f9f9f9",borderRadius:10,padding:"8px"}}>
+                    <div style={{fontSize:11,fontWeight:900,color:"#111",textAlign:"center",marginBottom:2}}>אישור הגעה</div>
+                    <div style={{fontSize:8,color:"#888",textAlign:"center",marginBottom:6}}>נשמח לראותכם בין אורחינו</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:5}}>
+                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם פרטי</div>
+                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם משפחה</div>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+                      <div style={{background:"#2D9B5A",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#fff",textAlign:"center"}}>✓ מגיעים</div>
+                      <div style={{background:"#fff",border:"2px solid #D63B3B",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#D63B3B",textAlign:"center"}}>✗ לא מגיעים</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* TRUST */}
-      <div style={{background:C.blueXL,borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,padding:"16px 6vw"}}>
-        <div style={{maxWidth:1080,margin:"0 auto",display:"flex",alignItems:"center",gap:32,flexWrap:"wrap",justifyContent:"center"}}>
-          {["✅ ללא כרטיס אשראי","🔒 מאובטח SSL","📱 עובד בכל מכשיר","🇮🇱 מערכת ישראלית","🤖 AI חכם"].map(t=>(
-            <span key={t} style={{fontSize:14,fontWeight:600,color:C.blue}}>{t}</span>
+      {/* 4 ICONS BAR */}
+      <div style={{background:"#fff",borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,padding:"28px 6vw"}}>
+        <div style={{maxWidth:700,margin:"0 auto",display:"flex",justifyContent:"center",gap:"clamp(20px,5vw,60px)",flexWrap:"wrap"}}>
+          {[
+            {icon:<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, label:"אישורי הגעה", sub:"בוואטסאפ"},
+            {icon:<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>, label:"אישורים", sub:"טלפוניים"},
+            {icon:<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, label:"מתנות", sub:"באשראי"},
+            {icon:<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>, label:"סידורי הושבה", sub:"מלאים"},
+          ].map((item,i)=>(
+            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer"}}>
+              <div style={{width:64,height:64,borderRadius:"50%",border:`2px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff",transition:"all .2s"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.boxShadow=`0 4px 16px ${C.blueL}33`;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.boxShadow="none";}}>
+                {item.icon}
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:12,fontWeight:700,color:C.text}}>{item.label}</div>
+                <div style={{fontSize:11,color:C.muted}}>{item.sub}</div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
