@@ -183,7 +183,7 @@ function ReceiptModal({ tables, onClose }) {
 function Countdown({ date }) {
   const [time,setTime]=useState({d:0,h:0,m:0,s:0});
   useEffect(()=>{const calc=()=>{const diff=new Date(date)-new Date();if(diff<=0){setTime({d:0,h:0,m:0,s:0});return;}setTime({d:Math.floor(diff/86400000),h:Math.floor((diff%86400000)/3600000),m:Math.floor((diff%3600000)/60000),s:Math.floor((diff%60000)/1000)});};calc();const id=setInterval(calc,1000);return()=>clearInterval(id);},[date]);
-  return(<div style={{display:"flex",gap:8,justifyContent:"center"}}>{[["d","ימים"],["h","שעות"],["m","דקות"],["s","שניות"]].map(([k,l])=>(<div key={k} style={{textAlign:"center",background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 10px",minWidth:52}}><div style={{fontSize:24,fontWeight:900,color:"#fff",lineHeight:1}}>{String(time[k]).padStart(2,"0")}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:2}}>{l}</div></div>))}</div>);
+  return(<div style={{display:"flex",gap:8,justifyContent:"center",direction:"ltr"}}>{[["d","ימים"],["h","שעות"],["m","דקות"],["s","שניות"]].map(([k,l])=>(<div key={k} style={{textAlign:"center",background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 10px",minWidth:52}}><div style={{fontSize:24,fontWeight:900,color:"#fff",lineHeight:1}}>{String(time[k]).padStart(2,"0")}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:2}}>{l}</div></div>))}</div>);
 }
 
 // ─── HAMBURGER MENU ───────────────────────────────────────────────────────────
@@ -340,8 +340,8 @@ function LandingPage({ onOpenAuth }) {
                   <div style={{textAlign:"center",borderBottom:"1px solid #eee",paddingBottom:8,marginBottom:8}}>
                     <div style={{fontSize:9.5,color:"#555",fontWeight:600}}>יום חמישי, 30 באפריל 2026</div>
                     <div style={{fontSize:20,fontWeight:900,color:"#111",lineHeight:1.1,marginTop:1}}>19:30</div>
-                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אצולת העמק עפולה</div>
-                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 שנקין עפולה</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אולמי Sidor-IL</div>
+                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 השושנים 30, נוף הגליל</div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:8}}>
                     {[["🔗","שתפו"],["📅","יומן"],["🚗","נווט"]].map(([ic,t])=>(
@@ -1781,6 +1781,12 @@ function InviteSettings({ event, onUpdate }) {
 export default function Root() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
 
+  const selectEvent=(ev)=>{
+    setEvent(ev);
+    if(ev)sessionStorage.setItem("lastEventId",ev.id);
+    else sessionStorage.removeItem("lastEventId");
+  };
+
   const path=window.location.pathname;
   const hash=window.location.hash;
 
@@ -1809,7 +1815,22 @@ export default function Root() {
     return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style><InvitePage code={inviteMatch[1]}/></>);
   }
 
-  useEffect(()=>{sb.auth.getSession().then(({data})=>{setUser(data.session?.user||null);setChecking(false);});const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user||null));return()=>subscription.unsubscribe();},[]);
+  useEffect(()=>{
+    sb.auth.getSession().then(async({data})=>{
+      const u=data.session?.user||null;
+      setUser(u);
+      if(u){
+        const lastId=sessionStorage.getItem("lastEventId");
+        if(lastId){
+          const{data:ev}=await sb.from("events").select("*").eq("id",lastId).eq("user_id",u.id).single();
+          if(ev)setEvent(ev);
+        }
+      }
+      setChecking(false);
+    });
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user||null));
+    return()=>subscription.unsubscribe();
+  },[]);
   const logout=async()=>{await sb.auth.signOut();setUser(null);setEvent(null);setShowLanding(false);};
 
   if(checking)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
@@ -1820,9 +1841,9 @@ export default function Root() {
   </>);
 
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <EventPicker user={user} onSelect={setEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)}/>
+    <EventPicker user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)}/>
   </>);
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>setEvent(null)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
+  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
 }
