@@ -378,8 +378,8 @@ function LandingPage({ onOpenAuth, onLogout }) {
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,minHeight:"100vh"}}>
 
       {/* NAV */}
-      <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,background:"#fff",borderBottom:`1px solid ${C.border}`,height:66,display:"flex",alignItems:"center",padding:"0 5vw",boxShadow:scrolled?"0 2px 16px rgba(26,63,163,.07)":"none",transition:"box-shadow .3s"}}>
-        {/* לוגו — משמאל */}
+      <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,background:"#fff",borderBottom:`1px solid ${C.border}`,height:66,display:"flex",alignItems:"center",padding:"0 5vw",flexDirection:"row-reverse",boxShadow:scrolled?"0 2px 16px rgba(26,63,163,.07)":"none",transition:"box-shadow .3s"}}>
+        {/* לוגו — ימין ב-DOM = שמאל ב-RTL */}
         <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
             <circle cx="18" cy="18" r="17" fill={`url(#tg)`}/>
@@ -389,8 +389,8 @@ function LandingPage({ onOpenAuth, onLogout }) {
           </svg>
           <span style={{fontWeight:900,fontSize:19,color:C.blue,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </div>
-        {/* שאר — ימין */}
-        <div style={{flex:1,display:"flex",gap:8,alignItems:"center",justifyContent:"flex-end"}}>
+        {/* שאר — שמאל ב-DOM = ימין ב-RTL */}
+        <div style={{flex:1,display:"flex",gap:8,alignItems:"center",flexDirection:"row-reverse",justifyContent:"flex-end"}}>
           {[["#","ראשי"],["#features","פיצ'רים"],["#how","איך עובד"],["#pricing","מחירים"],["#contact","צור קשר"]].map(([h,l])=>(
             <a key={h} href={h} className="nav-link"
               style={{color:C.text,textDecoration:"none",fontSize:14,fontWeight:600,padding:"6px 12px",borderRadius:8,display:"none",transition:"background .15s"}}
@@ -415,7 +415,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
       {/* HERO */}
       <section style={{minHeight:"100vh",display:"flex",alignItems:"center",padding:"80px 8vw 60px",position:"relative",overflow:"hidden"}}>
         {/* תמונת רקע מטושטשת */}
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)",backgroundSize:"cover",backgroundPosition:"center",filter:"blur(8px) brightness(.85)",transform:"scale(1.05)",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)",backgroundSize:"cover",backgroundPosition:"center",filter:"blur(3px) brightness(.9)",transform:"scale(1.03)",zIndex:0}}/>
         {/* שכבת לבן מעל */}
         <div style={{position:"absolute",inset:0,background:"rgba(240,244,255,.82)",zIndex:1}}/>
 
@@ -511,7 +511,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
             <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(32px,4vw,58px)",fontWeight:800,lineHeight:1.1,color:C.text,marginBottom:16}}>
               <span style={{color:C.blue}}>Sidor-IL</span>
             </h1>
-            <p style={{fontSize:16,color:C.muted,lineHeight:1.8,marginBottom:12}}>ממשק מתקדם לתכנון וניהול אירוע מושלם עם דרך חדשה להזמין ולהרשים את האורחים.</p>
+            <p style={{fontSize:16,color:C.muted,lineHeight:1.8,marginBottom:12}}>מערכת חכמה לניהול הושבה ואישורי הגעה באירועים — סדר, שליטה וחווית אורחים מושלמת במקום אחד.</p>
             <div style={{fontSize:14,color:C.text,fontWeight:700,marginBottom:28}}>
               <span style={{color:C.blue,fontSize:22,fontWeight:900}}>1,000+</span> אירועים הצטרפו!
             </div>
