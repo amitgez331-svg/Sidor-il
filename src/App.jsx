@@ -2303,10 +2303,11 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const [customCats,setCustomCats]=useState({...RELATION_COLORS});
   const [newCatName,setNewCatName]=useState("");
   const [newCatColor,setNewCatColor]=useState("#E53E3E");
+  const [editingCat,setEditingCat]=useState(null); // {oldName, newName, color}
   const CAT_COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795","#744210","#2C7A7B"];
 
   return(
-    <div style={{direction:"rtl",padding:"20px 16px"}}>
+    <div style={{direction:"rtl",padding:"16px 8px"}}>
       {/* כותרת */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
@@ -2329,28 +2330,68 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
       {showCats&&(
         <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:16,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
           <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:14}}>🏷️ ניהול קטגוריות קרבה</div>
+
           {/* קטגוריות קיימות */}
           <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
             {Object.entries(customCats).map(([name,color])=>(
-              <div key={name} style={{display:"flex",alignItems:"center",gap:6,background:color+"15",border:`1.5px solid ${color}44`,borderRadius:20,padding:"5px 12px"}}>
-                <div style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}}/>
-                <span style={{fontSize:13,fontWeight:700,color:color}}>{name}</span>
-                <button onClick={()=>{const c={...customCats};delete c[name];setCustomCats(c);delete RELATION_COLORS[name];}}
-                  style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,padding:0,lineHeight:1,marginRight:2}}>×</button>
-              </div>
+              editingCat?.oldName===name ? (
+                // מצב עריכה
+                <div key={name} style={{display:"flex",alignItems:"center",gap:6,background:"#F7FAFC",border:"1.5px solid #BEE3F8",borderRadius:12,padding:"6px 10px",flexWrap:"wrap"}}>
+                  <div style={{width:14,height:14,borderRadius:"50%",background:editingCat.color,flexShrink:0,border:"2px solid #E2E8F0"}}/>
+                  <input value={editingCat.newName} onChange={e=>setEditingCat(c=>({...c,newName:e.target.value}))}
+                    style={{border:"1px solid #E2E8F0",borderRadius:6,padding:"3px 8px",fontSize:12,outline:"none",fontFamily:"inherit",width:120}}/>
+                  <div style={{display:"flex",gap:4}}>
+                    {CAT_COLORS.map(c=>(
+                      <div key={c} onClick={()=>setEditingCat(ec=>({...ec,color:c}))}
+                        style={{width:16,height:16,borderRadius:"50%",background:c,cursor:"pointer",border:`2px solid ${editingCat.color===c?"#1A202C":"transparent"}`}}/>
+                    ))}
+                  </div>
+                  <button onClick={()=>{
+                    const {oldName,newName,color:nc}=editingCat;
+                    if(!newName.trim())return;
+                    const c={...customCats};
+                    delete c[oldName];
+                    delete RELATION_COLORS[oldName];
+                    c[newName.trim()]=nc;
+                    RELATION_COLORS[newName.trim()]=nc;
+                    setCustomCats(c);
+                    setEditingCat(null);
+                  }} style={{background:"#276749",color:"#fff",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✓</button>
+                  <button onClick={()=>setEditingCat(null)}
+                    style={{background:"#F7FAFC",color:"#718096",border:"1px solid #E2E8F0",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>✕</button>
+                </div>
+              ) : (
+                // תצוגה רגילה
+                <div key={name} style={{display:"flex",alignItems:"center",gap:6,background:color+"15",border:`1.5px solid ${color}44`,borderRadius:20,padding:"5px 12px"}}>
+                  <div style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}}/>
+                  <span style={{fontSize:13,fontWeight:700,color:color}}>{name}</span>
+                  <button onClick={()=>setEditingCat({oldName:name,newName:name,color})}
+                    style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:12,padding:"0 2px",lineHeight:1}}>✏️</button>
+                  <button onClick={()=>{const c={...customCats};delete c[name];setCustomCats(c);delete RELATION_COLORS[name];}}
+                    style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,padding:0,lineHeight:1}}>×</button>
+                </div>
+              )
             ))}
           </div>
+
           {/* הוספת קטגוריה */}
           <div style={{borderTop:"1px solid #F0F0F0",paddingTop:14}}>
             <div style={{fontSize:12,fontWeight:700,color:"#718096",marginBottom:8}}>הוסף קטגוריה חדשה:</div>
             <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
               <input value={newCatName} onChange={e=>setNewCatName(e.target.value)} placeholder="שם הקטגוריה..."
                 style={{border:"1.5px solid #E2E8F0",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",fontFamily:"inherit",flex:1,minWidth:150}}/>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                {CAT_COLORS.map(c=>(
-                  <div key={c} onClick={()=>setNewCatColor(c)}
-                    style={{width:22,height:22,borderRadius:"50%",background:c,cursor:"pointer",border:`3px solid ${newCatColor===c?"#1A202C":"transparent"}`,transition:"border .1s"}}/>
-                ))}
+              {/* תצוגת צבע נוכחי + בוחר */}
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <div style={{width:28,height:28,borderRadius:"50%",background:newCatColor,border:"2px solid #E2E8F0",flexShrink:0}}/>
+                <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                  {CAT_COLORS.map(c=>(
+                    <div key={c} onClick={()=>setNewCatColor(c)}
+                      style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",
+                        border:`3px solid ${newCatColor===c?"#1A202C":"transparent"}`,
+                        transform:newCatColor===c?"scale(1.2)":"scale(1)",
+                        transition:"all .15s"}}/>
+                  ))}
+                </div>
               </div>
               <button onClick={()=>{
                 if(!newCatName.trim())return;
