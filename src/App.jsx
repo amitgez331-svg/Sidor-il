@@ -518,8 +518,15 @@ function LandingPage({ onOpenAuth, onLogout }) {
               מערכת ניהול אירועים מתקדמת
               <div style={{width:32,height:3,background:C.blue,borderRadius:2}}/>
             </div>
-            <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(42px,5vw,72px)",fontWeight:900,lineHeight:1.05,color:C.text,marginBottom:20,letterSpacing:"-.02em"}}>
-              <span style={{color:C.blue}}>Sidor-IL</span>
+            <h1 style={{fontFamily:"'Heebo',sans-serif",fontSize:"clamp(42px,5vw,72px)",fontWeight:900,lineHeight:1.05,color:C.text,marginBottom:20,letterSpacing:"-.02em",display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+              <span style={{color:C.blue}}>Sid</span>
+              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style={{marginBottom:-4,marginLeft:-2,marginRight:-2}}>
+                <circle cx="26" cy="26" r="24" fill={`url(#hg)`}/>
+                <defs><radialGradient id="hg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF"/><stop offset="100%" stopColor="#1B3A8C"/></radialGradient></defs>
+                <circle cx="26" cy="26" r="12" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5"/>
+                {[0,60,120,180,240,300].map((deg,i)=>{const r=deg*Math.PI/180;return<circle key={i} cx={26+18*Math.cos(r)} cy={26+18*Math.sin(r)} r="3.5" fill="rgba(255,255,255,0.9)"/>;} )}
+              </svg>
+              <span style={{color:C.blue}}>r-IL</span>
             </h1>
             <p style={{fontSize:18,color:"#2D3748",lineHeight:1.8,marginBottom:16,fontWeight:600}}>מערכת חכמה לניהול הושבה ואישורי הגעה באירועים — סדר, שליטה וחווית אורחים מושלמת במקום אחד.</p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:32}}>
@@ -1167,7 +1174,7 @@ function SeatingApp({ user, event, onBack }) {
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
   const dropOnTable=async(toId,guestId,fromId)=>{const allG=[...guests,...tables.flatMap(t=>t.guests||[])];const guest=allG.find(g=>String(g.id)===String(guestId));const toTable=tables.find(t=>t.id===toId);if(!guest||!toTable||(toTable.guests||[]).length>=toTable.seats)return;setSaving(true);await sb.from("guests").update({table_id:toId}).eq("id",guestId);setTables(ts=>ts.map(t=>{if(t.id===fromId)return{...t,guests:(t.guests||[]).filter(g=>String(g.id)!==String(guestId))};if(t.id===toId)return{...t,guests:[...(t.guests||[]),{...guest,table_id:toId}]};return t;}));setGuests(gs=>gs.filter(g=>String(g.id)!==String(guestId)));setSaving(false);};
-  const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>[...gs,{...guest,table_id:null}]);setSaving(false);};
+  const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
   const editTable=async(id,name,type,seats)=>{setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
   const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
   const addGuest=async(data)=>{
