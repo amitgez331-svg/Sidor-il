@@ -2633,7 +2633,10 @@ function BudgetScreen({ event }) {
 
   useEffect(()=>{
     sb.from("budget_items").select("*").eq("event_id",event.id).order("created_at",{ascending:false})
-      .then(({data})=>{setItems(data||[]);setLoading(false);});
+      .then(({data,error})=>{
+        if(error)console.error("budget_items error:",error.message);
+        setItems(data||[]);setLoading(false);
+      });
   },[]);
 
   const totalExpenses=items.filter(i=>i.type==="expense").reduce((s,i)=>s+Number(i.amount||0),0);
@@ -2644,15 +2647,28 @@ function BudgetScreen({ event }) {
   const saveItem=async()=>{
     if(!form.name.trim()||!form.amount)return;
     setSaving(true);
-    if(editItem){
-      const{data}=await sb.from("budget_items").update({...form,event_id:event.id}).eq("id",editItem.id).select().single();
-      setItems(is=>is.map(i=>i.id===editItem.id?data:i));
-    }else{
-      const{data}=await sb.from("budget_items").insert({...form,event_id:event.id}).select().single();
-      setItems(is=>[data,...is]);
+    try{
+      if(editItem){
+        const{data,error}=await sb.from("budget_items").update({
+          name:form.name,amount:Number(form.amount),advance:Number(form.advance||0),
+          type:form.type,category:form.category,note:form.note,event_id:event.id
+        }).eq("id",editItem.id).select().single();
+        if(error)throw error;
+        setItems(is=>is.map(i=>i.id===editItem.id?data:i));
+      }else{
+        const{data,error}=await sb.from("budget_items").insert({
+          name:form.name,amount:Number(form.amount),advance:Number(form.advance||0),
+          type:form.type,category:form.category,note:form.note,event_id:event.id
+        }).select().single();
+        if(error)throw error;
+        setItems(is=>[data,...is]);
+      }
+      setShowForm(false);setEditItem(null);
+      setForm({name:"",amount:"",advance:"0",type:"expense",category:"אחר",note:""});
+    }catch(e){
+      alert("שגיאה בשמירה: "+e.message);
     }
-    setSaving(false);setShowForm(false);setEditItem(null);
-    setForm({name:"",amount:"",advance:"0",type:"expense",category:"אחר",note:""});
+    setSaving(false);
   };
 
   const deleteItem=async(id)=>{
