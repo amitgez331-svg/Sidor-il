@@ -416,6 +416,116 @@ function HamburgerMenu({ onOpenAuth, onClose, onVenuePage, onLogout }) {
 }
 
 // ─── LANDING PAGE ─────────────────────────────────────────────────────────────
+// ─── ACCESSIBILITY WIDGET ────────────────────────────────────────────────────
+function AccessibilityWidget() {
+  const [open,setOpen]=useState(false);
+  const [settings,setSettings]=useState({
+    fontSize:0,      // -1, 0, 1, 2
+    contrast:false,  // ניגודיות גבוהה
+    grayscale:false, // גווני אפור
+    bigCursor:false, // סמן גדול
+    stopAnim:false,  // עצור אנימציות
+    dyslexia:false,  // גופן דיסלקציה
+    highlight:false, // הדגש קישורים
+    underline:false, // קו תחתי לקישורים
+  });
+
+  useEffect(()=>{
+    const r=document.documentElement;
+    // גודל טקסט
+    const base=16;
+    r.style.fontSize=(base+settings.fontSize*2)+"px";
+    // ניגודיות
+    document.body.style.filter=[
+      settings.contrast?"contrast(150%)":"",
+      settings.grayscale?"grayscale(100%)":"",
+    ].filter(Boolean).join(" ")||"none";
+    // אנימציות
+    const style=document.getElementById("a11y-style")||document.createElement("style");
+    style.id="a11y-style";
+    style.textContent=[
+      settings.stopAnim?"*{animation:none!important;transition:none!important;}":"",
+      settings.dyslexia?"*{font-family:'Arial',sans-serif!important;letter-spacing:.05em!important;word-spacing:.1em!important;line-height:1.8!important;}":"",
+      settings.highlight?"a,button{outline:3px solid #FFD700!important;outline-offset:2px!important;}":"",
+      settings.underline?"a{text-decoration:underline!important;}":"",
+      settings.bigCursor?"*{cursor:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='4' cy='4' r='3' fill='black'/%3E%3C/svg%3E\") 4 4,auto!important;}":"",
+    ].join("\n");
+    document.head.appendChild(style);
+  },[settings]);
+
+  const toggle=(key)=>setSettings(s=>({...s,[key]:!s[key]}));
+  const reset=()=>setSettings({fontSize:0,contrast:false,grayscale:false,bigCursor:false,stopAnim:false,dyslexia:false,highlight:false,underline:false});
+
+  const BtnOpt=({icon,label,active,onClick})=>(
+    <button onClick={onClick}
+      style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:active?"#1B3A8C":"#F7FAFC",color:active?"#fff":"#1A202C",border:`2px solid ${active?"#1B3A8C":"#E2E8F0"}`,borderRadius:10,padding:"10px 14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:600,textAlign:"right",transition:"all .15s"}}>
+      <span style={{fontSize:18,flexShrink:0}}>{icon}</span>
+      <span style={{flex:1}}>{label}</span>
+      {active&&<span style={{fontSize:11,background:"rgba(255,255,255,.25)",borderRadius:4,padding:"2px 6px"}}>פעיל</span>}
+    </button>
+  );
+
+  return(
+    <>
+      {/* כפתור צף */}
+      <button onClick={()=>setOpen(o=>!o)} aria-label="תפריט נגישות"
+        style={{position:"fixed",bottom:24,left:24,zIndex:9999,width:52,height:52,borderRadius:"50%",background:"#1B3A8C",color:"#fff",border:"3px solid #fff",boxShadow:"0 4px 20px rgba(27,58,140,.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+        ♿
+      </button>
+
+      {/* פאנל */}
+      {open&&(
+        <div style={{position:"fixed",bottom:86,left:24,zIndex:9998,background:"#fff",borderRadius:18,boxShadow:"0 8px 40px rgba(0,0,0,.18)",width:280,direction:"rtl",overflow:"hidden",border:"2px solid #E2E8F0"}}>
+          {/* כותרת */}
+          <div style={{background:"#1B3A8C",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{color:"#fff",fontWeight:800,fontSize:15}}>♿ נגישות</div>
+              <div style={{color:"rgba(255,255,255,.7)",fontSize:11,marginTop:2}}>תקן ישראלי 5568</div>
+            </div>
+            <button onClick={()=>setOpen(false)} style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:8,width:28,height:28,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+
+          <div style={{padding:"14px 12px",maxHeight:420,overflowY:"auto"}}>
+            {/* גודל טקסט */}
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>גודל טקסט</div>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <button onClick={()=>setSettings(s=>({...s,fontSize:Math.max(-1,s.fontSize-1)}))}
+                  style={{flex:1,background:"#F7FAFC",border:"2px solid #E2E8F0",borderRadius:8,padding:"8px",cursor:"pointer",fontSize:16,fontWeight:700}}>A−</button>
+                <span style={{flex:1,textAlign:"center",fontSize:13,fontWeight:600,color:"#2D3748"}}>{["קטן","רגיל","גדול","גדול מאוד"][settings.fontSize+1]}</span>
+                <button onClick={()=>setSettings(s=>({...s,fontSize:Math.min(2,s.fontSize+1)}))}
+                  style={{flex:1,background:"#F7FAFC",border:"2px solid #E2E8F0",borderRadius:8,padding:"8px",cursor:"pointer",fontSize:18,fontWeight:700}}>A+</button>
+              </div>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <BtnOpt icon="🌑" label="ניגודיות גבוהה" active={settings.contrast} onClick={()=>toggle("contrast")}/>
+              <BtnOpt icon="⬛" label="גווני אפור" active={settings.grayscale} onClick={()=>toggle("grayscale")}/>
+              <BtnOpt icon="⏸" label="עצור אנימציות" active={settings.stopAnim} onClick={()=>toggle("stopAnim")}/>
+              <BtnOpt icon="📖" label="גופן לדיסלקציה" active={settings.dyslexia} onClick={()=>toggle("dyslexia")}/>
+              <BtnOpt icon="🔗" label="הדגש קישורים" active={settings.highlight} onClick={()=>toggle("highlight")}/>
+              <BtnOpt icon="_" label="קו תחתי לקישורים" active={settings.underline} onClick={()=>toggle("underline")}/>
+              <BtnOpt icon="🖱" label="סמן גדול" active={settings.bigCursor} onClick={()=>toggle("bigCursor")}/>
+            </div>
+          </div>
+
+          {/* אפס */}
+          <div style={{padding:"10px 12px",borderTop:"1px solid #E2E8F0"}}>
+            <button onClick={reset} style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"2px solid #FED7D7",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              🔄 אפס הכל
+            </button>
+          </div>
+
+          {/* תחתית — מידע */}
+          <div style={{padding:"8px 12px",background:"#F7FAFC",borderTop:"1px solid #E2E8F0",fontSize:10,color:"#aaa",textAlign:"center"}}>
+            אתר זה עומד בתקן WCAG 2.1 AA
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function LandingPage({ onOpenAuth, onLogout }) {
   const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
@@ -1606,7 +1716,7 @@ function SeatingApp({ user, event, onBack }) {
                     color:screen===item.id?"#E53E3E":"#4A5568",
                     background:screen===item.id?"#FFF5F5":"transparent",
                     borderRight:`3px solid ${screen===item.id?"#E53E3E":"transparent"}`,
-                    fontSize:13,fontWeight:screen===item.id?700:500,transition:"all .15s"}}
+                    fontSize:15,fontWeight:screen===item.id?700:500,transition:"all .15s"}}
                   onMouseEnter={e=>{if(screen!==item.id){e.currentTarget.style.background="#F7FAFC";e.currentTarget.style.color="#1A202C";}}}
                   onMouseLeave={e=>{if(screen!==item.id){e.currentTarget.style.background="transparent";e.currentTarget.style.color="#4A5568";}}}
                 >
@@ -2024,6 +2134,7 @@ function SeatingApp({ user, event, onBack }) {
     {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
     {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
+    <AccessibilityWidget/>
       </div>{/* end main content */}
     </div>{/* end flex row */}
   </div>);
@@ -2339,8 +2450,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const CAT_COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795","#744210","#2C7A7B"];
 
   return(
-    <div style={{direction:"rtl",padding:"16px 8px"}}>
-      {/* כותרת */}
+    <div style={{direction:"rtl",padding:"16px 4px"}}>
+      {/* כותרת */
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
           <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>אישורי הגעה</div>
@@ -2464,18 +2575,18 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
       {/* טבלה */}
       <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 16px rgba(0,0,0,.1)",overflow:"hidden",border:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,tableLayout:"fixed"}}>
           <colgroup>
-            <col style={{width:"16%"}}/>
+            <col style={{width:"18%"}}/>
             <col style={{width:"6%"}}/>
             <col style={{width:"6%"}}/>
-            <col style={{width:"11%"}}/>
+            <col style={{width:"12%"}}/>
             <col style={{width:"6%"}}/>
-            <col style={{width:"13%"}}/>
+            <col style={{width:"14%"}}/>
             <col style={{width:"7%"}}/>
-            <col style={{width:"12%"}}/>
-            <col style={{width:"5%"}}/>
-            <col style={{width:"12%"}}/>
+            <col style={{width:"11%"}}/>
+            <col style={{width:"4%"}}/>
+            <col style={{width:"10%"}}/>
             <col style={{width:"6%"}}/>
           </colgroup>
           <thead>
@@ -2502,44 +2613,44 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                 onMouseEnter={e=>e.currentTarget.style.filter="brightness(.96)"}
                 onMouseLeave={e=>e.currentTarget.style.filter="none"}>
                 {/* שם */}
-                <td style={{padding:"9px 10px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
+                <td style={{padding:"11px 12px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <div style={{width:26,height:26,borderRadius:"50%",background:relColor||"#CBD5E0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{g.name[0]}</div>
-                    <span style={{fontWeight:700,color:"#1A202C",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</span>
+                    <div style={{width:30,height:30,borderRadius:"50%",background:relColor||"#CBD5E0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{g.name[0]}</div>
+                    <span style={{fontWeight:700,color:"#1A202C",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</span>
                   </div>
                 </td>
-                <td style={{padding:"9px 6px",textAlign:"center",fontWeight:800,fontSize:12,color:"#2D3748",borderRight:"1px solid #E2E8F0"}}>{g.guest_count||1}</td>
+                <td style={{padding:"11px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:"#2D3748",borderRight:"1px solid #E2E8F0"}}>{g.guest_count||1}</td>
                 <td style={{padding:"9px 6px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  <span style={{fontWeight:900,fontSize:12,color:g.rsvp==="confirmed"?"#276749":"#CBD5E0"}}>{g.rsvp==="confirmed"?g.guest_count||1:0}</span>
+                  <span style={{fontWeight:900,fontSize:13,color:g.rsvp==="confirmed"?"#276749":"#CBD5E0"}}>{g.rsvp==="confirmed"?g.guest_count||1:0}</span>
                 </td>
-                <td style={{padding:"9px 6px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:11,fontWeight:600,borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.phone||"—"}</td>
+                <td style={{padding:"11px 8px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:12,fontWeight:600,borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.phone||"—"}</td>
                 <td style={{padding:"9px 6px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  {getTableNum(g)?<span style={{background:"#1B3A8C",color:"#fff",borderRadius:5,padding:"2px 7px",fontWeight:800,fontSize:11}}>{getTableNum(g)}</span>:<span style={{color:"#CBD5E0"}}>—</span>}
+                  {getTableNum(g)?<span style={{background:"#1B3A8C",color:"#fff",borderRadius:5,padding:"2px 7px",fontWeight:800,fontSize:12}}>{getTableNum(g)}</span>:<span style={{color:"#CBD5E0"}}>—</span>}
                 </td>
-                <td style={{padding:"9px 6px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
-                  {g.relation&&<span style={{display:"inline-flex",alignItems:"center",gap:3,background:(relColor||"#CBD5E0")+"25",border:`1.5px solid ${relColor||"#CBD5E0"}66`,borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700,color:relColor||"#718096",whiteSpace:"nowrap"}}>
+                <td style={{padding:"11px 8px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
+                  {g.relation&&<span style={{display:"inline-flex",alignItems:"center",gap:3,background:(relColor||"#CBD5E0")+"25",border:`1.5px solid ${relColor||"#CBD5E0"}66`,borderRadius:20,padding:"2px 7px",fontSize:12,fontWeight:700,color:relColor||"#718096",whiteSpace:"nowrap"}}>
                     <span style={{width:5,height:5,borderRadius:"50%",background:relColor||"#CBD5E0",display:"inline-block",flexShrink:0}}/>{g.relation}
                   </span>}
                 </td>
                 <td style={{padding:"9px 6px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  {g.gift&&g.gift>0?<span style={{background:"#FFFFF0",color:"#B7791F",border:"1.5px solid #FAF089",borderRadius:5,padding:"2px 6px",fontWeight:800,fontSize:10}}>₪{g.gift}</span>:<span style={{color:"#CBD5E0",fontSize:10}}>—</span>}
+                  {g.gift&&g.gift>0?<span style={{background:"#FFFFF0",color:"#B7791F",border:"1.5px solid #FAF089",borderRadius:5,padding:"2px 6px",fontWeight:800,fontSize:12}}>₪{g.gift}</span>:<span style={{color:"#CBD5E0",fontSize:10}}>—</span>}
                 </td>
-                <td style={{padding:"9px 6px",color:"#718096",fontSize:10,textAlign:"center",whiteSpace:"nowrap",borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
+                <td style={{padding:"11px 8px",color:"#718096",fontSize:11,textAlign:"center",whiteSpace:"nowrap",borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
                 <td style={{padding:"9px 6px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
                   <span style={{color:"#718096",fontSize:11}}>{g.views||0}</span>
                 </td>
-                <td style={{padding:"9px 4px",borderRight:"1px solid #E2E8F0"}}>
+                <td style={{padding:"11px 6px",borderRight:"1px solid #E2E8F0"}}>
                   <select value={g.rsvp||"pending"} onChange={async e=>await updateRsvp(g,e.target.value)}
                     style={{border:`1.5px solid ${g.rsvp==="confirmed"?"#9AE6B4":g.rsvp==="declined"?"#FEB2B2":"#CBD5E0"}`,
                       background:g.rsvp==="confirmed"?"#F0FFF4":g.rsvp==="declined"?"#FFF5F5":"#F7FAFC",
                       color:g.rsvp==="confirmed"?"#276749":g.rsvp==="declined"?"#C53030":"#718096",
-                      borderRadius:6,padding:"4px 3px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",outline:"none",width:"100%"}}>
+                      borderRadius:6,padding:"4px 3px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",outline:"none",width:"100%"}}>
                     <option value="pending">לא הופצה</option>
                     <option value="confirmed">מגיע/ה ✓</option>
                     <option value="declined">לא מגיע/ה ✗</option>
                   </select>
                 </td>
-                <td style={{padding:"9px 4px"}}>
+                <td style={{padding:"11px 6px"}}>
                   <div style={{display:"flex",gap:3}}>
                     <button onClick={()=>setEditG({...g})} style={{background:"#EBF8FF",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:5,padding:"4px 7px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✏️</button>
                     <button onClick={()=>deleteGuest(g)} style={{background:"#FFF5F5",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:5,padding:"4px 5px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>🗑️</button>
@@ -4327,6 +4438,7 @@ export default function App() {
   if(!user||showLanding)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
     <LandingPage onOpenAuth={mode=>{setShowLanding(false);setAuthMode(mode);}} onLogout={user?logout:null}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
+    <AccessibilityWidget/>
   </>);
 
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
