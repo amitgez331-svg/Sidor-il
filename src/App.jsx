@@ -2451,7 +2451,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
   return(
     <div style={{direction:"rtl",padding:"16px 4px"}}>
-      {/* כותרת */
+      {/* כותרת */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
           <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>אישורי הגעה</div>
