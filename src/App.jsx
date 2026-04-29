@@ -3546,6 +3546,7 @@ ${instructions}
     try{
       // קריאה ישירה ל-Anthropic
       const apiKey=import.meta.env.VITE_ANTHROPIC_KEY;
+      console.log("API Key exists:", !!apiKey, "length:", apiKey?.length);
       if(!apiKey){
         throw new Error("חסר API Key — הוסף VITE_ANTHROPIC_KEY ב-Vercel Environment Variables");
       }
