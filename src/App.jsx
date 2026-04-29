@@ -3014,6 +3014,7 @@ function BudgetScreen({ event }) {
         </div>
       )}
     </div>
+    </div>
   );
 }
 function ContactsScreen({ event, onAdd }) {
