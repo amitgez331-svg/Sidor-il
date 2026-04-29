@@ -2078,7 +2078,7 @@ function SeatingApp({ user, event, onBack }) {
 
     {/* שאר המסכים בדסקטופ */}
     {screen!=="home"&&screen!=="seating"&&(
-      <div style={{flex:1,overflowY:"auto",maxWidth:800,margin:"0 auto",width:"100%",padding:"24px 16px"}}>
+      <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 24px",boxSizing:"border-box"}}>
         {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
@@ -2458,9 +2458,9 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const CAT_COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795","#744210","#2C7A7B"];
 
   return(
-    <div style={{direction:"rtl",width:"100%"}}>
+    <div style={{direction:"rtl",width:"100%",display:"flex",flexDirection:"column"}}>
       {/* כותרת + כפתורים */}
-      <div style={{padding:"16px 16px 0"}}>
+      <div style={{padding:"16px 24px 0"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
           <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>אישורי הגעה</div>
@@ -2584,8 +2584,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
       {/* טבלה — מקצה לקצה */}
       </div>
-      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
+        <table style={{width:"100%",minWidth:960,borderCollapse:"collapse",fontSize:14}}>
           <thead>
             <tr style={{background:"#1B3A8C",borderBottom:"3px solid #122e70"}}>
               {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","👁","הגעה","פעולות"].map((h,i)=>(
@@ -2663,7 +2663,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
       </div>
 
       {/* מקרא קטגוריות */}
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14,padding:"0 24px 16px"}}>
         {Object.entries(RELATION_COLORS).map(([rel,col])=>(
           <div key={rel} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#718096"}}>
             <div style={{width:10,height:10,borderRadius:"50%",background:col}}/>
