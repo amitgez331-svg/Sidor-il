@@ -2075,7 +2075,7 @@ function SeatingApp({ user, event, onBack }) {
 
     {/* שאר המסכים בדסקטופ */}
     {screen!=="home"&&screen!=="seating"&&(
-      <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 20px",boxSizing:"border-box"}}>
+      <div style={{flex:1,overflowY:"auto",maxWidth:800,margin:"0 auto",width:"100%",padding:"24px 16px"}}>
         {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
@@ -2200,7 +2200,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   );
 
   return(
-    <div style={{direction:"rtl",padding:"24px 28px",width:"100%",boxSizing:"border-box"}}>
+    <div style={{direction:"rtl",padding:"24px 28px",maxWidth:900,margin:"0 auto"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div>
           <div style={{fontSize:22,fontWeight:900,color:"#1A202C"}}>פרטי האירוע שלכם</div>
@@ -2455,7 +2455,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const CAT_COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795","#744210","#2C7A7B"];
 
   return(
-    <div style={{direction:"rtl",padding:"16px 20px"}}>
+    <div style={{direction:"rtl",padding:"16px 0"}}>
       {/* כותרת */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
@@ -2579,8 +2579,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
       </div>
 
       {/* טבלה */}
-      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",minWidth:900,borderCollapse:"collapse",fontSize:14}}>
+      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
           <thead>
             <tr style={{background:"#1B3A8C",borderBottom:"3px solid #122e70"}}>
               {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","👁","הגעה","פעולות"].map((h,i)=>(
@@ -2866,8 +2866,8 @@ function BudgetScreen({ event }) {
       </div>
 
       {/* טבלה */}
-      <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 16px rgba(0,0,0,.1)",overflowX:"auto",border:"2px solid #C3D3F5"}}>
-        <table style={{width:"100%",minWidth:700,borderCollapse:"collapse",fontSize:14}}>
+      <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 16px rgba(0,0,0,.1)",overflow:"hidden",border:"2px solid #C3D3F5"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
           <thead>
             <tr style={{background:"#1B3A8C",borderBottom:"3px solid #122e70"}}>
               <th style={{padding:"13px 16px",textAlign:"right",fontWeight:800,color:"#fff",fontSize:13}}>מוצר / שירות</th>
@@ -3544,12 +3544,23 @@ ${instructions}
 שבץ כל אורח לשולחן מתאים לפי ההנחיות. שים לב לא לחרוג ממספר המקומות.`;
 
     try{
-      const{data,error:fnErr}=await sb.functions.invoke("ai-seating",{
-        body:{prompt}
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "anthropic-dangerous-direct-browser-access":"true",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY||""
+        },
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:2000,
+          system:"אתה עוזר לסידורי הושבה. החזר JSON תקני בלבד ללא טקסט נוסף.",
+          messages:[{role:"user",content:prompt}]
+        })
       });
-      if(fnErr)throw new Error(fnErr.message||"שגיאה בקריאה לשרת");
-      const text=data?.content?.[0]?.text||"";
-      if(!text)throw new Error(data?.error?.message||"לא התקבלה תשובה מה-AI");
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`שגיאה ${res.status}`);}
+      const data=await res.json();
+      const text=data.content?.[0]?.text||"";
       const clean=text.replace(/```json\n?|```/g,"").trim();
       const parsed=JSON.parse(clean);
       setResult(parsed);
@@ -3720,13 +3731,12 @@ function InvitePage({ code }) {
 
   const doInsert=async()=>{
     const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
-    const{data:inserted}=await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null,views:1}).select().single();
+    await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null});
     setSubmitted(true);setSubmitting(false);setShowDupModal(false);
   };
 
   const doUpdate=async()=>{
-    const curViews=(dupGuest.views||0)+1;
-    await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null,views:curViews}).eq("id",dupGuest.id);
+    await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null}).eq("id",dupGuest.id);
     setSubmitted(true);setSubmitting(false);setShowDupModal(false);
   };
 
