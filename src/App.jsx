@@ -3545,8 +3545,13 @@ ${instructions}
 
     try{
       const res=await sb.functions.invoke("ai-seating",{body:{prompt}});
-      if(res.error)throw new Error(res.error.message);
-      const parsed=res.data;
+      if(res.error){
+        // נסה לקרוא את פרטי השגיאה
+        const errMsg=typeof res.error==="object"?JSON.stringify(res.error):res.error.message||String(res.error);
+        throw new Error(errMsg);
+      }
+      if(!res.data)throw new Error("לא התקבל מידע מהשרת");
+      const parsed=typeof res.data==="string"?JSON.parse(res.data):res.data;
       setResult(parsed);
     }catch(e){
       setError(`שגיאה: ${e.message||"נסה שוב"}`);
