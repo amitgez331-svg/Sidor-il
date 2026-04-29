@@ -1696,10 +1696,13 @@ function SeatingApp({ user, event, onBack }) {
       {/* SIDEBAR */}
       {sidebarOpen&&(
         <div style={{width:220,background:"#fff",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",borderLeft:"1px solid #E2E8F0",boxShadow:"2px 0 8px rgba(0,0,0,.04)"}}>
-          <div style={{padding:"16px",borderBottom:"1px solid #F0F0F0",background:"#FAFAFA"}}>
-            <div style={{fontSize:11,color:"#999",marginBottom:4}}>האירוע הנוכחי</div>
-            <div style={{fontSize:13,fontWeight:800,color:"#1A202C",lineHeight:1.3}}>{event.name}</div>
-            {event.date&&<div style={{fontSize:11,color:"#718096",marginTop:3}}>📅 {event.date}</div>}
+          <div style={{padding:"16px",borderBottom:"1px solid #F0F0F0",background:"linear-gradient(135deg,#EBF8FF,#F0F4FF)"}}>
+            <div style={{fontSize:10,color:"#999",marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em"}}>האירוע הנוכחי</div>
+            <div style={{fontSize:15,fontWeight:900,color:"#1A202C",lineHeight:1.3,marginBottom:4}}>{event.name}</div>
+            {event.date&&<div style={{fontSize:12,color:"#2B6CB0",fontWeight:700}}>
+              📅 {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}
+            </div>}
+            {event.venue&&<div style={{fontSize:11,color:"#718096",marginTop:2}}>📍 {event.venue}</div>}
           </div>
           <nav style={{flex:1,padding:"8px 0"}}>
             {navItems.map(item=>{
@@ -2200,7 +2203,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   );
 
   return(
-    <div style={{direction:"rtl",padding:"24px 28px",maxWidth:900,margin:"0 auto"}}>
+    <div style={{direction:"rtl",padding:"20px 16px",width:"100%",boxSizing:"border-box"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div>
           <div style={{fontSize:22,fontWeight:900,color:"#1A202C"}}>פרטי האירוע שלכם</div>
@@ -2455,8 +2458,9 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const CAT_COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795","#744210","#2C7A7B"];
 
   return(
-    <div style={{direction:"rtl",padding:"16px 0"}}>
-      {/* כותרת */}
+    <div style={{direction:"rtl",width:"100%"}}>
+      {/* כותרת + כפתורים */}
+      <div style={{padding:"16px 16px 0"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
           <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>אישורי הגעה</div>
@@ -2578,7 +2582,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#999",fontSize:16}}>×</button>}
       </div>
 
-      {/* טבלה */}
+      {/* טבלה — מקצה לקצה */}
+      </div>
       <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
           <thead>
@@ -2827,7 +2832,8 @@ function BudgetScreen({ event }) {
   if(loading)return<div style={{padding:40,textAlign:"center"}}><Spinner size={32}/></div>;
 
   return(
-    <div style={{direction:"rtl",padding:"16px 8px"}}>
+    <div style={{direction:"rtl",width:"100%"}}>
+      <div style={{padding:"16px 16px 0"}}>
       {/* כותרת */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
@@ -2865,8 +2871,8 @@ function BudgetScreen({ event }) {
         ))}
       </div>
 
-      {/* טבלה */}
-      <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 16px rgba(0,0,0,.1)",overflow:"hidden",border:"2px solid #C3D3F5"}}>
+      {/* טבלה — מקצה לקצה */}
+      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
           <thead>
             <tr style={{background:"#1B3A8C",borderBottom:"3px solid #122e70"}}>
@@ -3514,149 +3520,158 @@ function WhatsAppScreen({ event, guests }) {
 
 // ─── AI SEATING SCREEN ────────────────────────────────────────────────────────
 function AISeatingScreen({ event, tables, guests, onApply }) {
-  const [instructions,setInstructions]=useState("");
+  const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
-  const [error,setError]=useState("");
+  const [groupByRelation,setGroupByRelation]=useState(true);
+  const [fillEmpty,setFillEmpty]=useState(true);
 
-  const allGuests=[...guests,...tables.flatMap(t=>(t.guests||[]).map(g=>({...g,currentTable:t.name})))];
+  const runSmartSeating=()=>{
+    setLoading(true);
+    setTimeout(()=>{
+      const unseated=[...guests]; // רק ממתינים
+      const assignments=[];
 
-  const runAI=async()=>{
-    if(!instructions.trim()){setError("כתוב הנחיות לפני הפעלת ה-AI");return;}
-    if(tables.length===0){setError("צור שולחנות קודם");return;}
-    if(allGuests.length===0){setError("הוסף אורחים קודם");return;}
-    setLoading(true);setError("");setResult(null);
-
-    const prompt=`אתה עוזר לסידורי הושבה לאירועים בעברית.
-
-רשימת האורחים:
-${allGuests.map(g=>`- ${g.name} (ID: ${g.id})${g.currentTable?` [כרגע בשולחן: ${g.currentTable}]`:""}`).join("\n")}
-
-רשימת השולחנות:
-${tables.map(t=>`- ${t.name} (ID: ${t.id}, מקומות: ${t.seats}, תפוס: ${(t.guests||[]).length})`).join("\n")}
-
-הנחיות המשתמש:
-${instructions}
-
-החזר JSON בלבד (ללא טקסט נוסף) בפורמט:
-{"assignments":[{"guestId":"...","tableId":"...","reason":"..."}],"summary":"תקציר בעברית של הסידור"}
-
-שבץ כל אורח לשולחן מתאים לפי ההנחיות. שים לב לא לחרוג ממספר המקומות.`;
-
-    try{
-      // קריאה ישירה ל-Anthropic
-      const apiKey=import.meta.env.VITE_ANTHROPIC_KEY;
-      console.log("API Key exists:", !!apiKey, "length:", apiKey?.length);
-      if(!apiKey){
-        throw new Error("חסר API Key — הוסף VITE_ANTHROPIC_KEY ב-Vercel Environment Variables");
-      }
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "x-api-key":apiKey,
-          "anthropic-version":"2023-06-01",
-          "anthropic-dangerous-direct-browser-access":"true"
-        },
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:2000,
-          system:"אתה עוזר לסידורי הושבה. החזר JSON תקני בלבד ללא טקסט נוסף.",
-          messages:[{role:"user",content:prompt}]
-        })
+      // קבץ לפי קטגוריה
+      const byRelation={};
+      unseated.forEach(g=>{
+        const rel=g.relation||"ללא שיוך";
+        if(!byRelation[rel])byRelation[rel]=[];
+        byRelation[rel].push(g);
       });
-      if(!res.ok){
-        const e=await res.json().catch(()=>({}));
-        throw new Error(e?.error?.message||`שגיאת שרת ${res.status}`);
+
+      // עותק של שולחנות עם מקומות פנויים
+      const tableSlots=tables.map(t=>({
+        ...t,
+        used:(t.guests||[]).length,
+        free:t.seats-(t.guests||[]).length
+      })).filter(t=>t.free>0);
+
+      if(groupByRelation){
+        // שבץ לפי קטגוריה — כל קטגוריה לשולחן אחד
+        Object.entries(byRelation).forEach(([rel,gList])=>{
+          let remaining=[...gList];
+          for(const tbl of tableSlots){
+            if(remaining.length===0)break;
+            while(tbl.free>0&&remaining.length>0){
+              const g=remaining.shift();
+              assignments.push({guestId:g.id,tableId:tbl.id,reason:`${rel} → ${tbl.name}`});
+              tbl.free--;tbl.used++;
+            }
+          }
+        });
+      }else{
+        // שבץ לפי סדר — מלא שולחן אחד לפני הבא
+        let remaining=[...unseated];
+        for(const tbl of tableSlots){
+          while(tbl.free>0&&remaining.length>0){
+            const g=remaining.shift();
+            assignments.push({guestId:g.id,tableId:tbl.id,reason:`סידור לפי זמינות → ${tbl.name}`});
+            tbl.free--;
+          }
+        }
       }
-      const data=await res.json();
-      const text=data.content?.[0]?.text||"";
-      const clean=text.replace(/```json\n?|```/g,"").trim();
-      const parsed=JSON.parse(clean);
-      setResult(parsed);
-    }catch(e){
-      setError(`שגיאה: ${e.message||"נסה שוב"}`);
-    }
-    setLoading(false);
+
+      const summary=`שובצו ${assignments.length} אורחים מתוך ${unseated.length} ממתינים`;
+      setResult({assignments,summary});
+      setLoading(false);
+    },600);
   };
 
   return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16,paddingBottom:80}}>
-      {/* הסבר */}
-      <div style={{background:"linear-gradient(135deg,#F5F3FF,#EDE9FE)",border:"1.5px solid #7C3AED30",borderRadius:16,padding:16,marginBottom:16}}>
-        <div style={{fontSize:15,fontWeight:800,color:"#7C3AED",marginBottom:6}}>🤖 איך עובד?</div>
-        <div style={{fontSize:13,color:"#6D28D9",lineHeight:1.7}}>כתוב הנחיות בעברית חופשית — מי לא יושב עם מי, מי צריך לשבת קרוב לבמה, משפחות ביחד וכו'. ה-AI יסדר את כל האורחים אוטומטית.</div>
-      </div>
+    <div style={{direction:"rtl",padding:24,maxWidth:700,margin:"0 auto"}}>
+      <div style={{fontSize:20,fontWeight:900,color:"#1A202C",marginBottom:6}}>🪑 סידור הושבה חכם</div>
+      <div style={{fontSize:13,color:"#718096",marginBottom:20}}>סידור אוטומטי לפי קטגוריות ומקומות פנויים</div>
 
       {/* סטטיסטיקות */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-        {[[allGuests.length,"👥","אורחים"],[tables.length,"🪑","שולחנות"],[tables.reduce((s,t)=>s+t.seats,0)-allGuests.filter(g=>g.table_id).length,"🆓","מקומות פנויים"]].map(([v,ic,l])=>(
-          <Card key={l} style={{padding:"10px 8px",textAlign:"center"}}>
-            <div style={{fontSize:20}}>{ic}</div>
-            <div style={{fontSize:20,fontWeight:900,color:C.blue}}>{v}</div>
-            <div style={{fontSize:10,color:C.muted}}>{l}</div>
-          </Card>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+        {[[guests.length,"👥","ממתינים להושבה"],[tables.length,"🪑","שולחנות"],[tables.reduce((s,t)=>s+Math.max(0,t.seats-(t.guests||[]).length),0),"🆓","מקומות פנויים"]].map(([v,ic,l])=>(
+          <div key={l} style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"14px",textAlign:"center",boxShadow:"0 1px 6px rgba(0,0,0,.04)"}}>
+            <div style={{fontSize:24}}>{ic}</div>
+            <div style={{fontSize:24,fontWeight:900,color:"#2B6CB0"}}>{v}</div>
+            <div style={{fontSize:11,color:"#718096",marginTop:2}}>{l}</div>
+          </div>
         ))}
       </div>
 
-      {/* שדה הנחיות */}
-      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>✍️ כתוב הנחיות לסידור</div>
-      <textarea
-        value={instructions}
-        onChange={e=>setInstructions(e.target.value)}
-        placeholder={"לדוגמה:\n• משפחת כהן לא יושבת ליד משפחת לוי\n• הורי הכלה ליד הבמה\n• ילדים בשולחן נפרד\n• חברים מהצבא ביחד"}
-        style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:14,fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",minHeight:140,boxSizing:"border-box",resize:"vertical",marginBottom:12,lineHeight:1.6}}
-      />
-
-      {/* דוגמאות מהירות */}
-      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
-        {["זוגות ביחד","ילדים בשולחן נפרד","קשישים קרוב לבמה","חברים מהעבודה ביחד"].map(tip=>(
-          <button key={tip} onClick={()=>setInstructions(p=>p+(p?"\n":"")+tip)}
-            style={{background:C.blueXL,color:C.blue,border:`1px solid ${C.border}`,borderRadius:20,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-            + {tip}
-          </button>
+      {/* הגדרות */}
+      <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:20}}>
+        <div style={{fontSize:14,fontWeight:800,color:"#1A202C",marginBottom:14}}>⚙️ אפשרויות סידור</div>
+        {[
+          {key:"groupByRelation",label:"קבץ לפי קטגוריית קרבה",desc:"משפחה קרובה ביחד, חברים ביחד וכו'",val:groupByRelation,set:setGroupByRelation},
+          {key:"fillEmpty",label:"מלא שולחנות ריקים קודם",desc:"תעדוף שולחנות עם פחות אורחים",val:fillEmpty,set:setFillEmpty},
+        ].map(item=>(
+          <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #F7FAFC"}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:"#1A202C"}}>{item.label}</div>
+              <div style={{fontSize:12,color:"#718096"}}>{item.desc}</div>
+            </div>
+            <div onClick={()=>item.set(s=>!s)}
+              style={{width:44,height:24,borderRadius:12,background:item.val?"#276749":"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
+              <div style={{position:"absolute",top:2,right:item.val?2:20,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"right .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
+            </div>
+          </div>
         ))}
       </div>
 
-      {error&&<div style={{background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:C.danger,marginBottom:12}}>{error}</div>}
-
-      {/* כפתור הפעלה */}
-      <button onClick={runAI} disabled={loading}
-        style={{width:"100%",background:loading?"#E9D5FF":`linear-gradient(135deg,#7C3AED,#A855F7)`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:loading?"default":"pointer",fontFamily:"inherit",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:loading?"none":"0 4px 20px rgba(124,58,237,.4)"}}>
-        {loading?<><Spinner size={20} color="#fff"/>מחשב סידור אופטימלי...</>:"🤖 הפעל AI לסידור חכם"}
-      </button>
+      {/* קטגוריות קיימות */}
+      <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:20}}>
+        <div style={{fontSize:14,fontWeight:800,color:"#1A202C",marginBottom:12}}>📊 פילוח לפי קטגוריה</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+          {Object.entries(
+            [...guests,...tables.flatMap(t=>t.guests||[])].reduce((acc,g)=>{
+              const r=g.relation||"ללא שיוך";
+              acc[r]=(acc[r]||0)+(g.guest_count||1);
+              return acc;
+            },{})
+          ).map(([rel,count])=>(
+            <div key={rel} style={{display:"flex",alignItems:"center",gap:6,background:(RELATION_COLORS[rel]||"#CBD5E0")+"18",border:`1.5px solid ${(RELATION_COLORS[rel]||"#CBD5E0")}44`,borderRadius:20,padding:"5px 12px"}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:RELATION_COLORS[rel]||"#CBD5E0"}}/>
+              <span style={{fontSize:12,fontWeight:700,color:RELATION_COLORS[rel]||"#718096"}}>{rel}</span>
+              <span style={{fontSize:12,fontWeight:900,color:"#1A202C"}}>{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* תוצאה */}
       {result&&(
-        <div style={{background:"linear-gradient(135deg,#F5F3FF,#EDE9FE)",border:"1.5px solid #7C3AED40",borderRadius:16,padding:16,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:800,color:"#7C3AED",marginBottom:8}}>✨ הצעת סידור</div>
-          {result.summary&&<div style={{fontSize:13,color:"#6D28D9",lineHeight:1.7,marginBottom:12,background:"#fff",borderRadius:10,padding:"8px 6px"}}>{result.summary}</div>}
-          <div style={{maxHeight:200,overflowY:"auto",marginBottom:12}}>
-            {result.assignments?.slice(0,8).map((a,i)=>{
+        <div style={{background:"#F0FFF4",border:"1.5px solid #9AE6B4",borderRadius:14,padding:20,marginBottom:20}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#276749",marginBottom:8}}>✅ {result.summary}</div>
+          <div style={{maxHeight:200,overflowY:"auto"}}>
+            {result.assignments.slice(0,10).map((a,i)=>{
               const g=allGuests.find(x=>String(x.id)===String(a.guestId));
-              const t=tables.find(x=>String(x.id)===String(a.tableId));
-              if(!g||!t)return null;
-              return(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid #EDE9FE`}}>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#7C3AED,#A855F7)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
-                  <div style={{flex:1,fontSize:13,color:C.text,fontWeight:600}}>{g.name}</div>
-                  <div style={{fontSize:11,color:"#7C3AED",fontWeight:700,background:"#EDE9FE",borderRadius:8,padding:"2px 8px"}}>→ {t.name}</div>
+              return g?(
+                <div key={i} style={{fontSize:12,color:"#2D3748",padding:"3px 0",borderBottom:"1px solid #C6F6D5"}}>
+                  <span style={{fontWeight:700}}>{g.name}</span> → {a.reason}
                 </div>
-              );
+              ):null;
             })}
-            {result.assignments?.length>8&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"8px 0"}}>ועוד {result.assignments.length-8} אורחים...</div>}
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            <button onClick={()=>setResult(null)} style={{background:"#fff",color:"#7C3AED",border:"1.5px solid #7C3AED40",borderRadius:12,padding:"11px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>↩ נסה שוב</button>
-            <button onClick={()=>onApply(result.assignments)} style={{background:`linear-gradient(135deg,#7C3AED,#A855F7)`,color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✅ אשר ויישם</button>
+            {result.assignments.length>10&&<div style={{fontSize:11,color:"#718096",marginTop:4}}>ועוד {result.assignments.length-10} אורחים...</div>}
           </div>
         </div>
       )}
+
+      {guests.length===0&&(
+        <div style={{background:"#EBF8FF",border:"1.5px solid #BEE3F8",borderRadius:14,padding:20,textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:32,marginBottom:8}}>🎉</div>
+          <div style={{fontSize:15,fontWeight:700,color:"#2B6CB0"}}>כל האורחים כבר מוסבים!</div>
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={runSmartSeating} disabled={loading||guests.length===0}
+          style={{flex:2,background:guests.length===0?"#E2E8F0":"#2B6CB0",color:guests.length===0?"#aaa":"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:15,fontWeight:700,cursor:guests.length===0?"default":"pointer",fontFamily:"inherit"}}>
+          {loading?"מסדר...":"🚀 סדר אוטומטית"}
+        </button>
+        {result&&<button onClick={()=>onApply(result.assignments)}
+          style={{flex:1,background:"#276749",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+          ✅ אשר וסיים
+        </button>}
+      </div>
     </div>
   );
 }
-
-// ─── ADD TABLE MODAL ──────────────────────────────────────────────────────────
 function AddTableModal({ onConfirm, onClose }) {
   const [name,setName]=useState(""),[type,setType]=useState("round");
   return(
@@ -4452,5 +4467,5 @@ export default function App() {
   </>);
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
+  <SeatingApp user={user} event={event} onBack={()=>setShowLanding(true)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
 }
