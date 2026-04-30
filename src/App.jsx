@@ -2174,59 +2174,61 @@ function SeatingApp({ user, event, onBack }) {
             onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
             style={{flex:1,overflow:"auto",background:"#F8F6F0"}}>
             <div className="map-bg"
-              style={{position:"relative",width:1200,height:800,
+              style={{position:"relative",width:1400,height:920,
                 background:"linear-gradient(180deg,#F0EBE0 0%,#F5F1E8 100%)",
                 border:"3px solid #D4C9B0",margin:8,borderRadius:8,boxShadow:"0 2px 12px rgba(0,0,0,0.1)"}}
               onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
 
-              {/* קירות — מסגרת */}
+              {/* קירות */}
               <div style={{position:"absolute",inset:0,border:"6px solid #B8A882",borderRadius:6,pointerEvents:"none",zIndex:1}}/>
 
-              {/* ─── במה — למעלה מרכז ─── */}
+              {/* ─── רחבת ריקודים — למעלה מרכז ─── */}
               <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
-                width:280,height:70,
-                background:"linear-gradient(180deg,#C0392B,#E74C3C)",
-                borderRadius:"0 0 14px 14px",
-                border:"3px solid #922B21",borderTop:"none",
-                boxShadow:"0 4px 16px rgba(0,0,0,0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
+                width:300,height:72,background:"linear-gradient(180deg,#C0392B,#E74C3C)",
+                borderRadius:"0 0 16px 16px",border:"3px solid #922B21",borderTop:"none",
+                boxShadow:"0 4px 16px rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
                 <div style={{textAlign:"center"}}>
                   <div style={{fontSize:20,marginBottom:2}}>👥</div>
                   <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:2}}>רחבת ריקודים</div>
                 </div>
               </div>
 
-              {/* ─── בר — למעלה ימין ─── */}
-              <div style={{position:"absolute",top:0,right:40,
-                width:120,height:56,
-                background:"linear-gradient(180deg,#1E8449,#27AE60)",
-                borderRadius:"0 0 12px 12px",
-                border:"3px solid #196F3D",borderTop:"none",
-                boxShadow:"0 4px 12px rgba(0,0,0,0.2)",
-                display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
+              {/* ─── בר — פינה ימין עליון, צמוד לקיר ─── */}
+              <div style={{position:"absolute",top:0,right:0,
+                width:130,height:62,background:"linear-gradient(180deg,#1E8449,#27AE60)",
+                borderRadius:"0 0 0 14px",border:"3px solid #196F3D",borderTop:"none",borderRight:"none",
+                boxShadow:"0 4px 12px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
                 <div style={{textAlign:"center"}}>
-                  <div style={{fontSize:16,marginBottom:2}}>🍾</div>
+                  <div style={{fontSize:18,marginBottom:2}}>🍾🥂</div>
                   <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>בר</div>
                 </div>
               </div>
 
-              {/* ─── כניסה — למטה מרכז ─── */}
+              {/* ─── כניסה — למטה מרכז, צמוד לקיר ─── */}
               <div style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",
-                width:120,height:30,
-                background:"linear-gradient(180deg,#2C3E50,#34495E)",
-                borderRadius:"10px 10px 0 0",
+                width:140,height:36,background:"linear-gradient(180deg,#2C3E50,#34495E)",
+                borderRadius:"12px 12px 0 0",border:"3px solid #1A252F",borderBottom:"none",
                 display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
-                <span style={{fontSize:11,fontWeight:800,color:"#fff",letterSpacing:1}}>🚪 כניסה</span>
+                <span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:1}}>🚪 כניסה</span>
               </div>
 
-              {/* ─── שולחנות ─── */}
+              {/* ─── שולחנות — עם כפתור עריכה שנשאר עם השולחן ─── */}
               {tables.map(t=>{
+                let posX=t.x, posY=t.y;
                 const hmd=e=>{
                   e.stopPropagation();
                   setSelected(t.id);
-                  const ox=e.clientX-t.x,oy=e.clientY-t.y;
-                  const mv=me=>moveTablePos(t.id,me.clientX-ox,me.clientY-oy);
-                  const up=()=>{saveTablePos(t.id,t.x,t.y);window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);};
+                  const ox=e.clientX-posX, oy=e.clientY-posY;
+                  const mv=me=>{
+                    posX=me.clientX-ox;
+                    posY=me.clientY-oy;
+                    moveTablePos(t.id,posX,posY);
+                  };
+                  const up=()=>{
+                    saveTablePos(t.id,posX,posY);
+                    window.removeEventListener("mousemove",mv);
+                    window.removeEventListener("mouseup",up);
+                  };
                   window.addEventListener("mousemove",mv);
                   window.addEventListener("mouseup",up);
                 };
@@ -2235,12 +2237,14 @@ function SeatingApp({ user, event, onBack }) {
                     <TableNode table={t} selected={selected===t.id} onMouseDown={hmd}
                       onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
                     {selected===t.id&&(
-                      <div style={{position:"absolute",top:-14,right:-14,zIndex:20}}>
-                        <button onClick={e=>{e.stopPropagation();editTable(t.id,t.name,t.type,t.seats);}}
-                          style={{width:26,height:26,borderRadius:"50%",background:"#fff",border:`2px solid ${C.blueM}`,
-                            display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-                            fontSize:12,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>✏️</button>
-                      </div>
+                      <button
+                        onMouseDown={e=>e.stopPropagation()}
+                        onClick={e=>{e.stopPropagation();editTable(t.id,t.name,t.type,t.seats);}}
+                        style={{position:"absolute",top:-12,right:-12,zIndex:30,
+                          width:26,height:26,borderRadius:"50%",background:"#fff",
+                          border:`2px solid ${C.blueM}`,display:"flex",alignItems:"center",
+                          justifyContent:"center",cursor:"pointer",fontSize:12,
+                          boxShadow:"0 2px 8px rgba(0,0,0,0.25)"}}>✏️</button>
                     )}
                   </div>
                 );
