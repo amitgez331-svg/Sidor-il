@@ -1883,7 +1883,7 @@ function SeatingApp({ user, event, onBack }) {
       {screen!=="home"&&<button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>← חזרה</button>}
       <span style={{fontWeight:800,fontSize:15,color:"#fff",flex:1}}>{event.name}</span>
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
-      {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋"],["guests","👥"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,.25)":"transparent",color:"#fff",border:`1px solid ${view===v?"rgba(255,255,255,.4)":"rgba(255,255,255,.2)"}`,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>))}</div>}
+      {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋 רשימה"],["guests","👥 אורחים"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",color:view===v?C.blue:"#fff",border:`2px solid ${view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.4)"}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 2px 8px rgba(0,0,0,0.2)":"none",transition:"all .15s"}}>{l}</button>))}</div>}
       <span style={{background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 12px"}}>{seated}/{total}</span>
       {screen==="seating"&&<><button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
       <button onClick={()=>setModal("receipt")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🖨️ חפש</button></>}
@@ -2197,25 +2197,41 @@ function SeatingApp({ user, event, onBack }) {
               {/* קירות */}
               <div style={{position:"absolute",inset:0,border:"6px solid #B8A882",borderRadius:6,pointerEvents:"none",zIndex:1}}/>
 
-              {/* ─── רחבת ריקודים — למעלה מרכז ─── */}
+              {/* ─── במה — למעלה מרכז ─── */}
               <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
-                width:300,height:72,background:"linear-gradient(180deg,#C0392B,#E74C3C)",
-                borderRadius:"0 0 16px 16px",border:"3px solid #922B21",borderTop:"none",
-                boxShadow:"0 4px 16px rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
-                <div style={{textAlign:"center"}}>
-                  <div style={{fontSize:20,marginBottom:2}}>👥</div>
-                  <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:2}}>רחבת ריקודים</div>
+                width:300,height:72,
+                background:"linear-gradient(180deg,#4A1E8C,#7B3FD4)",
+                borderRadius:"0 0 20px 20px",border:"3px solid #6B21A8",borderTop:"none",
+                boxShadow:"0 6px 20px rgba(107,33,168,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
+                {/* תאורה */}
+                <div style={{position:"absolute",top:6,left:0,right:0,display:"flex",justifyContent:"space-around",padding:"0 20px"}}>
+                  {["#FF6B6B","#FFD700","#4ECDC4","#FF9FF3","#FFD700"].map((col,i)=>(
+                    <div key={i} style={{width:8,height:8,borderRadius:"50%",background:col,boxShadow:`0 0 8px ${col}`,opacity:0.9}}/>
+                  ))}
+                </div>
+                <div style={{textAlign:"center",marginTop:10}}>
+                  <div style={{fontSize:18,marginBottom:2}}>🎤✨</div>
+                  <div style={{fontSize:13,fontWeight:900,color:"#FFD700",letterSpacing:2,textShadow:"0 0 10px rgba(255,215,0,0.6)"}}>★ במה ★</div>
                 </div>
               </div>
 
               {/* ─── בר — פינה ימין עליון, צמוד לקיר ─── */}
               <div style={{position:"absolute",top:0,right:0,
-                width:130,height:62,background:"linear-gradient(180deg,#1E8449,#27AE60)",
-                borderRadius:"0 0 0 14px",border:"3px solid #196F3D",borderTop:"none",borderRight:"none",
-                boxShadow:"0 4px 12px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5}}>
-                <div style={{textAlign:"center"}}>
-                  <div style={{fontSize:18,marginBottom:2}}>🍾🥂</div>
-                  <div style={{fontSize:12,fontWeight:900,color:"#fff"}}>בר</div>
+                width:150,height:76,
+                background:"linear-gradient(160deg,#1A1A2E,#16213E,#0F3460)",
+                borderRadius:"0 0 0 18px",border:"3px solid #E94560",borderTop:"none",borderRight:"none",
+                boxShadow:"0 6px 20px rgba(233,69,96,0.3)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,
+                overflow:"hidden"}}>
+                {/* ניאון */}
+                <div style={{position:"absolute",top:4,left:0,right:0,display:"flex",justifyContent:"center",gap:6}}>
+                  {["#FF6B9D","#C77DFF","#48CAE4"].map((col,i)=>(
+                    <div key={i} style={{width:6,height:6,borderRadius:"50%",background:col,boxShadow:`0 0 8px ${col}`}}/>
+                  ))}
+                </div>
+                <div style={{textAlign:"center",marginTop:6}}>
+                  <div style={{fontSize:20,marginBottom:3}}>🍸🥂</div>
+                  <div style={{fontSize:13,fontWeight:900,color:"#E94560",letterSpacing:2,textShadow:"0 0 8px rgba(233,69,96,0.8)"}}>BAR</div>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.6)",fontWeight:600}}>open bar</div>
                 </div>
               </div>
 
