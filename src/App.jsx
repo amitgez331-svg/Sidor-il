@@ -80,16 +80,96 @@ function TableNode({ table, selected, onMouseDown, onDrop }) {
   }
 
   if(table.type==="rect"){
-    const W=120,H=90;
+    const W=110,H=80;
+    const seatR=6;
+    const S_W=W+seatR*4+4, S_H=H+seatR*4+4;
+    const ox=(S_W-W)/2, oy=(S_H-H)/2;
+
+    // כיסאות על 4 צדדים
+    const topSeats=Math.ceil(total/4);
+    const bottomSeats=Math.ceil(total/4);
+    const leftSeats=Math.floor(total/4);
+    const rightSeats=total-topSeats-bottomSeats-leftSeats;
+    let seatIdx=0;
+    const seatNodes=[];
+
+    // למעלה
+    for(let i=0;i<topSeats;i++){
+      const x=ox+W/(topSeats+1)*(i+1);
+      const y=oy-seatR-3;
+      const taken=seatIdx<occupied;
+      seatNodes.push(<g key={`t${i}`}>
+        <circle cx={x} cy={y+1} r={seatR} fill="rgba(0,0,0,0.12)"/>
+        <circle cx={x} cy={y} r={seatR} fill={taken?"#1565C0":"#B0BEC5"} stroke={taken?"#0D47A1":"#90A4AE"} strokeWidth={1}/>
+        <circle cx={x} cy={y} r={2.5} fill={taken?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.35)"}/>
+      </g>);
+      seatIdx++;
+    }
+    // למטה
+    for(let i=0;i<bottomSeats;i++){
+      const x=ox+W/(bottomSeats+1)*(i+1);
+      const y=oy+H+seatR+3;
+      const taken=seatIdx<occupied;
+      seatNodes.push(<g key={`b${i}`}>
+        <circle cx={x} cy={y+1} r={seatR} fill="rgba(0,0,0,0.12)"/>
+        <circle cx={x} cy={y} r={seatR} fill={taken?"#1565C0":"#B0BEC5"} stroke={taken?"#0D47A1":"#90A4AE"} strokeWidth={1}/>
+        <circle cx={x} cy={y} r={2.5} fill={taken?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.35)"}/>
+      </g>);
+      seatIdx++;
+    }
+    // שמאל
+    for(let i=0;i<leftSeats;i++){
+      const x=ox-seatR-3;
+      const y=oy+H/(leftSeats+1)*(i+1);
+      const taken=seatIdx<occupied;
+      seatNodes.push(<g key={`l${i}`}>
+        <circle cx={x+1} cy={y+1} r={seatR} fill="rgba(0,0,0,0.12)"/>
+        <circle cx={x} cy={y} r={seatR} fill={taken?"#1565C0":"#B0BEC5"} stroke={taken?"#0D47A1":"#90A4AE"} strokeWidth={1}/>
+        <circle cx={x} cy={y} r={2.5} fill={taken?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.35)"}/>
+      </g>);
+      seatIdx++;
+    }
+    // ימין
+    for(let i=0;i<rightSeats;i++){
+      const x=ox+W+seatR+3;
+      const y=oy+H/(rightSeats+1)*(i+1);
+      const taken=seatIdx<occupied;
+      seatNodes.push(<g key={`r${i}`}>
+        <circle cx={x+1} cy={y+1} r={seatR} fill="rgba(0,0,0,0.12)"/>
+        <circle cx={x} cy={y} r={seatR} fill={taken?"#1565C0":"#B0BEC5"} stroke={taken?"#0D47A1":"#90A4AE"} strokeWidth={1}/>
+        <circle cx={x} cy={y} r={2.5} fill={taken?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.35)"}/>
+      </g>);
+      seatIdx++;
+    }
+
     return(
-      <div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:W,height:H,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?"drop-shadow(0 4px 18px #00BCD488)":"drop-shadow(0 2px 8px #0002)"}}>
-        <svg width={W} height={H}>
-          <rect x={1} y={1} width={W-2} height={H-2} rx={12} fill="#00BCD4" stroke={selected?"#fff":"#00ACC1"} strokeWidth={selected?2.5:1.5}/>
-          <rect x={5} y={5} width={W-10} height={H-10} rx={8} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1} strokeDasharray="4 3"/>
+      <div onMouseDown={onMouseDown} {...dp}
+        style={{position:"absolute",left:table.x-ox,top:table.y-oy,width:S_W,height:S_H,
+          cursor:"grab",userSelect:"none",zIndex:selected?10:1,
+          filter:selected?"drop-shadow(0 4px 18px #00BCD488)":"drop-shadow(0 2px 8px #0002)"}}>
+        <svg width={S_W} height={S_H}>
+          {seatNodes}
+          {/* צל שולחן */}
+          <rect x={ox+2} y={oy+3} width={W} height={H} rx={12} fill="rgba(0,0,0,0.15)"/>
+          {/* שולחן */}
+          <rect x={ox} y={oy} width={W} height={H} rx={12} fill={selected?"#0288D1":"#00BCD4"} stroke={selected?"#fff":"#00ACC1"} strokeWidth={selected?2.5:1.5}/>
+          {/* טבעת דקורטיבית */}
+          <rect x={ox+5} y={oy+5} width={W-10} height={H-10} rx={8} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1} strokeDasharray="5 3"/>
         </svg>
-        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none",gap:1}}>
-          <span style={{fontSize:11,fontWeight:900,color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.3)",textAlign:"center",maxWidth:100,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{table.name}</span>
-          <span style={{fontSize:10,color:"rgba(255,255,255,0.85)",fontWeight:700}}>{occupied}/{total}</span>
+        <div style={{position:"absolute",left:ox,top:oy,width:W,height:H,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          flexDirection:"column",pointerEvents:"none",gap:1}}>
+          <span style={{fontSize:13,fontWeight:900,color:"#fff",textShadow:"0 1px 3px rgba(0,0,0,0.3)",
+            textAlign:"center",maxWidth:W-16,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+            {table.name?.match(/\d+/)?.[0]||table.name}
+          </span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.9)",fontWeight:700}}>{occupied}/{total}</span>
+          {table.name?.replace(/^\d+\s*/,"").trim()&&(
+            <span style={{fontSize:8,color:"rgba(255,255,255,0.8)",fontWeight:600,
+              textAlign:"center",maxWidth:W-16,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+              {table.name?.replace(/^\d+\s*/,"").trim()}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -2090,22 +2170,105 @@ function SeatingApp({ user, event, onBack }) {
       <main style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
         {view==="map"&&<>
           <div onDragOver={e=>e.preventDefault()}
-            onDrop={e=>{
-              // רק אם שחררו ישירות על הרקע הריק — לא על שולחן
-              if(e.defaultPrevented)return;
-              e.preventDefault();
-              // אל תעשה כלום — גרירה לרקע לא מסירה אורחים
-            }}
+            onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
             onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
-            style={{flex:1,overflow:"auto",backgroundImage:`radial-gradient(ellipse at 30% 20%,rgba(74,122,255,.06),transparent 50%),linear-gradient(${C.border}80 1px,transparent 1px),linear-gradient(90deg,${C.border}80 1px,transparent 1px)`,backgroundSize:"auto,40px 40px,40px 40px"}}>
-            <div className="map-bg" style={{position:"relative",width:1400,height:900}} onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
-              <div style={{position:"absolute",bottom:24,left:"50%",transform:"translateX(-50%)",width:210,height:34,background:`linear-gradient(135deg,${C.blue}18,${C.blueL}12)`,border:`1px solid ${C.blueL}40`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:C.blue,letterSpacing:".1em",fontWeight:700}}>▲ במה ▲</div>
-              {tables.map(t=>{const hmd=e=>{e.stopPropagation();setSelected(t.id);const ox=e.clientX-t.x,oy=e.clientY-t.y;const mv=me=>moveTablePos(t.id,me.clientX-ox,me.clientY-oy);const up=()=>{saveTablePos(t.id,t.x,t.y);window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);};window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);};return<TableNode key={t.id} table={t} selected={selected===t.id} onMouseDown={hmd} onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>;} )}
+            style={{flex:1,overflow:"auto",background:"#F5F0E8"}}>
+            <div className="map-bg" style={{position:"relative",width:1400,height:900,
+              background:"linear-gradient(180deg,#EDE8DC 0%,#F2EDE3 40%,#EDE8DC 100%)",
+              backgroundImage:"radial-gradient(ellipse 80% 40% at 50% 0%,rgba(255,220,100,0.08),transparent)"}}
+              onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
+
+              {/* ─── רצפה — פרקטים ─── */}
+              <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.18}} xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="parquet" x="0" y="0" width="60" height="30" patternUnits="userSpaceOnUse">
+                    <rect x="0" y="0" width="60" height="30" fill="none" stroke="#8B6914" strokeWidth="0.5"/>
+                    <line x1="0" y1="0" x2="60" y2="30" stroke="#8B6914" strokeWidth="0.3"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#parquet)"/>
+              </svg>
+
+              {/* ─── במה ─── */}
+              <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(-50%)",
+                width:340,height:90,background:"linear-gradient(180deg,#4A3728,#6B4C35)",
+                borderRadius:"0 0 20px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.3)",
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                border:"3px solid #8B6914",borderTop:"none",zIndex:5}}>
+                <div style={{display:"flex",gap:16,marginBottom:6}}>
+                  {["🎵","🎤","🎵"].map((e,i)=><span key={i} style={{fontSize:20}}>{e}</span>)}
+                </div>
+                <div style={{fontSize:14,fontWeight:900,color:"#FFD700",letterSpacing:2,textShadow:"0 0 10px rgba(255,215,0,0.5)"}}>★ במה ★</div>
+                {/* תאורה */}
+                <div style={{position:"absolute",top:-8,left:20,right:20,display:"flex",justifyContent:"space-around"}}>
+                  {[0,1,2,3,4].map(i=><div key={i} style={{width:12,height:12,borderRadius:"50%",
+                    background:["#FF6B6B","#FFD700","#4ECDC4","#FF6B6B","#FFD700"][i],
+                    boxShadow:`0 0 8px ${["#FF6B6B","#FFD700","4ECDC4","#FF6B6B","#FFD700"][i]}`,opacity:0.9}}/>)}
+                </div>
+              </div>
+
+              {/* ─── בר ─── */}
+              <div style={{position:"absolute",top:30,right:40,
+                width:130,height:70,background:"linear-gradient(135deg,#2D5016,#3D6B20)",
+                borderRadius:12,boxShadow:"0 4px 16px rgba(0,0,0,0.25)",
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                border:"2px solid #4A8B25",zIndex:5}}>
+                <div style={{fontSize:18,marginBottom:4}}>🍾🥂</div>
+                <div style={{fontSize:13,fontWeight:900,color:"#fff",letterSpacing:1}}>בר</div>
+              </div>
+
+              {/* ─── רחבת ריקודים ─── */}
+              <div style={{position:"absolute",top:140,left:"50%",transform:"translateX(-50%)",
+                width:200,height:100,
+                background:"linear-gradient(135deg,rgba(100,50,150,0.15),rgba(50,100,200,0.15))",
+                border:"2px dashed rgba(150,100,220,0.4)",borderRadius:16,
+                display:"flex",alignItems:"center",justifyContent:"center",zIndex:2}}>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:22,marginBottom:4}}>💃🕺</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"rgba(100,50,150,0.7)",letterSpacing:1}}>רחבת ריקודים</div>
+                </div>
+              </div>
+
+              {/* ─── כניסה ─── */}
+              <div style={{position:"absolute",bottom:20,left:"50%",transform:"translateX(-50%)",
+                width:160,height:40,background:"linear-gradient(135deg,#1B3A8C,#2952C8)",
+                borderRadius:"20px 20px 0 0",display:"flex",alignItems:"center",justifyContent:"center",
+                boxShadow:"0 -4px 12px rgba(27,58,140,0.3)",zIndex:5}}>
+                <span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:2}}>🚪 כניסה</span>
+              </div>
+
+              {/* ─── שולחנות ─── */}
+              {tables.map(t=>{
+                const hmd=e=>{
+                  e.stopPropagation();
+                  setSelected(t.id);
+                  const ox=e.clientX-t.x,oy=e.clientY-t.y;
+                  const mv=me=>moveTablePos(t.id,me.clientX-ox,me.clientY-oy);
+                  const up=()=>{saveTablePos(t.id,t.x,t.y);window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);};
+                  window.addEventListener("mousemove",mv);
+                  window.addEventListener("mouseup",up);
+                };
+                return(
+                  <div key={t.id} style={{position:"absolute",left:t.x,top:t.y}}>
+                    <TableNode table={t} selected={selected===t.id} onMouseDown={hmd}
+                      onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
+                    {/* כפתור עריכה על השולחן */}
+                    {selected===t.id&&(
+                      <div style={{position:"absolute",top:-14,right:-14,zIndex:20}}>
+                        <button onClick={e=>{e.stopPropagation();editTable(t.id,t.name,t.type,t.seats);}}
+                          style={{width:28,height:28,borderRadius:"50%",background:"#fff",border:`2px solid ${C.blueM}`,
+                            display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
+                            fontSize:13,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>✏️</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div style={{padding:"6px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:16,fontSize:11,color:C.muted,flexShrink:0}}>
             {Object.entries(TABLE_TYPES).map(([k,v])=><span key={k}>{v.icon} {v.label}</span>)}
-            <span style={{marginRight:"auto"}}>💡 גרור שולחנות · שחרר אורחים לשולחן</span>
+            <span style={{marginRight:"auto"}}>💡 גרור שולחנות · לחץ לבחירה · ✏️ לעריכה</span>
           </div>
         </>}
         {view==="list"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
