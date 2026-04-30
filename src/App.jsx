@@ -57,12 +57,129 @@ const Inp = ({value,onChange,placeholder,onKeyDown,type="text",style={}}) => (
 
 // ─── TABLE NODE ───────────────────────────────────────────────────────────────
 function TableNode({ table, selected, onMouseDown, onDrop }) {
-  const sc=sColor(table),p=pct(table),guests=table.guests||[];
+  const guests=table.guests||[];
+  const occupied=guests.length;
+  const total=table.seats||10;
+  const pctFull=total>0?occupied/total:0;
   const dp={onDragOver:e=>{e.preventDefault();e.stopPropagation();},onDrop:e=>{e.preventDefault();e.stopPropagation();onDrop(e);}};
-  if(table.type==="knight"){const W=170,H=56;return(<div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:W,height:H,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?`drop-shadow(0 4px 18px ${C.blueL}88)`:"drop-shadow(0 2px 8px #0002)"}}><svg width={W} height={H}><rect x={1} y={1} width={W-2} height={H-2} rx={10} fill={C.surface} stroke={selected?C.blueL:C.border} strokeWidth={selected?2:1}/>{p>0&&<rect x={4} y={4} width={(p/100)*(W-8)} height={H-8} rx={7} fill={sc} opacity={.18}/>}{Array.from({length:Math.min(table.seats,11)}).map((_,i)=><circle key={i} cx={12+i*14} cy={9} r={4} fill={i<guests.length?sc:C.border}/>)}</svg><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none"}}><span style={{fontSize:11,fontWeight:800,color:C.text}}>{table.name}</span><span style={{fontSize:10,color:C.muted}}>{guests.length}/{table.seats}</span></div></div>);}
-  if(table.type==="rect"){const W=104,H=84;return(<div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:W,height:H,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?`drop-shadow(0 4px 18px ${C.blueL}88)`:"drop-shadow(0 2px 8px #0002)"}}><svg width={W} height={H}><rect x={1} y={1} width={W-2} height={H-2} rx={8} fill={C.surface} stroke={selected?C.blueL:C.border} strokeWidth={selected?2:1}/>{p>0&&<rect x={4} y={4} width={(p/100)*(W-8)} height={H-8} rx={5} fill={sc} opacity={.15}/>}{Array.from({length:table.seats}).map((_,i)=>{const pr=Math.ceil(table.seats/2),row=i<pr?0:1,col=i%pr,x=10+col*(W-20)/(pr-1||1),y=row===0?8:H-8;return<circle key={i} cx={x} cy={y} r={4} fill={i<guests.length?sc:C.border}/>;})}</svg><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none"}}><span style={{fontSize:10,fontWeight:800,color:C.text}}>{table.name}</span><span style={{fontSize:9,color:C.muted}}>{guests.length}/{table.seats}</span></div></div>);}
-  const R=52,circ=2*Math.PI*(R-8);
-  return(<div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:R*2+4,height:R*2+4,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?`drop-shadow(0 4px 18px ${C.blueL}88)`:"drop-shadow(0 2px 8px #0002)"}}><svg width={R*2+4} height={R*2+4}><circle cx={R+2} cy={R+4} r={R-1} fill="rgba(27,58,140,0.05)"/><circle cx={R+2} cy={R+2} r={R} fill={C.surface} stroke={selected?C.blueL:C.border} strokeWidth={selected?2:1}/>{p>0&&<circle cx={R+2} cy={R+2} r={R-8} fill="none" stroke={sc} strokeWidth={5} strokeLinecap="round" strokeDasharray={`${(p/100)*circ} ${circ}`} transform={`rotate(-90 ${R+2} ${R+2})`} opacity={.8}/>}{Array.from({length:table.seats}).map((_,i)=>{const a=(i/table.seats)*Math.PI*2-Math.PI/2;return<circle key={i} cx={R+2+(R-2)*Math.cos(a)} cy={R+2+(R-2)*Math.sin(a)} r={3.5} fill={i<guests.length?sc:C.border}/>;})}</svg><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none"}}><span style={{fontSize:13}}>{TABLE_TYPES[table.type]?.icon}</span><span style={{fontSize:11,fontWeight:800,color:C.text,textAlign:"center",maxWidth:76,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{table.name}</span><span style={{fontSize:10,color:C.muted}}>{guests.length}/{table.seats}</span></div></div>);
+
+  if(table.type==="knight"){
+    const W=180,H=60;
+    return(
+      <div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:W,height:H,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?"drop-shadow(0 4px 18px #00BCD488)":"drop-shadow(0 2px 8px #0002)"}}>
+        <svg width={W} height={H}>
+          <rect x={1} y={1} width={W-2} height={H-2} rx={12} fill="#00BCD4" stroke={selected?"#fff":"#00ACC1"} strokeWidth={selected?2.5:1.5}/>
+          <rect x={4} y={4} width={W-8} height={H-8} rx={9} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1} strokeDasharray="4 3"/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none"}}>
+          <span style={{fontSize:12,fontWeight:900,color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.3)"}}>{table.name}</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.85)",fontWeight:700}}>{occupied}/{total}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if(table.type==="rect"){
+    const W=120,H=90;
+    return(
+      <div onMouseDown={onMouseDown} {...dp} style={{position:"absolute",left:table.x,top:table.y,width:W,height:H,cursor:"grab",userSelect:"none",zIndex:selected?10:1,filter:selected?"drop-shadow(0 4px 18px #00BCD488)":"drop-shadow(0 2px 8px #0002)"}}>
+        <svg width={W} height={H}>
+          <rect x={1} y={1} width={W-2} height={H-2} rx={12} fill="#00BCD4" stroke={selected?"#fff":"#00ACC1"} strokeWidth={selected?2.5:1.5}/>
+          <rect x={5} y={5} width={W-10} height={H-10} rx={8} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1} strokeDasharray="4 3"/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none",gap:1}}>
+          <span style={{fontSize:11,fontWeight:900,color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.3)",textAlign:"center",maxWidth:100,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{table.name}</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.85)",fontWeight:700}}>{occupied}/{total}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── עגול — סגנון עיטורים ─────────────────────────────────────────────────
+  const R=46;           // רדיוס עיגול ראשי
+  const seatR=7;        // רדיוס כיסא
+  const seatDist=R+14;  // מרחק כיסאות מהמרכז
+  const S=R*2+seatDist+seatR*2+8; // גודל כולל
+  const cx=S/2, cy=S/2;
+
+  const tableNum=table.name?.match(/\d+/)?.[0]||"";
+  const tableName=table.name?.replace(/^\d+\s*/,"").trim()||"";
+
+  // עיטורי שיניים (קטנים, בין הכיסאות)
+  const decoCount=24;
+  const decos=Array.from({length:decoCount},(_,i)=>{
+    const a=(i/decoCount)*Math.PI*2;
+    const dr=R+7;
+    return <circle key={i} cx={cx+dr*Math.cos(a)} cy={cy+dr*Math.sin(a)} r={3}
+      fill={selected?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.4)"}/>;
+  });
+
+  // כיסאות — בדיוק לפי מספר המושבים, כחול=תפוס, אפור=פנוי
+  const seats=Array.from({length:total},(_,i)=>{
+    const a=(i/total)*Math.PI*2-Math.PI/2;
+    const sx=cx+seatDist*Math.cos(a);
+    const sy=cy+seatDist*Math.sin(a);
+    const isTaken=i<occupied;
+    return(
+      <g key={i}>
+        {/* צל כיסא */}
+        <circle cx={sx+1} cy={sy+1} r={seatR} fill="rgba(0,0,0,0.15)"/>
+        {/* כיסא */}
+        <circle cx={sx} cy={sy} r={seatR}
+          fill={isTaken?"#1565C0":"#B0BEC5"}
+          stroke={isTaken?"#0D47A1":"#90A4AE"}
+          strokeWidth={1.2}/>
+        {/* נקודה מרכזית בכיסא */}
+        <circle cx={sx} cy={sy} r={2.5}
+          fill={isTaken?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.4)"}/>
+      </g>
+    );
+  });
+
+  return(
+    <div onMouseDown={onMouseDown} {...dp}
+      style={{position:"absolute",left:table.x,top:table.y,width:S,height:S,
+        cursor:"grab",userSelect:"none",zIndex:selected?10:1,
+        filter:selected?"drop-shadow(0 6px 22px rgba(0,188,212,0.65))":"drop-shadow(0 3px 12px rgba(0,0,0,0.18))"}}>
+      <svg width={S} height={S}>
+        {/* כיסאות — מאחורה */}
+        {seats}
+        {/* צל שולחן */}
+        <circle cx={cx+2} cy={cy+3} r={R+1} fill="rgba(0,0,0,0.15)"/>
+        {/* עיגול חיצוני קצה */}
+        <circle cx={cx} cy={cy} r={R+2} fill={selected?"#0097A7":"#00ACC1"}/>
+        {/* עיטורים */}
+        {decos}
+        {/* עיגול ראשי */}
+        <circle cx={cx} cy={cy} r={R} fill={selected?"#0288D1":"#00BCD4"}/>
+        {/* טבעת דקורטיבית פנימית */}
+        <circle cx={cx} cy={cy} r={R-7} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={1.5} strokeDasharray="6 4"/>
+        {/* מילוי פנימי עדין */}
+        <circle cx={cx} cy={cy} r={R-14} fill="rgba(255,255,255,0.07)"/>
+      </svg>
+
+      {/* טקסט מרכזי */}
+      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
+        justifyContent:"center",flexDirection:"column",pointerEvents:"none",gap:0}}>
+        {tableNum&&(
+          <span style={{fontSize:24,fontWeight:900,color:"#fff",lineHeight:1,
+            textShadow:"0 1px 4px rgba(0,0,0,0.35)"}}>{tableNum}</span>
+        )}
+        <span style={{fontSize:11,fontWeight:700,lineHeight:1.2,
+          color:pctFull>=1?"#FF5252":pctFull>0.8?"#FFE082":"rgba(255,255,255,0.95)",
+          textShadow:"0 1px 2px rgba(0,0,0,0.3)"}}>
+          {occupied} / {total}
+        </span>
+        {tableName&&(
+          <span style={{fontSize:8.5,fontWeight:700,color:"rgba(255,255,255,0.88)",
+            textAlign:"center",maxWidth:R*1.3,overflow:"hidden",whiteSpace:"nowrap",
+            textOverflow:"ellipsis",textShadow:"0 1px 2px rgba(0,0,0,0.3)",marginTop:1}}>
+            {tableName}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── RSVP BADGE ──────────────────────────────────────────────────────────────
@@ -3338,10 +3455,19 @@ function SMSScreen({ event, guests }) {
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
+  const [smsBalance,setSmsBalance]=useState(null); // null=טוען
 
   useEffect(()=>{
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
   },[guests]);
+
+  // טעינת יתרת SMS מ-Supabase
+  useEffect(()=>{
+    sb.from("sms_balance").select("*").eq("event_id",event.id).single()
+      .then(({data})=>{
+        setSmsBalance(data?.balance??0);
+      }).catch(()=>setSmsBalance(0));
+  },[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=filterRsvp==="all"?withPhone
@@ -3359,12 +3485,32 @@ function SMSScreen({ event, guests }) {
 
   const charCount=msgText.length;
   const smsCount=charCount<=160?1:Math.ceil(charCount/153);
+  const totalSmsNeeded=smsCount*toSend.length;
+  const hasBalance=smsBalance===null||smsBalance>=totalSmsNeeded;
+
+  const buyPackage=async(amount,price)=>{
+    if(!window.confirm(`לרכוש ${amount} SMS ב-₪${price}?\n(תשלום דרך PayPlus יתווסף בקרוב)`))return;
+    // עדכן יתרה ב-Supabase
+    const{data:existing}=await sb.from("sms_balance").select("*").eq("event_id",event.id).single().catch(()=>({data:null}));
+    if(existing){
+      const newBal=(existing.balance||0)+amount;
+      await sb.from("sms_balance").update({balance:newBal,total_purchased:(existing.total_purchased||0)+amount,updated_at:new Date().toISOString()}).eq("event_id",event.id);
+      setSmsBalance(newBal);
+    } else {
+      await sb.from("sms_balance").insert({event_id:event.id,balance:amount,total_purchased:amount,total_sent:0});
+      setSmsBalance(amount);
+    }
+    alert(`✅ ${amount} SMS נוספו ליתרה שלך!`);
+  };
 
   const pickTemplate=(t)=>{setSelectedTemplate(t.id);setMsgText(t.text);};
 
   const sendAll=async()=>{
     if(toSend.length===0){alert("אין אורחים לשליחה עם מספר טלפון");return;}
-    if(!window.confirm(`לשלוח SMS ל-${toSend.length} אורחים?`))return;
+    if(smsBalance!==null&&smsBalance<totalSmsNeeded){
+      alert(`אין מספיק SMS!\nנדרש: ${totalSmsNeeded} | יתרה: ${smsBalance}\nרכוש SMS נוספים למטה.`);return;
+    }
+    if(!window.confirm(`לשלוח SMS ל-${toSend.length} אורחים? (${totalSmsNeeded} SMS)`))return;
     setSending(true);setProgress(0);setResults(null);
     try{
       let p=0;
@@ -3380,7 +3526,14 @@ function SMSScreen({ event, guests }) {
       clearInterval(iv);
       if(error)throw new Error(error.message);
       setProgress(100);
-      setResults(data?.results||[]);
+      const res=data?.results||[];
+      setResults(res);
+      const sent=res.filter(r=>r.status?.includes("✓")).length*smsCount;
+      if(sent>0&&smsBalance!==null){
+        const newBal=Math.max(0,smsBalance-sent);
+        await sb.from("sms_balance").update({balance:newBal,updated_at:new Date().toISOString()}).eq("event_id",event.id);
+        setSmsBalance(newBal);
+      }
     }catch(e){
       alert("שגיאה בשליחה: "+e.message);
     }
@@ -3394,7 +3547,7 @@ function SMSScreen({ event, guests }) {
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"16px 24px",paddingBottom:80}}>
 
       {/* כותרת */}
-      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>📱 שליחת SMS</div>
           <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
@@ -3405,6 +3558,47 @@ function SMSScreen({ event, guests }) {
         <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
           <div style={{fontSize:28,fontWeight:900}}>{withPhone.length}</div>
           <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
+        </div>
+      </div>
+
+      {/* יתרת SMS */}
+      <div style={{background:"#fff",borderRadius:14,padding:"14px 18px",marginBottom:16,border:`1.5px solid ${!hasBalance&&smsBalance!==null&&smsBalance<totalSmsNeeded?"#FC8181":C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:44,height:44,borderRadius:12,background:smsBalance===0?"#FFF5F5":smsBalance===null?"#F7FAFC":"#F0FFF4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>
+            {smsBalance===null?"⏳":smsBalance===0?"⚠️":"📊"}
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:C.text}}>יתרת SMS</div>
+            <div style={{fontSize:11,color:C.muted}}>
+              {totalSmsNeeded>0?`נדרש לשליחה: ${totalSmsNeeded} SMS`:"בחר אורחים לשליחה"}
+            </div>
+          </div>
+        </div>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:32,fontWeight:900,color:smsBalance===0?"#E53E3E":smsBalance!==null&&smsBalance<totalSmsNeeded?"#DD6B20":"#276749",lineHeight:1}}>
+            {smsBalance===null?"...":smsBalance.toLocaleString()}
+          </div>
+          <div style={{fontSize:10,color:C.muted,fontWeight:600}}>הודעות זמינות</div>
+        </div>
+      </div>
+
+      {/* כפתורי רכישת SMS */}
+      <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
+        <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>🛒 רכישת SMS</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+          {[[100,"29"],[200,"49"],[300,"69"],[500,"99"],[800,"149"],[1000,"179"]].map(([amt,price])=>(
+            <div key={amt} onClick={()=>buyPackage(amt,price)}
+              style={{border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 8px",textAlign:"center",cursor:"pointer",background:C.bg,transition:"all .15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueM;e.currentTarget.style.background=C.blueXL;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.bg;}}>
+              <div style={{fontSize:18,fontWeight:900,color:C.blue}}>{amt}</div>
+              <div style={{fontSize:9,color:C.muted,marginBottom:4}}>הודעות</div>
+              <div style={{fontSize:13,fontWeight:800,color:C.text}}>₪{price}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
+          💳 תשלום מאובטח · Apple Pay · Google Pay · Bit · Visa
         </div>
       </div>
 
@@ -3473,12 +3667,12 @@ function SMSScreen({ event, guests }) {
           </div>
 
           {/* כפתור שליחה */}
-          <button onClick={sendAll} disabled={sending||toSend.length===0}
-            style={{width:"100%",background:sending||toSend.length===0?"#A0AEC0":`linear-gradient(135deg,${C.blue},${C.blueM})`,
+          <button onClick={sendAll} disabled={sending||toSend.length===0||!hasBalance}
+            style={{width:"100%",background:sending||toSend.length===0||!hasBalance?"#A0AEC0":`linear-gradient(135deg,${C.blue},${C.blueM})`,
               color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
-              cursor:sending||toSend.length===0?"default":"pointer",fontFamily:"inherit",
-              boxShadow:sending||toSend.length===0?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
-            {sending?`שולח... ${progress}%`:`📱 שלח SMS ל-${toSend.length} אורחים`}
+              cursor:sending||toSend.length===0||!hasBalance?"default":"pointer",fontFamily:"inherit",
+              boxShadow:sending||toSend.length===0||!hasBalance?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
+            {sending?`שולח... ${progress}%`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:`📱 שלח SMS ל-${toSend.length} אורחים`}
           </button>
 
           {/* Progress Bar */}
@@ -3551,10 +3745,11 @@ function SMSScreen({ event, guests }) {
             </div>
 
             {/* מידע */}
-            <div style={{marginTop:14,background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 14px"}}>
-              <div style={{fontSize:12,color:C.text,lineHeight:1.7}}>
+            <div style={{marginTop:14,background:!hasBalance&&smsBalance!==null?"#FFF5F5":C.blueXL,border:`1.5px solid ${!hasBalance&&smsBalance!==null?"#FC8181":C.border}`,borderRadius:10,padding:"10px 14px"}}>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.8}}>
                 ✅ מחובר ל-<strong>019 SMS</strong><br/>
-                📊 {smsCount} SMS לאורח × {toSend.length} אורחים = <strong>{smsCount*toSend.length} SMS סה"כ</strong>
+                📊 {smsCount} SMS × {toSend.length} אורחים = <strong>{totalSmsNeeded} SMS</strong><br/>
+                💳 יתרה: <strong style={{color:!hasBalance&&smsBalance!==null?"#E53E3E":"#276749"}}>{smsBalance===null?"טוען...":`${smsBalance} SMS`}</strong>
               </div>
             </div>
           </div>
