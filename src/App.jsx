@@ -1510,6 +1510,7 @@ function SeatingApp({ user, event, onBack }) {
   const [userPackages,setUserPackages]=useState([]);
   const [trialExpired,setTrialExpired]=useState(false);
   const [trialHours,setTrialHours]=useState(24);
+  const [editTableData,setEditTableData]=useState(null); // מודל עריכת שולחן במפה
 
   // בדיקת תקופת ניסיון — יום מרגע ההרשמה
   const checkTrial=useCallback(()=>{
@@ -2174,10 +2175,24 @@ function SeatingApp({ user, event, onBack }) {
             onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
             style={{flex:1,overflow:"auto",background:"#F8F6F0"}}>
             <div className="map-bg"
-              style={{position:"relative",width:1400,height:920,
-                background:"linear-gradient(180deg,#F0EBE0 0%,#F5F1E8 100%)",
+              style={{position:"relative",width:1200,height:800,
+                background:"#F5F0E8",
                 border:"3px solid #D4C9B0",margin:8,borderRadius:8,boxShadow:"0 2px 12px rgba(0,0,0,0.1)"}}
               onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
+
+              {/* ריצוף */}
+              <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}} xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="tiles" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <rect x="0" y="0" width="50" height="50" fill="#F5F0E8"/>
+                    <rect x="1" y="1" width="23" height="23" fill="#EDE8DC" rx="1"/>
+                    <rect x="26" y="1" width="23" height="23" fill="#EDE8DC" rx="1"/>
+                    <rect x="1" y="26" width="23" height="23" fill="#EDE8DC" rx="1"/>
+                    <rect x="26" y="26" width="23" height="23" fill="#EDE8DC" rx="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#tiles)"/>
+              </svg>
 
               {/* קירות */}
               <div style={{position:"absolute",inset:0,border:"6px solid #B8A882",borderRadius:6,pointerEvents:"none",zIndex:1}}/>
@@ -2239,7 +2254,7 @@ function SeatingApp({ user, event, onBack }) {
                     {selected===t.id&&(
                       <button
                         onMouseDown={e=>e.stopPropagation()}
-                        onClick={e=>{e.stopPropagation();editTable(t.id,t.name,t.type,t.seats);}}
+                        onClick={e=>{e.stopPropagation();setEditTableData(t);}}
                         style={{position:"absolute",top:-12,right:-12,zIndex:30,
                           width:26,height:26,borderRadius:"50%",background:"#fff",
                           border:`2px solid ${C.blueM}`,display:"flex",alignItems:"center",
@@ -2340,6 +2355,12 @@ function SeatingApp({ user, event, onBack }) {
 
     {/* GuestModal לדסקטופ */}
     {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
+
+    {/* EditTableModal לדסקטופ — נפתח מכפתור עריכה במפה */}
+    {editTableData&&<EditTableModal table={editTableData} onClose={()=>setEditTableData(null)}
+      onSave={async(id,name,type,seats)=>{await editTable(id,name,type,seats);setEditTableData(null);}}
+      onDelete={async(id)=>{await deleteTable(id);setEditTableData(null);setSelected(null);}}
+    />}
 
     {/* שאר המסכים בדסקטופ */}
     {screen!=="home"&&screen!=="seating"&&(
