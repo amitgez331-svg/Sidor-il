@@ -2305,13 +2305,18 @@ function SeatingApp({ user, event, onBack }) {
                   ):(t.guests||[]).map(g=>(
                     <div key={g.id} draggable
                       onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(t.id));}}
-                      onClick={()=>setEditGuestData(g)}
-                      style={{display:"flex",alignItems:"center",gap:5,background:"#fff",border:`1px solid ${C.border}`,borderRadius:20,padding:"3px 10px 3px 5px",cursor:"grab",fontSize:12,color:C.text}}
+                      style={{display:"flex",alignItems:"center",gap:4,background:"#fff",border:`1px solid ${C.border}`,borderRadius:20,padding:"3px 4px 3px 5px",fontSize:12,color:C.text,cursor:"grab"}}
                       onMouseEnter={e=>e.currentTarget.style.borderColor=C.blueL}
                       onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                      {/* עיגול צבע לפי קטגוריה */}
                       <div style={{width:12,height:12,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#CBD5E0",flexShrink:0}}/>
-                      {g.name}
+                      <span onClick={()=>setEditGuestData(g)} style={{cursor:"pointer"}}>{g.name}</span>
+                      <button
+                        onClick={async e=>{e.stopPropagation();await removeFromTable(t.id,g);}}
+                        title="הסר מהשולחן"
+                        style={{width:16,height:16,borderRadius:"50%",background:"#FEE2E2",border:"none",
+                          color:"#C53030",cursor:"pointer",fontSize:10,fontWeight:900,
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          flexShrink:0,lineHeight:1,padding:0}}>×</button>
                     </div>
                   ))}
                 </div>
