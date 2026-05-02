@@ -2460,14 +2460,19 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const [saved,setSaved]=useState(false);
   const [myRole,setMyRole]=useState(event.my_role||"groom");
   const [settings,setSettings]=useState({
-    confetti:true,popupRsvp:false,autoRsvp:true,
-    tableNum:true,hebrewDate:true,countdown:true,shareBtn:true,
+    confetti: event.settings_json?.confetti??true,
+    popupRsvp: event.settings_json?.popupRsvp??false,
+    autoRsvp: event.settings_json?.autoRsvp??true,
+    tableNum: event.settings_json?.tableNum??true,
+    hebrewDate: event.settings_json?.hebrewDate??true,
+    countdown: event.settings_json?.countdown??true,
+    shareBtn: event.settings_json?.shareBtn??true,
   });
 
   const save=async()=>{
     setSaving(true);
-    await sb.from("events").update({...form,my_role:myRole}).eq("id",event.id);
-    Object.assign(event,{...form,my_role:myRole});
+    await sb.from("events").update({...form,my_role:myRole,settings_json:settings}).eq("id",event.id);
+    Object.assign(event,{...form,my_role:myRole,settings_json:settings});
     setSaving(false);setSaved(true);
     setTimeout(()=>setSaved(false),2500);
   };
@@ -4656,8 +4661,44 @@ function InvitePage({ code, guestId }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
       {showDupModal&&<DupModal/>}
+
+      {/* אפקט קונפטי */}
+      {(event.settings_json?.confetti??true)&&(()=>{
+        const pieces=[...Array(18)].map((_,i)=>({
+          left:`${Math.random()*100}%`,
+          color:["#FFD700","#FF6B6B","#4ECDC4","#A29BFE","#FD79A8","#55EFC4"][i%6],
+          size:`${8+Math.random()*8}px`,
+          delay:`${Math.random()*3}s`,
+          dur:`${3+Math.random()*3}s`,
+          borderRadius:i%3===0?"50%":"2px",
+        }));
+        return <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9999,overflow:"hidden"}}>
+          {pieces.map((p,i)=><div key={i} style={{position:"absolute",top:-20,left:p.left,width:p.size,height:p.size,background:p.color,borderRadius:p.borderRadius,animation:`confettiFall ${p.dur} ${p.delay} linear infinite`,opacity:0.8}}/>)}
+        </div>;
+      })()}
+
+      {/* ספירה לאחור */}
+      {(event.settings_json?.countdown??true)&&eventDate&&(()=>{
+        const now=new Date();
+        const diff=eventDate-now;
+        if(diff<=0)return null;
+        const days=Math.floor(diff/(1000*60*60*24));
+        const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+        const mins=Math.floor((diff%(1000*60*60))/(1000*60));
+        return(
+          <div style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"10px 16px",textAlign:"center",direction:"rtl"}}>
+            <div style={{display:"inline-flex",gap:16,alignItems:"center"}}>
+              <span style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600}}>⏳ עוד</span>
+              {days>0&&<span style={{color:"#fff",fontWeight:800,fontSize:14}}>{days} ימים</span>}
+              <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{hours} שעות</span>
+              <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{mins} דקות</span>
+              <span style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600}}>לאירוע</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{position:"relative",height:"55vw",maxHeight:360,minHeight:240,overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
@@ -4683,9 +4724,23 @@ function InvitePage({ code, guestId }) {
 
         <div style={{borderTop:"1px solid #eee",borderBottom:"1px solid #eee",padding:"16px 0",marginBottom:20,textAlign:"center"}}>
           {dateStr&&<div style={{fontSize:14,fontWeight:700,color:"#333",marginBottom:4}}>{dateStr}</div>}
+          {(event.settings_json?.hebrewDate??true)&&event.date&&(()=>{
+            try{
+              const d=new Date(event.date);
+              const heb=new Intl.DateTimeFormat("he-IL-u-ca-hebrew",{year:"numeric",month:"long",day:"numeric"}).format(d);
+              return <div style={{fontSize:12,color:"#888",marginBottom:4}}>{heb}</div>;
+            }catch{return null;}
+          })()}
           {event.event_time&&<div style={{fontSize:18,fontWeight:900,color:"#111",marginBottom:8,letterSpacing:".05em"}}>{event.event_time}</div>}
           {event.venue&&<div style={{fontSize:15,fontWeight:700,color:"#333",marginBottom:2}}>{event.venue}</div>}
           {event.venue_address&&<div style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>📍 {event.venue_address}</div>}
+          {/* מספר שולחן — מוצג אם האורח אישר הגעה ויש לו שולחן */}
+          {(event.settings_json?.tableNum??true)&&knownGuest?.table_id&&knownGuest?.rsvp==="confirmed"&&(
+            <div style={{marginTop:12,background:"linear-gradient(135deg,#1B3A8C,#2952C8)",color:"#fff",borderRadius:12,padding:"10px 16px",display:"inline-block"}}>
+              <span style={{fontSize:13,fontWeight:700}}>🪑 השולחן שלך: </span>
+              <span style={{fontSize:16,fontWeight:900}}>{knownGuest.table_name||knownGuest.table_id}</span>
+            </div>
+          )}
         </div>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
@@ -4695,9 +4750,9 @@ function InvitePage({ code, guestId }) {
           {eventDate&&<button onClick={addCalendar} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
             <span style={{fontSize:22}}>📅</span><span style={{fontSize:11,color:"#555",fontWeight:600}}>הוסף ליומן</span>
           </button>}
-          <button onClick={share} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+          {(event.settings_json?.shareBtn??true)&&<button onClick={share} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
             <span style={{fontSize:22}}>🔗</span><span style={{fontSize:11,color:"#555",fontWeight:600}}>שתפו את האירוע</span>
-          </button>
+          </button>}
         </div>
 
         {/* כפתורי מתנה — Bit / Paybox */}
