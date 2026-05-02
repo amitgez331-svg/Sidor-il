@@ -175,8 +175,8 @@ function TableNode({ table, selected, onMouseDown, onDrop }) {
     );
   }
 
-  // ─── עגול — סגנון עיטורים ─────────────────────────────────────────────────
-  const R=52;           // רדיוס עיגול ראשי — גדול כמו ריבועי
+  // ─── עגול  -  סגנון עיטורים ─────────────────────────────────────────────────
+  const R=52;           // רדיוס עיגול ראשי  -  גדול כמו ריבועי
   const seatR=6;        // רדיוס כיסא
   const seatDist=R+13;  // מרחק כיסאות מהמרכז
   const S=R*2+seatDist+seatR*2+8; // גודל כולל
@@ -194,7 +194,7 @@ function TableNode({ table, selected, onMouseDown, onDrop }) {
       fill={selected?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.4)"}/>;
   });
 
-  // כיסאות — בדיוק לפי מספר המושבים, כחול=תפוס, אפור=פנוי
+  // כיסאות  -  בדיוק לפי מספר המושבים, כחול=תפוס, אפור=פנוי
   const seats=Array.from({length:total},(_,i)=>{
     const a=(i/total)*Math.PI*2-Math.PI/2;
     const sx=cx+seatDist*Math.cos(a);
@@ -222,7 +222,7 @@ function TableNode({ table, selected, onMouseDown, onDrop }) {
         cursor:"grab",userSelect:"none",zIndex:selected?10:1,
         filter:selected?"drop-shadow(0 6px 22px rgba(0,188,212,0.65))":"drop-shadow(0 3px 12px rgba(0,0,0,0.18))"}}>
       <svg width={S} height={S}>
-        {/* כיסאות — מאחורה */}
+        {/* כיסאות  -  מאחורה */}
         {seats}
         {/* צל שולחן */}
         <circle cx={cx+2} cy={cy+3} r={R+1} fill="rgba(0,0,0,0.15)"/>
@@ -502,11 +502,11 @@ function VenuePage({ onBack, onOpenAuth }) {
         {/* מה אנחנו מציעים */}
         <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:16}}>מה אנחנו מציעים?</div>
         {[
-          {icon:"🪑",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע — ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
+          {icon:"🪑",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע  -  ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
           {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"שליחת הזמנות דיגיטליות ואישורי הגעה בוואטסאפ ו-SMS לכל האורחים."},
-          {icon:"💳",title:"מתנות באשראי",desc:"מערכת תשלומים דיגיטלית לקבלת מתנות מהאורחים — מאובטח ומהיר."},
-          {icon:"📊",title:"לוח בקרה לאולמות",desc:"ניהול אירועים מרובים במקביל מלוח בקרה מרכזי אחד — חיסכון בזמן ובכסף."},
-          {icon:"🏷️",title:"White Label",desc:"המערכת תופיע תחת המותג שלך — הלוגו, הצבעים והשם שלך."},
+          {icon:"💳",title:"מתנות באשראי",desc:"מערכת תשלומים דיגיטלית לקבלת מתנות מהאורחים  -  מאובטח ומהיר."},
+          {icon:"📊",title:"לוח בקרה לאולמות",desc:"ניהול אירועים מרובים במקביל מלוח בקרה מרכזי אחד  -  חיסכון בזמן ובכסף."},
+          {icon:"🏷️",title:"White Label",desc:"המערכת תופיע תחת המותג שלך  -  הלוגו, הצבעים והשם שלך."},
         ].map((item,i)=>(
           <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12,display:"flex",gap:14,alignItems:"flex-start"}}>
             <div style={{width:44,height:44,borderRadius:12,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{item.icon}</div>
@@ -714,7 +714,7 @@ function AccessibilityWidget() {
             </button>
           </div>
 
-          {/* תחתית — מידע */}
+          {/* תחתית  -  מידע */}
           <div style={{padding:"8px 12px",background:"#F7FAFC",borderTop:"1px solid #E2E8F0",fontSize:10,color:"#aaa",textAlign:"center"}}>
             אתר זה עומד בתקן WCAG 2.1 AA
           </div>
@@ -744,10 +744,10 @@ function LandingPage({ onOpenAuth, onLogout }) {
   if(venuePage) return <VenuePage onBack={()=>setVenuePage(false)} onOpenAuth={onOpenAuth}/>;
 
   const eventTypes = [
-    { emoji:"💍", title:"חתונות", desc:"הכל מסודר, הכל מאושר — ניהול חכם מהרשימה ועד השולחן.", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80" },
-    { emoji:"✡️", title:"בר/ת מצווה", desc:"רגע מרגש שמגיע פעם אחת — תנו לנו לדאוג לפרטים.", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=80" },
-    { emoji:"👶", title:"בריתות", desc:"שמחה שמגיעה בהפתעה — אנחנו כאן לעזור בכל קצב.", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80" },
-    { emoji:"💼", title:"אירועים עסקיים", desc:"ניהול מקצועי, תדמית מושלמת — מכל גודל ובכל מקום.", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80" },
+    { emoji:"💍", title:"חתונות", desc:"הכל מסודר, הכל מאושר  -  ניהול חכם מהרשימה ועד השולחן.", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80" },
+    { emoji:"✡️", title:"בר/ת מצווה", desc:"רגע מרגש שמגיע פעם אחת  -  תנו לנו לדאוג לפרטים.", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=80" },
+    { emoji:"👶", title:"בריתות", desc:"שמחה שמגיעה בהפתעה  -  אנחנו כאן לעזור בכל קצב.", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80" },
+    { emoji:"💼", title:"אירועים עסקיים", desc:"ניהול מקצועי, תדמית מושלמת  -  מכל גודל ובכל מקום.", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80" },
   ];
 
   return(
@@ -755,7 +755,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
 
       {/* NAV */}
       <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,background:"#fff",borderBottom:`1px solid ${C.border}`,height:66,display:"flex",alignItems:"center",padding:"0 5vw",flexDirection:"row-reverse",boxShadow:scrolled?"0 2px 16px rgba(26,63,163,.07)":"none",transition:"box-shadow .3s"}}>
-        {/* לוגו — ימין ב-DOM = שמאל ב-RTL */}
+        {/* לוגו  -  ימין ב-DOM = שמאל ב-RTL */}
         <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
             <circle cx="18" cy="18" r="17" fill={`url(#tg)`}/>
@@ -765,7 +765,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
           </svg>
           <span style={{fontWeight:900,fontSize:19,color:C.blue,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </div>
-        {/* שאר — שמאל ב-DOM = ימין ב-RTL */}
+        {/* שאר  -  שמאל ב-DOM = ימין ב-RTL */}
         <div style={{flex:1,display:"flex",gap:8,alignItems:"center",flexDirection:"row-reverse",justifyContent:"flex-end"}}>
           {[["#","ראשי"],["#features","פיצ'רים"],["#how","איך עובד"],["#pricing","מחירים"],["#contact","צור קשר"]].map(([h,l])=>(
             <a key={h} href={h} className="nav-link"
@@ -878,7 +878,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
               </div>
             </div>
           </div>
-          {/* טקסט — ימין */}
+          {/* טקסט  -  ימין */}
           <div style={{flex:1,minWidth:280,order:1}}>
             <div style={{fontSize:13,fontWeight:700,color:C.blue,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:32,height:3,background:C.blue,borderRadius:2}}/>
@@ -895,12 +895,12 @@ function LandingPage({ onOpenAuth, onLogout }) {
               </svg>
               <span style={{color:C.blue}}>r-IL</span>
             </h1>
-            <p style={{fontSize:18,color:"#2D3748",lineHeight:1.8,marginBottom:16,fontWeight:600}}>מערכת חכמה לניהול הושבה ואישורי הגעה באירועים — סדר, שליטה וחווית אורחים מושלמת במקום אחד.</p>
+            <p style={{fontSize:18,color:"#2D3748",lineHeight:1.8,marginBottom:16,fontWeight:600}}>מערכת חכמה לניהול הושבה ואישורי הגעה באירועים  -  סדר, שליטה וחווית אורחים מושלמת במקום אחד.</p>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:32}}>
               <button onClick={()=>onOpenAuth("register")} style={{background:C.blue,color:"#fff",border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 30px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>הזמנה דיגיטלית בחינם ›</button>
               <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה למערכת ›</button>
             </div>
-            {/* 3 אייקונים — תמיד בשורה אחת */}
+            {/* 3 אייקונים  -  תמיד בשורה אחת */}
             <div className="hero-icons" style={{display:"flex",gap:0,justifyContent:"space-between",maxWidth:360,width:"100%"}}>
               {[["✅","אישורי הגעה","בוואטסאפ"],["🪑","סידורי הושבה","מלאים"],["💌","הזמנה","דיגיטלית"]].map(([ic,t,s])=>(
                 <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1}}>
@@ -961,7 +961,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
 
       {/* HOW */}
       <section style={{padding:"88px 6vw",position:"relative",overflow:"hidden"}} id="how">
-        {/* רקע — שולחנות הושבה מטושטשים */}
+        {/* רקע  -  שולחנות הושבה מטושטשים */}
         <div style={{position:"absolute",inset:0,zIndex:0}}>
           <div style={{position:"absolute",inset:0,background:`linear-gradient(145deg,${C.blue}F5,#122e9eF5,#1a4ac4F5)`}}/>
           <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.12,filter:"blur(1px)"}} xmlns="http://www.w3.org/2000/svg">
@@ -989,7 +989,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
           <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52}}>
             <div style={{display:"inline-block",fontSize:12,fontWeight:700,color:"rgba(255,255,255,.9)",background:"rgba(255,255,255,.12)",borderRadius:100,padding:"5px 16px",marginBottom:12}}>איך עובד</div>
             <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:"#fff",marginBottom:12}}>3 צעדים לאירוע מסודר</h2>
-            <p style={{fontSize:16,color:"rgba(255,255,255,.65)"}}>פשוט, מהיר — ועובד.</p>
+            <p style={{fontSize:16,color:"rgba(255,255,255,.65)"}}>פשוט, מהיר  -  ועובד.</p>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:34}}>
             {[["01","הוסף אורחים","ייבא מ-Excel, מאנשי קשר, או הוסף ידנית. כל אורח עם שם, טלפון וכמות מגיעים."],["02","צור שולחנות","הגדר שולחנות עגולים, מרובעים, שולחן אבירים. סדר על מפת האולם."],["03","AI עושה השאר","תאר העדפות ו-AI יסדר הכל. הדפס פתקי הושבה לאורחים ביום האירוע."]].map(([n,t,d],i)=>(
@@ -1003,7 +1003,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
         </div>
       </section>
 
-      {/* FEATURES SHOWCASE — במקום חבילות */}
+      {/* FEATURES SHOWCASE  -  במקום חבילות */}
       <section style={{padding:"88px 6vw",background:C.bg,textAlign:"center"}} id="pricing">
         <div style={{maxWidth:1080,margin:"0 auto"}}>
           <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52}}>
@@ -1012,15 +1012,15 @@ function LandingPage({ onOpenAuth, onLogout }) {
             <p style={{fontSize:16,color:C.muted,lineHeight:1.8}}>הכלים שיהפכו את ניהול האירוע שלך לחוויה קלה, מהנה ומקצועית.</p>
           </div>
 
-          {/* 3 פיצ'רים עיקריים + 3 נוספים — כרטיסים קטנים אחידים */}
+          {/* 3 פיצ'רים עיקריים + 3 נוספים  -  כרטיסים קטנים אחידים */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16,marginBottom:44}}>
             {[
               {icon:"🪑",title:"סידורי הושבה חכמים",desc:"מפה אינטראקטיבית של האולם עם גרירת אורחים לשולחנות. שולחנות עגולים, מרובעים ואבירים. פתק הושבה להדפסה מיידית.",color:C.blue,bg:C.blueXL,tags:["🗺️ מפה חיה","🪑 שולחנות בכל צורה","🖨️ פתק הושבה","📊 סטטיסטיקות"]},
               {icon:"💬",title:"WhatsApp + SMS לכל אורח",desc:"שלח הזמנות אישיות עם שם האורח לוואטסאפ או SMS. תזכורות אוטומטיות ושליחת מספר שולחן ביום האירוע.",color:"#25D366",bg:"#F0FFF4",tags:["💌 הזמנה אישית","🔔 תזכורות אוטומטיות","🪑 שליחת שולחן","📈 מעקב בזמן אמת"]},
-              {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"הזמנה דיגיטלית יפה עם קישור אישי לכל אורח. האורח מאשר הגעה ובוחר כמות מגיעים — המערכת מתעדכנת אוטומטית.",color:C.success,bg:"#F0FFF6",tags:["🎨 הזמנה יפה","🔗 קישור אישי","👥 כמות מגיעים","⚡ עדכון בזמן אמת"]},
-              {icon:"🤖",title:"AI סידור חכם",desc:"בחר קטגוריות, תאר מי לא יושב עם מי, ו-AI יחלק אוטומטית לפי קטגוריות ושולחנות ריקים — תוך שניות.",color:"#7B3FD4",bg:"#F5F0FF",tags:["🏷️ סידור לפי קטגוריות","🪑 מילוי שולחנות ריקים","⚡ תוך שניות"]},
-              {icon:"📊",title:"ייבוא מ-Excel",desc:"העלה רשימת אורחים בקובץ Excel תוך שניות — שם, טלפון, כמות. ללא הקלדה ידנית.",color:"#276749",bg:"#F0FFF4",tags:["📂 Excel / CSV","⚡ ייבוא מיידי"]},
-              {icon:"🖨️",title:"פתק הושבה",desc:"חפש שם אורח — קבל פתק מיידי עם מספר שולחן. כמו קיוסק מקצועי ביום האירוע.",color:C.blue,bg:C.blueXL,tags:["🔍 חיפוש מהיר","🖨️ הדפסה מיידית","📱 עובד מהנייד"]},
+              {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"הזמנה דיגיטלית יפה עם קישור אישי לכל אורח. האורח מאשר הגעה ובוחר כמות מגיעים  -  המערכת מתעדכנת אוטומטית.",color:C.success,bg:"#F0FFF6",tags:["🎨 הזמנה יפה","🔗 קישור אישי","👥 כמות מגיעים","⚡ עדכון בזמן אמת"]},
+              {icon:"🤖",title:"AI סידור חכם",desc:"בחר קטגוריות, תאר מי לא יושב עם מי, ו-AI יחלק אוטומטית לפי קטגוריות ושולחנות ריקים  -  תוך שניות.",color:"#7B3FD4",bg:"#F5F0FF",tags:["🏷️ סידור לפי קטגוריות","🪑 מילוי שולחנות ריקים","⚡ תוך שניות"]},
+              {icon:"📊",title:"ייבוא מ-Excel",desc:"העלה רשימת אורחים בקובץ Excel תוך שניות  -  שם, טלפון, כמות. ללא הקלדה ידנית.",color:"#276749",bg:"#F0FFF4",tags:["📂 Excel / CSV","⚡ ייבוא מיידי"]},
+              {icon:"🖨️",title:"פתק הושבה",desc:"חפש שם אורח  -  קבל פתק מיידי עם מספר שולחן. כמו קיוסק מקצועי ביום האירוע.",color:C.blue,bg:C.blueXL,tags:["🔍 חיפוש מהיר","🖨️ הדפסה מיידית","📱 עובד מהנייד"]},
             ].map((f,i)=>(
               <div key={f.title} className="fu"
                 style={{opacity:0,transform:"translateY(22px)",transition:`opacity .6s ${i*.07}s,transform .6s ${i*.07}s`,
@@ -1420,7 +1420,7 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
   return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
     {picked&&<div style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,fontSize:14,flexShrink:0}}>
       <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{picked.name[0]}</div>
-      <span style={{flex:1,fontWeight:700}}>{picked.name} — בחר שולחן</span>
+      <span style={{flex:1,fontWeight:700}}>{picked.name}  -  בחר שולחן</span>
       <button onClick={()=>setPicked(null)} style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:13,fontFamily:"inherit",fontWeight:700}}>ביטול</button>
     </div>}
 
@@ -1512,7 +1512,7 @@ function SeatingApp({ user, event, onBack }) {
   const [trialHours,setTrialHours]=useState(24);
   const [editTableData,setEditTableData]=useState(null); // מודל עריכת שולחן במפה
 
-  // בדיקת תקופת ניסיון — יום מרגע ההרשמה
+  // בדיקת תקופת ניסיון  -  יום מרגע ההרשמה
   const checkTrial=useCallback(()=>{
     const createdAt=user.created_at||user.user_metadata?.created_at;
     if(!createdAt)return;
@@ -1547,7 +1547,7 @@ function SeatingApp({ user, event, onBack }) {
     if(!guest||!toTable)return;
     // בדוק שהשולחן לא מלא (אלא אם זה אותו שולחן)
     if(String(fromId)!==String(toId)&&(toTable.guests||[]).length>=toTable.seats)return;
-    // אותו שולחן — אל תעשה כלום
+    // אותו שולחן  -  אל תעשה כלום
     if(String(fromId)===String(toId))return;
     setSaving(true);
     await sb.from("guests").update({table_id:toId}).eq("id",guestId);
@@ -1860,7 +1860,7 @@ function SeatingApp({ user, event, onBack }) {
                       </div>
                     </div>
                     {/* טלפון */}
-                    <div style={{fontSize:11,color:"#666",textAlign:"center"}}>{g.phone||"—"}</div>
+                    <div style={{fontSize:11,color:"#666",textAlign:"center"}}>{g.phone||" - "}</div>
                     {/* סטטוס */}
                     <div style={{textAlign:"center"}}>
                       <span style={{fontSize:10,fontWeight:700,color:rsvpColor(g.rsvp),background:rsvpBg(g.rsvp),borderRadius:50,padding:"3px 8px",whiteSpace:"nowrap"}}>
@@ -1869,7 +1869,7 @@ function SeatingApp({ user, event, onBack }) {
                     </div>
                     {/* מתנה */}
                     <div style={{fontSize:11,color:"#888",textAlign:"center"}}>
-                      {g.gift_amount?`₪${g.gift_amount}`:"—"}
+                      {g.gift_amount?`₪${g.gift_amount}`:" - "}
                     </div>
                   </div>
                 ))}
@@ -2076,7 +2076,7 @@ function SeatingApp({ user, event, onBack }) {
           <div style={{background:`linear-gradient(135deg,#B45309,#D97706)`,borderRadius:12,padding:"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{display:"flex",alignItems:"center",gap:10,color:"#fff"}}>
               <span>⏰</span>
-              <span style={{fontSize:13,fontWeight:700}}>{trialExpired?"תקופת הניסיון הסתיימה":`תקופת ניסיון — ${trialHours} שעות נותרו`}</span>
+              <span style={{fontSize:13,fontWeight:700}}>{trialExpired?"תקופת הניסיון הסתיימה":`תקופת ניסיון  -  ${trialHours} שעות נותרו`}</span>
             </div>
             <button onClick={()=>setScreen("packages")} style={{background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:8,padding:"5px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>שדרג ←</button>
           </div>
@@ -2199,7 +2199,7 @@ function SeatingApp({ user, event, onBack }) {
       <aside style={{width:320,background:C.surface,borderLeft:`1px solid ${C.border}`,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
         {selTable?(
           <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
-            {/* כפתור חזרה — בולט */}
+            {/* כפתור חזרה  -  בולט */}
             <div style={{padding:"10px 14px",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,flexShrink:0}}>
               <button onClick={()=>setSelected(null)}
                 style={{width:"100%",background:"rgba(255,255,255,.2)",border:"2px solid rgba(255,255,255,.6)",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit",borderRadius:10,padding:"9px",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
@@ -2326,7 +2326,7 @@ function SeatingApp({ user, event, onBack }) {
                   {/* קירות */}
                   <div style={{position:"absolute",inset:0,border:"6px solid #B8A882",borderRadius:6,pointerEvents:"none",zIndex:1}}/>
 
-                  {/* ─── במה — למעלה מרכז ─── */}
+                  {/* ─── במה  -  למעלה מרכז ─── */}
                   <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
                     width:300,height:72,
                     background:"linear-gradient(180deg,#4A1E8C,#7B3FD4)",
@@ -2343,7 +2343,7 @@ function SeatingApp({ user, event, onBack }) {
                     </div>
                   </div>
 
-                  {/* ─── בר — רחוק יותר מהבמה ─── */}
+                  {/* ─── בר  -  רחוק יותר מהבמה ─── */}
                   <div style={{position:"absolute",top:0,left:"calc(50% + 200px)",
                     width:140,height:72,
                     background:"linear-gradient(160deg,#1A1A2E,#16213E,#0F3460)",
@@ -2361,7 +2361,7 @@ function SeatingApp({ user, event, onBack }) {
                     </div>
                   </div>
 
-                  {/* ─── כניסה — למטה מרכז, צמוד לקיר ─── */}
+                  {/* ─── כניסה  -  למטה מרכז, צמוד לקיר ─── */}
                   <div style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",
                     width:140,height:36,background:"linear-gradient(180deg,#2C3E50,#34495E)",
                     borderRadius:"12px 12px 0 0",border:"3px solid #1A252F",borderBottom:"none",
@@ -2495,7 +2495,7 @@ function SeatingApp({ user, event, onBack }) {
     {/* GuestModal לדסקטופ */}
     {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
 
-    {/* EditTableModal לדסקטופ — נפתח מכפתור עריכה במפה */}
+    {/* EditTableModal לדסקטופ  -  נפתח מכפתור עריכה במפה */}
     {editTableData&&<EditTableModal table={editTableData} onClose={()=>setEditTableData(null)}
       onSave={async(id,name,type,seats)=>{await editTable(id,name,type,seats);setEditTableData(null);}}
       onDelete={async(id)=>{await deleteTable(id);setEditTableData(null);setSelected(null);}}
@@ -2513,7 +2513,7 @@ function SeatingApp({ user, event, onBack }) {
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
 
-        {/* טבלת אישורי הגעה — diginet style */}
+        {/* טבלת אישורי הגעה  -  diginet style */}
         {screen==="rsvp"&&<DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={setGuests} setTables={setTables} onAddGuest={()=>setModal("addGuest")}/>}
         {screen==="import"&&<div style={{direction:"rtl"}}>
           {/* ייבוא מ-Excel */}
@@ -2627,7 +2627,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const Field=({label,value,onChange,placeholder,type="text",maxLen,hint})=>(
     <div style={{marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-        <div style={{fontSize:12,color:"#718096",fontWeight:700}}>{label}{hint&&<span style={{color:"#aaa",fontWeight:400}}> — {hint}</span>}</div>
+        <div style={{fontSize:12,color:"#718096",fontWeight:700}}>{label}{hint&&<span style={{color:"#aaa",fontWeight:400}}>  -  {hint}</span>}</div>
         {maxLen&&<div style={{fontSize:11,color:"#aaa"}}>{(value||"").length}/{maxLen}</div>}
       </div>
       <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} maxLength={maxLen}
@@ -2817,10 +2817,10 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         </div>
       </div>
 
-      {/* קישורי תשלום — Bit / Paybox */}
+      {/* קישורי תשלום  -  Bit / Paybox */}
       <div style={{background:"#fff",borderRadius:14,padding:"24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>💝 קישורי מתנה דיגיטלית</div>
-        <div style={{fontSize:12,color:"#718096",marginBottom:16}}>הוסף קישור לBit או Paybox — יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית.</div>
+        <div style={{fontSize:12,color:"#718096",marginBottom:16}}>הוסף קישור לBit או Paybox  -  יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית.</div>
 
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Bit */}
@@ -2935,7 +2935,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     }).eq("id",editG.id);
     // סנכרון מתנה לניהול תקציב
     if(newGift!==oldGift){
-      const budgetName=`מתנה — ${editG.name}`;
+      const budgetName=`מתנה  -  ${editG.name}`;
       const{data:existing}=await sb.from("budget_items").select("id").eq("event_id",event.id).eq("name",budgetName).single();
       if(newGift>0){
         if(existing){
@@ -3105,7 +3105,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#999",fontSize:16}}>×</button>}
       </div>
 
-      {/* טבלה — מקצה לקצה */}
+      {/* טבלה  -  מקצה לקצה */}
       </div>
       <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
         <table style={{width:"100%",minWidth:960,borderCollapse:"collapse",fontSize:14}}>
@@ -3127,7 +3127,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
               const dateStr=updatedAt?
                 new Date(updatedAt).toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit",year:"numeric"})
                 +" | "+new Date(updatedAt).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})
-                :"—";
+                :" - ";
               return(
               <tr key={g.id} style={{borderBottom:"2px solid #E2E8F0",background:rowBg,transition:"filter .1s"}}
                 onMouseEnter={e=>e.currentTarget.style.filter="brightness(.96)"}
@@ -3143,9 +3143,9 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                 <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
                   <span style={{fontWeight:900,fontSize:13,color:g.rsvp==="confirmed"?"#276749":"#CBD5E0"}}>{g.rsvp==="confirmed"?g.guest_count||1:0}</span>
                 </td>
-                <td style={{padding:"11px 8px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:12,fontWeight:600,borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.phone||"—"}</td>
+                <td style={{padding:"11px 8px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:12,fontWeight:600,borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.phone||" - "}</td>
                 <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  {getTableNum(g)?<span style={{background:"#1B3A8C",color:"#fff",borderRadius:5,padding:"2px 7px",fontWeight:800,fontSize:12}}>{getTableNum(g)}</span>:<span style={{color:"#CBD5E0"}}>—</span>}
+                  {getTableNum(g)?<span style={{background:"#1B3A8C",color:"#fff",borderRadius:5,padding:"2px 7px",fontWeight:800,fontSize:12}}>{getTableNum(g)}</span>:<span style={{color:"#CBD5E0"}}> - </span>}
                 </td>
                 <td style={{padding:"11px 8px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
                   {g.relation&&<span style={{display:"inline-flex",alignItems:"center",gap:3,background:(relColor||"#CBD5E0")+"25",border:`1.5px solid ${relColor||"#CBD5E0"}66`,borderRadius:20,padding:"2px 7px",fontSize:12,fontWeight:700,color:relColor||"#718096",whiteSpace:"nowrap"}}>
@@ -3153,7 +3153,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                   </span>}
                 </td>
                 <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  {g.gift&&g.gift>0?<span style={{background:"#FFFFF0",color:"#B7791F",border:"1.5px solid #FAF089",borderRadius:5,padding:"2px 6px",fontWeight:800,fontSize:12}}>₪{g.gift}</span>:<span style={{color:"#CBD5E0",fontSize:10}}>—</span>}
+                  {g.gift&&g.gift>0?<span style={{background:"#FFFFF0",color:"#B7791F",border:"1.5px solid #FAF089",borderRadius:5,padding:"2px 6px",fontWeight:800,fontSize:12}}>₪{g.gift}</span>:<span style={{color:"#CBD5E0",fontSize:10}}> - </span>}
                 </td>
                 <td style={{padding:"11px 8px",color:"#718096",fontSize:11,textAlign:"center",whiteSpace:"nowrap",borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
                 <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
@@ -3195,7 +3195,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         ))}
       </div>
 
-      {/* מודל עריכה מהירה — בסגנון diginet */}
+      {/* מודל עריכה מהירה  -  בסגנון diginet */}
       {editG&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setEditG(null)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:32,width:500,maxWidth:"95vw",direction:"rtl",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
@@ -3419,7 +3419,7 @@ function BudgetScreen({ event }) {
         ))}
       </div>
 
-      {/* טבלה — מקצה לקצה */}
+      {/* טבלה  -  מקצה לקצה */}
       <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
           <thead>
@@ -3457,7 +3457,7 @@ function BudgetScreen({ event }) {
                     ₪{Number(item.amount||0).toLocaleString()}
                   </td>
                   <td style={{padding:"13px 12px",textAlign:"center",fontWeight:700,fontSize:14,color:"#2D3748",borderRight:"1px solid #E2E8F0"}}>
-                    {Number(item.advance||0)>0?<span style={{color:"#276749"}}>₪{Number(item.advance).toLocaleString()}</span>:<span style={{color:"#CBD5E0"}}>—</span>}
+                    {Number(item.advance||0)>0?<span style={{color:"#276749"}}>₪{Number(item.advance).toLocaleString()}</span>:<span style={{color:"#CBD5E0"}}> - </span>}
                   </td>
                   <td style={{padding:"13px 12px",textAlign:"center",fontWeight:700,fontSize:14,borderRight:"1px solid #E2E8F0"}}>
                     {remain>0?<span style={{color:"#C53030",fontWeight:800}}>₪{remain.toLocaleString()}</span>:<span style={{color:"#276749",fontWeight:800}}>שולם ✓</span>}
@@ -3699,7 +3699,7 @@ function PackagesScreen({ event, onBack }) {
     {id:"reception",name:"עמדת קבלת פנים",price:1300,sub:"החל מ",color:"#7C3AED",icon:"💎",badge:"פרימיום",
      features:["עמדת קבלת פנים עם דיילים/ות","חלוקת פתקיות הושבה לאורחים","צמצום רזרבות במהלך ההושבה","ניהול תורים בכניסה","תיאום מלא עם צוות האולם"]},
     {id:"production",name:"הפקת אירוע",price:"ייעוץ",sub:"לייעוץ חינם",color:"#DB2777",icon:"✨",badge:"חלומות",
-     features:["🎪 אטרקציות לאירוע","🍸 ניהול אלכוהול / בר אקטיבי","🎨 עיצובים לאירוע","💫 אתם חולמים — אנחנו מגשימים","📞 ייעוץ אישי ללא עלות"]},
+     features:["🎪 אטרקציות לאירוע","🍸 ניהול אלכוהול / בר אקטיבי","🎨 עיצובים לאירוע","💫 אתם חולמים  -  אנחנו מגשימים","📞 ייעוץ אישי ללא עלות"]},
   ];
 
   const smsPacks=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
@@ -3750,7 +3750,7 @@ function PackagesScreen({ event, onBack }) {
                   ))}
                 </ul>
 
-                {/* VIP — טבלת מחירים לפי רשומות, לחיצה מעדכנת מחיר */}
+                {/* VIP  -  טבלת מחירים לפי רשומות, לחיצה מעדכנת מחיר */}
                 {pkg.id==="vip"&&(
                   <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
                     <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות רשומות:</div>
@@ -3767,7 +3767,7 @@ function PackagesScreen({ event, onBack }) {
                   </div>
                 )}
 
-                {/* WhatsApp — טבלת מחירים לפי רשומות */}
+                {/* WhatsApp  -  טבלת מחירים לפי רשומות */}
                 {pkg.id==="whatsapp"&&(
                   <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
                     <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות רשומות:</div>
@@ -3784,7 +3784,7 @@ function PackagesScreen({ event, onBack }) {
                   </div>
                 )}
 
-                {/* SMS — הוסף חבילת SMS */}
+                {/* SMS  -  הוסף חבילת SMS */}
                 {pkg.id==="sms"&&(
                   <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
                     <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות SMS:</div>
@@ -3801,7 +3801,7 @@ function PackagesScreen({ event, onBack }) {
                   </div>
                 )}
 
-                {/* עמדת קבלת פנים / הפקת אירוע — צור קשר בלבד */}
+                {/* עמדת קבלת פנים / הפקת אירוע  -  צור קשר בלבד */}
                 {(pkg.id==="reception"||pkg.id==="production")?(
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
                     <a href={`https://wa.me/972526817102?text=${encodeURIComponent(pkg.id==="production"?"שלום, אני מעוניין לשמוע על הפקת אירוע ולקבל הצעת מחיר":"שלום, אני מעוניין לשמוע על עמדת קבלת פנים")}`} target="_blank" rel="noopener"
@@ -3895,7 +3895,7 @@ function SMSScreen({ event, guests }) {
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
   },[guests]);
 
-  // כשנוסח ההזמנה משתנה בפרטי האירוע — עדכן את ה-template
+  // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
   useEffect(()=>{
     if(selectedTemplate==="invite"){
       setMsgText(smsInviteText);
@@ -4046,7 +4046,7 @@ function SMSScreen({ event, guests }) {
 
       <div className="msg-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
 
-        {/* עמודה שמאל — עריכה */}
+        {/* עמודה שמאל  -  עריכה */}
         <div>
 
           {/* בחירת נוסח */}
@@ -4149,7 +4149,7 @@ function SMSScreen({ event, guests }) {
           )}
         </div>
 
-        {/* עמודה ימין — תצוגה מקדימה */}
+        {/* עמודה ימין  -  תצוגה מקדימה */}
         <div className="msg-preview">
           <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",position:"sticky",top:20}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
@@ -4220,7 +4220,7 @@ function WhatsAppScreen({ event, guests }) {
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
 
-  // כשנוסח ההזמנה משתנה בפרטי האירוע — עדכן את ה-template
+  // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
   useEffect(()=>{
     if(selectedTemplate==="invite"){
       setMsgText(inviteText);
@@ -4382,7 +4382,7 @@ function WhatsAppScreen({ event, guests }) {
           )}
         </div>
 
-        {/* עמודה ימין — תצוגה מקדימה */}
+        {/* עמודה ימין  -  תצוגה מקדימה */}
         <div className="wa-preview">
           <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",position:"sticky",top:20}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
@@ -4463,7 +4463,7 @@ function AISeatingScreen({ event, tables, guests, onApply }) {
       })).filter(t=>t.free>0);
 
       if(groupByRelation){
-        // שבץ לפי קטגוריה — כל קטגוריה לשולחן אחד
+        // שבץ לפי קטגוריה  -  כל קטגוריה לשולחן אחד
         Object.entries(byRelation).forEach(([rel,gList])=>{
           let remaining=[...gList];
           for(const tbl of tableSlots){
@@ -4476,7 +4476,7 @@ function AISeatingScreen({ event, tables, guests, onApply }) {
           }
         });
       }else{
-        // שבץ לפי סדר — מלא שולחן אחד לפני הבא
+        // שבץ לפי סדר  -  מלא שולחן אחד לפני הבא
         let remaining=[...unseated];
         for(const tbl of tableSlots){
           while(tbl.free>0&&remaining.length>0){
@@ -4665,7 +4665,7 @@ function InvitePage({ code, guestId }) {
         setEvent(data||null);setLoading(false);
         if(data){
           sb.from("events").update({views:(data.views||0)+1}).eq("id",data.id);
-          // אם יש guestId — טען את פרטי האורח ומלא אוטומטית
+          // אם יש guestId  -  טען את פרטי האורח ומלא אוטומטית
           if(guestId){
             const{data:g}=await sb.from("guests").select("*").eq("id",guestId).single();
             if(g){
@@ -4877,7 +4877,7 @@ function InvitePage({ code, guestId }) {
           {event.event_time&&<div style={{fontSize:18,fontWeight:900,color:"#111",marginBottom:8,letterSpacing:".05em"}}>{event.event_time}</div>}
           {event.venue&&<div style={{fontSize:15,fontWeight:700,color:"#333",marginBottom:2}}>{event.venue}</div>}
           {event.venue_address&&<div style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>📍 {event.venue_address}</div>}
-          {/* מספר שולחן — מוצג אם האורח אישר הגעה ויש לו שולחן */}
+          {/* מספר שולחן  -  מוצג אם האורח אישר הגעה ויש לו שולחן */}
           {(event.settings_json?.tableNum??true)&&knownGuest?.table_id&&knownGuest?.rsvp==="confirmed"&&(
             <div style={{marginTop:12,background:"linear-gradient(135deg,#1B3A8C,#2952C8)",color:"#fff",borderRadius:12,padding:"10px 16px",display:"inline-block"}}>
               <span style={{fontSize:13,fontWeight:700}}>🪑 השולחן שלך: </span>
@@ -4898,7 +4898,7 @@ function InvitePage({ code, guestId }) {
           </button>}
         </div>
 
-        {/* כפתורי מתנה — Bit / Paybox */}
+        {/* כפתורי מתנה  -  Bit / Paybox */}
         {(event.bit_link||event.paybox_link)&&(
           <div style={{marginBottom:24}}>
             <div style={{fontSize:13,fontWeight:700,color:"#888",textAlign:"center",marginBottom:10}}>💝 שלח מתנה דיגיטלית</div>
@@ -4982,7 +4982,7 @@ function InviteSettings({ event, onUpdate }) {
     <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:100}}>
       <Card style={{padding:16,marginBottom:20,border:`2px solid ${C.blueL}`}}>
         <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:4}}>🔗 לינק ההזמנה</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שלח לאורחים — יוכלו לאשר הגעה ולקבל פרטים</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שלח לאורחים  -  יוכלו לאשר הגעה ולקבל פרטים</div>
         <div style={{background:C.blueXL,borderRadius:10,padding:"8px 6px",fontSize:11,color:C.blue,fontFamily:"monospace",marginBottom:12,wordBreak:"break-all",lineHeight:1.5}}>{inviteCode?inviteUrl:"טוען..."}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           <button onClick={copy} style={{background:copied?C.success:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:10,padding:"10px 6px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
@@ -5002,7 +5002,7 @@ function InviteSettings({ event, onUpdate }) {
         {[["📛",event.name],["📅",event.date?new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"}):"לא הוגדר"],["🕐",event.event_time||"לא הוגדר"],["📍",event.venue||"לא הוגדר"],["🏠",event.venue_address||"לא הוגדר"]].map(([icon,val])=>(
           <div key={icon} style={{display:"flex",gap:8,marginBottom:6,fontSize:13,color:C.text}}><span>{icon}</span><span>{val}</span></div>
         ))}
-        <div style={{fontSize:11,color:C.muted,marginTop:8}}>לשינוי הפרטים — חזור לרשימת האירועים ולחץ ✏️</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:8}}>לשינוי הפרטים  -  חזור לרשימת האירועים ולחץ ✏️</div>
       </Card>
 
       <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:12}}>🎨 בחר עיצוב הזמנה</div>
@@ -5044,9 +5044,9 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
       .then(({data})=>{
         const evs=data||[];
         setEvents(evs);
-        // אם יש אירוע אחד — נכנס ישר
+        // אם יש אירוע אחד  -  נכנס ישר
         if(evs.length===1){onSelect(evs[0]);return;}
-        // אם אין אירועים — מציגים טופס יצירה
+        // אם אין אירועים  -  מציגים טופס יצירה
         if(evs.length===0){setShowForm(true);}
         setLoading(false);
       });
@@ -5063,7 +5063,7 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
 
-  // אם יש כמה אירועים — בחירה
+  // אם יש כמה אירועים  -  בחירה
   if(events.length>1&&!showForm){
     return(
       <div dir="rtl" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Heebo',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -5109,7 +5109,7 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
           <div style={{textAlign:"center",marginBottom:28}}>
             <div style={{fontSize:40,marginBottom:8}}>🎊</div>
             <div style={{fontSize:22,fontWeight:900,color:C.text}}>צור אירוע חדש</div>
-            <div style={{fontSize:13,color:C.muted,marginTop:4}}>מלא את הפרטים הבסיסיים — ניתן לעדכן מאוחר יותר</div>
+            <div style={{fontSize:13,color:C.muted,marginTop:4}}>מלא את הפרטים הבסיסיים  -  ניתן לעדכן מאוחר יותר</div>
           </div>
 
           {/* סוג אירוע */}
@@ -5463,7 +5463,7 @@ export default function App() {
 
   if(checking)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
 
-  // ניתוב לדף אדמין — לפני כל שאר הניתובים!
+  // ניתוב לדף אדמין  -  לפני כל שאר הניתובים!
   if(isAdmin){
     if(!user||(user.email!==ADMIN_EMAIL&&localStorage.getItem("sidor_admin")!=="1"))return(
       <AdminLogin onSuccess={u=>{setUser(u);}} onClose={()=>window.location.hash=""}/>
