@@ -923,7 +923,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
       <section style={{padding:"88px 6vw",background:C.surface}} id="events">
         <div style={{maxWidth:1080,margin:"0 auto"}}>
           <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52,textAlign:"center"}}>
-            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:C.text,marginBottom:12}}>אז מה אתם חוגגים?</h2>
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:C.text,marginBottom:12}}>איזה רגע מיוחד אתם מתכננים?</h2>
             <p style={{fontSize:16,color:C.muted}}>ב-Sidor-IL ניהול ההושבה מותאם בדיוק לסוג האירוע שלכם.</p>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:22}}>
