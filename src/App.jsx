@@ -176,7 +176,7 @@ function TableNode({ table, selected, onMouseDown, onDrop }) {
   }
 
   // ─── עגול — סגנון עיטורים ─────────────────────────────────────────────────
-  const R=42;           // רדיוס עיגול ראשי — קצת גדול יותר
+  const R=52;           // רדיוס עיגול ראשי — גדול כמו ריבועי
   const seatR=6;        // רדיוס כיסא
   const seatDist=R+13;  // מרחק כיסאות מהמרכז
   const S=R*2+seatDist+seatR*2+8; // גודל כולל
@@ -2217,8 +2217,8 @@ function SeatingApp({ user, event, onBack }) {
                     </div>
                   </div>
 
-                  {/* ─── בר — צמוד לבמה מימין ─── */}
-                  <div style={{position:"absolute",top:0,left:"calc(50% + 151px)",
+                  {/* ─── בר — רחוק יותר מהבמה ─── */}
+                  <div style={{position:"absolute",top:0,left:"calc(50% + 200px)",
                     width:140,height:72,
                     background:"linear-gradient(160deg,#1A1A2E,#16213E,#0F3460)",
                     borderRadius:"0 0 18px 0",border:"3px solid #E94560",borderTop:"none",borderLeft:"none",
