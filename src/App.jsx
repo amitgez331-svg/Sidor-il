@@ -1742,55 +1742,123 @@ function SeatingApp({ user, event, onBack }) {
           </div>
         )}
         {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>}
-        {screen==="rsvp"&&(
-          <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
-              {[
-                ["מגיעים",[...guests,...tables.flatMap(t=>t.guests||[])].filter(g=>g.rsvp==="confirmed").length,C.success],
-                ["לא מגיעים",[...guests,...tables.flatMap(t=>t.guests||[])].filter(g=>g.rsvp==="declined").length,C.danger],
-                ["ממתינים",[...guests,...tables.flatMap(t=>t.guests||[])].filter(g=>!g.rsvp||g.rsvp==="pending").length,C.gold],
-              ].map(([l,v,c])=>(
-                <Card key={l} style={{padding:"12px 8px",textAlign:"center",borderTop:`3px solid ${c}`}}>
-                  <div style={{fontSize:22,fontWeight:900,color:c}}>{v}</div>
-                  <div style={{fontSize:11,color:C.muted,marginTop:2}}>{l}</div>
-                </Card>
-              ))}
-            </div>
-            {[...guests,...tables.flatMap(t=>t.guests||[])].map(g=>(
-              <Card key={g.id} style={{padding:"12px 14px",marginBottom:10}}>
-                {/* שורת שם */}
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-                  <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:700,color:C.text}}>{g.name}</div>
-                    {g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}
+        {screen==="rsvp"&&(()=>{
+          const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
+          const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
+          const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
+          const [statusModal,setStatusModal]=React.useState(null);
+          const [search,setSearch]=React.useState("");
+          const filtered=allGuests.filter(g=>!search||g.name?.includes(search)||g.phone?.includes(search));
+
+          const updateRsvp=async(g,rsvp)=>{
+            await sb.from("guests").update({rsvp}).eq("id",g.id);
+            setGuests(gs=>gs.map(x=>x.id===g.id?{...x,rsvp}:x));
+            setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp}:x)})));
+            setStatusModal(null);
+          };
+
+          const rsvpColor=(r)=>r==="confirmed"?"#276749":r==="declined"?"#C53030":"#888";
+          const rsvpBg=(r)=>r==="confirmed"?"#F0FFF4":r==="declined"?"#FFF5F5":"#F7F7F7";
+          const rsvpLabel=(r)=>r==="confirmed"?"✓ מגיע":r==="declined"?"✗ לא מגיע":"⏳ ממתין";
+
+          return(
+            <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
+
+              {/* מודל שינוי סטטוס */}
+              {statusModal&&(
+                <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setStatusModal(null)}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:360,direction:"rtl"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div style={{fontSize:16,fontWeight:900,color:"#1a1a1a"}}>שינוי מצב הגעה ל{statusModal.name}</div>
+                      <button onClick={()=>setStatusModal(null)} style={{width:30,height:30,borderRadius:"50%",border:"1px solid #eee",background:"#f5f5f5",cursor:"pointer",fontSize:16,fontWeight:900}}>×</button>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {[
+                        ["confirmed","✓ מגיעים"],
+                        ["declined","✗ לא מגיעים"],
+                        ["pending","? אולי מגיעים"],
+                        ["no_answer","📞 לא ענו"],
+                        ["sent","✈️ נשלחה הודעה"],
+                        ["not_shown","🕐 לא הוצגה הזמנה"],
+                      ].map(([val,label])=>(
+                        <button key={val} onClick={()=>updateRsvp(statusModal,val)}
+                          style={{background:statusModal.rsvp===val?"#3D5475":"#f5f5f5",
+                            color:statusModal.rsvp===val?"#fff":"#333",
+                            border:"1.5px solid #e5e5e5",borderRadius:50,padding:"14px",
+                            fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                {/* כפתורי RSVP */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
-                  {[["confirmed","✓ מגיע","#F0FFF6",C.success],["pending","⏳ ממתין",C.blueXL,C.blue],["declined","✗ לא מגיע","#FEF2F2",C.danger]].map(([v,l,bg,col])=>(
-                    <button key={v} onClick={async()=>{
-                      await sb.from("guests").update({rsvp:v}).eq("id",g.id);
-                      setGuests(gs=>[...gs.map(x=>x.id===g.id?{...x,rsvp:v}:x)]);
-                      setTables(ts=>[...ts.map(t=>({...t,guests:[...(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp:v}:x)]}))]);
-                    }} style={{background:(g.rsvp||"pending")===v?col:bg,color:(g.rsvp||"pending")===v?"#fff":col,border:`2px solid ${(g.rsvp||"pending")===v?col:C.border}`,borderRadius:10,padding:"8px 4px",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700,transition:"all .15s"}}>
-                      {l}
-                    </button>
+              )}
+
+              {/* סטטיסטיקות */}
+              <div style={{background:"#fff",padding:"16px 16px 12px",borderBottom:"1px solid #eee"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center",marginBottom:12}}>
+                  <div><div style={{fontSize:30,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{allGuests.length}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מוזמנים</div></div>
+                  <div><div style={{fontSize:30,fontWeight:900,color:"#C53030",lineHeight:1}}>{declined}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>לא מגיעים</div></div>
+                  <div><div style={{fontSize:30,fontWeight:900,color:"#276749",lineHeight:1}}>{confirmed}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מגיעים</div></div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>setModal("addGuest")}
+                    style={{flex:1,background:"#3D5475",color:"#fff",border:"none",borderRadius:50,padding:"10px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                    ➕ הוסף מוזמן
+                  </button>
+                  <button onClick={()=>{
+                    exportToCSV(`אישורי_הגעה.csv`,
+                      ["שם מלא","טלפון","סטטוס","כמות","שולחן"],
+                      allGuests.map(g=>[g.name,g.phone||"",g.rsvp==="confirmed"?"מגיע":g.rsvp==="declined"?"לא מגיע":"ממתין",g.guest_count||1,""])
+                    );
+                  }} style={{background:"#276749",color:"#fff",border:"none",borderRadius:50,padding:"10px 16px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                    📥
+                  </button>
+                </div>
+              </div>
+
+              {/* חיפוש */}
+              <div style={{padding:"10px 16px"}}>
+                <input value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="חיפוש..."
+                  style={{width:"100%",border:"1px solid #e5e5e5",borderRadius:50,padding:"9px 16px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#f9f9f9"}}/>
+              </div>
+
+              {/* טבלה */}
+              <div style={{background:"#fff",margin:"0 12px",borderRadius:14,overflow:"hidden",border:"1px solid #eee",boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 90px 80px",padding:"10px 14px",background:"#f5f5f5",borderBottom:"1px solid #eee"}}>
+                  {["שם מלא","טלפון","סטטוס"].map(h=>(
+                    <div key={h} style={{fontSize:11,fontWeight:800,color:"#555",textAlign:"center"}}>{h}</div>
                   ))}
                 </div>
-                {/* כפתור מחיקה */}
-                <button onClick={async()=>{
-                  if(!window.confirm(`למחוק את "${g.name}" מהרשימה?`))return;
-                  await sb.from("guests").delete().eq("id",g.id);
-                  setGuests(gs=>gs.filter(x=>x.id!==g.id));
-                  setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).filter(x=>x.id!==g.id)})));
-                }} style={{width:"100%",background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:10,padding:"8px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",color:C.danger,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                  🗑️ מחק אורח
-                </button>
-              </Card>
-            ))}
-          </div>
-        )}
+                {filtered.map((g,i)=>(
+                  <div key={g.id} onClick={()=>setStatusModal(g)}
+                    style={{display:"grid",gridTemplateColumns:"1fr 90px 80px",padding:"11px 14px",
+                      borderBottom:i<filtered.length-1?"1px solid #f0f0f0":"none",
+                      cursor:"pointer",background:i%2===0?"#fff":"#fafafa",alignItems:"center"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#1B3A8C,#4A7AFF)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{g.name?.[0]}</div>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:700,color:"#1a1a1a",lineHeight:1.2}}>{g.name}</div>
+                        {g.guest_count>1&&<div style={{fontSize:10,color:"#888"}}>({g.guest_count})</div>}
+                      </div>
+                    </div>
+                    <div style={{fontSize:10,color:"#666",textAlign:"center",direction:"ltr"}}>{g.phone||"—"}</div>
+                    <div style={{textAlign:"center"}}>
+                      <span style={{fontSize:10,fontWeight:700,color:rsvpColor(g.rsvp),background:rsvpBg(g.rsvp),borderRadius:50,padding:"3px 8px",whiteSpace:"nowrap"}}>
+                        {rsvpLabel(g.rsvp)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:"#aaa",fontSize:13}}>לא נמצאו אורחים</div>}
+              </div>
+              <div style={{textAlign:"center",fontSize:11,color:"#999",margin:"8px 0 16px"}}>
+                {filtered.length} מתוך {allGuests.length} אורחים
+              </div>
+            </div>
+          );
+        })()}
         {screen==="import"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
@@ -3285,8 +3353,8 @@ function BudgetScreen({ event }) {
       </div>
 
       {/* טבלה  -  מקצה לקצה */}
-      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflow:"hidden",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
+        <table style={{width:"100%",minWidth:600,borderCollapse:"collapse",fontSize:14}}>
           <thead>
             <tr style={{background:"#1B3A8C",borderBottom:"3px solid #122e70"}}>
               <th style={{padding:"13px 16px",textAlign:"right",fontWeight:800,color:"#fff",fontSize:13}}>מוצר / שירות</th>
@@ -3851,7 +3919,14 @@ function SMSScreen({ event, guests }) {
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
-      <style>{`@media(max-width:700px){.msg-grid{grid-template-columns:1fr!important;} .msg-preview{display:none!important;}}`}</style>
+      <style>{`
+        @media(max-width:768px){
+          .msg-grid{grid-template-columns:1fr!important;}
+          .msg-preview{display:none!important;}
+          .wa-grid{grid-template-columns:1fr!important;}
+          .wa-preview{display:none!important;}
+        }
+      `}</style>
 
       {/* כותרת */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -3909,10 +3984,10 @@ function SMSScreen({ event, guests }) {
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+      <div className="msg-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
 
-        {/* עמודה שמאל  -  עריכה */}
-        <div>
+        {/* עמודה שמאל - עריכה */}
+        <div style={{minWidth:0}}>
 
           {/* בחירת נוסח */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
@@ -4015,7 +4090,7 @@ function SMSScreen({ event, guests }) {
         </div>
 
         {/* עמודה ימין  -  תצוגה מקדימה */}
-        <div>
+        <div className="msg-preview">
           <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",position:"sticky",top:20}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
 
@@ -4167,8 +4242,6 @@ function WhatsAppScreen({ event, guests }) {
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
-      <style>{`@media(max-width:700px){.wa-grid{grid-template-columns:1fr!important;} .wa-preview{display:none!important;}}`}</style>
-
       {/* כותרת */}
       <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
@@ -4184,7 +4257,7 @@ function WhatsAppScreen({ event, guests }) {
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+      <div className="wa-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
 
         {/* עמודה שמאל  -  עריכה */}
         <div>
@@ -4283,7 +4356,7 @@ function WhatsAppScreen({ event, guests }) {
         </div>
 
         {/* עמודה ימין  -  תצוגה מקדימה */}
-        <div>
+        <div className="wa-preview">
           <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",position:"sticky",top:20}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
 
