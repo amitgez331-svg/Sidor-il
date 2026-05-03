@@ -900,17 +900,17 @@ function LandingPage({ onOpenAuth, onLogout }) {
               <button onClick={()=>onOpenAuth("register")} style={{background:C.blue,color:"#fff",border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 30px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>הזמנה דיגיטלית בחינם ›</button>
               <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה למערכת ›</button>
             </div>
-            <div style={{display:"flex",gap:16,flexWrap:"nowrap",justifyContent:"center"}}>
+            <div style={{display:"flex",gap:24,flexWrap:"nowrap",justifyContent:"flex-end"}}>
               {[["✅","אישורי הגעה","בוואטסאפ"],["🪑","סידורי הושבה","מלאים"],["💌","הזמנה","דיגיטלית"]].map(([ic,t,s])=>(
-                <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:"0 0 auto"}}>
-                  <div style={{width:64,height:64,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s"}}
+                <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:"0 0 auto"}}>
+                  <div style={{width:76,height:76,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s"}}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.transform="translateY(-3px)";}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
                     {ic}
                   </div>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:13,fontWeight:800,color:C.text}}>{t}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s}</div>
+                    <div style={{fontSize:14,fontWeight:800,color:C.text}}>{t}</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:1}}>{s}</div>
                   </div>
                 </div>
               ))}
@@ -1746,8 +1746,8 @@ function SeatingApp({ user, event, onBack }) {
           const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
           const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
           const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
-          const [statusModal,setStatusModal]=React.useState(null);
-          const [search,setSearch]=React.useState("");
+          const [statusModal,setStatusModal]=useState(null);
+          const [search,setSearch]=useState("");
           const filtered=allGuests.filter(g=>!search||g.name?.includes(search)||g.phone?.includes(search));
 
           const updateRsvp=async(g,rsvp)=>{
@@ -4242,6 +4242,7 @@ function WhatsAppScreen({ event, guests }) {
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
+      <style>{`@media(max-width:768px){.wa-grid{grid-template-columns:1fr!important;}.wa-preview{display:none!important;}}`}</style>
       {/* כותרת */}
       <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
