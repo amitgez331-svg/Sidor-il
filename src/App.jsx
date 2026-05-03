@@ -1593,7 +1593,7 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
           <button onClick={()=>{
             const BOM="\uFEFF";
             const rows=[["שם מלא","טלפון","סטטוס","כמות"],...allGuests.map(g=>[g.name,g.phone||"",g.rsvp==="confirmed"?"מגיע":g.rsvp==="declined"?"לא מגיע":"ממתין",g.guest_count||1])];
-            const csv=BOM+rows.map(r=>r.map(c=>'"'+String(c||"").replace(/"/g,'\'\'')+'"').join(",")).join("\n");
+            const csv=BOM+rows.map(r=>r.map(c=>`"${String(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
             const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));a.download="אישורי_הגעה.csv";a.click();
           }} style={{background:"#276749",color:"#fff",border:"none",borderRadius:50,padding:"10px 16px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📥</button>
         </div>
