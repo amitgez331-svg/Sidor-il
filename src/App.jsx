@@ -3638,158 +3638,187 @@ function ContactsScreen({ event, onAdd }) {
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
 function PackagesScreen({ event, onBack }) {
   const [selectedPkg,setSelectedPkg]=useState(null);
-  const [smsPkg,setSmsPkg]=useState(null);
+  const [selectedTier,setSelectedTier]=useState(null); // לחבילות עם מחיר לפי כמות
+
+  const TIER5=[["עד 50",80],["עד 100",120],["עד 150",180],["עד 200",240],["עד 250",280],["עד 300",340],["עד 350",390],["עד 400",430],["עד 450",480],["עד 500",520],["עד 550",560],["עד 600",600],["עד 650",630],["עד 700",660],["עד 750",690],["עד 800",720]];
+  const TIER6=[["עד 100",250],["עד 150",370],["עד 200",480],["עד 250",590],["עד 300",690],["עד 350",790],["עד 400",880],["עד 450",970],["עד 500",1050],["עד 550",1130],["עד 600",1200],["עד 650",1300],["עד 700",1400],["עד 750",1500],["עד 800",1600]];
 
   const packages=[
-    {id:"basic",name:"בסיס + הושבה",price:150,sub:"החל מ",color:C.blue,icon:"🪑",
-     features:["שליחה ידנית בוואטסאפ","קבלת אישורי הגעה ללא הגבלה","סידורי הושבה מלאים","מפה אינטראקטיבית","פתק הושבה להדפסה","AI סידור חכם"]},
-    {id:"sms",name:"הודעות SMS",price:70,sub:"החל מ",color:"#059669",icon:"📱",badge:"SMS",
-     features:["הכל בחבילת בסיס","שליחת SMS לכל האורחים","תזמון הודעות אוטומטי","תזכורות לפני האירוע","אישורי הגעה ב-SMS"]},
-    {id:"whatsapp",name:"WhatsApp אוטומטי",price:80,sub:"החל מ",color:"#25D366",icon:"💬",badge:"WhatsApp",featured:true,
-     features:["הכל בחבילת SMS","שליחה אוטומטית בוואטסאפ","תזכורת לפני האירוע","הודעת תודה לאחר האירוע","מגיב אוטומטי לשאלות"]},
-    {id:"vip",name:"VIP הכל כלול",price:250,sub:"החל מ",color:"#B45309",icon:"👑",badge:"VIP",
-     features:["הכל בחבילת WhatsApp","📞 סבב שיחות טלפוני לאורחים","מספר שולחן ב-SMS ביום האירוע","סגנון הזמנה פרימיום","תמיכה ייעודית 24/7"]},
-    {id:"reception",name:"עמדת קבלת פנים",price:1300,sub:"החל מ",color:"#7C3AED",icon:"💎",badge:"פרימיום",
-     features:["עמדת קבלת פנים עם דיילים/ות","חלוקת פתקיות הושבה לאורחים","צמצום רזרבות במהלך ההושבה","ניהול תורים בכניסה","תיאום מלא עם צוות האולם"]},
-    {id:"production",name:"הפקת אירוע",price:"ייעוץ",sub:"לייעוץ חינם",color:"#DB2777",icon:"✨",badge:"חלומות",
-     features:["🎪 אטרקציות לאירוע","🍸 ניהול אלכוהול / בר אקטיבי","🎨 עיצובים לאירוע","💫 אתם חולמים  -  אנחנו מגשימים","📞 ייעוץ אישי ללא עלות"]},
+    {
+      id:"free", name:"חינם", price:0, priceLabel:"₪0", color:"#64748B", icon:"🎁",
+      badge:null, featured:false,
+      desc:"התחל בחינם, שתף ידנית",
+      features:["✅ הזמנה דיגיטלית יפה","✅ שיתוף ידני בוואטסאפ","✅ עד 50 אורחים","❌ אישורי הגעה אוטומטיים","❌ שליחת SMS","❌ WhatsApp אוטומטי","❌ סידורי הושבה"],
+    },
+    {
+      id:"basic", name:"בסיסית", price:50, priceLabel:"₪50", color:"#3182CE", icon:"💌",
+      badge:null, featured:false,
+      desc:"הזמנה + אישורי הגעה",
+      features:["✅ הזמנה דיגיטלית יפה","✅ שיתוף ידני + קישור אישי","✅ אישורי הגעה דרך WhatsApp האישי","✅ עדכון בזמן אמת","❌ שליחה אוטומטית","❌ סידורי הושבה"],
+    },
+    {
+      id:"seating", name:"מתקדמת", price:150, priceLabel:"₪150", color:C.blue, icon:"🪑",
+      badge:"פופולרי", featured:true,
+      desc:"הכל + סידורי הושבה",
+      features:["✅ כל מה שבבסיסית","✅ סידורי הושבה מלאים","✅ מפה אינטראקטיבית של האולם","✅ גרירת אורחים לשולחנות","✅ פתק הושבה להדפסה","✅ AI סידור חכם"],
+    },
+    {
+      id:"sms", name:"SMS", price:null, priceLabel:"לפי כמות", color:"#059669", icon:"📱",
+      badge:"תוספת", featured:false,
+      desc:"דורש חבילה מתקדמת + ₪100",
+      note:"דורש חבילת מתקדמת (₪150). תוספת ₪100 לסידורי הושבה.",
+      smsPacks:[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]],
+      features:["✅ כל מה שבמתקדמת","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
+    },
+    {
+      id:"auto", name:"אוטומציה", price:null, priceLabel:"לפי כמות", color:"#25D366", icon:"💬",
+      badge:"חדש", featured:false,
+      desc:"WhatsApp אוטומטי + SMS",
+      note:"דורש חבילת מתקדמת (₪150). תוספת ₪100 לסידורי הושבה.",
+      tiers:TIER5,
+      features:["✅ כל מה שבמתקדמת","✅ 2 סבבי שליחה בוואטסאפ אוטומטי","✅ תזכורת SMS לקראת האירוע","✅ הודעת תודה אחרי האירוע","✅ שליחה אוטומטית לאורחים שלא ענו"],
+    },
+    {
+      id:"vip", name:"VIP + מוקד", price:null, priceLabel:"לפי כמות", color:"#B45309", icon:"👑",
+      badge:"VIP", featured:false,
+      desc:"הכל + שיחות טלפוניות",
+      tiers:TIER6,
+      features:["✅ כל מה שבאוטומציה","✅ 3 סבבי שיחות טלפוניות ע\"י מוקד אנושי","✅ סבב שיחות חוזרות לאורחים שטרם אישרו","✅ דוח מפורט של כל השיחות","✅ תמיכה ייעודית"],
+    },
   ];
 
-  const smsPacks=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
-  const vipPacks=[["עד 100","₪250"],["עד 150","₪370"],["עד 200","₪480"],["עד 250","₪590"],["עד 300","₪690"],["עד 350","₪790"],["עד 400","₪880"],["עד 450","₪970"],["עד 500","₪1,050"],["עד 550","₪1,130"],["עד 600","₪1,200"],["עד 650","₪1,300"],["עד 700","₪1,400"],["עד 750","₪1,500"],["עד 800","₪1,600"]];
-
-  const handlePurchase=(pkg,extraSms=null)=>{
-    const total=pkg.price+(extraSms?extraSms[1]:0);
-    alert(`בקרוב! תשלום של ₪${total} עבור חבילת "${pkg.name}"${extraSms?` + ${extraSms[0]} SMS`:""}\nמערכת PayPlus תשולב בקרוב.`);
+  const handleBuy=(pkg)=>{
+    if(pkg.id==="free") return;
+    let msg=`לרכישת חבילת "${pkg.name}"`;
+    if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
+    else if(pkg.price) msg+=` - ₪${pkg.price}`;
+    window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
   };
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
-      {/* Header */}
-      <div style={{background:`linear-gradient(135deg,#B45309,#D97706)`,padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
+
+      {/* כותרת */}
+      <div style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:"repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)",backgroundSize:"12px 12px"}}/>
         <div style={{position:"relative",zIndex:1}}>
           <div style={{fontSize:13,color:"rgba(255,255,255,.7)",marginBottom:4}}>שדרג את האירוע שלך</div>
-          <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>👑 חבילות Sidor-IL</div>
+          <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>📦 חבילות Sidor-IL</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.65)",marginTop:6}}>בחר את החבילה שמתאימה לך</div>
         </div>
       </div>
 
       <div style={{padding:16}}>
-        {/* חבילות */}
-        {packages.map((pkg,i)=>(
-          <div key={pkg.id} onClick={()=>setSelectedPkg(selectedPkg?.id===pkg.id?null:pkg)}
-            style={{background:C.surface,border:`2px solid ${selectedPkg?.id===pkg.id?pkg.color:C.border}`,borderRadius:18,padding:"18px 16px",marginBottom:12,cursor:"pointer",position:"relative",
-              boxShadow:selectedPkg?.id===pkg.id?`0 4px 20px ${pkg.color}33`:"none",transition:"all .2s"}}>
-            {pkg.badge&&<div style={{position:"absolute",top:-10,right:16,background:pkg.color,color:"#fff",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:100}}>{pkg.badge}</div>}
-            {pkg.featured&&<div style={{position:"absolute",top:-10,left:16,background:C.gold,color:C.text,fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:100}}>⭐ הכי פופולרי</div>}
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:selectedPkg?.id===pkg.id?12:0}}>
-              <div style={{width:44,height:44,borderRadius:12,background:pkg.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{pkg.icon}</div>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:800,fontSize:15,color:C.text}}>{pkg.name}</div>
-                <div style={{fontSize:13,color:C.muted,marginTop:1}}>לחץ לפרטים נוספים</div>
+        {packages.map((pkg)=>{
+          const isOpen=selectedPkg?.id===pkg.id;
+          return(
+            <div key={pkg.id}
+              style={{background:"#fff",border:`2px solid ${isOpen?pkg.color:pkg.featured?"#CBD5E0":"#E2E8F0"}`,
+                borderRadius:18,marginBottom:12,overflow:"hidden",
+                boxShadow:isOpen?`0 4px 20px ${pkg.color}33`:pkg.featured?"0 2px 12px rgba(0,0,0,.08)":"none",
+                transition:"all .2s"}}>
+
+              {/* ראש כרטיס */}
+              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}
+                style={{padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+                {pkg.badge&&<div style={{position:"absolute",fontSize:10,fontWeight:800,background:pkg.color,color:"#fff",padding:"2px 8px",borderRadius:100}}/>}
+                <div style={{width:46,height:46,borderRadius:13,background:pkg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
+                  {pkg.icon}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{fontWeight:900,fontSize:15,color:"#1a1a1a"}}>{pkg.name}</div>
+                    {pkg.badge&&<span style={{fontSize:10,fontWeight:800,background:pkg.color,color:"#fff",padding:"2px 8px",borderRadius:100}}>{pkg.badge}</span>}
+                    {pkg.featured&&<span style={{fontSize:10,fontWeight:800,background:"#FEF3C7",color:"#B45309",padding:"2px 8px",borderRadius:100}}>⭐ הכי פופולרי</span>}
+                  </div>
+                  <div style={{fontSize:12,color:"#888",marginTop:2}}>{pkg.desc}</div>
+                </div>
+                <div style={{textAlign:"center",flexShrink:0}}>
+                  <div style={{fontSize:18,fontWeight:900,color:pkg.color}}>{pkg.priceLabel}</div>
+                  {pkg.price===0&&<div style={{fontSize:10,color:"#888"}}>תמיד</div>}
+                </div>
               </div>
-              <div style={{textAlign:"left"}}>
-                <div style={{fontSize:10,color:C.muted,marginBottom:1}}>{pkg.sub}</div>
-                <div style={{fontSize:22,fontWeight:900,color:pkg.color}}>{typeof pkg.price==="number"?`₪${pkg.price.toLocaleString()}`:pkg.price}</div>
-              </div>
+
+              {/* תוכן מורחב */}
+              {isOpen&&(
+                <div style={{padding:"0 16px 16px",borderTop:"1px solid #f0f0f0"}}>
+
+                  {/* הערה לחבילות שדורשות מתקדמת */}
+                  {pkg.note&&(
+                    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"10px 12px",marginBottom:14,marginTop:14,fontSize:12,color:"#B45309",fontWeight:700}}>
+                      ⚠️ {pkg.note}
+                    </div>
+                  )}
+
+                  {/* פיצ'רים */}
+                  <div style={{marginTop:pkg.note?0:14,marginBottom:16}}>
+                    {pkg.features.map(f=>(
+                      <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:f.startsWith("❌")?"#999":"#1a1a1a",marginBottom:7,textDecoration:f.startsWith("❌")?"line-through":"none"}}>
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* בחירת כמות לחבילות אוטומציה ו-VIP */}
+                  {pkg.tiers&&(
+                    <div style={{marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>בחר כמות אורחים:</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,maxHeight:200,overflowY:"auto"}}>
+                        {pkg.tiers.map(([label,price])=>(
+                          <div key={label} onClick={e=>{e.stopPropagation();setSelectedTier(selectedTier?.[0]===label?null:[label,price]);}}
+                            style={{border:`1.5px solid ${selectedTier?.[0]===label?pkg.color:"#E2E8F0"}`,borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",background:selectedTier?.[0]===label?pkg.color+"11":"#fff",cursor:"pointer"}}>
+                            <span style={{fontSize:12,color:"#666"}}>{label} רשומות</span>
+                            <span style={{fontSize:13,fontWeight:800,color:pkg.color}}>₪{price.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* בחירת כמות SMS */}
+                  {pkg.smsPacks&&(
+                    <div style={{marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>בחר כמות SMS:</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                        {pkg.smsPacks.map(([sms,price])=>(
+                          <div key={sms} onClick={e=>{e.stopPropagation();setSelectedTier(selectedTier?.[0]===sms?null:[sms,price]);}}
+                            style={{border:`1.5px solid ${selectedTier?.[0]===sms?pkg.color:"#E2E8F0"}`,borderRadius:10,padding:"8px 4px",textAlign:"center",cursor:"pointer",background:selectedTier?.[0]===sms?pkg.color+"11":"#fff"}}>
+                            <div style={{fontSize:14,fontWeight:800,color:pkg.color}}>{sms.toLocaleString()}</div>
+                            <div style={{fontSize:9,color:"#888",marginBottom:2}}>SMS</div>
+                            <div style={{fontSize:12,fontWeight:700,color:"#333"}}>₪{price}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* כפתור */}
+                  {pkg.id==="free"?(
+                    <div style={{background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#276749",fontWeight:700}}>
+                      ✅ אתה משתמש בחבילה זו כעת
+                    </div>
+                  ):(
+                    <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}}
+                      disabled={!!(pkg.tiers||pkg.smsPacks)&&!selectedTier}
+                      style={{width:"100%",background:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"#E2E8F0":`linear-gradient(135deg,${pkg.color},${pkg.color}CC)`,
+                        color:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"#999":"#fff",
+                        border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,
+                        cursor:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      {(pkg.tiers||pkg.smsPacks)&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
+                      {selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            {selectedPkg?.id===pkg.id&&(
-              <div>
-                <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
-                  {pkg.features.map(f=>(
-                    <li key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:C.text}}>
-                      <span style={{color:pkg.color,fontWeight:900,flexShrink:0}}>✓</span>{f}
-                    </li>
-                  ))}
-                </ul>
+          );
+        })}
 
-                {/* VIP  -  טבלת מחירים לפי רשומות, לחיצה מעדכנת מחיר */}
-                {pkg.id==="vip"&&(
-                  <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות רשומות:</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,maxHeight:220,overflowY:"auto"}}>
-                      {vipPacks.map(([label,price])=>(
-                        <div key={label}
-                          onClick={e=>{e.stopPropagation();setSmsPkg([label,parseInt(price.replace(/[₪,]/g,""))]);}}
-                          style={{border:`1.5px solid ${smsPkg?.[0]===label?"#B45309":C.border}`,borderRadius:8,padding:"8px",display:"flex",justifyContent:"space-between",alignItems:"center",background:smsPkg?.[0]===label?"#FFFBEB":C.surface,cursor:"pointer"}}>
-                          <span style={{fontSize:12,color:C.muted}}>{label}</span>
-                          <span style={{fontSize:13,fontWeight:800,color:"#B45309"}}>{price}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* WhatsApp  -  טבלת מחירים לפי רשומות */}
-                {pkg.id==="whatsapp"&&(
-                  <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות רשומות:</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,maxHeight:220,overflowY:"auto"}}>
-                      {[["עד 50","80"],["עד 100","120"],["עד 150","180"],["עד 200","240"],["עד 250","280"],["עד 300","340"],["עד 350","390"],["עד 400","430"],["עד 450","480"],["עד 500","520"],["עד 550","560"],["עד 600","600"],["עד 650","630"],["עד 700","660"],["עד 750","690"],["עד 800","720"]].map(([label,price])=>(
-                        <div key={label}
-                          onClick={e=>{e.stopPropagation();setSmsPkg([label,parseInt(price)]);}}
-                          style={{border:`1.5px solid ${smsPkg?.[0]===label?"#25D366":C.border}`,borderRadius:8,padding:"8px",display:"flex",justifyContent:"space-between",alignItems:"center",background:smsPkg?.[0]===label?"#F0FFF4":C.surface,cursor:"pointer"}}>
-                          <span style={{fontSize:12,color:C.muted}}>{label} רשומות</span>
-                          <span style={{fontSize:13,fontWeight:800,color:"#25D366"}}>₪{price}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* SMS  -  הוסף חבילת SMS */}
-                {pkg.id==="sms"&&(
-                  <div style={{background:C.bg,borderRadius:12,padding:12,marginBottom:12}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>בחר כמות SMS:</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-                      {smsPacks.map(([sms,price])=>(
-                        <div key={sms} onClick={e=>{e.stopPropagation();setSmsPkg(smsPkg?.[0]===sms?null:[sms,price]);}}
-                          style={{border:`1.5px solid ${smsPkg?.[0]===sms?C.blue:C.border}`,borderRadius:10,padding:"8px 4px",textAlign:"center",cursor:"pointer",background:smsPkg?.[0]===sms?C.blueXL:C.surface}}>
-                          <div style={{fontSize:14,fontWeight:800,color:C.blue}}>{sms.toLocaleString()}</div>
-                          <div style={{fontSize:9,color:C.muted}}>SMS</div>
-                          <div style={{fontSize:12,fontWeight:700,color:C.text}}>₪{price}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* עמדת קבלת פנים / הפקת אירוע  -  צור קשר בלבד */}
-                {(pkg.id==="reception"||pkg.id==="production")?(
-                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    <a href={`https://wa.me/972526817102?text=${encodeURIComponent(pkg.id==="production"?"שלום, אני מעוניין לשמוע על הפקת אירוע ולקבל הצעת מחיר":"שלום, אני מעוניין לשמוע על עמדת קבלת פנים")}`} target="_blank" rel="noopener"
-                      onClick={e=>e.stopPropagation()}
-                      style={{width:"100%",background:"#25D366",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      💬 יצירת קשר בוואטסאפ
-                    </a>
-                    <a href="tel:0526817102" onClick={e=>e.stopPropagation()}
-                      style={{width:"100%",background:C.blueXL,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      📞 התקשר עכשיו
-                    </a>
-                  </div>
-                ):(
-                  <button onClick={e=>{e.stopPropagation();
-                    const finalPrice=smsPkg?smsPkg[1]:pkg.price;
-                    alert(`בקרוב! תשלום של ₪${finalPrice.toLocaleString()} עבור חבילת "${pkg.name}"\nמערכת PayPlus תשולב בקרוב.`);
-                  }}
-                    style={{width:"100%",background:`linear-gradient(135deg,${pkg.color},${pkg.color}CC)`,color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    לרכישה מהירה ← {smsPkg?`₪${smsPkg[1].toLocaleString()}`:typeof pkg.price==="number"?`₪${pkg.price.toLocaleString()}`:pkg.price}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* PayPlus */}
-        <div style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 16px",textAlign:"center"}}>
-          <div style={{fontSize:12,color:C.muted,marginBottom:6}}>תשלום מאובטח דרך PayPlus</div>
-          <div style={{display:"flex",justifyContent:"center",gap:12,fontSize:20}}>
-            🍎 <span style={{fontSize:13,fontWeight:700,color:C.text}}>Apple Pay</span>
-            <span style={{fontSize:13,fontWeight:700,color:C.text}}>Google Pay</span>
-            <span style={{fontSize:13,fontWeight:700,color:C.text}}>Bit</span>
-            <span style={{fontSize:13,fontWeight:700,color:C.text}}>Visa</span>
-          </div>
+        {/* תשלום */}
+        <div style={{background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:14,padding:"14px 16px",textAlign:"center",marginTop:8}}>
+          <div style={{fontSize:12,color:"#555",marginBottom:4}}>💳 תשלום מאובטח</div>
+          <div style={{fontSize:11,color:"#888"}}>Apple Pay · Google Pay · Bit · Visa · Mastercard</div>
         </div>
       </div>
     </div>
