@@ -1553,7 +1553,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
               <span style={{fontSize:13,fontWeight:700,direction:l==="מס' נייד"?"ltr":"rtl"}}>{v}</span>
             </div>
           ))}
-          <button onClick={()=>setScreen("settings_event")} style={{background:"#EEF2FF",color:"#1B3A8C",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:4}}>
+          <button onClick={()=>setScreen("settings")} style={{background:"#EEF2FF",color:"#1B3A8C",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:4}}>
             📋 עריכת פרטי האירוע
           </button>
         </div>
@@ -1966,7 +1966,7 @@ function SeatingApp({ user, event, onBack }) {
               {icon:"📱",label:"SMS",nav:"sms",color:"#1B3A8C",bg:"#EEF2FF"},
               {icon:"💬",label:"WhatsApp",nav:"whatsapp",color:"#25D366",bg:"#F0FFF4"},
               {icon:"📦",label:"חבילות",nav:"packages",color:"#B45309",bg:"#FFFBEB"},
-              {icon:"⚙️",label:"הגדרות",nav:"settings",color:"#555",bg:"#F7F7F7"},
+              {icon:"⚙️",label:"הגדרות",nav:"user_settings",color:"#555",bg:"#F7F7F7"},
             ].map(item=>{
               const isLocked=item.nav!=="packages"&&item.nav!=="settings"&&trialExpired&&userPackages.length===0;
               return(
@@ -2112,7 +2112,8 @@ function SeatingApp({ user, event, onBack }) {
         }}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
-        {screen==="settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
+        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
+        {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
         {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
       </div>
       <BottomNav active={screen} onChange={setScreen}/>
@@ -2123,7 +2124,7 @@ function SeatingApp({ user, event, onBack }) {
 
   const navItems=[
     {id:"home",icon:"🏠",label:"ראשי"},
-    {id:"settings_event",icon:"📋",label:"פרטי האירוע"},
+    {id:"settings",icon:"📋",label:"פרטי האירוע"},
     {id:"seating",icon:"🪑",label:"סידורי הושבה"},
     {id:"rsvp",icon:"✅",label:"אישורי הגעה"},
     {id:"import",icon:"📊",label:"ייבוא אורחים"},
@@ -2132,7 +2133,7 @@ function SeatingApp({ user, event, onBack }) {
     {id:"sms",icon:"📱",label:"הודעות SMS"},
     {id:"whatsapp",icon:"💬",label:"WhatsApp"},
     {id:"ai",icon:"🤖",label:"AI סידור חכם"},
-    {id:"settings",icon:"⚙️",label:"הגדרות"},
+    {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
 
   return(<div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
