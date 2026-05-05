@@ -900,6 +900,21 @@ function LandingPage({ onOpenAuth, onLogout }) {
               <button onClick={()=>onOpenAuth("register")} style={{background:C.blue,color:"#fff",border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 30px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>הזמנה דיגיטלית בחינם ›</button>
               <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה למערכת ›</button>
             </div>
+            <div style={{display:"flex",gap:24,flexWrap:"nowrap",justifyContent:"flex-start"}}>
+              {[["✅","אישורי הגעה","בוואטסאפ"],["🪑","סידורי הושבה","מלאים"],["💌","הזמנה","דיגיטלית"]].map(([ic,t,s])=>(
+                <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:"0 0 auto"}}>
+                  <div style={{width:76,height:76,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.transform="translateY(-3px)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
+                    {ic}
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:14,fontWeight:800,color:C.text}}>{t}</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:1}}>{s}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -5601,7 +5616,7 @@ function PrivacyPage() {
   return(
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
       <div style={{background:"#fff",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16}}>
-        <a href="#" style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700}}>← חזור לדף הבית</a>
+        <a href="#" onClick={e=>{e.preventDefault();window.location.hash="";}} style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700,cursor:"pointer"}}>← חזור לדף הבית</a>
         <span style={{color:"#ccc"}}>|</span>
         <span style={{fontWeight:800,color:"#1a1a1a",fontSize:15}}>Sidor-IL</span>
       </div>
@@ -5639,6 +5654,12 @@ function PrivacyPage() {
 export default function App() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
   const [showPrivacy,setShowPrivacy]=useState(window.location.hash==="#/privacy");
+
+  useEffect(()=>{
+    const onHash=()=>setShowPrivacy(window.location.hash==="#/privacy");
+    window.addEventListener("hashchange",onHash);
+    return()=>window.removeEventListener("hashchange",onHash);
+  },[]);
 
   const selectEvent=(ev)=>{
     setEvent(ev);
