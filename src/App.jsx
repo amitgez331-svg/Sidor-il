@@ -2123,7 +2123,7 @@ function SeatingApp({ user, event, onBack }) {
 
   const navItems=[
     {id:"home",icon:"🏠",label:"ראשי"},
-    {id:"settings",icon:"📋",label:"פרטי האירוע"},
+    {id:"settings_event",icon:"📋",label:"פרטי האירוע"},
     {id:"seating",icon:"🪑",label:"סידורי הושבה"},
     {id:"rsvp",icon:"✅",label:"אישורי הגעה"},
     {id:"import",icon:"📊",label:"ייבוא אורחים"},
@@ -2132,6 +2132,7 @@ function SeatingApp({ user, event, onBack }) {
     {id:"sms",icon:"📱",label:"הודעות SMS"},
     {id:"whatsapp",icon:"💬",label:"WhatsApp"},
     {id:"ai",icon:"🤖",label:"AI סידור חכם"},
+    {id:"settings",icon:"⚙️",label:"הגדרות"},
   ];
 
   return(<div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -2156,7 +2157,9 @@ function SeatingApp({ user, event, onBack }) {
     <div style={{display:"flex",flex:1,overflow:"hidden"}}>
       {/* SIDEBAR */}
       {sidebarOpen&&(
-        <div style={{width:220,background:"#fff",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",borderLeft:"1px solid #E2E8F0",boxShadow:"2px 0 8px rgba(0,0,0,.04)"}}>
+        <div style={{width:220,background:"#fff",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",borderLeft:"1px solid #E2E8F0",boxShadow:"2px 0 8px rgba(0,0,0,.04)",scrollbarWidth:"none"}}
+          onScroll={e=>e.currentTarget.style.scrollbarWidth="none"}>
+          <style>{`.sidebar-scroll::-webkit-scrollbar{display:none}`}</style>
           <div style={{padding:"16px",borderBottom:"1px solid #F0F0F0",background:"linear-gradient(135deg,#EBF8FF,#F0F4FF)"}}>
             <div style={{fontSize:10,color:"#999",marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em"}}>האירוע הנוכחי</div>
             <div style={{fontSize:15,fontWeight:900,color:"#1A202C",lineHeight:1.3,marginBottom:4}}>{event.name}</div>
@@ -2436,7 +2439,7 @@ function SeatingApp({ user, event, onBack }) {
           <div onDragOver={e=>e.preventDefault()}
             onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
             onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
-            style={{flex:1,overflow:"auto",background:"#F8F6F0",position:"relative",display:"flex",alignItems:"flex-start",justifyContent:"flex-start"}}>
+            style={{flex:1,overflow:"auto",background:"#F8F6F0",position:"relative",display:"flex",alignItems:"flex-start",justifyContent:"flex-start",paddingBottom:40}}>
             {(()=>{
               // מפה ממלאת את כל השטח הזמין
               const sidebarW=sidebarOpen?320:0;
