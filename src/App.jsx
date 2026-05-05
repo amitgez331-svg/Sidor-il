@@ -3684,6 +3684,8 @@ function PackagesScreen({ event, onBack }) {
       desc:"2 אנשי צוות ביום האירוע",
       features:["✅ 2 אנשי צוות מקצועיים ביום האירוע","✅ חלוקת פתקי הושבה לאורחים","✅ ניהול תורים בכניסה","✅ תיאום מול צוות האולם","✅ צמצום עומס ברזרבות","⚠️ תיתכן תוספת מרחק"],
     },
+    {
+      id:"vip", name:"VIP + מוקד", price:null, priceLabel:"לפי כמות", color:"#B45309", icon:"👑",
       badge:"VIP", featured:false,
       desc:"הכל + שיחות טלפוניות",
       tiers:TIER6,
