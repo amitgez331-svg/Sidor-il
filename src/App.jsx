@@ -3679,7 +3679,11 @@ function PackagesScreen({ event, onBack }) {
       features:["✅ כל מה שבמתקדמת","✅ 2 סבבי שליחה בוואטסאפ אוטומטי","✅ תזכורת SMS לקראת האירוע","✅ הודעת תודה אחרי האירוע","✅ שליחה אוטומטית לאורחים שלא ענו"],
     },
     {
-      id:"vip", name:"VIP + מוקד", price:null, priceLabel:"לפי כמות", color:"#B45309", icon:"👑",
+      id:"staff", name:"צוות הושבה", price:1300, priceLabel:"החל מ ₪1,300", color:"#7C3AED", icon:"👥",
+      badge:"שירות פרימיום", featured:false,
+      desc:"2 אנשי צוות ביום האירוע",
+      features:["✅ 2 אנשי צוות מקצועיים ביום האירוע","✅ חלוקת פתקי הושבה לאורחים","✅ ניהול תורים בכניסה","✅ תיאום מול צוות האולם","✅ צמצום עומס ברזרבות","⚠️ תיתכן תוספת מרחק"],
+    },
       badge:"VIP", featured:false,
       desc:"הכל + שיחות טלפוניות",
       tiers:TIER6,
@@ -4192,6 +4196,7 @@ function SMSScreen({ event, guests }) {
 
 // ─── WHATSAPP SCREEN ──────────────────────────────────────────────────────────
 function WhatsAppScreen({ event, guests }) {
+  const [waPkg,setWaPkg]=useState(null); // null=בחירה, "auto"=חבילה5, "vip"=חבילה6
   const groomName = event.groom_name || "החתן";
   const brideName = event.bride_name || "הכלה";
   const coupleStr = `${groomName} ו${brideName}`;
@@ -4289,13 +4294,56 @@ function WhatsAppScreen({ event, guests }) {
   const sentOk=results?.filter(r=>r.status?.includes("✓")).length||0;
   const sentFail=results?.filter(r=>r.status?.includes("✗")).length||0;
 
+  // מסך בחירת חבילה
+  if(!waPkg) return(
+    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16,paddingBottom:80}}>
+      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"20px",marginBottom:24,color:"#fff",textAlign:"center"}}>
+        <div style={{fontSize:22,marginBottom:6}}>💬</div>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>שליחת WhatsApp</div>
+        <div style={{fontSize:13,opacity:.85}}>בחר את סוג השירות שרכשת</div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+        <div onClick={()=>setWaPkg("auto")}
+          style={{background:"#fff",border:"2px solid #25D366",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(37,211,102,.15)"}}>
+          <div style={{fontSize:36,marginBottom:10}}>💬</div>
+          <div style={{fontSize:15,fontWeight:900,color:"#075E54",marginBottom:6}}>אוטומציה</div>
+          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>2 סבבי שליחה אוטומטית<br/>SMS תזכורת + תודה</div>
+          <div style={{fontSize:12,fontWeight:700,color:"#25D366",background:"#F0FFF4",borderRadius:8,padding:"4px 0"}}>החל מ ₪80</div>
+        </div>
+        <div onClick={()=>setWaPkg("vip")}
+          style={{background:"#fff",border:"2px solid #B45309",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(180,83,9,.15)"}}>
+          <div style={{fontSize:36,marginBottom:10}}>👑</div>
+          <div style={{fontSize:15,fontWeight:900,color:"#B45309",marginBottom:6}}>VIP + מוקד</div>
+          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>הכל באוטומציה<br/>+ 3 סבבי שיחות טלפוניות</div>
+          <div style={{fontSize:12,fontWeight:700,color:"#B45309",background:"#FFFBEB",borderRadius:8,padding:"4px 0"}}>החל מ ₪250</div>
+        </div>
+      </div>
+      <div style={{marginTop:20,background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px"}}>
+        <div style={{fontSize:12,color:"#555",fontWeight:700,marginBottom:8}}>ההבדל בין החבילות:</div>
+        <div style={{fontSize:12,color:"#666",lineHeight:1.8}}>
+          💬 <strong>אוטומציה</strong> - שליחה אוטומטית מהמערכת לכל האורחים<br/>
+          👑 <strong>VIP + מוקד</strong> - כנ"ל + נציגים אנושיים מתקשרים לכל אורח שלא ענה
+        </div>
+      </div>
+      <div style={{marginTop:14,textAlign:"center"}}>
+        <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
+          style={{fontSize:13,color:"#25D366",fontWeight:700,textDecoration:"none"}}>
+          לא רכשת עדיין? לחץ כאן לרכישה
+        </a>
+      </div>
+    </div>
+  );
+
+
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
       <style>{`@media(max-width:768px){.wa-grid{grid-template-columns:1fr!important;}.wa-preview{display:none!important;}}`}</style>
       {/* כותרת */}
       <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>💬 שליחת WhatsApp</div>
+          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>
+            {waPkg==="vip"?"👑 VIP + מוקד":"💬 אוטומציה"}
+          </div>
           <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
           <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
             {coupleStr} 💍
