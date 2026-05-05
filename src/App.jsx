@@ -4293,6 +4293,10 @@ function WhatsAppScreen({ event, guests }) {
     setSending(false);
   };
 
+  const [scheduledDate,setScheduledDate]=useState("");
+  const [scheduledTime,setScheduledTime]=useState("09:00");
+  const [showSchedule,setShowSchedule]=useState(false);
+
   const sentOk=results?.filter(r=>r.status?.includes("✓")).length||0;
   const sentFail=results?.filter(r=>r.status?.includes("✗")).length||0;
 
@@ -4304,7 +4308,8 @@ function WhatsAppScreen({ event, guests }) {
         <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>שליחת WhatsApp</div>
         <div style={{fontSize:13,opacity:.85}}>בחר את סוג השירות שרכשת</div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
         <div onClick={()=>setWaPkg("auto")}
           style={{background:"#fff",border:"2px solid #25D366",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(37,211,102,.15)"}}>
           <div style={{fontSize:36,marginBottom:10}}>💬</div>
@@ -4320,18 +4325,39 @@ function WhatsAppScreen({ event, guests }) {
           <div style={{fontSize:12,fontWeight:700,color:"#B45309",background:"#FFFBEB",borderRadius:8,padding:"4px 0"}}>החל מ ₪250</div>
         </div>
       </div>
-      <div style={{marginTop:20,background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px"}}>
+
+      {/* הבדל */}
+      <div style={{background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
         <div style={{fontSize:12,color:"#555",fontWeight:700,marginBottom:8}}>ההבדל בין החבילות:</div>
-        <div style={{fontSize:12,color:"#666",lineHeight:1.8}}>
-          💬 <strong>אוטומציה</strong> - שליחה אוטומטית מהמערכת לכל האורחים<br/>
+        <div style={{fontSize:12,color:"#666",lineHeight:1.9}}>
+          💬 <strong>אוטומציה</strong> - שליחה אוטומטית לכל האורחים, SMS תזכורת ותודה<br/>
           👑 <strong>VIP + מוקד</strong> - כנ"ל + נציגים אנושיים מתקשרים לכל אורח שלא ענה
         </div>
       </div>
-      <div style={{marginTop:14,textAlign:"center"}}>
-        <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
-          style={{fontSize:13,color:"#25D366",fontWeight:700,textDecoration:"none"}}>
-          לא רכשת עדיין? לחץ כאן לרכישה
-        </a>
+
+      {/* רכישה */}
+      <div style={{background:"#fff",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:800,color:"#1a1a1a",marginBottom:12}}>לא רכשת עדיין?</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת אוטומציה WhatsApp")}`}
+            target="_blank" rel="noopener"
+            style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:"#075E54"}}>💬 אוטומציה</div>
+              <div style={{fontSize:11,color:"#555"}}>החל מ ₪80</div>
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:"#25D366"}}>לרכישה ←</div>
+          </a>
+          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת VIP + מוקד WhatsApp")}`}
+            target="_blank" rel="noopener"
+            style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:"#B45309"}}>👑 VIP + מוקד</div>
+              <div style={{fontSize:11,color:"#555"}}>החל מ ₪250</div>
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:"#B45309"}}>לרכישה ←</div>
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -4341,20 +4367,26 @@ function WhatsAppScreen({ event, guests }) {
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
       <style>{`@media(max-width:768px){.wa-grid{grid-template-columns:1fr!important;}.wa-preview{display:none!important;}}`}</style>
       {/* כותרת */}
-      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>
-            {waPkg==="vip"?"👑 VIP + מוקד":"💬 אוטומציה"}
+      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>
+              {waPkg==="vip"?"👑 VIP + מוקד":"💬 אוטומציה"}
+            </div>
+            <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
+            <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
+              {coupleStr} 💍
+            </div>
           </div>
-          <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
-          <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
-            {coupleStr} 💍
+          <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:900}}>{withPhone.length}</div>
+            <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
           </div>
         </div>
-        <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
-          <div style={{fontSize:28,fontWeight:900}}>{withPhone.length}</div>
-          <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
-        </div>
+        <button onClick={()=>setWaPkg(null)}
+          style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+          ← חזור לבחירת חבילה
+        </button>
       </div>
 
       <div className="wa-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -4412,6 +4444,99 @@ function WhatsAppScreen({ event, guests }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* תזמון שליחה */}
+          <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:12,border:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{fontSize:14,fontWeight:800,color:C.text}}>⏰ תזמון שליחות</div>
+              <button onClick={()=>setShowSchedule(s=>!s)}
+                style={{background:showSchedule?"#EEF2FF":"#F7FAFC",color:showSchedule?C.blue:"#555",border:`1px solid ${showSchedule?C.blueL:"#E2E8F0"}`,borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                {showSchedule?"סגור":"ערוך תזמונים"}
+              </button>
+            </div>
+
+            {(()=>{
+              // חישוב תאריכי ברירת מחדל לפי תאריך האירוע
+              const eventD=event.date?new Date(event.date):null;
+              const calcDate=(daysOffset)=>{
+                if(!eventD) return "";
+                const d=new Date(eventD);
+                d.setDate(d.getDate()+daysOffset);
+                return d.toISOString().split("T")[0];
+              };
+
+              const defaultSchedules=[
+                {label:"שבוע וחצי לפני",desc:"הזמנה ראשונה",date:calcDate(-11),time:"10:00",icon:"💌"},
+                {label:"4 ימים לפני",desc:"תזכורת",date:calcDate(-4),time:"10:00",icon:"🔔"},
+                {label:"ביום האירוע",desc:"מספר שולחן",date:calcDate(0),time:"09:00",icon:"🎉"},
+                {label:"יומיים אחרי",desc:"הודעת תודה",date:calcDate(2),time:"10:00",icon:"💙"},
+              ];
+
+              return(
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {defaultSchedules.map((s,i)=>{
+                    const key=`wa_schedule_${i}`;
+                    const saved=scheduledDate===key;
+                    const d=s.date?new Date(s.date+"T00:00:00"):null;
+                    const displayDate=d?d.toLocaleDateString("he-IL",{weekday:"short",day:"numeric",month:"short"}):"תאריך לא הוגדר";
+                    return(
+                      <div key={i} style={{border:`1.5px solid ${showSchedule&&scheduledDate===key?C.blueL:C.border}`,borderRadius:12,padding:"10px 12px",background:scheduledDate===key?C.blueXL:"#FAFAFA"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{fontSize:20,flexShrink:0}}>{s.icon}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:800,color:C.text}}>{s.label}</div>
+                            <div style={{fontSize:11,color:C.muted}}>{s.desc}</div>
+                          </div>
+                          {!showSchedule&&(
+                            <div style={{textAlign:"left",fontSize:11,color:C.muted,direction:"ltr"}}>{displayDate} {s.time}</div>
+                          )}
+                        </div>
+
+                        {showSchedule&&(
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
+                            <div>
+                              <div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div>
+                              <input type="date" defaultValue={s.date}
+                                id={`wa_date_${i}`}
+                                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div>
+                              <input type="time" defaultValue={s.time}
+                                id={`wa_time_${i}`}
+                                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {showSchedule&&(
+                    <button onClick={()=>{
+                      // שמירת כל 4 התזמונים
+                      const saved=defaultSchedules.map((s,i)=>({
+                        ...s,
+                        date:document.getElementById(`wa_date_${i}`)?.value||s.date,
+                        time:document.getElementById(`wa_time_${i}`)?.value||s.time,
+                      }));
+                      alert("✅ התזמונים נשמרו!\n"+saved.map(s=>`${s.icon} ${s.label}: ${s.date} ${s.time}`).join("\n"));
+                      setShowSchedule(false);
+                    }}
+                      style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                      💾 שמור תזמונים
+                    </button>
+                  )}
+
+                  {!eventD&&(
+                    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#B45309"}}>
+                      ⚠️ הגדר תאריך אירוע בפרטי האירוע כדי לחשב תאריכים אוטומטית
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* כפתור שליחה */}
