@@ -1968,11 +1968,11 @@ function SeatingApp({ user, event, onBack }) {
           const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
           return(
             <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"14px 20px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-              <div style={{display:"flex",justifyContent:"center",gap:20,alignItems:"center"}}>
-                <span style={{fontSize:12,color:"#888",fontWeight:600}}>⏳ עוד</span>
-                {days>0&&<div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{days}</div><div style={{fontSize:10,color:"#888"}}>ימים</div></div>}
-                <div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{hours}</div><div style={{fontSize:10,color:"#888"}}>שעות</div></div>
+              <div style={{display:"flex",justifyContent:"center",gap:20,alignItems:"center",direction:"ltr"}}>
                 <span style={{fontSize:12,color:"#888",fontWeight:600}}>לאירוע</span>
+                <div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{hours}</div><div style={{fontSize:10,color:"#888"}}>שעות</div></div>
+                {days>0&&<div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{days}</div><div style={{fontSize:10,color:"#888"}}>ימים</div></div>}
+                <span style={{fontSize:12,color:"#888",fontWeight:600}}>⏳ עוד</span>
               </div>
             </div>
           );
@@ -1996,7 +1996,7 @@ function SeatingApp({ user, event, onBack }) {
               {icon:"📦",label:"חבילות",nav:"packages",color:"#B45309",bg:"#FFFBEB"},
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",color:"#555",bg:"#F7F7F7"},
             ].map(item=>{
-              const isLocked=item.nav!=="packages"&&item.nav!=="settings"&&trialExpired&&userPackages.length===0;
+              const isLocked=item.nav!=="packages"&&item.nav!=="settings"&&item.nav!=="rsvp"&&item.nav!=="invite"&&item.nav!=="user_settings"&&trialExpired&&userPackages.length===0;
               return(
                 <div key={item.nav} onClick={()=>{
                     if(isLocked){setScreen("packages");return;}
@@ -2209,7 +2209,7 @@ function SeatingApp({ user, event, onBack }) {
           </div>
           <nav style={{flex:1,padding:"8px 0"}}>
             {navItems.map(item=>{
-              const isLocked=item.id!=="packages"&&item.id!=="settings"&&trialExpired&&userPackages.length===0;
+              const isLocked=!["home","packages","settings","settings_event","user_settings","rsvp","invite"].includes(item.id)&&trialExpired&&userPackages.length===0;
               return(
                 <div key={item.id}
                   onClick={()=>{
