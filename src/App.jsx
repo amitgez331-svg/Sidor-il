@@ -480,7 +480,7 @@ function ReceiptModal({ tables, onClose }) {
 function Countdown({ date }) {
   const [time,setTime]=useState({d:0,h:0,m:0,s:0});
   useEffect(()=>{const calc=()=>{const diff=new Date(date)-new Date();if(diff<=0){setTime({d:0,h:0,m:0,s:0});return;}setTime({d:Math.floor(diff/86400000),h:Math.floor((diff%86400000)/3600000),m:Math.floor((diff%3600000)/60000),s:Math.floor((diff%60000)/1000)});};calc();const id=setInterval(calc,1000);return()=>clearInterval(id);},[date]);
-  return(<div style={{display:"flex",gap:8,justifyContent:"center",direction:"ltr"}}>{[["d","ימים"],["h","שעות"],["m","דקות"],["s","שניות"]].map(([k,l])=>(<div key={k} style={{textAlign:"center",background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 10px",minWidth:52}}><div style={{fontSize:24,fontWeight:900,color:"#fff",lineHeight:1}}>{String(time[k]).padStart(2,"0")}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:2}}>{l}</div></div>))}</div>);
+  return(<div style={{display:"flex",gap:8,justifyContent:"center"}}>{[["d","ימים"],["h","שעות"],["m","דקות"],["s","שניות"]].map(([k,l])=>(<div key={k} style={{textAlign:"center",background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 10px",minWidth:52}}><div style={{fontSize:24,fontWeight:900,color:"#fff",lineHeight:1}}>{String(time[k]).padStart(2,"0")}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:2}}>{l}</div></div>))}</div>);
 }
 
 // ─── VENUE PAGE ───────────────────────────────────────────────────────────────
@@ -1286,7 +1286,7 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>תאריך</div>
-            <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} dir="ltr" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} dir="ltr" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שעה</div>
@@ -1370,11 +1370,12 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
   const hasSeating=userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id));
+  const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id));
   const isFreePlan=userPackages.length===0;
   const items=[
     {id:"home",icon:"🏠",label:"ראשי"},
     {id:"seating",icon:"🪑",label:"הושבה",locked:!hasSeating},
-    {id:"rsvp",icon:"✅",label:"הגעה",locked:isFreePlan&&trialExpired},
+    {id:"rsvp",icon:"✅",label:"הגעה",locked:!hasRsvp},
     {id:"add",icon:"➕",label:"הוסף",locked:isFreePlan&&totalGuests>=50},
     {id:"settings",icon:"⚙️",label:"הגדרות"},
   ];
@@ -1806,7 +1807,7 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
                 {g.guest_count>1&&<div style={{fontSize:10,color:"#888"}}>({g.guest_count})</div>}
               </div>
             </div>
-            <div style={{fontSize:10,color:"#666",textAlign:"center",direction:"ltr"}}>{g.phone||" - "}</div>
+            <div style={{fontSize:10,color:"#666",textAlign:"center"}}>{g.phone||" - "}</div>
             <div onClick={()=>setStatusModal(g)} style={{textAlign:"center",cursor:"pointer"}}>
               <span style={{fontSize:10,fontWeight:700,color:rsvpColor(g.rsvp),background:rsvpBg(g.rsvp),borderRadius:50,padding:"3px 8px",whiteSpace:"nowrap"}}>{rsvpLabel(g.rsvp)}</span>
             </div>
@@ -1945,7 +1946,7 @@ function SeatingApp({ user, event, onBack }) {
           const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
           return(
             <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"14px 20px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-              <div style={{display:"flex",justifyContent:"center",gap:20,alignItems:"center",direction:"ltr"}}>
+              <div style={{display:"flex",justifyContent:"center",gap:20,alignItems:"center"}}>
                 <span style={{fontSize:12,color:"#888",fontWeight:600}}>לאירוע</span>
                 <div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{hours}</div><div style={{fontSize:10,color:"#888"}}>שעות</div></div>
                 {days>0&&<div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{days}</div><div style={{fontSize:10,color:"#888"}}>ימים</div></div>}
@@ -1973,7 +1974,16 @@ function SeatingApp({ user, event, onBack }) {
               {icon:"📦",label:"חבילות",nav:"packages",color:"#B45309",bg:"#FFFBEB"},
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",color:"#555",bg:"#F7F7F7"},
             ].map(item=>{
-              const isLocked=item.nav!=="packages"&&item.nav!=="settings"&&item.nav!=="invite"&&item.nav!=="user_settings"&&trialExpired&&userPackages.length===0;
+              const hasPkg=(id)=>userPackages.some(p=>p.package_id===id||["seating","sms","auto","vip","staff"].includes(p.package_id)&&["seating","sms","whatsapp","ai"].includes(id)||p.package_id==="basic"&&id==="rsvp");
+              const isLocked=(()=>{
+                if(["packages","settings","invite","user_settings","home"].includes(item.nav)) return false;
+                if(item.nav==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id));
+                if(item.nav==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id));
+                if(item.nav==="sms") return !userPackages.some(p=>["sms","auto","vip"].includes(p.package_id));
+                if(item.nav==="whatsapp") return !userPackages.some(p=>["auto","vip"].includes(p.package_id));
+                if(item.nav==="ai"||item.nav==="budget"||item.nav==="import") return userPackages.length===0;
+                return false;
+              })();
               return(
                 <div key={item.nav} onClick={()=>{
                     if(isLocked){setScreen("packages");return;}
@@ -2186,7 +2196,15 @@ function SeatingApp({ user, event, onBack }) {
           </div>
           <nav style={{flex:1,padding:"8px 0"}}>
             {navItems.map(item=>{
-              const isLocked=!["home","packages","settings","settings_event","user_settings","invite"].includes(item.id)&&trialExpired&&userPackages.length===0;
+              const isLocked=(()=>{
+                if(["home","packages","settings","settings_event","user_settings","invite"].includes(item.id)) return false;
+                if(item.id==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id));
+                if(item.id==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id));
+                if(item.id==="sms") return !userPackages.some(p=>["sms","auto","vip"].includes(p.package_id));
+                if(item.id==="whatsapp") return !userPackages.some(p=>["auto","vip"].includes(p.package_id));
+                if(item.id==="ai"||item.id==="budget"||item.id==="import") return userPackages.length===0;
+                return false;
+              })();
               return(
                 <div key={item.id}
                   onClick={()=>{
@@ -2858,7 +2876,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>תאריך האירוע</div>
-            <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
               dir="ltr" style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
             {form.date&&<div style={{fontSize:11,color:"#718096",marginTop:6,fontWeight:600}}>📅 <span dir="ltr">{hebrewDate(form.date)}</span></div>}
           </div>
@@ -2899,7 +2917,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>מספר טלפון של מקום האירוע:</div>
             <input value={form.venue_phone} onChange={e=>setForm(f=>({...f,venue_phone:e.target.value}))} placeholder="098332266" type="tel"
-              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box",direction:"ltr"}}/>
+              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
         </div>
       </div>
@@ -2988,7 +3006,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
             </div>
             <input value={form.bit_link} onChange={e=>setForm(f=>({...f,bit_link:e.target.value}))}
               placeholder="https://bit.ly/... או מספר הטלפון"
-              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",direction:"ltr"}}/>
+              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
           </div>
 
           {/* Paybox */}
@@ -2999,7 +3017,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
             </div>
             <input value={form.paybox_link} onChange={e=>setForm(f=>({...f,paybox_link:e.target.value}))}
               placeholder="https://payboxapp.com/..."
-              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",direction:"ltr"}}/>
+              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
           </div>
         </div>
 
@@ -4293,7 +4311,7 @@ function SMSScreen({ event, guests }) {
                             style={{width:38,height:22,borderRadius:11,background:smsScheduleEnabled[i]?C.blue:"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
                             <div style={{position:"absolute",top:2,left:smsScheduleEnabled[i]?18:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
                           </div>
-                          {!showSmsSchedule&&smsScheduleEnabled[i]&&<div style={{fontSize:10,color:C.muted,direction:"ltr"}}>{disp} {s.time}</div>}
+                          {!showSmsSchedule&&smsScheduleEnabled[i]&&<div style={{fontSize:10,color:C.muted}}>{disp} {s.time}</div>}
                         </div>
                         {smsScheduleEnabled[i]&&<>
                         {/* תצוגת הטקסט */}
@@ -4305,7 +4323,7 @@ function SMSScreen({ event, guests }) {
                           </button>
                         </div>
                         {showSmsSchedule&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-                          <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><input type="date" defaultValue={s.date} id={`sms_date_${i}`} dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
+                          <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><input type="date" dir="ltr" defaultValue={s.date} id={`sms_date_${i}`} dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div><input type="time" defaultValue={s.time} id={`sms_time_${i}`} style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
                         </div>}
                         </>}
@@ -4726,7 +4744,7 @@ function WhatsAppScreen({ event, guests }) {
                             <div style={{position:"absolute",top:2,left:waScheduleEnabled[i]?18:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
                           </div>
                           {!showSchedule&&waScheduleEnabled[i]&&(
-                            <div style={{textAlign:"left",fontSize:11,color:C.muted,direction:"ltr"}}>{displayDate} {s.time}</div>
+                            <div style={{textAlign:"left",fontSize:11,color:C.muted}}>{displayDate} {s.time}</div>
                           )}
                         </div>
                         {waScheduleEnabled[i]&&<>
@@ -4742,7 +4760,7 @@ function WhatsAppScreen({ event, guests }) {
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                             <div>
                               <div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div>
-                              <input type="date" defaultValue={s.date} id={`wa_date_${i}`}
+                              <input type="date" dir="ltr" defaultValue={s.date} id={`wa_date_${i}`}
                                 dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
                             </div>
                             <div>
@@ -5247,7 +5265,7 @@ function InvitePage({ code, guestId }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} input[type="date"]{direction:ltr!important;text-align:right;} .date-ltr{direction:ltr!important;display:inline-block;} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
       {showDupModal&&<DupModal/>}
 
       {/* אפקט קונפטי */}
@@ -5590,7 +5608,7 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             <div>
               <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>תאריך</div>
-              <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+              <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
                 dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
             </div>
             <div>
@@ -5636,7 +5654,7 @@ function AdminLogin({ onSuccess, onClose }) {
         <div style={{fontSize:13,color:"#888",marginBottom:28}}>הכנס סיסמת אדמין</div>
         <input type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}}
           onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="סיסמה" autoFocus
-          style={{width:"100%",background:"#21262D",border:`1.5px solid ${err?"#F85149":"#30363D"}`,borderRadius:12,padding:"13px 16px",fontSize:16,color:"#E6EDF3",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:err?8:16,textAlign:"right",direction:"ltr"}}/>
+          style={{width:"100%",background:"#21262D",border:`1.5px solid ${err?"#F85149":"#30363D"}`,borderRadius:12,padding:"13px 16px",fontSize:16,color:"#E6EDF3",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:err?8:16,textAlign:"right"}}/>
         {err&&<div style={{fontSize:13,color:"#F85149",marginBottom:12}}>{err}</div>}
         <button onClick={submit} disabled={!pass}
           style={{width:"100%",background:!pass?"#21262D":"#1B3A8C",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:16,fontWeight:700,cursor:!pass?"default":"pointer",fontFamily:"inherit",marginBottom:12}}>
