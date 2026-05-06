@@ -841,42 +841,39 @@ function LandingPage({ onOpenAuth, onLogout }) {
             ))}
             <div style={{width:240,height:500,borderRadius:40,background:"#111",padding:8,boxShadow:"0 40px 80px rgba(13,27,75,.35)",position:"relative",border:"1px solid #333",zIndex:2}}>
               <div style={{position:"absolute",top:13,left:"50%",transform:"translateX(-50%)",width:9,height:9,borderRadius:"50%",background:"#222",zIndex:10}}/>
-              <div style={{borderRadius:32,overflow:"hidden",height:"100%",background:"#f5f0e8",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",direction:"rtl",position:"relative"}}>
-                {/* רקע טקסטורה */}
-                <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(45deg,rgba(180,160,120,.06) 0,rgba(180,160,120,.06) 1px,transparent 0,transparent 50%)",backgroundSize:"8px 8px"}}/>
-                {/* הזמנה */}
-                <div style={{position:"relative",zIndex:1,width:"88%",background:"#faf8f2",border:"1.5px solid #c8b88a",borderRadius:6,padding:"16px 12px",textAlign:"center",boxShadow:"0 4px 20px rgba(100,80,40,.15)"}}>
-                  {/* מסגרת פינות */}
-                  {[["0px","0px"],["0px","auto"],["auto","0px"],["auto","auto"]].map(([t,b],i)=>(
-                    <svg key={i} width="20" height="20" viewBox="0 0 20 20" style={{position:"absolute",top:t==="auto"?undefined:4,bottom:b==="auto"?undefined:4,right:i%2===0?4:undefined,left:i%2===1?4:undefined}}>
-                      <path d={i===0?"M2,10 L2,2 L10,2":i===1?"M10,2 L18,2 L18,10":i===2?"M2,10 L2,18 L10,18":"M10,18 L18,18 L18,10"} stroke="#8a7040" strokeWidth="1.5" fill="none"/>
-                    </svg>
-                  ))}
-                  <div style={{fontSize:8,color:"#8a7040",marginBottom:6,letterSpacing:"0.1em"}}>בס"ד</div>
-                  <div style={{fontSize:8,color:"#555",marginBottom:8,lineHeight:1.5}}>"שימני כחותם על לבך כחותם על זרועך"</div>
-                  {/* שמות */}
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:4}}>
-                    <div style={{fontSize:18,fontWeight:900,color:"#2a2a1a",letterSpacing:"-0.01em"}}>עמית</div>
-                    <div style={{fontSize:14,color:"#8a7040",fontWeight:300}}>&</div>
-                    <div style={{fontSize:18,fontWeight:900,color:"#8a7040"}}>אורנה</div>
+              <div style={{borderRadius:32,overflow:"hidden",height:"100%",background:"#f9f9f9",display:"flex",flexDirection:"column",direction:"rtl"}}>
+                <div style={{height:195,position:"relative",overflow:"hidden",background:`linear-gradient(160deg,${C.blue},${C.blueM})`}}>
+                  <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"}}/>
+                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#fff",padding:12}}>
+                    <div style={{fontSize:20,fontWeight:900,textShadow:"0 2px 8px rgba(0,0,0,.6)"}}>עמית & אורנה</div>
+                    <div style={{fontSize:11,opacity:.9,marginTop:3,fontWeight:600}}>מתחתנים 💍</div>
                   </div>
-                  <div style={{fontSize:8,color:"#888",fontStyle:"italic",marginBottom:10}}>are getting married</div>
-                  <div style={{height:"1px",background:"linear-gradient(90deg,transparent,#c8b88a,transparent)",marginBottom:10}}/>
-                  {/* פרטים */}
-                  <div style={{fontSize:8,color:"#444",lineHeight:1.9,marginBottom:10}}>
-                    <div>שמחים וגדשים להזמינכם לחגוג עמנו</div>
-                    <div>את יום נישואינו</div>
+                </div>
+                <div style={{flex:1,background:"#fff",borderRadius:"14px 14px 0 0",marginTop:-12,padding:"12px 10px",overflow:"hidden"}}>
+                  <div style={{textAlign:"center",borderBottom:"1px solid #eee",paddingBottom:8,marginBottom:8}}>
+                    <div style={{fontSize:9,color:"#555",fontWeight:600}}>יום חמישי, 30 באפריל 2026</div>
+                    <div style={{fontSize:20,fontWeight:900,color:"#111",lineHeight:1.1,marginTop:1}}>19:30</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אולמי Sidor-IL</div>
+                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 השושנים 30, נוף הגליל</div>
                   </div>
-                  <div style={{background:"#f0ead8",borderRadius:4,padding:"6px 8px",marginBottom:8}}>
-                    <div style={{fontSize:13,fontWeight:900,color:"#2a2a1a",letterSpacing:"0.05em",direction:"ltr"}}>28 · 05 · 2026</div>
-                    <div style={{fontSize:7,color:"#888",marginTop:1}}>יום חמישי, י"ב בסיון תשפ"ו</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:8}}>
+                    {[["🔗","שתפו"],["📅","יומן"],["🚗","נווט"]].map(([ic,t])=>(
+                      <div key={t} style={{background:"#f7f7f7",border:"1px solid #eee",borderRadius:8,padding:"5px 2px",textAlign:"center"}}><div style={{fontSize:13}}>{ic}</div><div style={{fontSize:8,color:"#555",fontWeight:600,marginTop:1}}>{t}</div></div>
+                    ))}
                   </div>
-                  <div style={{fontSize:9,fontWeight:700,color:"#2a2a1a",marginBottom:2}}>אולמי Sidor-IL</div>
-                  <div style={{fontSize:7,color:"#888",marginBottom:8}}>קבלת פנים 19:30 · חופה 20:30</div>
-                  <div style={{height:"1px",background:"linear-gradient(90deg,transparent,#c8b88a,transparent)",marginBottom:8}}/>
-                  <div style={{fontSize:7,color:"#aaa",fontStyle:"italic"}}>נשמח לראותכם</div>
-                  {/* כפתור */}
-                  <div style={{marginTop:8,background:"#2a2a1a",borderRadius:4,padding:"5px",fontSize:8,fontWeight:700,color:"#f0ead8"}}>✓ אישור הגעה</div>
+                  <div style={{background:"#f9f9f9",borderRadius:10,padding:"8px"}}>
+                    <div style={{fontSize:11,fontWeight:900,color:"#111",textAlign:"center",marginBottom:2}}>אישור הגעה</div>
+                    <div style={{fontSize:8,color:"#888",textAlign:"center",marginBottom:6}}>נשמח לראותכם בין אורחינו</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:5}}>
+                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם פרטי</div>
+                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם משפחה</div>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+                      <div style={{background:"#2D9B5A",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#fff",textAlign:"center"}}>✓ מגיעים</div>
+                      <div style={{background:"#fff",border:"2px solid #D63B3B",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#D63B3B",textAlign:"center"}}>✗ לא מגיעים</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -904,16 +901,17 @@ function LandingPage({ onOpenAuth, onLogout }) {
               <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה למערכת ›</button>
             </div>
             <div style={{display:"flex",gap:24,flexWrap:"nowrap",justifyContent:"flex-start"}}>
-              {[["✅","אישורי הגעה","בוואטסאפ"],["🪑","סידורי הושבה","מלאים"],["💌","הזמנה","דיגיטלית"]].map(([ic,t,s])=>(
+              {[["1","צרו אירוע","הגדירו פרטים בדקות"],["2","הזמינו אורחים","שתפו קישור אישי"],["3","נהלו הכל","הושבה, אישורים, SMS"]].map(([num,t,s],i)=>(
                 <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:"0 0 auto"}}>
-                  <div style={{width:76,height:76,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s"}}
+                  <div style={{width:76,height:76,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s",position:"relative"}}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.transform="translateY(-3px)";}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
-                    {ic}
+                    <div style={{fontSize:11,fontWeight:700,color:C.blueL,marginBottom:2}}>שלב</div>
+                    <div style={{fontSize:28,fontWeight:900,color:C.blue,lineHeight:1}}>{num}</div>
                   </div>
                   <div style={{textAlign:"center"}}>
                     <div style={{fontSize:14,fontWeight:800,color:C.text}}>{t}</div>
-                    <div style={{fontSize:12,color:C.muted,marginTop:1}}>{s}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s}</div>
                   </div>
                 </div>
               ))}
