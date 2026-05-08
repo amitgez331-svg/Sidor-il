@@ -724,194 +724,288 @@ function AccessibilityWidget() {
   );
 }
 
+// ─── UPGRADED LANDING PAGE ────────────────────────────────────────────────────
+// מחליף את function LandingPage הקיים ב-App.jsx
+// צבע: כחול ולבן | סגנון: דינמי ומרשים
+
+function useCountUp(target, duration = 1800, start = false) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let startTime = null;
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(ease * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [start, target, duration]);
+  return count;
+}
+
+function StatCounter({ value, suffix = "", label, start }) {
+  const count = useCountUp(value, 1800, start);
+  return (
+    <div style={{ textAlign: "center", padding: "0 16px" }}>
+      <div style={{
+        fontSize: "clamp(36px,4vw,56px)", fontWeight: 900, color: C.blue,
+        lineHeight: 1, fontFamily: "'Heebo',sans-serif",
+        background: `linear-gradient(135deg,${C.blue},${C.blueL})`,
+        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+      }}>
+        {count.toLocaleString()}{suffix}
+      </div>
+      <div style={{ fontSize: 14, color: C.muted, fontWeight: 600, marginTop: 6 }}>{label}</div>
+    </div>
+  );
+}
+
 function LandingPage({ onOpenAuth, onLogout }) {
-  const [scrolled,setScrolled]=useState(false);
-  const [menuOpen,setMenuOpen]=useState(false);
-  const [venuePage,setVenuePage]=useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [venuePage, setVenuePage] = useState(false);
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [heroVisible, setHeroVisible] = useState(false);
 
-  useEffect(()=>{
-    const fn=()=>setScrolled(window.scrollY>40);
-    window.addEventListener("scroll",fn);
-    return()=>window.removeEventListener("scroll",fn);
-  },[]);
+  useEffect(() => {
+    // Trigger hero animation on mount
+    const t = setTimeout(() => setHeroVisible(true), 100);
+    return () => clearTimeout(t);
+  }, []);
 
-  useEffect(()=>{
-    const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting){x.target.style.opacity=1;x.target.style.transform="none";obs.unobserve(x.target);}});},{threshold:.1});
-    setTimeout(()=>document.querySelectorAll(".fu").forEach(el=>obs.observe(el)),100);
-    return()=>obs.disconnect();
-  },[]);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
 
-  if(venuePage) return <VenuePage onBack={()=>setVenuePage(false)} onOpenAuth={onOpenAuth}/>;
+  useEffect(() => {
+    // Scroll reveal for .fu elements
+    const obs = new IntersectionObserver(e => {
+      e.forEach(x => {
+        if (x.isIntersecting) {
+          x.target.style.opacity = 1;
+          x.target.style.transform = "none";
+          obs.unobserve(x.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    setTimeout(() => document.querySelectorAll(".fu").forEach(el => obs.observe(el)), 100);
+    return () => obs.disconnect();
+  }, []);
 
-  const eventTypes = [
-    { emoji:"💍", title:"חתונות", desc:"התארסתם? מזל טוב! ניהול החתונה בקלות.", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80" },
-    { emoji:"✡️", title:"בר/ת מצווה", desc:"גיל המצוות הגיע. תכנון נכון ביחד עם ההורים.", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=80" },
-    { emoji:"👶", title:"בריתות", desc:"הבייבי נולד? ארגון אירוע אפילו בטווח קצר.", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80" },
-    { emoji:"💼", title:"אירועים עסקיים", desc:"מערכת מתקדמת לניהול אירוע עסקי מכל גודל.", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80" },
+  useEffect(() => {
+    // Stats counter trigger
+    const obs = new IntersectionObserver(e => {
+      if (e[0].isIntersecting) { setStatsVisible(true); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    const el = document.getElementById("stats-section");
+    if (el) obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Auto-rotate features
+  useEffect(() => {
+    const id = setInterval(() => setActiveFeature(f => (f + 1) % 6), 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (venuePage) return <VenuePage onBack={() => setVenuePage(false)} onOpenAuth={onOpenAuth} />;
+
+  const features = [
+    { icon: "🪑", title: "סידורי הושבה חכמים", desc: "מפה אינטראקטיבית של האולם עם גרירת אורחים לשולחנות.", color: C.blue, bg: C.blueXL },
+    { icon: "💬", title: "WhatsApp + SMS", desc: "הזמנות אישיות ותזכורות אוטומטיות לכל אורח.", color: "#25D366", bg: "#F0FFF4" },
+    { icon: "✅", title: "אישורי הגעה דיגיטליים", desc: "קישור אישי לכל אורח. המערכת מתעדכנת אוטומטית.", color: C.success, bg: "#F0FFF6" },
+    { icon: "🤖", title: "AI סידור חכם", desc: "בחר קטגוריות ו-AI יחלק את האורחים תוך שניות.", color: "#7B3FD4", bg: "#F5F0FF" },
+    { icon: "📊", title: "ייבוא מ-Excel", desc: "העלה רשימת אורחים בקובץ Excel תוך שניות.", color: "#276749", bg: "#F0FFF4" },
+    { icon: "🖨️", title: "פתק הושבה", desc: "חפש שם אורח — קבל פתק מיידי עם מספר שולחן.", color: C.blue, bg: C.blueXL },
   ];
 
-  return(
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,minHeight:"100vh"}}>
+  const eventTypes = [
+    { emoji: "💍", title: "חתונות", desc: "ניהול החתונה בקלות.", img: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80" },
+    { emoji: "✡️", title: "בר/ת מצווה", desc: "תכנון נכון ביחד עם ההורים.", img: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=80" },
+    { emoji: "👶", title: "בריתות", desc: "ארגון אירוע אפילו בטווח קצר.", img: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80" },
+    { emoji: "💼", title: "אירועים עסקיים", desc: "מערכת מתקדמת לכל גודל.", img: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80" },
+  ];
 
-      {/* NAV */}
-      <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,background:"#fff",borderBottom:`1px solid ${C.border}`,height:66,display:"flex",alignItems:"center",padding:"0 5vw",flexDirection:"row-reverse",boxShadow:scrolled?"0 2px 16px rgba(26,63,163,.07)":"none",transition:"box-shadow .3s"}}>
-        {/* לוגו  -  ימין ב-DOM = שמאל ב-RTL */}
-        <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="17" fill={`url(#tg)`}/>
-            <defs><radialGradient id="tg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF"/><stop offset="100%" stopColor="#1B3A8C"/></radialGradient></defs>
-            <circle cx="18" cy="18" r="9" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5"/>
-            {[0,60,120,180,240,300].map((deg,i)=>{const rad=deg*Math.PI/180;return <circle key={i} cx={18+13*Math.cos(rad)} cy={18+13*Math.sin(rad)} r="2.8" fill="rgba(255,255,255,0.85)"/>;} )}
-          </svg>
-          <span style={{fontWeight:900,fontSize:19,color:C.blue,letterSpacing:"-.02em"}}>Sidor-IL</span>
+  const heroDelay = (n) => ({
+    opacity: heroVisible ? 1 : 0,
+    transform: heroVisible ? "none" : "translateY(28px)",
+    transition: `opacity 0.8s ${n * 0.12}s ease, transform 0.8s ${n * 0.12}s ease`,
+  });
+
+  return (
+    <div dir="rtl" style={{ fontFamily: "'Heebo',sans-serif", background: C.bg, color: C.text, minHeight: "100vh" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+        @keyframes floatSlow{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-22px) rotate(8deg)}}
+        @keyframes pulse-ring{0%{transform:scale(1);opacity:0.4}100%{transform:scale(1.6);opacity:0}}
+        @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+        @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:.3}}
+        @keyframes slideInRight{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}
+        @keyframes orb{0%,100%{transform:scale(1) translate(0,0)}33%{transform:scale(1.1) translate(-20px,15px)}66%{transform:scale(0.95) translate(15px,-10px)}}
+        .confetti-piece{position:absolute;top:-20px;width:8px;height:8px;border-radius:2px;animation:confettiFall linear infinite;z-index:2;pointer-events:none}
+        @media(min-width:768px){.nav-link{display:block!important}}
+        @media(max-width:767px){.hide-mobile{display:none!important}.hero-layout{flex-direction:column!important;align-items:center!important;text-align:center!important}.hero-btns{justify-content:center!important}.hero-steps{justify-content:center!important}}
+        .feature-tab:hover{background:${C.blueXL}!important;color:${C.blue}!important}
+        .cta-btn-main:hover{transform:translateY(-3px)!important;box-shadow:0 16px 40px rgba(27,58,140,.5)!important}
+        .cta-btn-sec:hover{background:rgba(255,255,255,.15)!important}
+        .event-card:hover .event-img{transform:scale(1.07)!important}
+        .step-dot:hover{transform:translateY(-4px) scale(1.08)!important;border-color:${C.blueL}!important}
+      `}</style>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position: "fixed", top: 0, right: 0, left: 0, zIndex: 100,
+        background: scrolled ? "rgba(255,255,255,0.97)" : "#fff",
+        borderBottom: `1px solid ${scrolled ? C.border : "transparent"}`,
+        height: 66, display: "flex", alignItems: "center", padding: "0 5vw",
+        flexDirection: "row-reverse",
+        boxShadow: scrolled ? "0 4px 24px rgba(26,63,163,.09)" : "none",
+        transition: "all .35s ease"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+          <div style={{ position: "relative" }}>
+            <div style={{
+              position: "absolute", inset: -3, borderRadius: "50%",
+              background: `linear-gradient(135deg,${C.blueL},${C.blue})`,
+              opacity: 0.2, animation: "orb 4s ease-in-out infinite"
+            }} />
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="17" fill={`url(#tg)`} />
+              <defs><radialGradient id="tg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF" /><stop offset="100%" stopColor="#1B3A8C" /></radialGradient></defs>
+              <circle cx="18" cy="18" r="9" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />
+              {[0, 60, 120, 180, 240, 300].map((deg, i) => { const rad = deg * Math.PI / 180; return <circle key={i} cx={18 + 13 * Math.cos(rad)} cy={18 + 13 * Math.sin(rad)} r="2.8" fill="rgba(255,255,255,0.85)" />; })}
+            </svg>
+          </div>
+          <span style={{ fontWeight: 900, fontSize: 19, color: C.blue, letterSpacing: "-.02em" }}>Sidor-IL</span>
         </div>
-        {/* שאר  -  שמאל ב-DOM = ימין ב-RTL */}
-        <div style={{flex:1,display:"flex",gap:8,alignItems:"center",flexDirection:"row-reverse",justifyContent:"flex-end"}}>
-          {[["#","ראשי"],["#how","איך עובד"],["#pricing","מחירים"],["#contact","צור קשר"]].map(([h,l])=>(
+        <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center", flexDirection: "row-reverse", justifyContent: "flex-end" }}>
+          {[["#", "ראשי"], ["#how", "איך עובד"], ["#pricing", "מחירים"], ["#contact", "צור קשר"]].map(([h, l]) => (
             <a key={h} href={h} className="nav-link"
-              style={{color:C.text,textDecoration:"none",fontSize:14,fontWeight:600,padding:"6px 12px",borderRadius:8,display:"none",transition:"background .15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background=C.blueXL;e.currentTarget.style.color=C.blue;}}
-              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.text;}}>{l}</a>
+              style={{ color: C.text, textDecoration: "none", fontSize: 14, fontWeight: 600, padding: "6px 12px", borderRadius: 8, display: "none", transition: "all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.blueXL; e.currentTarget.style.color = C.blue; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.text; }}>{l}</a>
           ))}
-          <button onClick={()=>onOpenAuth("login")}
-            style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"7px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+          <button onClick={() => onOpenAuth("login")} style={{ background: "transparent", color: C.blue, border: `2px solid ${C.blue}`, borderRadius: 8, padding: "7px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
             כניסה
           </button>
-          <button onClick={()=>setMenuOpen(true)}
-            style={{background:"none",border:`1.5px solid ${C.border}`,borderRadius:8,width:38,height:38,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0}}>
-            <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
-            <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
-            <span style={{width:16,height:2,background:C.blue,borderRadius:1,display:"block"}}/>
+          <button onClick={() => setMenuOpen(true)} style={{ background: "none", border: `1.5px solid ${C.border}`, borderRadius: 8, width: 38, height: 38, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, flexShrink: 0, padding: 0 }}>
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 16, height: 2, background: C.blue, borderRadius: 1, display: "block" }} />)}
           </button>
         </div>
       </nav>
 
-      {menuOpen&&<HamburgerMenu onOpenAuth={onOpenAuth} onClose={()=>setMenuOpen(false)} onVenuePage={()=>setVenuePage(true)} onLogout={onLogout}/>}
+      {menuOpen && <HamburgerMenu onOpenAuth={onOpenAuth} onClose={() => setMenuOpen(false)} onVenuePage={() => setVenuePage(true)} onLogout={onLogout} />}
 
-      {/* HERO */}
-      <section style={{minHeight:"100vh",display:"flex",alignItems:"center",padding:"80px 8vw 60px",position:"relative",overflow:"hidden"}}>
-        {/* תמונת רקע מטושטשת */}
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)",backgroundSize:"cover",backgroundPosition:"center",filter:"blur(1.5px) brightness(.95)",transform:"scale(1.02)",zIndex:0}}/>
-        {/* שכבת לבן מעל */}
-        <div style={{position:"absolute",inset:0,background:"rgba(240,244,255,.82)",zIndex:1}}/>
+      {/* ── HERO ── */}
+      <section style={{ minHeight: "100vh", display: "flex", alignItems: "center", padding: "80px 8vw 60px", position: "relative", overflow: "hidden" }}>
+        {/* Background */}
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)", backgroundSize: "cover", backgroundPosition: "center", filter: "blur(1.5px) brightness(.95)", transform: "scale(1.02)", zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(240,244,255,.82)", zIndex: 1 }} />
 
-        {/* קונפטי CSS */}
-        <style>{`
-          @keyframes confettiFall {
-            0%{transform:translateY(-20px) rotate(0deg);opacity:1}
-            100%{transform:translateY(110vh) rotate(720deg);opacity:.3}
-          }
-          .confetti-piece {
-            position:absolute;
-            top:-20px;
-            width:8px;
-            height:8px;
-            border-radius:2px;
-            animation: confettiFall linear infinite;
-            z-index:2;
-            pointer-events:none;
-          }
-        `}</style>
-        {[
-          {left:"5%",color:"#4A7AFF",delay:"0s",dur:"4s",size:8},
-          {left:"12%",color:"#1B3A8C",delay:"0.5s",dur:"5s",size:6},
-          {left:"20%",color:"#4A7AFF",delay:"1s",dur:"3.5s",size:10},
-          {left:"28%",color:"#90CDF4",delay:"1.5s",dur:"4.5s",size:7},
-          {left:"35%",color:"#1B3A8C",delay:"0.3s",dur:"5.5s",size:5},
-          {left:"42%",color:"#4A7AFF",delay:"2s",dur:"4s",size:9},
-          {left:"50%",color:"#BEE3F8",delay:"0.8s",dur:"3.8s",size:6},
-          {left:"58%",color:"#1B3A8C",delay:"1.2s",dur:"4.2s",size:8},
-          {left:"65%",color:"#4A7AFF",delay:"0.1s",dur:"5s",size:7},
-          {left:"72%",color:"#90CDF4",delay:"1.8s",dur:"3.5s",size:5},
-          {left:"80%",color:"#1B3A8C",delay:"0.6s",dur:"4.8s",size:9},
-          {left:"88%",color:"#4A7AFF",delay:"1.4s",dur:"4s",size:6},
-          {left:"95%",color:"#BEE3F8",delay:"0.9s",dur:"5.2s",size:8},
-          {left:"15%",color:"#4A7AFF",delay:"2.5s",dur:"4.3s",size:5,borderRadius:"50%"},
-          {left:"45%",color:"#1B3A8C",delay:"3s",dur:"3.7s",size:7,borderRadius:"50%"},
-          {left:"75%",color:"#4A7AFF",delay:"2.2s",dur:"5.1s",size:6,borderRadius:"50%"},
-        ].map((c,i)=>(
-          <div key={i} className="confetti-piece" style={{left:c.left,width:c.size,height:c.size,background:c.color,animationDelay:c.delay,animationDuration:c.dur,borderRadius:c.borderRadius||"2px"}}/>
+        {/* Animated gradient orbs */}
+        <div style={{ position: "absolute", top: "10%", right: "5%", width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle,${C.blueL}22,transparent 70%)`, animation: "orb 7s ease-in-out infinite", zIndex: 1, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "15%", left: "8%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle,${C.blue}18,transparent 70%)`, animation: "orb 9s ease-in-out infinite reverse", zIndex: 1, pointerEvents: "none" }} />
+
+        {/* Confetti */}
+        {[{ left: "5%", color: "#4A7AFF", delay: "0s", dur: "4s", size: 8 }, { left: "12%", color: "#1B3A8C", delay: "0.5s", dur: "5s", size: 6 }, { left: "20%", color: "#4A7AFF", delay: "1s", dur: "3.5s", size: 10 }, { left: "28%", color: "#90CDF4", delay: "1.5s", dur: "4.5s", size: 7 }, { left: "35%", color: "#1B3A8C", delay: "0.3s", dur: "5.5s", size: 5 }, { left: "42%", color: "#4A7AFF", delay: "2s", dur: "4s", size: 9 }, { left: "50%", color: "#BEE3F8", delay: "0.8s", dur: "3.8s", size: 6 }, { left: "58%", color: "#1B3A8C", delay: "1.2s", dur: "4.2s", size: 8 }, { left: "65%", color: "#4A7AFF", delay: "0.1s", dur: "5s", size: 7 }, { left: "72%", color: "#90CDF4", delay: "1.8s", dur: "3.5s", size: 5 }, { left: "80%", color: "#1B3A8C", delay: "0.6s", dur: "4.8s", size: 9 }, { left: "88%", color: "#4A7AFF", delay: "1.4s", dur: "4s", size: 6 }, { left: "95%", color: "#BEE3F8", delay: "0.9s", dur: "5.2s", size: 8 }].map((c, i) => (
+          <div key={i} className="confetti-piece" style={{ left: c.left, width: c.size, height: c.size, background: c.color, animationDelay: c.delay, animationDuration: c.dur }} />
         ))}
 
-        <div className="hero-wrap" style={{position:"relative",zIndex:3,width:"100%",maxWidth:1100,margin:"0 auto",display:"flex",alignItems:"center",gap:"6vw",flexWrap:"wrap",justifyContent:"center"}}>
-          {/* טלפון  -  שמאל */}
-          <div style={{flexShrink:0,position:"relative",order:2,display:"flex",justifyContent:"center"}}>
-            {[{top:"-20px",left:"-10px",emoji:"🌸",size:22,delay:"0s",dur:"3s"},{top:"-15px",right:"-5px",emoji:"🌺",size:18,delay:".4s",dur:"3.5s"},{top:"80px",left:"-25px",emoji:"✨",size:16,delay:".8s",dur:"2.8s"},{top:"100px",right:"-20px",emoji:"💐",size:18,delay:".2s",dur:"3.2s"},{top:"260px",left:"-20px",emoji:"🌼",size:17,delay:"1s",dur:"3s"},{top:"420px",left:"10px",emoji:"🎉",size:16,delay:".7s",dur:"2.7s"}].map((f,i)=>(
-              <div key={i} style={{position:"absolute",top:f.top,left:f.left,right:f.right,fontSize:f.size,animation:`float ${f.dur} ${f.delay} ease-in-out infinite`,pointerEvents:"none",zIndex:5}}>{f.emoji}</div>
+        <div className="hero-layout" style={{ position: "relative", zIndex: 3, width: "100%", maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: "6vw", flexWrap: "wrap", justifyContent: "center" }}>
+          {/* Phone mockup */}
+          <div style={{ flexShrink: 0, position: "relative", order: 2, display: "flex", justifyContent: "center", ...heroDelay(4) }}>
+            {[{ top: "-20px", left: "-10px", emoji: "🌸", size: 22, delay: "0s", dur: "3s" }, { top: "-15px", right: "-5px", emoji: "🌺", size: 18, delay: ".4s", dur: "3.5s" }, { top: "80px", left: "-25px", emoji: "✨", size: 16, delay: ".8s", dur: "2.8s" }, { top: "100px", right: "-20px", emoji: "💐", size: 18, delay: ".2s", dur: "3.2s" }, { top: "260px", left: "-20px", emoji: "🌼", size: 17, delay: "1s", dur: "3s" }, { top: "420px", left: "10px", emoji: "🎉", size: 16, delay: ".7s", dur: "2.7s" }].map((f, i) => (
+              <div key={i} style={{ position: "absolute", top: f.top, left: f.left, right: f.right, fontSize: f.size, animation: `float ${f.dur} ${f.delay} ease-in-out infinite`, pointerEvents: "none", zIndex: 5 }}>{f.emoji}</div>
             ))}
-            <div style={{width:240,height:500,borderRadius:40,background:"#111",padding:8,boxShadow:"0 40px 80px rgba(13,27,75,.35)",position:"relative",border:"1px solid #333",zIndex:2}}>
-              <div style={{position:"absolute",top:13,left:"50%",transform:"translateX(-50%)",width:9,height:9,borderRadius:"50%",background:"#222",zIndex:10}}/>
-              <div style={{borderRadius:32,overflow:"hidden",height:"100%",background:"#f9f9f9",display:"flex",flexDirection:"column",direction:"rtl"}}>
-                <div style={{height:195,position:"relative",overflow:"hidden",background:`linear-gradient(160deg,${C.blue},${C.blueM})`}}>
-                  <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"}}/>
-                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#fff",padding:12}}>
-                    <div style={{fontSize:20,fontWeight:900,textShadow:"0 2px 8px rgba(0,0,0,.6)"}}>עמית & אורנה</div>
-                    <div style={{fontSize:11,opacity:.9,marginTop:3,fontWeight:600}}>מתחתנים 💍</div>
+            {/* Pulse ring behind phone */}
+            <div style={{ position: "absolute", inset: -16, borderRadius: 52, border: `2px solid ${C.blueL}44`, animation: "pulse-ring 2.5s ease-out infinite" }} />
+            <div style={{ width: 240, height: 500, borderRadius: 40, background: "#111", padding: 8, boxShadow: `0 40px 80px rgba(13,27,75,.35),0 0 0 1px #333`, position: "relative", zIndex: 2 }}>
+              <div style={{ position: "absolute", top: 13, left: "50%", transform: "translateX(-50%)", width: 9, height: 9, borderRadius: "50%", background: "#222", zIndex: 10 }} />
+              <div style={{ borderRadius: 32, overflow: "hidden", height: "100%", background: "#f9f9f9", display: "flex", flexDirection: "column", direction: "rtl" }}>
+                <div style={{ height: 195, position: "relative", overflow: "hidden", background: `linear-gradient(160deg,${C.blue},${C.blueM})` }}>
+                  <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop" alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))" }} />
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff", padding: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>עמית & אורנה</div>
+                    <div style={{ fontSize: 11, opacity: .9, marginTop: 3, fontWeight: 600 }}>מתחתנים 💍</div>
                   </div>
                 </div>
-                <div style={{flex:1,background:"#fff",borderRadius:"14px 14px 0 0",marginTop:-12,padding:"12px 10px",overflow:"hidden"}}>
-                  <div style={{textAlign:"center",borderBottom:"1px solid #eee",paddingBottom:8,marginBottom:8}}>
-                    <div style={{fontSize:9,color:"#555",fontWeight:600}}>יום חמישי, 30 באפריל 2026</div>
-                    <div style={{fontSize:20,fontWeight:900,color:"#111",lineHeight:1.1,marginTop:1}}>19:30</div>
-                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אולמי Sidor-IL</div>
-                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 השושנים 30, נוף הגליל</div>
+                <div style={{ flex: 1, background: "#fff", borderRadius: "14px 14px 0 0", marginTop: -12, padding: "12px 10px", overflow: "hidden" }}>
+                  <div style={{ textAlign: "center", borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, color: "#555", fontWeight: 600 }}>יום חמישי, 30 באפריל 2026</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#111", lineHeight: 1.1, marginTop: 1 }}>19:30</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#222", marginTop: 2 }}>אולמי Sidor-IL</div>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:8}}>
-                    {[["🔗","שתפו"],["📅","יומן"],["🚗","נווט"]].map(([ic,t])=>(
-                      <div key={t} style={{background:"#f7f7f7",border:"1px solid #eee",borderRadius:8,padding:"5px 2px",textAlign:"center"}}><div style={{fontSize:13}}>{ic}</div><div style={{fontSize:8,color:"#555",fontWeight:600,marginTop:1}}>{t}</div></div>
-                    ))}
-                  </div>
-                  <div style={{background:"#f9f9f9",borderRadius:10,padding:"8px"}}>
-                    <div style={{fontSize:11,fontWeight:900,color:"#111",textAlign:"center",marginBottom:2}}>אישור הגעה</div>
-                    <div style={{fontSize:8,color:"#888",textAlign:"center",marginBottom:6}}>נשמח לראותכם בין אורחינו</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:5}}>
-                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם פרטי</div>
-                      <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:6,padding:"5px 4px",fontSize:8,color:"#bbb",textAlign:"center"}}>שם משפחה</div>
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-                      <div style={{background:"#2D9B5A",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#fff",textAlign:"center"}}>✓ מגיעים</div>
-                      <div style={{background:"#fff",border:"2px solid #D63B3B",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#D63B3B",textAlign:"center"}}>✗ לא מגיעים</div>
+                  <div style={{ background: "#f9f9f9", borderRadius: 10, padding: "8px" }}>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: "#111", textAlign: "center", marginBottom: 2 }}>אישור הגעה</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginTop: 8 }}>
+                      <div style={{ background: "#2D9B5A", borderRadius: 6, padding: "7px", fontSize: 9, fontWeight: 700, color: "#fff", textAlign: "center" }}>✓ מגיעים</div>
+                      <div style={{ background: "#fff", border: "2px solid #D63B3B", borderRadius: 6, padding: "7px", fontSize: 9, fontWeight: 700, color: "#D63B3B", textAlign: "center" }}>✗ לא מגיעים</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          {/* טקסט  -  ימין */}
-          <div style={{flex:1,minWidth:280,order:1}}>
-            <div style={{fontSize:13,fontWeight:700,color:C.blue,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:32,height:3,background:C.blue,borderRadius:2}}/>
-              מערכת ניהול אירועים מתקדמת
-              <div style={{width:32,height:3,background:C.blue,borderRadius:2}}/>
+
+          {/* Hero text */}
+          <div style={{ flex: 1, minWidth: 280, order: 1 }}>
+            {/* Badge */}
+            <div style={{ ...heroDelay(0), display: "inline-flex", alignItems: "center", gap: 8, background: C.blueXL, border: `1px solid ${C.blueL}44`, borderRadius: 100, padding: "6px 16px", marginBottom: 20 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.blueL, display: "inline-block", animation: "blink 1.8s infinite" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>מערכת ניהול אירועים מתקדמת</span>
             </div>
-            <h1 style={{fontFamily:"'Heebo',sans-serif",fontSize:"clamp(42px,5vw,72px)",fontWeight:900,lineHeight:1.05,color:C.text,marginBottom:20,letterSpacing:"-.02em",display:"flex",alignItems:"center",gap:2,direction:"ltr",justifyContent:"flex-end"}}>
-              <span style={{color:C.blue}}>Sid</span>
-              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style={{marginBottom:-4}}>
-                <circle cx="26" cy="26" r="24" fill={`url(#hg)`}/>
-                <defs><radialGradient id="hg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF"/><stop offset="100%" stopColor="#1B3A8C"/></radialGradient></defs>
-                <circle cx="26" cy="26" r="12" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5"/>
-                {[0,60,120,180,240,300].map((deg,i)=>{const r=deg*Math.PI/180;return<circle key={i} cx={26+18*Math.cos(r)} cy={26+18*Math.sin(r)} r="3.5" fill="rgba(255,255,255,0.9)"/>;} )}
+
+            <h1 style={{ ...heroDelay(1), fontFamily: "'Heebo',sans-serif", fontSize: "clamp(42px,5vw,72px)", fontWeight: 900, lineHeight: 1.05, color: C.text, marginBottom: 20, letterSpacing: "-.02em", display: "flex", alignItems: "center", gap: 2, direction: "ltr", justifyContent: "flex-end" }}>
+              <span style={{ color: C.blue }}>Sid</span>
+              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style={{ marginBottom: -4 }}>
+                <circle cx="26" cy="26" r="24" fill={`url(#hg)`} />
+                <defs><radialGradient id="hg" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF" /><stop offset="100%" stopColor="#1B3A8C" /></radialGradient></defs>
+                <circle cx="26" cy="26" r="12" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                {[0, 60, 120, 180, 240, 300].map((deg, i) => { const r = deg * Math.PI / 180; return <circle key={i} cx={26 + 18 * Math.cos(r)} cy={26 + 18 * Math.sin(r)} r="3.5" fill="rgba(255,255,255,0.9)" />; })}
               </svg>
-              <span style={{color:C.blue}}>r-IL</span>
+              <span style={{ color: C.blue }}>r-IL</span>
             </h1>
-            <p style={{fontSize:18,color:"#2D3748",lineHeight:1.8,marginBottom:16,fontWeight:600}}>מערכת חכמה לניהול הושבה ואישורי הגעה באירועים  -  סדר, שליטה וחווית אורחים מושלמת במקום אחד.</p>
-            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:32}}>
-              <button onClick={()=>onOpenAuth("register")} style={{background:C.blue,color:"#fff",border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 30px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>הזמנה דיגיטלית בחינם ›</button>
-              <button onClick={()=>onOpenAuth("login")} style={{background:"transparent",color:C.blue,border:`2px solid ${C.blue}`,borderRadius:8,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>כניסה למערכת ›</button>
+
+            <p style={{ ...heroDelay(2), fontSize: 18, color: "#2D3748", lineHeight: 1.8, marginBottom: 28, fontWeight: 600 }}>
+              מערכת חכמה לניהול הושבה ואישורי הגעה באירועים — סדר, שליטה וחווית אורחים מושלמת במקום אחד.
+            </p>
+
+            {/* CTA buttons */}
+            <div className="hero-btns" style={{ ...heroDelay(3), display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 36 }}>
+              <button onClick={() => onOpenAuth("register")} className="cta-btn-main"
+                style={{ background: `linear-gradient(135deg,${C.blue},${C.blueL})`, color: "#fff", border: "none", borderRadius: 10, padding: "14px 32px", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: `0 8px 28px rgba(27,58,140,.35)`, transition: "all .25s" }}>
+                🚀 הזמנה דיגיטלית בחינם
+              </button>
+              <button onClick={() => onOpenAuth("login")}
+                style={{ background: "transparent", color: C.blue, border: `2px solid ${C.blue}`, borderRadius: 10, padding: "13px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "all .2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.blueXL; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                כניסה למערכת ›
+              </button>
             </div>
-            <div style={{display:"flex",gap:24,flexWrap:"nowrap",justifyContent:"flex-start"}}>
-              {[["1","צרו אירוע","הגדירו פרטים בדקות"],["2","הזמינו אורחים","שתפו קישור אישי"],["3","נהלו הכל","הושבה, אישורים, SMS"]].map(([num,t,s],i)=>(
-                <div key={t} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:"0 0 auto"}}>
-                  <div style={{width:76,height:76,borderRadius:"50%",border:`2px solid ${C.border}`,background:"rgba(255,255,255,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(27,58,140,.12)",transition:"all .2s",position:"relative"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.transform="translateY(-3px)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.blueL,marginBottom:2}}>שלב</div>
-                    <div style={{fontSize:28,fontWeight:900,color:C.blue,lineHeight:1}}>{num}</div>
+
+            {/* Steps */}
+            <div className="hero-steps" style={{ ...heroDelay(4), display: "flex", gap: 24, flexWrap: "wrap" }}>
+              {[["1", "צרו אירוע", "הגדירו פרטים בדקות"], ["2", "הזמינו אורחים", "שתפו קישור אישי"], ["3", "נהלו הכל", "הושבה, אישורים, SMS"]].map(([num, t, s]) => (
+                <div key={t} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flex: "0 0 auto" }}>
+                  <div className="step-dot" style={{ width: 76, height: 76, borderRadius: "50%", border: `2px solid ${C.border}`, background: "rgba(255,255,255,.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(27,58,140,.12)", transition: "all .25s", cursor: "default" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.blueL, marginBottom: 2 }}>שלב</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: C.blue, lineHeight: 1 }}>{num}</div>
                   </div>
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:14,fontWeight:800,color:C.text}}>{t}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s}</div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{t}</div>
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{s}</div>
                   </div>
                 </div>
               ))}
@@ -919,36 +1013,40 @@ function LandingPage({ onOpenAuth, onLogout }) {
           </div>
         </div>
       </section>
-      <style>{`
-        @media(max-width:700px){
-          .hero-wrap{flex-direction:column!important;align-items:center!important;}
-          .hero-wrap > div{order:unset!important;width:100%!important;text-align:center!important;justify-content:center!important;}
-          .hero-wrap > div:first-child{order:2!important;margin-top:20px!important;}
-          .hero-wrap > div:last-child{order:1!important;}
-          .hero-wrap h1{justify-content:center!important;}
-          .hero-wrap .hero-btns{justify-content:center!important;}
-          .hero-wrap .hero-icons{justify-content:center!important;}
-        }
-      `}</style>
 
-      {/* EVENT TYPES */}
-      <section style={{padding:"88px 6vw",background:C.surface}} id="events">
-        <div style={{maxWidth:1080,margin:"0 auto"}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52,textAlign:"center"}}>
-            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:C.text,marginBottom:12}}>איזה רגע מיוחד אתם מתכננים?</h2>
-            <p style={{fontSize:16,color:C.muted}}>ב-Sidor-IL ניהול ההושבה מותאם בדיוק לסוג האירוע שלכם.</p>
+      {/* ── STATS ── */}
+      <section id="stats-section" style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: "52px 6vw" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 32 }}>
+          <StatCounter value={2400} suffix="+" label="אורחים מנוהלים" start={statsVisible} />
+          <div style={{ width: 1, background: C.border, alignSelf: "stretch" }} className="hide-mobile" />
+          <StatCounter value={180} suffix="+" label="אירועים פעילים" start={statsVisible} />
+          <div style={{ width: 1, background: C.border, alignSelf: "stretch" }} className="hide-mobile" />
+          <StatCounter value={98} suffix="%" label="שביעות רצון" start={statsVisible} />
+          <div style={{ width: 1, background: C.border, alignSelf: "stretch" }} className="hide-mobile" />
+          <StatCounter value={3} suffix=" דק׳" label="ממוצע הגדרת אירוע" start={statsVisible} />
+        </div>
+      </section>
+
+      {/* ── EVENT TYPES ── */}
+      <section style={{ padding: "88px 6vw", background: C.surface }} id="events">
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s,transform .6s", marginBottom: 52, textAlign: "center" }}>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "clamp(26px,3.3vw,44px)", fontWeight: 800, color: C.text, marginBottom: 12 }}>איזה רגע מיוחד אתם מתכננים?</h2>
+            <p style={{ fontSize: 16, color: C.muted }}>ב-Sidor-IL ניהול ההושבה מותאם בדיוק לסוג האירוע שלכם.</p>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:22}}>
-            {eventTypes.map((ev,i)=>(
-              <div key={ev.title} className="fu" style={{opacity:0,transform:"translateY(22px)",transition:`opacity .6s ${i*.08}s,transform .6s ${i*.08}s`,borderRadius:20,overflow:"hidden",cursor:"pointer",boxShadow:"0 4px 20px rgba(27,58,140,.08)",border:`1px solid ${C.border}`}}
-                onMouseEnter={e=>{e.currentTarget.querySelector("img").style.transform="scale(1.05)";}} onMouseLeave={e=>{e.currentTarget.querySelector("img").style.transform="scale(1)";}}>
-                <div style={{overflow:"hidden",height:180}}>
-                  <img src={ev.img} alt={ev.title} style={{width:"100%",height:"100%",objectFit:"cover",transition:"transform .4s ease"}}/>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 22 }}>
+            {eventTypes.map((ev, i) => (
+              <div key={ev.title} className="fu event-card"
+                style={{ opacity: 0, transform: "translateY(22px)", transition: `opacity .6s ${i * .08}s,transform .6s ${i * .08}s`, borderRadius: 20, overflow: "hidden", cursor: "pointer", boxShadow: "0 4px 20px rgba(27,58,140,.08)", border: `1px solid ${C.border}` }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 40px rgba(27,58,140,.16)`; e.currentTarget.style.transform = "translateY(-4px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(27,58,140,.08)"; e.currentTarget.style.transform = "none"; }}>
+                <div style={{ overflow: "hidden", height: 180 }}>
+                  <img className="event-img" src={ev.img} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .5s ease" }} />
                 </div>
-                <div style={{padding:"18px 18px 20px",background:C.surface}}>
-                  <h3 style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:6}}>{ev.emoji} {ev.title}</h3>
-                  <p style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
-                  <span style={{fontSize:13,color:C.blueL,fontWeight:700,cursor:"pointer"}}>למידע נוסף ←</span>
+                <div style={{ padding: "18px 18px 20px", background: C.surface }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 6 }}>{ev.emoji} {ev.title}</h3>
+                  <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 12 }}>{ev.desc}</p>
+                  <span style={{ fontSize: 13, color: C.blueL, fontWeight: 700 }}>למידע נוסף ←</span>
                 </div>
               </div>
             ))}
@@ -956,160 +1054,162 @@ function LandingPage({ onOpenAuth, onLogout }) {
         </div>
       </section>
 
-      {/* HOW */}
-      <section style={{padding:"88px 6vw",position:"relative",overflow:"hidden"}} id="how">
-        {/* רקע  -  שולחנות הושבה מטושטשים */}
-        <div style={{position:"absolute",inset:0,zIndex:0}}>
-          <div style={{position:"absolute",inset:0,background:`linear-gradient(145deg,${C.blue}F5,#122e9eF5,#1a4ac4F5)`}}/>
-          <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.12,filter:"blur(1px)"}} xmlns="http://www.w3.org/2000/svg">
-            {[
-              {cx:120,cy:120,r:55},{cx:320,cy:200,r:65},{cx:550,cy:130,r:50},
-              {cx:780,cy:180,r:60},{cx:980,cy:110,r:55},{cx:1180,cy:200,r:58},
-              {cx:200,cy:380,r:60},{cx:450,cy:420,r:52},{cx:680,cy:360,r:65},
-              {cx:900,cy:400,r:58},{cx:1100,cy:370,r:55},{cx:1300,cy:420,r:60},
-              {cx:130,cy:560,r:52},{cx:370,cy:580,r:60},{cx:600,cy:540,r:55},
-              {cx:830,cy:570,r:62},{cx:1050,cy:550,r:57},{cx:1250,cy:580,r:60},
-            ].map((t,i)=>(
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ padding: "88px 6vw", position: "relative", overflow: "hidden" }} id="how">
+        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(145deg,${C.blue}F5,#122e9eF5,#1a4ac4F5)` }} />
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.12, filter: "blur(1px)" }} xmlns="http://www.w3.org/2000/svg">
+            {[{ cx: 120, cy: 120, r: 55 }, { cx: 320, cy: 200, r: 65 }, { cx: 550, cy: 130, r: 50 }, { cx: 780, cy: 180, r: 60 }, { cx: 980, cy: 110, r: 55 }, { cx: 1180, cy: 200, r: 58 }, { cx: 200, cy: 380, r: 60 }, { cx: 450, cy: 420, r: 52 }, { cx: 680, cy: 360, r: 65 }].map((t, i) => (
               <g key={i}>
-                <circle cx={t.cx} cy={t.cy} r={t.r} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3"/>
-                <circle cx={t.cx} cy={t.cy} r={t.r-8} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="6 4"/>
-                {Array.from({length:8},(_,j)=>{
-                  const a=(j/8)*Math.PI*2-Math.PI/2;
-                  const sr=t.r+12;
-                  return <circle key={j} cx={t.cx+sr*Math.cos(a)} cy={t.cy+sr*Math.sin(a)} r="7" fill="rgba(255,255,255,0.7)"/>;
-                })}
+                <circle cx={t.cx} cy={t.cy} r={t.r} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3" />
+                <circle cx={t.cx} cy={t.cy} r={t.r - 8} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="6 4" />
+                {Array.from({ length: 8 }, (_, j) => { const a = (j / 8) * Math.PI * 2 - Math.PI / 2; const sr = t.r + 12; return <circle key={j} cx={t.cx + sr * Math.cos(a)} cy={t.cy + sr * Math.sin(a)} r="7" fill="rgba(255,255,255,0.7)" />; })}
               </g>
             ))}
           </svg>
         </div>
-        <div style={{maxWidth:1080,margin:"0 auto",position:"relative",zIndex:2}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52}}>
-            <div style={{display:"inline-block",fontSize:12,fontWeight:700,color:"rgba(255,255,255,.9)",background:"rgba(255,255,255,.12)",borderRadius:100,padding:"5px 16px",marginBottom:12}}>איך עובד</div>
-            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:"#fff",marginBottom:12}}>3 צעדים לאירוע מסודר</h2>
-            <p style={{fontSize:16,color:"rgba(255,255,255,.65)"}}>פשוט, מהיר  -  ועובד.</p>
+        <div style={{ maxWidth: 1080, margin: "0 auto", position: "relative", zIndex: 2 }}>
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s,transform .6s", marginBottom: 52, textAlign: "center" }}>
+            <div style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.9)", background: "rgba(255,255,255,.12)", borderRadius: 100, padding: "5px 16px", marginBottom: 12 }}>איך עובד</div>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "clamp(26px,3.3vw,44px)", fontWeight: 800, color: "#fff", marginBottom: 12 }}>3 צעדים לאירוע מסודר</h2>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,.65)" }}>פשוט, מהיר — ועובד.</p>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:34}}>
-            {[["01","הוסף אורחים","ייבא מ-Excel, מאנשי קשר, או הוסף ידנית. כל אורח עם שם, טלפון וכמות מגיעים."],["02","צור שולחנות","הגדר שולחנות עגולים, מרובעים, שולחן אבירים. סדר על מפת האולם."],["03","AI עושה השאר","תאר העדפות ו-AI יסדר הכל. הדפס פתקי הושבה לאורחים ביום האירוע."]].map(([n,t,d],i)=>(
-              <div key={n} className="fu" style={{opacity:0,transform:"translateY(22px)",transition:`opacity .6s ${i*.12}s,transform .6s ${i*.12}s`}}>
-                <div style={{fontFamily:"'Syne',sans-serif",fontSize:54,fontWeight:800,color:"rgba(255,255,255,.12)",lineHeight:1,marginBottom:10}}>{n}</div>
-                <div style={{fontSize:17,fontWeight:800,color:"#fff",marginBottom:7}}>{t}</div>
-                <div style={{fontSize:14,color:"rgba(255,255,255,.6)",lineHeight:1.7}}>{d}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 34 }}>
+            {[["01", "הוסף אורחים", "ייבא מ-Excel, מאנשי קשר, או הוסף ידנית. כל אורח עם שם, טלפון וכמות מגיעים."], ["02", "צור שולחנות", "הגדר שולחנות עגולים, מרובעים, שולחן אבירים. סדר על מפת האולם."], ["03", "AI עושה השאר", "תאר העדפות ו-AI יסדר הכל. הדפס פתקי הושבה לאורחים ביום האירוע."]].map(([n, t, d], i) => (
+              <div key={n} className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: `opacity .6s ${i * .12}s,transform .6s ${i * .12}s` }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 54, fontWeight: 800, color: "rgba(255,255,255,.12)", lineHeight: 1, marginBottom: 10 }}>{n}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 7 }}>{t}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,.6)", lineHeight: 1.7 }}>{d}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES SHOWCASE  -  במקום חבילות */}
-      <section style={{padding:"88px 6vw",background:C.bg,textAlign:"center"}} id="pricing">
-        <div style={{maxWidth:1080,margin:"0 auto"}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(22px)",transition:"opacity .6s,transform .6s",marginBottom:52}}>
-            <div style={{display:"inline-block",fontSize:12,fontWeight:700,color:C.blueL,background:C.blueXL,border:`1px solid rgba(74,122,255,.25)`,borderRadius:100,padding:"5px 16px",marginBottom:12}}>פיצ'רים, אבל באמת שווים</div>
-            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,3.3vw,44px)",fontWeight:800,color:C.text,marginBottom:14}}>כל מה שצריך לאירוע מושלם</h2>
-            <p style={{fontSize:16,color:C.muted,lineHeight:1.8}}>הכלים שיהפכו את ניהול האירוע שלך לחוויה קלה, מהנה ומקצועית.</p>
+      {/* ── FEATURES ── */}
+      <section style={{ padding: "88px 6vw", background: C.bg }} id="pricing">
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s,transform .6s", marginBottom: 48, textAlign: "center" }}>
+            <div style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: C.blueL, background: C.blueXL, border: `1px solid rgba(74,122,255,.25)`, borderRadius: 100, padding: "5px 16px", marginBottom: 12 }}>פיצ'רים, אבל באמת שווים</div>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "clamp(26px,3.3vw,44px)", fontWeight: 800, color: C.text, marginBottom: 14 }}>כל מה שצריך לאירוע מושלם</h2>
           </div>
 
-          {/* 3 פיצ'רים עיקריים + 3 נוספים  -  כרטיסים קטנים אחידים */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16,marginBottom:44}}>
-            {[
-              {icon:"🪑",title:"סידורי הושבה חכמים",desc:"מפה אינטראקטיבית של האולם עם גרירת אורחים לשולחנות. שולחנות עגולים, מרובעים ואבירים. פתק הושבה להדפסה מיידית.",color:C.blue,bg:C.blueXL,tags:["🗺️ מפה חיה","🪑 שולחנות בכל צורה","🖨️ פתק הושבה","📊 סטטיסטיקות"]},
-              {icon:"💬",title:"WhatsApp + SMS לכל אורח",desc:"שלח הזמנות אישיות עם שם האורח לוואטסאפ או SMS. תזכורות אוטומטיות ושליחת מספר שולחן ביום האירוע.",color:"#25D366",bg:"#F0FFF4",tags:["💌 הזמנה אישית","🔔 תזכורות אוטומטיות","🪑 שליחת שולחן","📈 מעקב בזמן אמת"]},
-              {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"הזמנה דיגיטלית יפה עם קישור אישי לכל אורח. האורח מאשר הגעה ובוחר כמות מגיעים  -  המערכת מתעדכנת אוטומטית.",color:C.success,bg:"#F0FFF6",tags:["🎨 הזמנה יפה","🔗 קישור אישי","👥 כמות מגיעים","⚡ עדכון בזמן אמת"]},
-              {icon:"🤖",title:"AI סידור חכם",desc:"בחר קטגוריות, תאר מי לא יושב עם מי, ו-AI יחלק אוטומטית לפי קטגוריות ושולחנות ריקים  -  תוך שניות.",color:"#7B3FD4",bg:"#F5F0FF",tags:["🏷️ סידור לפי קטגוריות","🪑 מילוי שולחנות ריקים","⚡ תוך שניות"]},
-              {icon:"📊",title:"ייבוא מ-Excel",desc:"העלה רשימת אורחים בקובץ Excel תוך שניות  -  שם, טלפון, כמות. ללא הקלדה ידנית.",color:"#276749",bg:"#F0FFF4",tags:["📂 Excel / CSV","⚡ ייבוא מיידי"]},
-              {icon:"🖨️",title:"פתק הושבה",desc:"חפש שם אורח  -  קבל פתק מיידי עם מספר שולחן. כמו קיוסק מקצועי ביום האירוע.",color:C.blue,bg:C.blueXL,tags:["🔍 חיפוש מהיר","🖨️ הדפסה מיידית","📱 עובד מהנייד"]},
-            ].map((f,i)=>(
+          {/* Interactive feature tabs */}
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s .1s,transform .6s .1s", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 32 }}>
+            {features.map((f, i) => (
+              <button key={f.title} className="feature-tab" onClick={() => setActiveFeature(i)}
+                style={{ padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", border: `1.5px solid ${activeFeature === i ? f.color : C.border}`, background: activeFeature === i ? f.bg : C.surface, color: activeFeature === i ? f.color : C.muted, transition: "all .2s" }}>
+                {f.icon} {f.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Active feature highlight */}
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s .2s,transform .6s .2s", background: C.surface, border: `2px solid ${features[activeFeature].color}33`, borderRadius: 24, padding: "32px", marginBottom: 32, display: "flex", alignItems: "center", gap: 24, transition: "all .3s ease" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 20, background: features[activeFeature].bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, flexShrink: 0, border: `2px solid ${features[activeFeature].color}22` }}>
+              {features[activeFeature].icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8 }}>{features[activeFeature].title}</div>
+              <div style={{ fontSize: 15, color: C.muted, lineHeight: 1.7 }}>{features[activeFeature].desc}</div>
+            </div>
+          </div>
+
+          {/* All features grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16, marginBottom: 44 }}>
+            {features.map((f, i) => (
               <div key={f.title} className="fu"
-                style={{opacity:0,transform:"translateY(22px)",transition:`opacity .6s ${i*.07}s,transform .6s ${i*.07}s`,
-                  background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px",textAlign:"right"}}
-                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-5px)";e.currentTarget.style.borderColor=f.color+"66";e.currentTarget.style.boxShadow=`0 8px 24px ${f.color}18`;}}
-                onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor=C.border;e.currentTarget.style.boxShadow="none";}}>
-                <div style={{width:52,height:52,borderRadius:15,background:f.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,marginBottom:14,border:`1.5px solid ${f.color}22`}}>
+                style={{ opacity: 0, transform: "translateY(22px)", transition: `opacity .6s ${i * .07}s,transform .6s ${i * .07}s`, background: C.surface, border: `1px solid ${activeFeature === i ? f.color + "66" : C.border}`, borderRadius: 20, padding: "24px", cursor: "pointer", transition: "all .25s" }}
+                onClick={() => setActiveFeature(i)}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.borderColor = f.color + "66"; e.currentTarget.style.boxShadow = `0 8px 24px ${f.color}18`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = activeFeature === i ? f.color + "66" : C.border; e.currentTarget.style.boxShadow = "none"; }}>
+                <div style={{ width: 52, height: 52, borderRadius: 15, background: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 14, border: `1.5px solid ${f.color}22` }}>
                   {f.icon}
                 </div>
-                <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:8}}>{f.title}</div>
-                <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:14}}>{f.desc}</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {f.tags.map(t=>(
-                    <span key={t} style={{fontSize:11,color:f.color,background:f.bg,borderRadius:100,padding:"3px 10px",fontWeight:700,border:`1px solid ${f.color}22`}}>{t}</span>
-                  ))}
-                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 8 }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>{f.desc}</div>
               </div>
             ))}
           </div>
 
-          <button onClick={()=>onOpenAuth("register")}
-            style={{background:`linear-gradient(135deg,${C.blue},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,
-              padding:"16px 48px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",
-              boxShadow:`0 8px 28px rgba(74,122,255,.4)`}}>
-            🚀 התחילו בחינם עכשיו
-          </button>
-          <div style={{fontSize:12,color:C.muted,marginTop:12}}>ללא כרטיס אשראי · התחלה מיידית</div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section style={{padding:"96px 6vw",textAlign:"center",position:"relative",overflow:"hidden"}} id="contact">
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)",backgroundSize:"cover",backgroundPosition:"center top",filter:"blur(5px) brightness(.65)",transform:"scale(1.05)",zIndex:0}}/>
-        <div style={{position:"absolute",inset:0,background:`linear-gradient(145deg,${C.blue}DD,#122e8cDD,${C.blueM}DD)`,zIndex:1}}/>
-        <div style={{position:"relative",zIndex:1}}>
-          <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(28px,4vw,50px)",fontWeight:800,color:"#fff",marginBottom:14}}>מוכן להתחיל?</h2>
-          <p style={{fontSize:17,color:"rgba(255,255,255,.7)",marginBottom:38}}>הצטרף לאלפי זוגות שכבר עשו את זה נכון.</p>
-          <div style={{display:"flex",gap:13,justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={()=>onOpenAuth("register")} style={{background:"#fff",color:C.blue,border:"none",borderRadius:14,padding:"15px 36px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 28px rgba(0,0,0,.15)"}}>🚀 הרשמה בחינם</button>
-            <a href="https://wa.me/972526817102" target="_blank" rel="noopener" style={{background:"#25D366",color:"#fff",border:"none",borderRadius:10,padding:"14px 28px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"flex",alignItems:"center",gap:8}}>💬 WhatsApp</a>
+          <div style={{ textAlign: "center" }}>
+            <button onClick={() => onOpenAuth("register")} className="cta-btn-main"
+              style={{ background: `linear-gradient(135deg,${C.blue},${C.blueL})`, color: "#fff", border: "none", borderRadius: 14, padding: "16px 48px", fontSize: 17, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: `0 8px 28px rgba(74,122,255,.4)`, transition: "all .25s" }}>
+              🚀 התחילו בחינם עכשיו
+            </button>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 12 }}>ללא כרטיס אשראי · התחלה מיידית</div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{background:"#070D28",color:"rgba(255,255,255,.45)",padding:"54px 6vw 30px"}}>
-        <div style={{maxWidth:1080,margin:"0 auto"}}>
-          <div style={{display:"flex",flexWrap:"wrap",gap:40,marginBottom:44,justifyContent:"space-between"}}>
-            {/* לוגו ופרטים */}
-            <div style={{maxWidth:320}}>
-              <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:12}}>
-                <div style={{width:34,height:34,borderRadius:9,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#fff",fontWeight:900}}>◈</div>
-                <span style={{fontWeight:900,fontSize:17,color:"#fff"}}>Sidor-IL</span>
-              </div>
-              <p style={{fontSize:13,color:"rgba(255,255,255,.38)",lineHeight:1.8,marginBottom:16}}>פלטפורמה ישראלית לניהול סידורי הושבה חכמים. בנויה עבור זוגות ומפיקי אירועים.</p>
+      {/* ── CTA ── */}
+      <section style={{ padding: "96px 6vw", textAlign: "center", position: "relative", overflow: "hidden" }} id="contact">
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1400)", backgroundSize: "cover", backgroundPosition: "center top", filter: "blur(5px) brightness(.65)", transform: "scale(1.05)", zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(145deg,${C.blue}DD,#122e8cDD,${C.blueM}DD)`, zIndex: 1 }} />
+
+        {/* Animated rings */}
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", border: "1px solid rgba(255,255,255,.08)", zIndex: 1, animation: "pulse-ring 3s ease-out infinite" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 400, height: 400, borderRadius: "50%", border: "1px solid rgba(255,255,255,.12)", zIndex: 1, animation: "pulse-ring 3s ease-out infinite .8s" }} />
+
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div className="fu" style={{ opacity: 0, transform: "translateY(22px)", transition: "opacity .6s,transform .6s" }}>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "clamp(28px,4vw,50px)", fontWeight: 800, color: "#fff", marginBottom: 14 }}>מוכן להתחיל?</h2>
+            <p style={{ fontSize: 17, color: "rgba(255,255,255,.7)", marginBottom: 38 }}>הצטרף לאלפי זוגות שכבר עשו את זה נכון.</p>
+            <div style={{ display: "flex", gap: 13, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => onOpenAuth("register")} className="cta-btn-main"
+                style={{ background: "#fff", color: C.blue, border: "none", borderRadius: 14, padding: "15px 36px", fontSize: 17, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 28px rgba(0,0,0,.15)", transition: "all .25s" }}>
+                🚀 הרשמה בחינם
+              </button>
+              <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
+                style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 10, padding: "14px 28px", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
+                💬 WhatsApp
+              </a>
             </div>
-            {/* צור קשר */}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: "#070D28", color: "rgba(255,255,255,.45)", padding: "54px 6vw 30px" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 40, marginBottom: 44, justifyContent: "space-between" }}>
+            <div style={{ maxWidth: 320 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: `linear-gradient(135deg,${C.blue},${C.blueL})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", fontWeight: 900 }}>◈</div>
+                <span style={{ fontWeight: 900, fontSize: 17, color: "#fff" }}>Sidor-IL</span>
+              </div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,.38)", lineHeight: 1.8, marginBottom: 16 }}>פלטפורמה ישראלית לניהול סידורי הושבה חכמים. בנויה עבור זוגות ומפיקי אירועים.</p>
+            </div>
             <div>
-              <div style={{fontSize:14,fontWeight:800,color:"rgba(255,255,255,.75)",marginBottom:16}}>צור קשר</div>
-              <div style={{fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:2.4,display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,.75)", marginBottom: 16 }}>צור קשר</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,.5)", lineHeight: 2.4, display: "flex", flexDirection: "column", gap: 4 }}>
                 <div>📍 השושנים 30, נוף הגליל</div>
-                <a href="https://wa.me/972526817102" target="_blank" rel="noopener" style={{color:"#25D366",textDecoration:"none",fontWeight:700}}>💬 לחץ לצ'אט ב-WhatsApp</a>
+                <a href="https://wa.me/972526817102" target="_blank" rel="noopener" style={{ color: "#25D366", textDecoration: "none", fontWeight: 700 }}>💬 לחץ לצ'אט ב-WhatsApp</a>
                 <div>📞 052-681-7102</div>
                 <div>⏰ א׳-ה׳: 9:00-17:00 | שישי: 9:00-12:00</div>
               </div>
             </div>
           </div>
-          <div style={{borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:22,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:12,alignItems:"center"}}>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12, alignItems: "center" }}>
             <span>© 2025 Sidor-IL · כל הזכויות שמורות</span>
-            <div style={{display:"flex",gap:14,alignItems:"center"}}>
-              <a href="#/privacy" style={{color:"rgba(255,255,255,.5)",textDecoration:"none",transition:"color .2s"}}
-                onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.5)"}>
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              <a href="#/privacy" style={{ color: "rgba(255,255,255,.5)", textDecoration: "none", transition: "color .2s" }}
+                onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,.5)"}>
                 מדיניות פרטיות
               </a>
-              <span style={{color:"rgba(255,255,255,.2)"}}>|</span>
-              {["📘 פייסבוק","📸 אינסטגרם","🎵 טיקטוק"].map(s=>(<span key={s} style={{cursor:"pointer",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.45)"}>{s}</span>))}
+              <span style={{ color: "rgba(255,255,255,.2)" }}>|</span>
+              {["📘 פייסבוק", "📸 אינסטגרם", "🎵 טיקטוק"].map(s => (
+                <span key={s} style={{ cursor: "pointer", transition: "color .2s" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,.45)"}>{s}</span>
+              ))}
             </div>
             <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
           </div>
         </div>
       </footer>
-
-      {/* WhatsApp FAB */}
-      <a href="https://wa.me/972526817102" target="_blank" rel="noopener" style={{position:"fixed",bottom:88,left:24,background:"#25D366",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        לחץ לצ'אט
-      </a>
     </div>
   );
 }
 
-// ─── AUTH DRAWER ──────────────────────────────────────────────────────────────
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   const [mode,setMode]=useState(initMode);
   const [email,setEmail]=useState("");
