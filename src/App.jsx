@@ -12,6 +12,24 @@ const C = {
   danger:"#D63B3B", gold:"#F0A500", info:"#2E6FB5",
 };
 
+// ─── LUNSOUL THEME ────────────────────────────────────────────────────────────
+const LS = {
+  purple:    "#6C3DD4",
+  purpleM:   "#7B4AE2",
+  purpleL:   "#9B72F0",
+  purpleXL:  "#F0EBFF",
+  purpleBg:  "#F5F0FF",
+  bg:        "#F0EFFE",
+  white:     "#FFFFFF",
+  text:      "#1A1035",
+  muted:     "#7B7B9A",
+  border:    "#E5E0F5",
+  success:   "#22C55E",
+  danger:    "#EF4444",
+  warning:   "#F59E0B",
+  headerH:   52,
+};
+
 const TABLE_TYPES = {
   round:  { label:"עגול",         icon:"⭕", defaultSeats:8  },
   rect:   { label:"מרובע",        icon:"⬛", defaultSeats:10 },
@@ -2762,23 +2780,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     </div>);
   }
 // ─── LUNSOUL THEME CONSTANTS ──────────────────────────────────────────────────
-const LS = {
-  purple:    "#6C3DD4",
-  purpleM:   "#7B4AE2",
-  purpleL:   "#9B72F0",
-  purpleXL:  "#F0EBFF",
-  purpleBg:  "#F5F0FF",
-  bg:        "#F0EFFE",
-  white:     "#FFFFFF",
-  text:      "#1A1035",
-  muted:     "#7B7B9A",
-  border:    "#E5E0F5",
-  success:   "#22C55E",
-  danger:    "#EF4444",
-  warning:   "#F59E0B",
-  headerH:   52,
-};
-
 // ─── SCREEN BANNER (Purple header for each screen like LunSoul) ──────────────
 function ScreenBanner({ icon, title, subtitle, extra }) {
   return (
