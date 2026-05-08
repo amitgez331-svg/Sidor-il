@@ -3421,6 +3421,8 @@ function LSHomeScreen({ event, setScreen, setModal, guests, tables, seated, tota
 }
 
 // ─── FULL LUNSOUL DESKTOP APP ─────────────────────────────────────────────────
+
+// ─── LUNSOUL EXACT DESKTOP APP ────────────────────────────────────────────────
 function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelected,
   view, setView, screen, setScreen, modal, setModal, editGuestData, setEditGuestData,
   loading, saving, search, setSearch, newGuest, setNewGuest, mobile,
@@ -3430,36 +3432,10 @@ function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelect
   seated, total, loadAll, sb, setShowLanding,
   venueElements, setVenueElements }) {
 
-  const [rightSub, setRightSub] = useState(null); // sub-screen in right sidebar
-
-  const NAV_MAIN = [
-    {id:"home",    icon:"📊", label:"סקירה כללית"},
-    {id:"rsvp",    icon:"👥", label:"ניהול אורחים"},
-    {id:"seating", icon:"🪑", label:"סידורי הושבה"},
-    {id:"whatsapp",icon:"💬", label:"הודעות"},
-    {id:"vendors", icon:"🏛️", label:"ספקים"},
-    {id:"more",    icon:"⋯",  label:"עוד"},
-  ];
-
-  const NAV_MORE = [
-    {id:"import", icon:"📊",label:"ייבוא אורחים"},
-    {id:"budget", icon:"💰",label:"ניהול תקציב"},
-    {id:"ai",     icon:"🤖",label:"AI חכם"},
-    {id:"sms",    icon:"📱",label:"SMS"},
-  ];
-
-  const RIGHT_SETTINGS = [
-    {id:"settings", icon:"👤",label:"פרטי האירוע",   sub:"שמות, תאריך ומיקום"},
-    {id:"meals",    icon:"🍽️",label:"סוגי מנות",     sub:"העדפות מנות לאורחים"},
-    {id:"gifts",    icon:"💝",label:"מתנות",          sub:"Bit והעברות"},
-    {id:"seating",  icon:"🪑",label:"סידורי הושבה",  sub:"מצב הושבה ואפשרויות"},
-    {id:"media",    icon:"🖼️",label:"מדיה",           sub:"תמונה ותיאור"},
-    {id:"design",   icon:"🎨",label:"עיצוב",          sub:"תבנית וצבעים"},
-    {id:"packages", icon:"📦",label:"חבילה",          sub:"בחירת חבילת אורחים"},
-  ];
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isLocked=(id)=>{
-    if(["home","packages","settings","user_settings","invite","media","design","gifts","meals","seating_settings"].includes(id)) return false;
+    if(["home","packages","settings","user_settings","invite"].includes(id)) return false;
     if(id==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p));
     if(id==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p));
     if(["sms","whatsapp"].includes(id)) return !userPackages.some(p=>["auto","vip"].includes(p));
@@ -3467,79 +3443,150 @@ function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelect
     return false;
   };
 
-  const nav=(id)=>{
+  const go=(id)=>{
     if(isLocked(id)){setScreen("packages");return;}
-    if(id==="vendors"){window.open("https://sidor-il.co.il/vendors","_blank");return;}
-    setScreen(id);
+    setScreen(id); setMoreOpen(false);
   };
 
+  const pkgLabel = userPackages.length>0
+    ? userPackages[0]?.toUpperCase?.()
+    : "BASIC";
+
+  // Right sidebar settings list — exactly like LunSoul
+  const settingsLinks = [
+    {id:"settings", icon:"👤", label:"פרטי האירוע",  sub:"שמות, תאריך ומיקום"},
+    {id:"meals",    icon:"🍽️", label:"סוגי מנות",    sub:"העדפות מנות לאורחים"},
+    {id:"gifts",    icon:"💝", label:"מתנות",         sub:"Bit והעברות"},
+    {id:"seating",  icon:"🪑", label:"סידורי הושבה", sub:"מצב הושבה ואפשרויות"},
+    {id:"media",    icon:"🖼️", label:"מדיה",          sub:"תמונה ותיאור"},
+    {id:"design",   icon:"🎨", label:"עיצוב",         sub:"תבנית וצבעים"},
+    {id:"packages", icon:"📦", label:"חבילה",         sub:"בחירת חבילת אורחים"},
+  ];
+
   return (
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LS.bg,color:LS.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{fontFamily:"'Heebo',sans-serif",background:"#F4F0FE",color:"#1A1035",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",direction:"rtl"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         @keyframes spin{to{transform:rotate(360deg)}}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#D4C9F0;border-radius:4px}
-        .ls-nav-btn:hover{background:${LS.purpleXL}!important;color:${LS.purple}!important}
+        .ls-nav:hover{color:#6D3FD4!important}
+        .ls-link:hover{background:#F0EBFF!important}
+        .ls-set:hover{background:#F5F2FF!important}
       `}</style>
 
-      {/* ══ TOP HEADER ══ */}
+      {/* ══ TOP HEADER — בדיוק כמו LunSoul ══ */}
       <header style={{
-        height:52, background:"#fff",
-        borderBottom:`1px solid ${LS.border}`,
+        height:54, background:"#fff",
+        borderBottom:"1px solid #EDE8FF",
         display:"flex", alignItems:"center",
-        padding:"0 16px", flexShrink:0, gap:0, zIndex:100,
-        boxShadow:"0 1px 8px rgba(107,61,212,.05)"
+        padding:"0 0",
+        flexShrink:0, zIndex:100,
+        boxShadow:"0 1px 4px rgba(91,45,184,.06)"
       }}>
-        {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0,paddingLeft:12,borderLeft:`1px solid ${LS.border}`,marginLeft:12,height:52}}>
-          <div style={{width:30,height:30,borderRadius:9,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",fontWeight:900}}>◈</div>
-          <span style={{fontWeight:900,fontSize:15,color:LS.purple}}>Sidor-IL</span>
-        </div>
 
-        {/* Main nav */}
-        <nav style={{display:"flex",flex:1,gap:0,alignItems:"center",height:"100%"}}>
-          {NAV_MAIN.map(item=>(
-            <button key={item.id} onClick={()=>nav(item.id)}
-              style={{
-                height:"100%", padding:"0 14px",
-                background:screen===item.id?"transparent":"transparent",
-                color:screen===item.id?LS.purple:LS.muted,
-                border:"none",
-                borderBottom:screen===item.id?`3px solid ${LS.purple}`:"3px solid transparent",
-                fontSize:13,fontWeight:screen===item.id?700:500,
-                cursor:"pointer",fontFamily:"inherit",
-                display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",
-                transition:"all .15s", position:"relative",
-              }}
-              className="ls-nav-btn">
-              <span style={{fontSize:14}}>{item.icon}</span>
-              {item.label}
-              {isLocked(item.id)&&<span style={{fontSize:9,background:"#FEF3C7",color:"#D97706",borderRadius:4,padding:"1px 4px"}}>🔒</span>}
-            </button>
-          ))}
-        </nav>
+        {/* Right side: user + flag + bell + search */}
+        <div style={{display:"flex",alignItems:"center",gap:2,padding:"0 14px",borderLeft:"1px solid #EDE8FF",height:"100%",flexShrink:0}}>
+          {/* התנתק button — red like LunSoul */}
+          <button onClick={async()=>{await sb.auth.signOut();}}
+            style={{
+              background:"#FFF0EE",color:"#E53935",
+              border:"1.5px solid #FFCDD2",borderRadius:9,
+              padding:"6px 12px",fontSize:13,fontWeight:700,
+              cursor:"pointer",fontFamily:"inherit",
+              display:"flex",alignItems:"center",gap:5,
+              transition:"all .15s"
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="#FFEBEE";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="#FFF0EE";}}>
+            <span style={{fontSize:14}}>→</span> התנתק
+          </button>
 
-        {/* Right controls */}
-        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,paddingRight:12,borderRight:`1px solid ${LS.border}`,marginRight:12}}>
-          {saving&&<div style={{width:14,height:14,borderRadius:"50%",border:"2px solid #D4C9F0",borderTopColor:LS.purple,animation:"spin .7s linear infinite"}}/>}
-
-          {/* User */}
-          <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",borderRadius:8,background:LS.purpleXL,border:`1px solid ${LS.border}`,cursor:"pointer"}}
-            onMouseEnter={e=>e.currentTarget.style.background="#E0D9F5"}
-            onMouseLeave={e=>e.currentTarget.style.background=LS.purpleXL}>
-            <div style={{width:22,height:22,borderRadius:"50%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:900}}>
-              {(user.email||"U")[0].toUpperCase()}
-            </div>
-            <span style={{fontSize:12,fontWeight:600,color:LS.text}}>{event.groom_name||user.email?.split("@")[0]||"משתמש"}</span>
+          {/* User name + dropdown */}
+          <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,cursor:"pointer",transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <span style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{event.groom_name||user.email?.split("@")[0]||"משתמש"} {event.bride_name?"& "+event.bride_name:""} </span>
+            <span style={{fontSize:10,color:"#9CA3AF"}}>▾</span>
           </div>
 
-          <button onClick={async()=>{await sb.auth.signOut();}}
-            style={{background:"none",border:`1px solid ${LS.border}`,borderRadius:7,padding:"5px 10px",fontSize:12,fontWeight:600,color:LS.muted,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}
-            onMouseEnter={e=>{e.currentTarget.style.color="#EF4444";e.currentTarget.style.borderColor="#FECDCD";}}
-            onMouseLeave={e=>{e.currentTarget.style.color=LS.muted;e.currentTarget.style.borderColor=LS.border;}}>
-            ← התנתק
+          {/* Flag */}
+          <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:7,cursor:"pointer",border:"1px solid #EDE8FF"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <span style={{fontSize:16}}>🇮🇱</span>
+            <span style={{fontSize:10,color:"#9CA3AF"}}>▾</span>
+          </div>
+
+          {/* Bell */}
+          <button style={{background:"none",border:"none",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.color="#6D3FD4";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="#9CA3AF";}}>
+            🔔
           </button>
+
+          {/* Search */}
+          <button style={{background:"none",border:"none",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.color="#6D3FD4";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="#9CA3AF";}}>
+            🔍
+          </button>
+        </div>
+
+        {/* Nav items — center */}
+        <nav style={{flex:1,display:"flex",alignItems:"center",height:"100%",overflow:"hidden",padding:"0 4px"}}>
+          {[
+            {id:"more",    label:"עוד",          icon:"⋯", hasDropdown:true},
+            {id:"vendors", label:"ספקים",        icon:"🏛️"},
+            {id:"whatsapp",label:"הודעות",       icon:"💬"},
+            {id:"seating", label:"סידורי הושבה", icon:"🪑"},
+            {id:"rsvp",    label:"ניהול אורחים", icon:"👥"},
+            {id:"home",    label:"סקירה כללית",  icon:"📊", active:true},
+          ].map(item=>(
+            <div key={item.id} style={{position:"relative",height:"100%",display:"flex",alignItems:"center"}}>
+              <button onClick={()=>item.hasDropdown?setMoreOpen(o=>!o):go(item.id)}
+                className="ls-nav"
+                style={{
+                  height:"100%", padding:"0 13px",
+                  background:"transparent", border:"none",
+                  borderBottom:screen===item.id?`3px solid #6D3FD4`:"3px solid transparent",
+                  color:screen===item.id?"#6D3FD4":"#6B7280",
+                  fontSize:13, fontWeight:screen===item.id?700:500,
+                  cursor:"pointer", fontFamily:"inherit",
+                  display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",
+                  transition:"color .15s",
+                }}>
+                <span style={{fontSize:14}}>{item.icon}</span>
+                {item.label}
+                {item.hasDropdown&&<span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>}
+                {isLocked(item.id)&&<span style={{fontSize:9,background:"#FEF3C7",color:"#D97706",borderRadius:3,padding:"1px 4px",fontWeight:700}}>🔒</span>}
+              </button>
+              {/* More dropdown */}
+              {item.hasDropdown&&moreOpen&&(
+                <div style={{position:"absolute",top:"100%",right:0,background:"#fff",border:"1px solid #EDE8FF",borderRadius:12,boxShadow:"0 8px 24px rgba(91,45,184,.12)",padding:"6px 0",zIndex:200,minWidth:160,direction:"rtl"}}>
+                  {[{id:"import",label:"ייבוא אורחים",icon:"📊"},{id:"budget",label:"ניהול תקציב",icon:"💰"},{id:"ai",label:"AI חכם",icon:"🤖"},{id:"sms",label:"הודעות SMS",icon:"📱"}].map(m=>(
+                    <button key={m.id} onClick={()=>go(m.id)}
+                      style={{width:"100%",background:"none",border:"none",padding:"9px 16px",fontSize:13,fontWeight:500,color:"#374151",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,transition:"background .15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+                      onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <span>{m.icon}</span>{m.label}
+                      {isLocked(m.id)&&<span style={{marginRight:"auto",fontSize:9,color:"#D97706"}}>🔒</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {saving&&<div style={{marginRight:8,width:14,height:14,borderRadius:"50%",border:"2px solid #D4C9F0",borderTopColor:"#6D3FD4",animation:"spin .7s linear infinite"}}/>}
+        </nav>
+
+        {/* Logo — far left (in RTL = far right visually) */}
+        <div style={{padding:"0 20px",borderRight:"1px solid #EDE8FF",height:"100%",display:"flex",alignItems:"center",flexShrink:0}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",lineHeight:1}}>
+            <span style={{fontWeight:900,fontSize:18,color:"#6D3FD4",letterSpacing:"-.5px",fontFamily:"serif",fontStyle:"italic"}}>LunSoul</span>
+            <span style={{fontSize:8,fontWeight:600,color:"#9CA3AF",letterSpacing:1}}>EVENTS</span>
+          </div>
         </div>
       </header>
 
@@ -3547,8 +3594,7 @@ function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelect
       <div style={{display:"flex",flex:1,overflow:"hidden",direction:"ltr"}}>
 
         {/* ══ MAIN CONTENT ══ */}
-        <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}}>
-
+        <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}} onClick={()=>moreOpen&&setMoreOpen(false)}>
           {screen==="home"&&<LSHomeScreen event={event} setScreen={setScreen} setModal={setModal}
             guests={guests} tables={tables} seated={seated} total={total}
             userPackages={userPackages} sb={sb}/>}
@@ -3564,145 +3610,177 @@ function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelect
             view={view} setView={setView} saving={saving} seated={seated} total={total}
             venueElements={venueElements} setVenueElements={setVenueElements}/>}
 
-          {screen==="rsvp"&&(
-            <div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}>
-              <ScreenBanner icon="👥" title="ניהול אורחים" subtitle="ניהול רשימת אורחים לאירוע"/>
-              <DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={()=>{}} setTables={()=>{}} onAddGuest={()=>setModal("addGuest")}/>
-            </div>
-          )}
+          {screen==="rsvp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
+            <ScreenBanner icon="👥" title="ניהול אורחים" subtitle="ניהול רשימת אורחים לאירוע"/>
+            <DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={()=>{}} setTables={()=>{}} onAddGuest={()=>setModal("addGuest")}/>
+          </div>)}
 
-          {screen==="whatsapp"&&(
-            <div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}>
-              <ScreenBanner icon="💬" title="שליחת הודעות" subtitle="מרכז הודעות"/>
-              <WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
-            </div>
-          )}
+          {screen==="whatsapp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
+            <ScreenBanner icon="💬" title="שליחת הודעות" subtitle="מרכז הודעות"/>
+            <WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
+          </div>)}
 
-          {screen==="sms"&&(
-            <div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}>
-              <ScreenBanner icon="📱" title="הודעות SMS" subtitle="שליחת הודעות SMS"/>
-              <SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
-            </div>
-          )}
+          {screen==="sms"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
+            <ScreenBanner icon="📱" title="הודעות SMS" subtitle="שליחת הודעות SMS"/>
+            <SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
+          </div>)}
 
-          {screen==="import"&&(
-            <div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}>
-              <ScreenBanner icon="📊" title="ייבוא אורחים" subtitle="ייבוא מ-Excel או הדבקה"/>
-              <div style={{background:"#fff",borderRadius:20,padding:28,border:`1px solid ${LS.border}`}}>
-                <div style={{background:LS.purpleXL,border:`2px dashed ${LS.purple}55`,borderRadius:16,padding:32,textAlign:"center",marginBottom:24}}>
-                  <div style={{fontSize:40,marginBottom:10}}>📊</div>
-                  <div style={{fontSize:16,fontWeight:800,color:LS.purple,marginBottom:6}}>ייבוא מ-Excel</div>
-                  <label style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",borderRadius:12,padding:"12px 28px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
-                    📂 בחר קובץ Excel
-                    <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
-                      const file=e.target.files[0];if(!file)return;
-                      try{const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");const buf=await file.arrayBuffer();const wb=read(buf);const ws=wb.Sheets[wb.SheetNames[0]];const rows=utils.sheet_to_json(ws);const toImport=rows.map(r=>({name:String(r["שם"]||r["name"]||"").trim(),phone:String(r["טלפון"]||r["phone"]||"").trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})).filter(g=>g.name.length>1);if(toImport.length>0){await sb.from("guests").insert(toImport);await loadAll();}alert(`✅ יובאו ${toImport.length} אורחים!`);}catch{alert("שגיאה");}
-                    }}/>
-                  </label>
-                </div>
-                <textarea id="importTextLS2" placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי"} style={{width:"100%",background:LS.purpleXL,border:`1.5px solid ${LS.border}`,borderRadius:14,padding:14,fontSize:14,color:LS.text,outline:"none",fontFamily:"inherit",minHeight:160,boxSizing:"border-box",marginBottom:14,resize:"vertical"}}/>
-                <LSBtn primary full onClick={async()=>{const text=document.getElementById("importTextLS2")?.value||"";const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);const toInsert=lines.map(l=>{const p=l.split(",");return{name:p[0].trim(),phone:p[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);if(toInsert.length>0){await sb.from("guests").insert(toInsert);await loadAll();setScreen("rsvp");}}}>✓ ייבא אורחים</LSBtn>
-              </div>
+          {screen==="import"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
+            <ScreenBanner icon="📊" title="ייבוא אורחים" subtitle="ייבוא מ-Excel"/>
+            <div style={{background:"#fff",borderRadius:18,padding:24,border:"1px solid #EDE8FF"}}>
+              <label style={{display:"block",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",borderRadius:11,padding:"12px 24px",fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",marginBottom:16}}>
+                📂 בחר קובץ Excel
+                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
+                  const file=e.target.files[0];if(!file)return;
+                  try{const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");const buf=await file.arrayBuffer();const wb=read(buf);const ws=wb.Sheets[wb.SheetNames[0]];const rows=utils.sheet_to_json(ws);const toImport=rows.map(r=>({name:String(r["שם"]||r["name"]||"").trim(),phone:String(r["טלפון"]||r["phone"]||"").trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})).filter(g=>g.name.length>1);if(toImport.length>0){await sb.from("guests").insert(toImport);await loadAll();}alert(`✅ יובאו ${toImport.length} אורחים!`);}catch{alert("שגיאה");}
+                }}/>
+              </label>
+              <textarea id="importTxt" placeholder="ישראל ישראלי, 050-1234567&#10;רונית לוי" style={{width:"100%",background:"#F5F2FF",border:"1.5px solid #EDE8FF",borderRadius:12,padding:14,fontSize:13,fontFamily:"inherit",minHeight:140,resize:"vertical",outline:"none",marginBottom:12}}/>
+              <button onClick={async()=>{const t=document.getElementById("importTxt")?.value||"";const r=t.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(",");return{name:p[0].trim(),phone:p[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);if(r.length){await sb.from("guests").insert(r);await loadAll();setScreen("rsvp");}}}
+                style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                ✓ ייבא אורחים
+              </button>
             </div>
-          )}
+          </div>)}
 
-          {screen==="budget"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="💰" title="ניהול תקציב" subtitle="מעקב הוצאות והכנסות"/><BudgetScreen event={event}/></div>)}
-          {screen==="ai"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="🤖" title="AI סידור חכם" subtitle="סידור אוטומטי"/><AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(a)=>{for(const{guestId,tableId}of a){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setScreen("seating");}}/></div>)}
-          {screen==="packages"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="📦" title="חבילות" subtitle="שדרג את הגרסה שלך"/><PackagesScreen event={event} onBack={()=>setScreen("home")}/></div>)}
-          {screen==="settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="📋" title="פרטי האירוע" subtitle="הגדרות האירוע"/><EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>sb.auth.signOut()} onUpdate={()=>{}}/></div>)}
-          {screen==="user_settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="⚙️" title="הגדרות" subtitle="הגדרות המשתמש"/><MobileSettingsScreen user={user} event={event} sb={sb} setGuests={()=>{}} setScreen={setScreen}/></div>)}
-          {screen==="invite"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:LS.bg,direction:"rtl"}}><ScreenBanner icon="💌" title="הזמנה דיגיטלית" subtitle="עיצוב ושיתוף"/><InviteSettings event={event} onUpdate={()=>setScreen("home")}/></div>)}
+          {screen==="budget"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💰" title="ניהול תקציב" subtitle="מעקב הוצאות"/><BudgetScreen event={event}/></div>)}
+          {screen==="ai"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="🤖" title="AI חכם" subtitle="סידור אוטומטי"/><AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(a)=>{for(const{guestId,tableId}of a){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setScreen("seating");}}/></div>)}
+          {screen==="packages"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📦" title="חבילות" subtitle="שדרג את הגרסה שלך"/><PackagesScreen event={event} onBack={()=>setScreen("home")}/></div>)}
+          {screen==="settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📋" title="פרטי האירוע" subtitle="הגדרות האירוע"/><EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>sb.auth.signOut()} onUpdate={()=>{}}/></div>)}
+          {screen==="invite"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💌" title="הזמנה דיגיטלית" subtitle="עיצוב ושיתוף"/><InviteSettings event={event} onUpdate={()=>setScreen("home")}/></div>)}
+          {screen==="user_settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="⚙️" title="הגדרות" subtitle="הגדרות משתמש"/><MobileSettingsScreen user={user} event={event} sb={sb} setGuests={()=>{}} setScreen={setScreen}/></div>)}
         </div>
 
-        {/* ══ RIGHT SIDEBAR ══ */}
+        {/* ══ RIGHT SIDEBAR — בדיוק כמו LunSoul ══ */}
         <aside style={{
-          width:260, background:"#fff",
-          borderLeft:`1px solid ${LS.border}`,
+          width:256, background:"#fff",
+          borderRight:"1px solid #EDE8FF",
           display:"flex", flexDirection:"column",
           flexShrink:0, height:"100%", overflowY:"auto",
+          direction:"rtl"
         }}>
+
+          {/* Logo at top of sidebar */}
+          <div style={{padding:"18px 20px 14px",textAlign:"center",borderBottom:"1px solid #EDE8FF"}}>
+            <div style={{fontSize:20,fontWeight:900,color:"#6D3FD4",fontFamily:"serif",fontStyle:"italic",letterSpacing:"-.3px",lineHeight:1}}>LunSoul</div>
+            <div style={{fontSize:8,fontWeight:600,color:"#9CA3AF",letterSpacing:1.5,marginTop:1}}>EVENTS</div>
+          </div>
+
           {/* Back to events */}
-          <div style={{padding:"11px 16px",borderBottom:`1px solid ${LS.border}`}}>
+          <div style={{padding:"10px 16px",borderBottom:"1px solid #EDE8FF"}}>
             <button onClick={()=>setShowLanding(true)}
-              style={{display:"flex",alignItems:"center",gap:5,background:"none",border:"none",color:LS.purple,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-              ← חזרה לאירועים
+              style={{background:"none",border:"none",color:"#6D3FD4",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4,padding:"4px 0"}}>
+              <span style={{fontSize:12}}>›</span> חזרה לאירועים
             </button>
           </div>
 
-          {/* Event info */}
-          <div style={{padding:"14px 16px",borderBottom:`1px solid ${LS.border}`}}>
-            <div style={{fontSize:14,fontWeight:900,color:LS.text,marginBottom:5}}>
-              {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ואורנה`:event.name}
+          {/* Event name + date */}
+          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#1A1035",marginBottom:5}}>
+              {event.groom_name&&event.bride_name
+                ?`החתונה של ${event.groom_name} ו${event.bride_name}`
+                :event.name}
             </div>
-            {event.date&&<div style={{fontSize:12,color:LS.muted,display:"flex",alignItems:"center",gap:4,marginBottom:6}}>
-              📅 {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})}
-            </div>}
+            {event.date&&(
+              <div style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#6B7280"}}>
+                <span>📅</span>
+                {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})}
+              </div>
+            )}
             {/* Package badge */}
-            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"#FEF9C3",color:"#D97706",borderRadius:100,padding:"3px 10px",fontSize:11,fontWeight:700,border:"1px solid #FDE68A",cursor:"pointer"}}
+            <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:5,background:"#FEF9C3",color:"#D97706",border:"1px solid #FDE68A",borderRadius:100,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}
               onClick={()=>setScreen("packages")}>
-              ✨ BASIC • 250 רשומות
+              ✨ {pkgLabel} • 250 רשומות
             </div>
           </div>
 
-          {/* Settings sections */}
-          <div style={{padding:"10px 0",borderBottom:`1px solid ${LS.border}`}}>
-            <div style={{padding:"6px 16px",fontSize:10,fontWeight:700,color:LS.muted,textTransform:"uppercase",letterSpacing:".06em"}}>הגדרות האירוע</div>
-            {RIGHT_SETTINGS.map(item=>(
+          {/* Settings links */}
+          <div style={{padding:"10px 0",borderBottom:"1px solid #EDE8FF"}}>
+            <div style={{padding:"5px 16px 8px",fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:.8,textTransform:"uppercase"}}>הגדרות האירוע</div>
+            {settingsLinks.map(item=>(
               <div key={item.id}
-                onClick={()=>{
-                  if(item.id==="packages")setScreen("packages");
-                  else if(item.id==="seating")setScreen("seating");
-                  else setScreen("settings");
-                }}
-                style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",transition:"all .15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background=LS.purpleXL}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <div style={{width:34,height:34,borderRadius:9,background:LS.purpleXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,border:`1px solid ${LS.border}`}}>
+                onClick={()=>go(item.id==="seating"?"seating":item.id==="packages"?"packages":"settings")}
+                className="ls-set"
+                style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",transition:"background .15s"}}>
+                <div style={{width:34,height:34,borderRadius:9,background:"#F5F2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
                   {item.icon}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:LS.text}}>{item.label}</div>
-                  <div style={{fontSize:11,color:LS.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.sub}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{item.label}</div>
+                  <div style={{fontSize:11,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.sub}</div>
                 </div>
-                <span style={{color:LS.muted,fontSize:11}}>←</span>
+                <span style={{fontSize:11,color:"#D1D5DB"}}>‹</span>
               </div>
             ))}
           </div>
 
-          {/* View invite */}
-          <div style={{padding:"14px 16px",borderBottom:`1px solid ${LS.border}`}}>
+          {/* Color swatches */}
+          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
+            <div style={{display:"flex",gap:7,justifyContent:"center",flexWrap:"wrap"}}>
+              {["#EC4899","#3B82F6","#22C55E","#F59E0B","#EF4444","#8B5CF6"].map((c,i)=>(
+                <div key={c} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",
+                  boxShadow:i===5?`0 0 0 2px #fff, 0 0 0 3.5px ${c}`:"none",
+                  transition:"transform .15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
+                  onMouseLeave={e=>e.currentTarget.style.transform="none"}/>
+              ))}
+            </div>
+          </div>
+
+          {/* View invite button */}
+          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
             <button onClick={()=>window.open(`${window.location.origin}/#/invite/${event.invite_code||""}`,"_blank")}
-              style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 12px rgba(107,61,212,.3)",marginBottom:6}}>
-              👁 צפה בהזמנה
+              style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 3px 10px rgba(91,45,184,.3)",marginBottom:8}}>
+              <span style={{fontSize:15}}>👁</span> צפה בהזמנה
             </button>
             <button onClick={()=>setScreen("home")}
-              style={{width:"100%",background:LS.purpleXL,color:LS.purple,border:`1px solid ${LS.border}`,borderRadius:12,padding:"8px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-              ❓ עזרה ותמיכה
+              style={{width:"100%",background:"#F5F2FF",color:"#6D3FD4",border:"none",borderRadius:11,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+              <span style={{fontSize:14}}>❓</span> עזרה ותמיכה
             </button>
           </div>
 
-          {/* Footer links */}
-          <div style={{padding:"12px 16px",marginTop:"auto"}}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:6}}>
-              {["תקנון","נגישות","פרטיות"].map(s=>(
-                <span key={s} style={{fontSize:11,color:LS.muted,cursor:"pointer"}}
-                  onMouseEnter={e=>e.target.style.color=LS.purple}
-                  onMouseLeave={e=>e.target.style.color=LS.muted}>{s}</span>
+          {/* Social + footer links */}
+          <div style={{padding:"14px 16px",marginTop:"auto"}}>
+            <div style={{display:"flex",gap:14,justifyContent:"center",marginBottom:10}}>
+              {["🎵","📸","📘"].map(s=>(
+                <span key={s} style={{fontSize:18,cursor:"pointer",opacity:.6,transition:"opacity .15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.opacity="1"}
+                  onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>{s}</span>
               ))}
             </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {["צור קשר","חוות דעת"].map(s=>(
-                <span key={s} style={{fontSize:11,color:LS.muted,cursor:"pointer"}}
-                  onMouseEnter={e=>e.target.style.color=LS.purple}
-                  onMouseLeave={e=>e.target.style.color=LS.muted}>{s}</span>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:6}}>
+              {["תקנון","נגישות","פרטיות"].map(s=>(
+                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer"}}
+                  onMouseEnter={e=>e.target.style.color="#6D3FD4"}
+                  onMouseLeave={e=>e.target.style.color="#9CA3AF"}>{s}</span>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+              {["צור קשר","⭐ חוות דעת"].map(s=>(
+                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer"}}
+                  onMouseEnter={e=>e.target.style.color="#6D3FD4"}
+                  onMouseLeave={e=>e.target.style.color="#9CA3AF"}>{s}</span>
               ))}
             </div>
           </div>
         </aside>
       </div>
+
+      {/* Modals */}
+      {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} desktop={true}/>}
+      {editTableData&&<EditTableModal table={editTableData} onSave={async(name,type,seats)=>{await editTable(editTableData.id,name,type,seats);setEditTableData(null);}} onDelete={async()=>{await deleteTable(editTableData.id);setEditTableData(null);}} onClose={()=>setEditTableData(null)}/>}
+      {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
+      {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
+      {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
+      <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
+        style={{position:"fixed",bottom:24,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:50,height:50,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none",fontSize:22}}>
+        💬
+      </a>
+      <AccessibilityWidget/>
     </div>
   );
 }
+
 
 
 
