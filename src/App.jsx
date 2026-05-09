@@ -5168,18 +5168,26 @@ export default function App() {
 
   // ← useEffect חייב להיות לפני כל return!
   useEffect(()=>{
+    // Timeout fallback — אם אחרי 3 שניות עדיין תקוע, שחרר
+    const timeout = setTimeout(()=>setChecking(false), 2000);
+
     sb.auth.getSession().then(async({data})=>{
+      clearTimeout(timeout);
       const u=data.session?.user||null;
       setUser(u);
       if(u){
         const savedId=localStorage.getItem("sidor_event_id");
         if(savedId){
           const{data:ev}=await sb.from("events").select("*").eq("id",savedId).eq("user_id",u.id).single();
-          if(ev){setEvent(ev);}
+          if(ev) setEvent(ev);
         }
       }
       setChecking(false);
+    }).catch(()=>{
+      clearTimeout(timeout);
+      setChecking(false);
     });
+
     const{data:{subscription}}=sb.auth.onAuthStateChange(async(event,session)=>{
       if(!session?.user){
         setUser(null);
@@ -5187,13 +5195,14 @@ export default function App() {
         localStorage.removeItem("sidor_event_id");
         setShowLanding(false);
         setAuthMode(null);
+        setChecking(false);
       } else {
-        const u = session.user;
+        const u=session.user;
         setUser(u);
         setAuthMode(null);
         setShowLanding(false);
-        // טען אירוע שמור
-        if(event==="SIGNED_IN"||event==="INITIAL_SESSION"){
+        setChecking(false);
+        if(event==="SIGNED_IN"){
           const savedId=localStorage.getItem("sidor_event_id");
           if(savedId){
             const{data:ev}=await sb.from("events").select("*").eq("id",savedId).eq("user_id",u.id).single();
@@ -5202,7 +5211,7 @@ export default function App() {
         }
       }
     });
-    return()=>subscription.unsubscribe();
+    return()=>{ subscription.unsubscribe(); clearTimeout(timeout); };
   },[]);
 
   const logout=async()=>{await sb.auth.signOut();setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");setShowLanding(false);};
@@ -5238,7 +5247,15 @@ export default function App() {
     return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style><InvitePage code={inviteMatch[1]} guestId={guestId}/></>);
   }
 
-  if(checking)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
+  if(checking)return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F4F0FE"}}>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
+        <div style={{width:44,height:44,borderRadius:"50%",border:"3px solid #EDE8FF",borderTopColor:"#5B2DB8",animation:"spin .7s linear infinite"}}/>
+        <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+        <div style={{fontSize:14,color:"#9CA3AF",fontFamily:"'Heebo',sans-serif",fontWeight:600}}>טוען...</div>
+      </div>
+    </div>
+  );
 
   // ניתוב לדף אדמין  -  לפני כל שאר הניתובים!
   if(isAdmin){
