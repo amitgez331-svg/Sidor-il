@@ -856,14 +856,14 @@ function AccessibilityWidget() {
 
 
 // ─── LANDING PAGE ──────────────────────────────────────────────────────────────
+
+// ─── LANDING PAGE — עם וידאו אמיתי ────────────────────────────────────────────
 function LandingPage({ onOpenAuth, onLogout, user }) {
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [chairsDone, setChairsDone] = useState(false);
 
   useEffect(()=>{
-    setTimeout(()=>setVisible(true), 100);
-    setTimeout(()=>setChairsDone(true), 2200);
+    setTimeout(()=>setVisible(true), 80);
     const fn=()=>setScrolled(window.scrollY>20);
     window.addEventListener("scroll",fn);
     return()=>window.removeEventListener("scroll",fn);
@@ -872,44 +872,22 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
   useEffect(()=>{
     const obs=new IntersectionObserver(e=>{
       e.forEach(x=>{if(x.isIntersecting){x.target.style.opacity=1;x.target.style.transform="none";}});
-    },{threshold:.12});
+    },{threshold:.1});
     setTimeout(()=>document.querySelectorAll(".lp-anim").forEach(el=>obs.observe(el)),200);
     return()=>obs.disconnect();
   },[]);
 
   const hd=(n=0)=>({
     opacity:visible?1:0,
-    transform:visible?"none":"translateY(28px)",
+    transform:visible?"none":"translateY(26px)",
     transition:`opacity .85s ${n*.12}s ease, transform .85s ${n*.12}s cubic-bezier(.16,1,.3,1)`,
   });
-
-  // Table animation data
-  const chairs = [
-    // top row
-    {cx:300,cy:60,  rot:180, delay:.2},
-    {cx:430,cy:60,  rot:180, delay:.35},
-    {cx:560,cy:60,  rot:180, delay:.5},
-    // bottom row
-    {cx:300,cy:295, rot:0,   delay:.65},
-    {cx:430,cy:295, rot:0,   delay:.8},
-    {cx:560,cy:295, rot:0,   delay:.95},
-    // left
-    {cx:160,cy:177, rot:90,  delay:1.1},
-    // right
-    {cx:700,cy:177, rot:-90, delay:1.25},
-  ];
-
-  const glasses = [
-    {x:355,y:148,delay:1.6},
-    {x:430,y:148,delay:1.75},
-    {x:505,y:148,delay:1.9},
-  ];
 
   const features=[
     {icon:"💌",title:"הזמנות דיגיטליות",desc:"עיצובים מרהיבים עם קישור אישי לכל אורח",color:"#7B3FD4"},
     {icon:"👥",title:"ניהול אורחים",desc:"ייבוא מ-Excel, קבוצות, מעקב בזמן אמת",color:"#3B82F6"},
     {icon:"💬",title:"WhatsApp אוטומטי",desc:"6 סבבי הודעות אוטומטיים לכל אורח",color:"#22C55E"},
-    {icon:"🪑",title:"סידורי הושבה",desc:"מפה אינטראקטיבית + AI חכם",color:"#F59E0B"},
+    {icon:"🪑",title:"סידורי הושבה",desc:"מפה אינטראקטיבית + AI חכם לשיבוץ",color:"#F59E0B"},
     {icon:"💝",title:"מעקב מתנות",desc:"קבלת מתנות דרך Bit עם דוח מסודר",color:"#EF4444"},
     {icon:"🏛️",title:"ספקי אירוע",desc:"אולמות, צלמים, DJ — הכל במקום אחד",color:"#8B5CF6"},
   ];
@@ -921,24 +899,16 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         *{box-sizing:border-box;margin:0;padding:0}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-        @keyframes chairSlideTop{from{transform:translateY(-120px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes chairSlideBot{from{transform:translateY(120px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes chairSlideL{from{transform:translateX(-100px);opacity:0}to{transform:translateX(0);opacity:1}}
-        @keyframes chairSlideR{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
-        @keyframes glassAppear{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
-        @keyframes wineFlow{0%{height:0}100%{height:16px}}
-        @keyframes sparkle{0%,100%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1)}}
         @keyframes gradMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-        @keyframes tableAppear{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
         .lp-anim{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
         .feat:hover{transform:translateY(-5px)!important;box-shadow:0 16px 40px rgba(91,45,184,.12)!important;border-color:#C4B5F4!important}
-        .cta1:hover{transform:translateY(-3px)!important;box-shadow:0 14px 36px rgba(91,45,184,.48)!important}
+        .cta1:hover{transform:translateY(-3px)!important;box-shadow:0 14px 36px rgba(91,45,184,.5)!important}
         .cta2:hover{background:#F0EBFF!important}
-        .nav-a:hover{background:#F0EBFF!important}
-        .plan:hover{transform:translateY(-5px)!important}
+        .nav-a:hover{background:#F0EBFF!important;color:#5B2DB8!important}
+        .plan:hover{transform:translateY(-5px)!important;box-shadow:0 20px 48px rgba(91,45,184,.14)!important}
       `}</style>
 
-      {/* ── NAV ── */}
+      {/* NAV */}
       <nav style={{
         position:"fixed",top:0,right:0,left:0,zIndex:100,
         background:scrolled?"rgba(255,255,255,.97)":"transparent",
@@ -956,11 +926,11 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
           {user?(
             <>
               <button onClick={()=>onOpenAuth("events")} className="cta1"
-                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"9px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 12px rgba(91,45,184,.36)",transition:"all .22s",display:"flex",alignItems:"center",gap:6}}>
+                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(91,45,184,.36)",transition:"all .22s"}}>
                 📊 האירועים שלי
               </button>
               <button onClick={onLogout} className="nav-a"
-                style={{background:"none",border:"1.5px solid #EDE8FF",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,color:"#7B7B9A",cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
+                style={{background:"none",border:"1.5px solid #EDE8FF",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:600,color:"#6B7280",cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
                 התנתק
               </button>
             </>
@@ -971,7 +941,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
                 התחברות
               </button>
               <button onClick={()=>onOpenAuth("register")} className="cta1"
-                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 12px rgba(91,45,184,.34)",transition:"all .22s"}}>
+                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(91,45,184,.36)",transition:"all .22s"}}>
                 צרו הזמנה בחינם ←
               </button>
             </>
@@ -979,249 +949,79 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section style={{
-        minHeight:"100vh",display:"flex",alignItems:"center",
-        padding:"80px 8vw 60px",position:"relative",overflow:"hidden",
-        background:"linear-gradient(145deg,#FAF8FF 0%,#F2ECFF 35%,#EAF0FF 70%,#F8F4FF 100%)"
-      }}>
-        {/* BG orbs */}
-        <div style={{position:"absolute",top:"10%",left:"2%",width:480,height:480,borderRadius:"50%",background:"radial-gradient(circle,rgba(91,45,184,.09),transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:"5%",right:"3%",width:380,height:380,borderRadius:"50%",background:"radial-gradient(circle,rgba(59,130,246,.07),transparent 70%)",pointerEvents:"none"}}/>
+      {/* HERO — וידאו אמיתי של שולחן ערוך עם כיסאות */}
+      <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+        {/* Real video background — wedding table seating */}
+        <video autoPlay muted loop playsInline
+          style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0}}>
+          <source src="https://videos.pexels.com/video-files/6205466/6205466-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4"/>
+          <source src="https://videos.pexels.com/video-files/5486820/5486820-hd_1920_1080_25fps.mp4" type="video/mp4"/>
+        </video>
 
-        <div style={{maxWidth:1160,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",flexWrap:"wrap",justifyContent:"center",position:"relative",zIndex:2}}>
+        {/* Overlay — סגול כמו LunSoul */}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(145deg,rgba(45,20,100,.78),rgba(80,35,160,.72),rgba(20,40,120,.68))",zIndex:1}}/>
 
-          {/* TEXT */}
-          <div style={{flex:1,minWidth:300,order:2}}>
-            <div style={{...hd(0),display:"inline-flex",alignItems:"center",gap:7,background:"rgba(91,45,184,.07)",border:"1px solid rgba(91,45,184,.16)",borderRadius:100,padding:"6px 16px",marginBottom:20}}>
-              <span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 6px #22C55E88"}}/>
-              <span style={{fontSize:13,fontWeight:700,color:"#5B2DB8"}}>הפלטפורמה המובילה לניהול אירועים בישראל 🇮🇱</span>
-            </div>
+        {/* Floating decorations */}
+        {[{t:"15%",r:"8%",e:"🌸",d:"0s"},{t:"60%",r:"4%",e:"🌺",d:".6s"},{t:"25%",l:"6%",e:"💐",d:"1s"},{b:"20%",l:"8%",e:"🌼",d:".4s"}].map((f,i)=>(
+          <div key={i} style={{position:"absolute",top:f.t,bottom:f.b,right:f.r,left:f.l,fontSize:24,animation:`float ${3.5+i*.4}s ${f.d} ease-in-out infinite`,pointerEvents:"none",zIndex:2,opacity:.8}}>{f.e}</div>
+        ))}
 
-            <h1 style={{...hd(1),fontSize:"clamp(36px,5vw,66px)",fontWeight:900,lineHeight:1.06,letterSpacing:"-2px",marginBottom:14,color:"#1A1035"}}>
-              ניהול אירוע{"\n"}
-              <span style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2,#3B82F6)",backgroundSize:"200% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"gradMove 4s ease infinite"}}>
-                דיגיטלי
-              </span>
-            </h1>
+        {/* Content */}
+        <div style={{position:"relative",zIndex:3,textAlign:"center",padding:"100px 6vw 60px",maxWidth:860,width:"100%"}}>
+          <div style={{...hd(0),display:"inline-flex",alignItems:"center",gap:7,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",borderRadius:100,padding:"6px 18px",marginBottom:22,backdropFilter:"blur(10px)"}}>
+            <span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 6px #22C55E"}}/>
+            <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.9)"}}>הפלטפורמה המובילה לניהול אירועים בישראל 🇮🇱</span>
+          </div>
 
-            <p style={{...hd(2),fontSize:"clamp(14px,1.4vw,17px)",color:"#7B7B9A",lineHeight:1.75,marginBottom:28,maxWidth:480}}>
-              אישורי הגעה בוואטסאפ, ניהול אורחים, סידור הושבה אוטומטי ושליחת הזמנות דיגיטליות — הכל במקום אחד
+          <h1 style={{...hd(1),fontSize:"clamp(40px,7vw,90px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-2px",marginBottom:16,color:"#fff"}}>
+            Sidor-IL
+          </h1>
+          <h2 style={{...hd(2),fontSize:"clamp(22px,3.5vw,46px)",fontWeight:900,lineHeight:1.1,marginBottom:18,color:"rgba(255,255,255,.95)"}}>
+            ניהול אירוע דיגיטלי
+          </h2>
+
+          {/* Script box like LunSoul */}
+          <div style={{...hd(3),display:"inline-block",background:"rgba(255,255,255,.1)",border:"2px solid rgba(212,175,55,.6)",borderRadius:12,padding:"12px 32px",marginBottom:24,backdropFilter:"blur(8px)"}}>
+            <p style={{fontSize:"clamp(13px,1.6vw,17px)",color:"rgba(255,255,255,.9)",fontWeight:600,fontStyle:"italic"}}>
+              לא עוד ספרי אורחים וטבלאות משלם ✦ ניהול מושלם
             </p>
-
-            <div style={{...hd(3),display:"flex",gap:12,flexWrap:"wrap",marginBottom:32}}>
-              <button onClick={()=>onOpenAuth("register")} className="cta1"
-                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:12,padding:"14px 30px",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 24px rgba(91,45,184,.42)",transition:"all .24s"}}>
-                ← צרו הזמנה דיגיטלית בחינם
-              </button>
-              <button className="cta2"
-                style={{background:"transparent",color:"#5B2DB8",border:"2px solid #C4B5F4",borderRadius:12,padding:"13px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-                ❓ איך זה עובד?
-              </button>
-            </div>
-
-            <div style={{...hd(4),display:"flex",gap:16,flexWrap:"wrap"}}>
-              {["ללא כרטיס אשראי","התחלה תוך 2 דקות","תמיכה בעברית"].map(t=>(
-                <div key={t} style={{display:"flex",alignItems:"center",gap:5,fontSize:13,color:"#9CA3AF",fontWeight:600}}>
-                  <span style={{width:18,height:18,borderRadius:"50%",background:"#ECFDF5",color:"#22C55E",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>✓</span>
-                  {t}
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* ANIMATED TABLE */}
-          <div style={{...hd(5),flexShrink:0,order:1,position:"relative"}}>
-            <svg width="860" height="360" viewBox="0 0 860 360" style={{maxWidth:"100%",filter:"drop-shadow(0 20px 60px rgba(91,45,184,.18))"}}>
-              <defs>
-                <radialGradient id="tableGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#7B4AE2"/>
-                  <stop offset="100%" stopColor="#4A1E8C"/>
-                </radialGradient>
-                <radialGradient id="plateGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#fff"/>
-                  <stop offset="100%" stopColor="#F0EBFF"/>
-                </radialGradient>
-                <radialGradient id="wineGrad" cx="50%" cy="30%" r="60%">
-                  <stop offset="0%" stopColor="#C0392B"/>
-                  <stop offset="100%" stopColor="#7B241C"/>
-                </radialGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-                <linearGradient id="chairGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#8B5CF6"/>
-                  <stop offset="100%" stopColor="#5B2DB8"/>
-                </linearGradient>
-                <linearGradient id="clothGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#F5F3FF"/>
-                  <stop offset="100%" stopColor="#EDE8FF"/>
-                </linearGradient>
-              </defs>
+          <p style={{...hd(4),fontSize:"clamp(14px,1.5vw,17px)",color:"rgba(255,255,255,.75)",marginBottom:36,lineHeight:1.75,maxWidth:560,margin:"0 auto 36px"}}>
+            אישורי הגעה בוואטסאפ, ניהול אורחים, סידור הושבה אוטומטי ושליחת הזמנות דיגיטליות — הכל במקום אחד
+          </p>
 
-              {/* TABLE */}
-              <g style={{animation:"tableAppear .6s .1s ease both"}}>
-                {/* Table shadow */}
-                <ellipse cx="430" cy="310" rx="250" ry="18" fill="rgba(91,45,184,.15)"/>
-                {/* Table top */}
-                <rect x="168" y="125" width="524" height="114" rx="20" fill="url(#tableGrad)" stroke="#6D28D9" strokeWidth="2"/>
-                {/* Table cloth */}
-                <rect x="172" y="129" width="516" height="106" rx="17" fill="url(#clothGrad)" opacity=".18"/>
-                {/* Table edge highlight */}
-                <rect x="172" y="129" width="516" height="4" rx="2" fill="rgba(255,255,255,.3)"/>
-                {/* Table legs */}
-                {[[230,239],[630,239]].map(([x,y],i)=>(
-                  <g key={i}>
-                    <rect x={x-14} y={y} width="28" height="62" rx="6" fill="#4A1E8C"/>
-                    <rect x={x-22} y={y+56} width="44" height="10" rx="5" fill="#3B1A78"/>
-                  </g>
-                ))}
-              </g>
-
-              {/* CHAIRS — top row (slide from top) */}
-              {chairs.slice(0,3).map((c,i)=>(
-                <g key={i} style={{animation:`chairSlideTop .6s ${c.delay}s cubic-bezier(.16,1,.3,1) both`}}>
-                  <g transform={`translate(${c.cx},${c.cy}) rotate(${c.rot})`}>
-                    {/* Chair back */}
-                    <rect x="-28" y="-44" width="56" height="46" rx="10" fill="url(#chairGrad)" stroke="#4A1E8C" strokeWidth="1.5"/>
-                    <rect x="-22" y="-38" width="44" height="34" rx="7" fill="rgba(255,255,255,.15)"/>
-                    {/* Vertical slats */}
-                    {[-10,0,10].map(sx=>(
-                      <rect key={sx} x={sx-2} y="-36" width="4" height="30" rx="2" fill="rgba(255,255,255,.2)"/>
-                    ))}
-                    {/* Chair seat */}
-                    <rect x="-30" y="-2" width="60" height="22" rx="8" fill="#7B4AE2"/>
-                    <rect x="-26" y="0" width="52" height="6" rx="3" fill="rgba(255,255,255,.2)"/>
-                    {/* Legs */}
-                    {[[-20,19],[20,19]].map(([lx,ly],j)=>(
-                      <g key={j}>
-                        <line x1={lx} y1={ly} x2={lx-4} y2={ly+28} stroke="#4A1E8C" strokeWidth="5" strokeLinecap="round"/>
-                        <ellipse cx={lx-4} cy={ly+28} rx="5" ry="3" fill="#3B1A78"/>
-                      </g>
-                    ))}
-                  </g>
-                </g>
-              ))}
-
-              {/* CHAIRS — bottom row (slide from bottom) */}
-              {chairs.slice(3,6).map((c,i)=>(
-                <g key={i+3} style={{animation:`chairSlideBot .6s ${c.delay}s cubic-bezier(.16,1,.3,1) both`}}>
-                  <g transform={`translate(${c.cx},${c.cy}) rotate(${c.rot})`}>
-                    <rect x="-28" y="-44" width="56" height="46" rx="10" fill="url(#chairGrad)" stroke="#4A1E8C" strokeWidth="1.5"/>
-                    <rect x="-22" y="-38" width="44" height="34" rx="7" fill="rgba(255,255,255,.15)"/>
-                    {[-10,0,10].map(sx=>(
-                      <rect key={sx} x={sx-2} y="-36" width="4" height="30" rx="2" fill="rgba(255,255,255,.2)"/>
-                    ))}
-                    <rect x="-30" y="-2" width="60" height="22" rx="8" fill="#7B4AE2"/>
-                    <rect x="-26" y="0" width="52" height="6" rx="3" fill="rgba(255,255,255,.2)"/>
-                    {[[-20,19],[20,19]].map(([lx,ly],j)=>(
-                      <g key={j}>
-                        <line x1={lx} y1={ly} x2={lx-4} y2={ly+28} stroke="#4A1E8C" strokeWidth="5" strokeLinecap="round"/>
-                        <ellipse cx={lx-4} cy={ly+28} rx="5" ry="3" fill="#3B1A78"/>
-                      </g>
-                    ))}
-                  </g>
-                </g>
-              ))}
-
-              {/* CHAIR left */}
-              <g style={{animation:`chairSlideL .6s ${chairs[6].delay}s cubic-bezier(.16,1,.3,1) both`}}>
-                <g transform={`translate(${chairs[6].cx},${chairs[6].cy}) rotate(${chairs[6].rot})`}>
-                  <rect x="-28" y="-44" width="56" height="46" rx="10" fill="url(#chairGrad)" stroke="#4A1E8C" strokeWidth="1.5"/>
-                  <rect x="-22" y="-38" width="44" height="34" rx="7" fill="rgba(255,255,255,.15)"/>
-                  {[-10,0,10].map(sx=>(<rect key={sx} x={sx-2} y="-36" width="4" height="30" rx="2" fill="rgba(255,255,255,.2)"/>))}
-                  <rect x="-30" y="-2" width="60" height="22" rx="8" fill="#7B4AE2"/>
-                  <rect x="-26" y="0" width="52" height="6" rx="3" fill="rgba(255,255,255,.2)"/>
-                  {[[-20,19],[20,19]].map(([lx,ly],j)=>(<g key={j}><line x1={lx} y1={ly} x2={lx-4} y2={ly+28} stroke="#4A1E8C" strokeWidth="5" strokeLinecap="round"/><ellipse cx={lx-4} cy={ly+28} rx="5" ry="3" fill="#3B1A78"/></g>))}
-                </g>
-              </g>
-
-              {/* CHAIR right */}
-              <g style={{animation:`chairSlideR .6s ${chairs[7].delay}s cubic-bezier(.16,1,.3,1) both`}}>
-                <g transform={`translate(${chairs[7].cx},${chairs[7].cy}) rotate(${chairs[7].rot})`}>
-                  <rect x="-28" y="-44" width="56" height="46" rx="10" fill="url(#chairGrad)" stroke="#4A1E8C" strokeWidth="1.5"/>
-                  <rect x="-22" y="-38" width="44" height="34" rx="7" fill="rgba(255,255,255,.15)"/>
-                  {[-10,0,10].map(sx=>(<rect key={sx} x={sx-2} y="-36" width="4" height="30" rx="2" fill="rgba(255,255,255,.2)"/>))}
-                  <rect x="-30" y="-2" width="60" height="22" rx="8" fill="#7B4AE2"/>
-                  <rect x="-26" y="0" width="52" height="6" rx="3" fill="rgba(255,255,255,.2)"/>
-                  {[[-20,19],[20,19]].map(([lx,ly],j)=>(<g key={j}><line x1={lx} y1={ly} x2={lx-4} y2={ly+28} stroke="#4A1E8C" strokeWidth="5" strokeLinecap="round"/><ellipse cx={lx-4} cy={ly+28} rx="5" ry="3" fill="#3B1A78"/></g>))}
-                </g>
-              </g>
-
-              {/* TABLE ITEMS — plates, cutlery, candle */}
-              <g style={{animation:"tableAppear .5s .3s ease both"}}>
-                {/* Plates */}
-                {[[300,182],[430,182],[560,182]].map(([x,y],i)=>(
-                  <g key={i}>
-                    <circle cx={x} cy={y} r="28" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.4)" strokeWidth="1.5"/>
-                    <circle cx={x} cy={y} r="20" fill="url(#plateGrad)" opacity=".9"/>
-                    <circle cx={x} cy={y} r="14" fill="none" stroke="rgba(91,45,184,.2)" strokeWidth="1"/>
-                  </g>
-                ))}
-                {/* Fork & knife */}
-                {[[300,182],[430,182],[560,182]].map(([x,y],i)=>(
-                  <g key={i}>
-                    <line x1={x-36} y1={y-14} x2={x-36} y2={y+14} stroke="rgba(255,255,255,.6)" strokeWidth="2" strokeLinecap="round"/>
-                    <line x1={x+36} y1={y-14} x2={x+36} y2={y+14} stroke="rgba(255,255,255,.6)" strokeWidth="2" strokeLinecap="round"/>
-                  </g>
-                ))}
-              </g>
-
-              {/* WINE GLASSES */}
-              {glasses.map((g,i)=>(
-                <g key={i} style={{animation:`glassAppear .55s ${g.delay}s cubic-bezier(.16,1,.3,1) both`}}>
-                  {/* Glass stem */}
-                  <line x1={g.x} y1={g.y+14} x2={g.x} y2={g.y+36} stroke="rgba(255,255,255,.7)" strokeWidth="2"/>
-                  {/* Glass base */}
-                  <ellipse cx={g.x} cy={g.y+37} rx="10" ry="3" fill="rgba(255,255,255,.5)"/>
-                  {/* Glass bowl outline */}
-                  <path d={`M ${g.x-14} ${g.y-20} Q ${g.x-16} ${g.y+8} ${g.x} ${g.y+14} Q ${g.x+16} ${g.y+8} ${g.x+14} ${g.y-20} Z`} fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.6)" strokeWidth="1.5"/>
-                  {/* Wine */}
-                  <clipPath id={`wc${i}`}>
-                    <path d={`M ${g.x-14} ${g.y-20} Q ${g.x-16} ${g.y+8} ${g.x} ${g.y+14} Q ${g.x+16} ${g.y+8} ${g.x+14} ${g.y-20} Z`}/>
-                  </clipPath>
-                  <rect x={g.x-16} y={g.y+2} width="32" height="12" fill="url(#wineGrad)" clipPath={`url(#wc${i})`} style={{animation:`wineFlow .4s ${g.delay+.3}s ease both`,transformOrigin:`${g.x}px ${g.y+14}px`}} opacity=".85"/>
-                  {/* Rim highlight */}
-                  <ellipse cx={g.x} cy={g.y-20} rx="14" ry="3" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.5"/>
-                </g>
-              ))}
-
-              {/* CANDLE center */}
-              <g style={{animation:`glassAppear .5s 2.0s ease both`}}>
-                <rect x="425" y="128" width="10" height="22" rx="3" fill="#FEF3C7" stroke="#FDE68A" strokeWidth="1"/>
-                {/* Flame */}
-                <ellipse cx="430" cy="124" rx="5" ry="8" fill="#F59E0B" filter="url(#glow)" style={{animation:"float 1.2s ease-in-out infinite"}}/>
-                <ellipse cx="430" cy="126" rx="3" ry="5" fill="#FEF08A"/>
-                {/* Candle holder */}
-                <ellipse cx="430" cy="150" rx="9" ry="3" fill="rgba(255,255,255,.5)"/>
-              </g>
-
-              {/* Sparkles */}
-              {chairsDone && [[200,100],[660,95],[310,70],[550,72],[430,60]].map(([x,y],i)=>(
-                <text key={i} x={x} y={y} fontSize="14" textAnchor="middle" style={{animation:`sparkle .6s ${i*.15}s ease both`}}>✨</text>
-              ))}
-
-              {/* Floating flowers decoration */}
-              {[[160,60],[700,65],[430,30]].map(([x,y],i)=>(
-                <text key={i} x={x} y={y} fontSize="18" textAnchor="middle" style={{animation:`float ${3+i*.5}s ${i*.4}s ease-in-out infinite`}}>🌸</text>
-              ))}
-
-              {/* Number labels on seats */}
-              {[{cx:300,cy:182},{cx:430,cy:182},{cx:560,cy:182}].map((s,i)=>(
-                <text key={i} x={s.cx} y={s.cy+5} textAnchor="middle" fontSize="11" fontWeight="900" fill="#5B2DB8" fontFamily="Heebo, sans-serif" style={{animation:`tableAppear .4s ${.8+i*.15}s ease both`}}>{i+1}</text>
-              ))}
-            </svg>
-
-            {/* Label below */}
-            <div style={{textAlign:"center",marginTop:8}}>
-              <div style={{fontSize:13,color:"#9CA3AF",fontWeight:600}}>מפת אולם אינטראקטיבית · גרירת אורחים לשולחנות</div>
-            </div>
+          <div style={{...hd(5),display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap",marginBottom:44}}>
+            <button onClick={()=>onOpenAuth("register")} className="cta1"
+              style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:14,padding:"16px 36px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 28px rgba(91,45,184,.55)",transition:"all .24s"}}>
+              ← צרו הזמנה דיגיטלית בחינם
+            </button>
+            <button className="cta2"
+              style={{background:"rgba(255,255,255,.12)",color:"#fff",border:"2px solid rgba(255,255,255,.35)",borderRadius:14,padding:"15px 28px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",backdropFilter:"blur(8px)",transition:"all .2s"}}>
+              ❓ איך זה עובד?
+            </button>
           </div>
+
+          {/* Stats */}
+          <div style={{...hd(6),display:"flex",gap:36,justifyContent:"center",flexWrap:"wrap"}}>
+            {[["3%","מענה ממוצע"],["+4K","ביקורים"],["+401","ספקים"]].map(([v,l])=>(
+              <div key={l} style={{textAlign:"center"}}>
+                <div style={{fontSize:"clamp(24px,3vw,34px)",fontWeight:900,color:"#fff"}}>{v}</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,.6)",fontWeight:600}}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{position:"absolute",bottom:28,left:"50%",transform:"translateX(-50%)",zIndex:3,display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:.6}}>
+          <div style={{width:1,height:40,background:"rgba(255,255,255,.4)"}}/>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.6)",fontWeight:600,letterSpacing:1}}>גלול</span>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
+      {/* FEATURES */}
       <section style={{padding:"72px 6vw",background:"#fff"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div className="lp-anim" style={{textAlign:"center",marginBottom:48}}>
@@ -1230,7 +1030,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
             <p style={{fontSize:15,color:"#9CA3AF",maxWidth:480,margin:"0 auto"}}>חתונות, בר/בת מצווה, בריתות, ימי הולדת ועוד</p>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(290px,1fr))",gap:18}}>
-            {features.map((f,i)=>(
+            {features.map(f=>(
               <div key={f.title} className="lp-anim feat"
                 style={{background:"#fff",borderRadius:18,padding:"24px",border:"1.5px solid #EDE8FF",transition:"all .25s",cursor:"default"}}>
                 <div style={{width:52,height:52,borderRadius:14,background:`${f.color}14`,border:`1.5px solid ${f.color}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,marginBottom:14}}>{f.icon}</div>
@@ -1242,7 +1042,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
+      {/* HOW IT WORKS */}
       <section style={{padding:"72px 6vw",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2,#9B72F0)",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle at 20% 80%,rgba(255,255,255,.05),transparent 50%)",pointerEvents:"none"}}/>
         <div style={{maxWidth:960,margin:"0 auto",position:"relative",zIndex:1}}>
@@ -1251,11 +1051,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
             <p style={{fontSize:15,color:"rgba(255,255,255,.65)"}}>פשוט, מהיר — ועובד.</p>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:32}}>
-            {[
-              {n:"01",icon:"📋",t:"הוסף אורחים",d:"ייבא מ-Excel, מאנשי קשר, או הוסף ידנית"},
-              {n:"02",icon:"🎨",t:"עצב הזמנה",d:"בחר מבין עשרות תבניות מעוצבות"},
-              {n:"03",icon:"🚀",t:"שלח ונהל",d:"WhatsApp אוטומטי, אישורים, מתנות"},
-            ].map(({n,icon,t,d})=>(
+            {[{n:"01",icon:"📋",t:"הוסף אורחים",d:"ייבא מ-Excel, מאנשי קשר, או הוסף ידנית"},{n:"02",icon:"🎨",t:"עצב הזמנה",d:"בחר מבין עשרות תבניות מעוצבות"},{n:"03",icon:"🚀",t:"שלח ונהל",d:"WhatsApp אוטומטי, אישורים, מתנות"}].map(({n,icon,t,d})=>(
               <div key={n} className="lp-anim" style={{textAlign:"center"}}>
                 <div style={{width:64,height:64,borderRadius:18,background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 14px"}}>{icon}</div>
                 <div style={{fontSize:44,fontWeight:900,color:"rgba(255,255,255,.09)",lineHeight:1,marginBottom:6}}>{n}</div>
@@ -1267,7 +1063,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
+      {/* PRICING */}
       <section style={{padding:"72px 6vw",background:"#FAF8FF"}}>
         <div style={{maxWidth:920,margin:"0 auto"}}>
           <div className="lp-anim" style={{textAlign:"center",marginBottom:44}}>
@@ -1279,7 +1075,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
               {name:"BASIC",price:"חינם",desc:"להתנסות",color:"#64748B",features:["הזמנה דיגיטלית","ניהול אורחים","סידורי הושבה","6 שפות"]},
               {name:"SMART",price:"₪69",per:"ל-50 רשומות",desc:"⭐ הכי פופולרי",color:"#5B2DB8",hot:true,features:["הכל ב-BASIC","WhatsApp אוטומטי","אישורי הגעה","תזכורות + ניווט"]},
               {name:"PREMIUM",price:"₪99",per:"ל-50 רשומות",desc:"שקט נפשי מלא",color:"#22C55E",features:["הכל ב-SMART","חייגן אוטומטי","מתנות באשראי","תמיכה מלאה"]},
-            ].map((plan)=>(
+            ].map(plan=>(
               <div key={plan.name} className="lp-anim plan"
                 style={{background:"#fff",borderRadius:22,padding:"26px 22px",border:`${plan.hot?2.5:1.5}px solid ${plan.hot?plan.color+"55":"#EDE8FF"}`,position:"relative",boxShadow:plan.hot?`0 10px 36px ${plan.color}18`:"none",transition:"all .25s"}}>
                 {plan.hot&&<div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",borderRadius:100,padding:"4px 16px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⭐ הכי פופולרי</div>}
@@ -1292,13 +1088,12 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
                 <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:18}}>
                   {plan.features.map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"center",gap:7,fontSize:13,color:"#1A1035"}}>
-                      <span style={{width:17,height:17,borderRadius:"50%",background:plan.color+"18",color:plan.color,fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✓</span>
-                      {f}
+                      <span style={{width:17,height:17,borderRadius:"50%",background:plan.color+"18",color:plan.color,fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✓</span>{f}
                     </div>
                   ))}
                 </div>
                 <button onClick={()=>onOpenAuth("register")}
-                  style={{width:"100%",background:plan.hot?`linear-gradient(135deg,#5B2DB8,#7B4AE2)`:"transparent",color:plan.hot?"#fff":plan.color,border:`2px solid ${plan.color}`,borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}
+                  style={{width:"100%",background:plan.hot?"linear-gradient(135deg,#5B2DB8,#7B4AE2)":"transparent",color:plan.hot?"#fff":plan.color,border:`2px solid ${plan.color}`,borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}
                   onMouseEnter={e=>{if(!plan.hot)e.currentTarget.style.background=plan.color+"12";}}
                   onMouseLeave={e=>{if(!plan.hot)e.currentTarget.style.background="transparent";}}>
                   {plan.price==="חינם"?"התחל בחינם":"בחר חבילה"} →
@@ -1309,7 +1104,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <section style={{padding:"72px 6vw",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",textAlign:"center"}}>
         <div className="lp-anim">
           <div style={{fontSize:36,marginBottom:14}}>🎊</div>
@@ -1332,7 +1127,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* FOOTER */}
       <footer style={{background:"#0D0820",padding:"44px 6vw 22px",direction:"rtl"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:36,marginBottom:36,justifyContent:"space-between"}}>
@@ -1354,7 +1149,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
           </div>
           <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:18,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,fontSize:12,color:"rgba(255,255,255,.3)",alignItems:"center"}}>
             <span>© 2025 Sidor-IL · כל הזכויות שמורות</span>
-            <a href="#/privacy" style={{color:"rgba(255,255,255,.38)",textDecoration:"none"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.38)"}>מדיניות פרטיות</a>
+            <a href="#/privacy" style={{color:"rgba(255,255,255,.38)",textDecoration:"none"}}>מדיניות פרטיות</a>
             <span>🇮🇱 נבנתה עם ❤️</span>
           </div>
         </div>
@@ -1363,7 +1158,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
   );
 }
 
-// ─── MY EVENTS SCREEN — בדיוק כמו LunSoul ──────────────────────────────────────
+// ─── MY EVENTS SCREEN — Sidor-IL ──────────────────────────────────────────────
 function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1396,58 +1191,65 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
   };
 
   if(loading) return(
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#FAF8FF,#F0EBFF)"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F4F0FE"}}>
       <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid #EDE8FF",borderTopColor:"#5B2DB8",animation:"spin .7s linear infinite"}}/>
     </div>
   );
 
   return(
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",minHeight:"100vh",background:"linear-gradient(135deg,#FAF8FF 0%,#F0EBFF 45%,#EAF0FF 100%)",color:"#1A1035"}}>
-      <style>{"@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}"}</style>
+    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",minHeight:"100vh",background:"#F4F0FE",color:"#1A1035"}}>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+      `}</style>
 
-      {/* Header — בדיוק כמו LunSoul */}
-      <header style={{background:"rgba(255,255,255,.95)",backdropFilter:"blur(20px)",borderBottom:"1px solid #EDE8FF",height:56,display:"flex",alignItems:"center",padding:"0 5vw",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(91,45,184,.06)"}}>
+      {/* Header — Sidor-IL */}
+      <header style={{background:"#fff",borderBottom:"2px solid #EDE8FF",height:56,display:"flex",alignItems:"center",padding:"0 5vw",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(91,45,184,.08)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:30,height:30,borderRadius:9,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",fontWeight:900}}>◈</div>
-          <span style={{fontWeight:900,fontSize:17,color:"#5B2DB8",letterSpacing:"-.3px"}}>Sidor-IL</span>
+          <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff",fontWeight:900,boxShadow:"0 2px 8px rgba(91,45,184,.3)"}}>◈</div>
+          <span style={{fontWeight:900,fontSize:18,color:"#5B2DB8",letterSpacing:"-.3px"}}>Sidor-IL</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"#7B7B9A",fontWeight:600}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1.5px solid #EDE8FF",borderRadius:9,background:"#F5F2FF"}}>
             <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700}}>
               {(user.email||"?")[0].toUpperCase()}
             </div>
-            <span>היי, {user.email?.split("@")[0]}</span>
-            <span style={{fontSize:10,color:"#ccc"}}>▾</span>
+            <span style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{user.email?.split("@")[0]}</span>
+            <span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>
           </div>
           <div style={{width:1,height:18,background:"#EDE8FF"}}/>
-          <button style={{background:"none",border:"none",fontSize:12,color:"#7B7B9A",cursor:"pointer",fontFamily:"inherit",fontWeight:600,padding:"4px 8px",borderRadius:6,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#F0EBFF"} onMouseLeave={e=>e.currentTarget.style.background="none"}>⭐ ביקורות</button>
-          <button style={{background:"none",border:"none",fontSize:12,color:"#7B7B9A",cursor:"pointer",fontFamily:"inherit",fontWeight:600,padding:"4px 8px",borderRadius:6,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#F0EBFF"} onMouseLeave={e=>e.currentTarget.style.background="none"}>⚙️ הגדרות</button>
-          <button style={{background:"none",border:"none",fontSize:12,color:"#7B7B9A",cursor:"pointer",fontFamily:"inherit",fontWeight:600,padding:"4px 8px",borderRadius:6,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#F0EBFF"} onMouseLeave={e=>e.currentTarget.style.background="none"}>? עזרה</button>
+          {["⭐ ביקורות","⚙️ הגדרות","? עזרה"].map(s=>(
+            <button key={s} style={{background:"none",border:"none",fontSize:12,color:"#6B7280",cursor:"pointer",fontFamily:"inherit",fontWeight:600,padding:"5px 9px",borderRadius:7,transition:"all .15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background="#F0EBFF";e.currentTarget.style.color="#5B2DB8";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="#6B7280";}}>{s}</button>
+          ))}
           <button onClick={onLogout}
-            style={{background:"linear-gradient(135deg,#EF4444,#DC2626)",color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}>
+            style={{background:"#FFF0EE",color:"#E53935",border:"1.5px solid #FFCDD2",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4,transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#FFEBEE"}
+            onMouseLeave={e=>e.currentTarget.style.background="#FFF0EE"}>
             → התנתק
           </button>
         </div>
       </header>
 
-      <div style={{maxWidth:1020,margin:"0 auto",padding:"32px 5vw"}}>
-
-        {/* Hero banner — כמו LunSoul */}
+      <div style={{maxWidth:1020,margin:"0 auto",padding:"28px 5vw"}}>
+        {/* Hero banner */}
         <div style={{
           background:"linear-gradient(135deg,#5B2DB8 0%,#7B4AE2 55%,#9B72F0 100%)",
-          borderRadius:20,padding:"28px 32px",marginBottom:28,
+          borderRadius:20,padding:"26px 32px",marginBottom:24,
           position:"relative",overflow:"hidden",
-          display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"
+          display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",
+          border:"2px solid rgba(255,255,255,.15)",
+          boxShadow:"0 8px 32px rgba(91,45,184,.25)"
         }}>
-          <div style={{position:"absolute",top:-60,left:-60,width:220,height:220,borderRadius:"50%",background:"rgba(255,255,255,.06)",pointerEvents:"none"}}/>
-          <div style={{position:"absolute",bottom:-30,right:200,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,.04)",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",top:-50,left:-50,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,.06)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.18)",borderRadius:100,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#fff",marginBottom:8}}>✨ ניהול האירועים</div>
-            <div style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:900,color:"#fff",marginBottom:4}}>האירועים שלי</div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.18)",border:"1px solid rgba(255,255,255,.25)",borderRadius:100,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#fff",marginBottom:8}}>✨ ניהול האירועים</div>
+            <div style={{fontSize:"clamp(20px,2.8vw,30px)",fontWeight:900,color:"#fff",marginBottom:3}}>האירועים שלי</div>
             <div style={{fontSize:13,color:"rgba(255,255,255,.7)"}}>צרו ונהלו את כל האירועים שלכם במקום אחד</div>
           </div>
           <button onClick={()=>setShowCreate(true)}
-            style={{background:"#fff",color:"#5B2DB8",border:"none",borderRadius:12,padding:"13px 26px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,flexShrink:0,boxShadow:"0 4px 16px rgba(0,0,0,.14)",transition:"all .2s",position:"relative",zIndex:1}}
+            style={{background:"#fff",color:"#5B2DB8",border:"2px solid rgba(255,255,255,.3)",borderRadius:12,padding:"13px 26px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,flexShrink:0,boxShadow:"0 4px 16px rgba(0,0,0,.12)",transition:"all .2s",position:"relative",zIndex:1}}
             onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
             onMouseLeave={e=>e.currentTarget.style.transform="none"}>
             + אירוע חדש
@@ -1471,9 +1273,9 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
               const daysLeft=ev.date?Math.max(0,Math.floor((new Date(ev.date)-new Date())/86400000)):null;
               const evDate=ev.date?new Date(ev.date):null;
               return(
-                <div key={ev.id} style={{background:"#fff",borderRadius:18,overflow:"hidden",border:"1.5px solid #EDE8FF",transition:"all .22s",cursor:"pointer",animation:"fadeIn .5s ease"}}
-                  onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 12px 36px rgba(91,45,184,.13)";e.currentTarget.style.borderColor="#C4B5F4";e.currentTarget.style.transform="translateY(-3px)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.borderColor="#EDE8FF";e.currentTarget.style.transform="none";}}>
+                <div key={ev.id} style={{background:"#fff",borderRadius:18,overflow:"hidden",border:"2px solid #EDE8FF",transition:"all .22s",cursor:"pointer",animation:"fadeIn .5s ease",boxShadow:"0 2px 8px rgba(91,45,184,.06)"}}
+                  onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 12px 36px rgba(91,45,184,.15)";e.currentTarget.style.borderColor="#7B4AE2";e.currentTarget.style.transform="translateY(-3px)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(91,45,184,.06)";e.currentTarget.style.borderColor="#EDE8FF";e.currentTarget.style.transform="none";}}>
 
                   {/* Card header */}
                   <div style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",padding:"18px 20px 14px",position:"relative",overflow:"hidden"}}
@@ -1481,72 +1283,62 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
                     <div style={{position:"absolute",top:-20,left:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,.07)",pointerEvents:"none"}}/>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.2)",borderRadius:100,padding:"2px 9px",fontSize:10,fontWeight:700,color:"#fff",marginBottom:7}}>
+                        <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.25)",borderRadius:100,padding:"2px 9px",fontSize:10,fontWeight:700,color:"#fff",marginBottom:7}}>
                           <span style={{width:5,height:5,borderRadius:"50%",background:"#22C55E",display:"inline-block"}}/>פעיל
                         </div>
                         <div style={{fontSize:17,fontWeight:900,color:"#fff",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.name}</div>
-                        {ev.date&&<div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600}}>
+                        {ev.date&&<div style={{fontSize:11,color:"rgba(255,255,255,.8)",fontWeight:600}}>
                           {evDate.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}
                         </div>}
                       </div>
                       {evDate&&(
-                        <div style={{background:"rgba(255,255,255,.18)",borderRadius:11,padding:"8px 10px",textAlign:"center",flexShrink:0,marginRight:8}}>
-                          <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{evDate.getDate()}</div>
+                        <div style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.25)",borderRadius:11,padding:"8px 12px",textAlign:"center",flexShrink:0,marginRight:8}}>
+                          <div style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1}}>{evDate.getDate()}</div>
                           <div style={{fontSize:9,color:"rgba(255,255,255,.8)",fontWeight:700}}>{evDate.toLocaleDateString("he-IL",{month:"short"})}</div>
                         </div>
                       )}
                     </div>
                     {daysLeft!==null&&daysLeft<=30&&(
-                      <div style={{marginTop:8,background:"rgba(239,68,68,.25)",borderRadius:7,padding:"3px 9px",fontSize:10,fontWeight:700,color:"#FCA5A5",display:"inline-block",position:"relative",zIndex:1}}>
+                      <div style={{marginTop:8,background:"rgba(239,68,68,.25)",border:"1px solid rgba(239,68,68,.3)",borderRadius:7,padding:"3px 9px",fontSize:10,fontWeight:700,color:"#FCA5A5",display:"inline-block",position:"relative",zIndex:1}}>
                         🔔 {daysLeft===0?"היום!":daysLeft===1?"מחר":daysLeft+" ימים"}
                       </div>
                     )}
                   </div>
 
                   {/* Card body */}
-                  <div style={{padding:"14px 18px"}} onClick={()=>onSelectEvent(ev)}>
-                    {/* Stats row */}
+                  <div style={{padding:"14px 18px",borderBottom:"1.5px solid #EDE8FF"}} onClick={()=>onSelectEvent(ev)}>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-                      {[
-                        {icon:"✅",val:"0",label:"מגיעים",c:"#22C55E",bg:"#ECFDF5"},
-                        {icon:"⏳",val:"0",label:"ממתינים",c:"#F59E0B",bg:"#FFFBEB"},
-                        {icon:"🪑",val:"0%",label:"שובצו",c:"#5B2DB8",bg:"#F0EBFF"},
-                      ].map(s=>(
-                        <div key={s.label} style={{textAlign:"center",padding:"8px 4px",borderRadius:9,background:s.bg}}>
+                      {[{val:"0",label:"מגיעים",c:"#22C55E",bg:"#ECFDF5",bc:"#A7F3D0"},{val:"0",label:"ממתינים",c:"#F59E0B",bg:"#FFFBEB",bc:"#FDE68A"},{val:"0%",label:"שובצו",c:"#5B2DB8",bg:"#F0EBFF",bc:"#C4B5F4"}].map(s=>(
+                        <div key={s.label} style={{textAlign:"center",padding:"8px 4px",borderRadius:9,background:s.bg,border:`1.5px solid ${s.bc}`}}>
                           <div style={{fontSize:15,fontWeight:900,color:s.c}}>{s.val}</div>
-                          <div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,marginTop:1}}>{s.label}</div>
+                          <div style={{fontSize:9,color:s.c,fontWeight:700,marginTop:1,opacity:.7}}>{s.label}</div>
                         </div>
                       ))}
                     </div>
-                    {/* Progress */}
-                    <div style={{marginBottom:4}}>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#9CA3AF",marginBottom:4,fontWeight:600}}>
+                    <div>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#9CA3AF",marginBottom:5,fontWeight:600}}>
                         <span>אישורי הגעה</span><span>0%</span>
                       </div>
-                      <div style={{height:4,background:"#F0EBFF",borderRadius:2}}>
-                        <div style={{height:"100%",width:"0%",background:"linear-gradient(90deg,#5B2DB8,#7B4AE2)",borderRadius:2}}/>
+                      <div style={{height:5,background:"#EDE8FF",borderRadius:3,border:"1px solid #D4C9F0"}}>
+                        <div style={{height:"100%",width:"0%",background:"linear-gradient(90deg,#5B2DB8,#7B4AE2)",borderRadius:3}}/>
                       </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div style={{padding:"0 14px 14px",display:"flex",gap:7}}>
+                  <div style={{padding:"12px 14px",display:"flex",gap:7,background:"#FAFAFA"}}>
                     <button onClick={()=>onSelectEvent(ev)}
                       style={{flex:1,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:9,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 3px 10px rgba(91,45,184,.3)"}}>
                       נהל אירוע ←
                     </button>
                     <button onClick={e=>{e.stopPropagation();setEditingEvent(ev);setEditForm({name:ev.name,date:ev.date||"",venue:ev.venue||"",groom_name:ev.groom_name||"",bride_name:ev.bride_name||"",event_time:ev.event_time||"",event_type:ev.event_type||"wedding"});}}
-                      style={{background:"#F0EBFF",color:"#5B2DB8",border:"none",borderRadius:9,padding:"10px 13px",fontSize:13,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
+                      style={{background:"#F0EBFF",color:"#5B2DB8",border:"1.5px solid #C4B5F4",borderRadius:9,padding:"10px 13px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700,transition:"all .15s"}}
                       onMouseEnter={e=>e.currentTarget.style.background="#E0D9F8"}
-                      onMouseLeave={e=>e.currentTarget.style.background="#F0EBFF"}>
-                      ✏️
-                    </button>
+                      onMouseLeave={e=>e.currentTarget.style.background="#F0EBFF"}>✏️</button>
                     <button onClick={e=>{e.stopPropagation();deleteEvent(ev);}}
-                      style={{background:"#FEF2F2",color:"#EF4444",border:"none",borderRadius:9,padding:"10px 13px",fontSize:13,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
+                      style={{background:"#FEF2F2",color:"#EF4444",border:"1.5px solid #FECACA",borderRadius:9,padding:"10px 13px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:700,transition:"all .15s"}}
                       onMouseEnter={e=>e.currentTarget.style.background="#FEE2E2"}
-                      onMouseLeave={e=>e.currentTarget.style.background="#FEF2F2"}>
-                      🗑️
-                    </button>
+                      onMouseLeave={e=>e.currentTarget.style.background="#FEF2F2"}>🗑️</button>
                   </div>
                 </div>
               );
@@ -1559,7 +1351,7 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
               onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor="#C4B5F4";}}>
               <div style={{width:48,height:48,borderRadius:14,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#fff",boxShadow:"0 4px 12px rgba(91,45,184,.3)"}}>+</div>
               <div style={{fontSize:14,fontWeight:700,color:"#5B2DB8"}}>צור אירוע חדש</div>
-              <div style={{fontSize:12,color:"#9CA3AF",textAlign:"center"}}>לחץ כדי להוסיף<br/>אירוע נוסף</div>
+              <div style={{fontSize:12,color:"#9CA3AF",textAlign:"center"}}>לחץ להוסיף אירוע נוסף</div>
             </div>
           </div>
         )}
@@ -1568,36 +1360,36 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
       {/* Edit modal */}
       {editingEvent&&(
         <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,8,32,.65)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setEditingEvent(null)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"30px",width:"100%",maxWidth:460,direction:"rtl",boxShadow:"0 20px 60px rgba(91,45,184,.22)",animation:"fadeIn .3s ease"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"28px",width:"100%",maxWidth:460,direction:"rtl",boxShadow:"0 20px 60px rgba(91,45,184,.22)",border:"2px solid #EDE8FF",animation:"fadeIn .3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:22}}>
               <div style={{width:44,height:44,borderRadius:13,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>✏️</div>
-              <div>
+              <div style={{flex:1}}>
                 <div style={{fontSize:17,fontWeight:900,color:"#1A1035"}}>עריכת אירוע</div>
                 <div style={{fontSize:11,color:"#9CA3AF"}}>{editingEvent.name}</div>
               </div>
-              <button onClick={()=>setEditingEvent(null)} style={{marginRight:"auto",background:"#F0EBFF",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14,color:"#5B2DB8",fontWeight:900}}>✕</button>
+              <button onClick={()=>setEditingEvent(null)} style={{background:"#F0EBFF",border:"1.5px solid #C4B5F4",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:14,color:"#5B2DB8",fontWeight:900}}>✕</button>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:18}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:18}}>
               {[["שם האירוע","name","חתונת עמית ואורנה"],["שם החתן","groom_name","עמית"],["שם הכלה","bride_name","אורנה"],["אולם/מקום","venue","אולמי הגן הקסום"]].map(([l,k,p])=>(
                 <div key={k}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",marginBottom:4,textTransform:"uppercase",letterSpacing:".05em"}}>{l}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
                   <input value={editForm[k]||""} onChange={e=>setEditForm(x=>({...x,[k]:e.target.value}))} placeholder={p}
-                    style={{width:"100%",background:"#F0EBFF",border:"1.5px solid #EDE8FF",borderRadius:11,padding:"9px 13px",fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box",color:"#1A1035",transition:"border-color .2s"}}
+                    style={{width:"100%",background:"#F5F2FF",border:"2px solid #EDE8FF",borderRadius:10,padding:"9px 13px",fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box",color:"#1A1035",transition:"border-color .2s"}}
                     onFocus={e=>e.target.style.borderColor="#5B2DB8"} onBlur={e=>e.target.style.borderColor="#EDE8FF"}/>
                 </div>
               ))}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {[["תאריך","date","date"],["שעה","event_time","time"]].map(([l,k,t])=>(
                   <div key={k}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",marginBottom:4,textTransform:"uppercase",letterSpacing:".05em"}}>{l}</div>
+                    <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
                     <input type={t} dir="ltr" value={editForm[k]||""} onChange={e=>setEditForm(x=>({...x,[k]:e.target.value}))}
-                      style={{width:"100%",background:"#F0EBFF",border:"1.5px solid #EDE8FF",borderRadius:11,padding:"9px 13px",fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                      style={{width:"100%",background:"#F5F2FF",border:"2px solid #EDE8FF",borderRadius:10,padding:"9px 13px",fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
                   </div>
                 ))}
               </div>
             </div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setEditingEvent(null)} style={{flex:1,background:"#F0EBFF",color:"#5B2DB8",border:"none",borderRadius:11,padding:"12px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
+              <button onClick={()=>setEditingEvent(null)} style={{flex:1,background:"#F5F2FF",color:"#5B2DB8",border:"2px solid #EDE8FF",borderRadius:11,padding:"12px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
               <button onClick={saveEdit} disabled={saving} style={{flex:2,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 12px rgba(91,45,184,.32)"}}>
                 {saving?"שומר...":"שמור שינויים ✓"}
               </button>
@@ -1606,1530 +1398,315 @@ function MyEventsScreen({ user, onSelectEvent, onLogout, onCreateNew }) {
         </div>
       )}
 
-      {/* Create modal */}
-      {showCreate&&(
-        <CreateEventScreen user={user} onSelect={(ev)=>{setShowCreate(false);onSelectEvent(ev);}} onLogout={onLogout} inModal={true} onClose={()=>setShowCreate(false)}/>
-      )}
+      {showCreate&&<CreateEventScreen user={user} onSelect={(ev)=>{setShowCreate(false);onSelectEvent(ev);}} onLogout={onLogout} inModal={true} onClose={()=>setShowCreate(false)}/>}
     </div>
   );
 }
 
+// ─── LUNSOUL EXACT DESKTOP APP ─────────────────────────────────────────────────
+function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelected,
+  view, setView, screen, setScreen, modal, setModal, editGuestData, setEditGuestData,
+  loading, saving, search, setSearch, newGuest, setNewGuest, mobile,
+  userPackages, trialExpired, trialHours, editTableData, setEditTableData,
+  addGuest, editGuest, addTable, doAddTable, deleteTable, editTable,
+  dropOnTable, removeFromTable, moveTablePos, saveTablePos,
+  seated, total, loadAll, sb, setShowLanding,
+  venueElements, setVenueElements }) {
 
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [countdown, setCountdown] = useState({d:0,h:0,m:0,s:0});
 
+  // Live countdown
+  useEffect(()=>{
+    if(!event.date) return;
+    const calc=()=>{
+      const diff=new Date(event.date)-new Date();
+      if(diff<=0){setCountdown({d:0,h:0,m:0,s:0});return;}
+      setCountdown({d:Math.floor(diff/86400000),h:Math.floor((diff%86400000)/3600000),m:Math.floor((diff%3600000)/60000),s:Math.floor((diff%60000)/1000)});
+    };
+    calc();
+    const id=setInterval(calc,1000);
+    return()=>clearInterval(id);
+  },[event.date]);
 
-function AuthDrawer({ mode:initMode, onClose, onAuth }) {
-  const [mode,setMode]=useState(initMode);
-  const [email,setEmail]=useState("");
-  const [pass,setPass]=useState("");
-  const [err,setErr]=useState("");
-  const [load,setLoad]=useState(false);
-  const [googleLoad,setGoogleLoad]=useState(false);
-  const [resetSent,setResetSent]=useState(false);
-
-  const submit=async()=>{
-    setErr("");setLoad(true);
-    try{
-      if(mode==="reset"){
-        const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:`https://sidoril.com`});
-        if(error)throw error;
-        setResetSent(true);
-      } else if(mode==="login"){
-        const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
-        if(error)throw error;
-        onAuth(data.user);
-      } else {
-        const{data,error}=await sb.auth.signUp({email,password:pass});
-        if(error)throw error;
-        if(data.user&&!data.user.email_confirmed_at)setErr("✅ נשלח מייל אימות!");
-        else onAuth(data.user);
-      }
-    }catch(e){
-      setErr(e.message==="Invalid login credentials"?"❌ אימייל או סיסמה שגויים":e.message);
-    }
-    setLoad(false);
+  const isLocked=(id)=>{
+    if(["home","packages","settings","user_settings","invite"].includes(id)) return false;
+    if(id==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p));
+    if(id==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p));
+    if(["sms","whatsapp"].includes(id)) return !userPackages.some(p=>["auto","vip"].includes(p));
+    if(["ai","budget","import"].includes(id)) return userPackages.length===0;
+    return false;
   };
 
-  const loginWithGoogle=async()=>{setGoogleLoad(true);await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:`https://sidoril.com`}});setGoogleLoad(false);};
+  const go=(id)=>{ if(isLocked(id)){setScreen("packages");return;} setScreen(id); setMoreOpen(false); };
 
-  return(
-    <>
-      <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(26,16,53,.6)",backdropFilter:"blur(8px)"}}/>
-      <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 28px 44px",maxWidth:480,margin:"0 auto",direction:"rtl",boxShadow:"0 -8px 40px rgba(107,61,212,.2)"}}>
-        <style>{"@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}"}</style>
-        <div style={{animation:"slideUp .3s ease"}}>
-          <div style={{width:40,height:4,borderRadius:2,background:LS.border,margin:"0 auto 24px"}}/>
+  const pkgLabel = userPackages.length>0 ? (userPackages[0]?.toUpperCase?.() || "BASIC") : "BASIC";
+
+  const settingsLinks=[
+    {id:"settings", icon:"👤", label:"פרטי האירוע",  sub:"שמות, תאריך ומיקום"},
+    {id:"meals",    icon:"🍽️", label:"סוגי מנות",    sub:"העדפות מנות לאורחים"},
+    {id:"gifts",    icon:"💝", label:"מתנות",         sub:"Bit והעברות"},
+    {id:"seating",  icon:"🪑", label:"סידורי הושבה", sub:"מצב הושבה ואפשרויות"},
+    {id:"media",    icon:"🖼️", label:"מדיה",          sub:"תמונה ותיאור"},
+    {id:"design",   icon:"🎨", label:"עיצוב",         sub:"תבנית וצבעים"},
+    {id:"packages", icon:"📦", label:"חבילה",         sub:"בחירת חבילת אורחים"},
+  ];
+
+  return (
+    <div style={{fontFamily:"'Heebo',sans-serif",background:"#F4F0FE",color:"#1A1035",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",direction:"rtl"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#C4B5F4;border-radius:4px}
+        .ls-nav:hover{color:#5B2DB8!important}
+        .ls-set:hover{background:#EDE8FF!important}
+      `}</style>
+
+      {/* ══ TOP HEADER — בדיוק כמו LunSoul ══ */}
+      <header style={{height:54,background:"#fff",borderBottom:"2px solid #EDE8FF",display:"flex",alignItems:"center",padding:"0 0",flexShrink:0,zIndex:100,boxShadow:"0 2px 8px rgba(91,45,184,.07)"}}>
+
+        {/* RIGHT: user controls */}
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"0 16px",borderLeft:"2px solid #EDE8FF",height:"100%",flexShrink:0}}>
+          {/* התנתק — red */}
+          <button onClick={async()=>{await sb.auth.signOut();}}
+            style={{background:"#FFF0EE",color:"#E53935",border:"1.5px solid #FFCDD2",borderRadius:9,padding:"6px 12px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5,transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#FFEBEE"}
+            onMouseLeave={e=>e.currentTarget.style.background="#FFF0EE"}>
+            <span>→</span> התנתק
+          </button>
+          {/* User name */}
+          <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,cursor:"pointer",transition:"all .15s",border:"1.5px solid transparent"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.borderColor="#EDE8FF";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor="transparent";}}>
+            <span style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{event.groom_name||user.email?.split("@")[0]||"משתמש"}</span>
+            <span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>
+          </div>
+          {/* Flag */}
+          <div style={{display:"flex",alignItems:"center",gap:3,padding:"5px 9px",borderRadius:8,cursor:"pointer",border:"1.5px solid #EDE8FF",background:"#FAFAFA",transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+            onMouseLeave={e=>e.currentTarget.style.background="#FAFAFA"}>
+            <span style={{fontSize:16}}>🇮🇱</span>
+            <span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>
+          </div>
+          {/* Bell */}
+          <button style={{background:"none",border:"1.5px solid transparent",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.borderColor="#EDE8FF";e.currentTarget.style.color="#5B2DB8";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.borderColor="transparent";e.currentTarget.style.color="#9CA3AF";}}>🔔</button>
+          {/* Search */}
+          <button style={{background:"none",border:"1.5px solid transparent",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.borderColor="#EDE8FF";e.currentTarget.style.color="#5B2DB8";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.borderColor="transparent";e.currentTarget.style.color="#9CA3AF";}}>🔍</button>
+        </div>
+
+        {/* CENTER: Nav */}
+        <nav style={{flex:1,display:"flex",alignItems:"center",height:"100%",padding:"0 4px",overflow:"hidden"}}>
+          {[
+            {id:"more",    label:"עוד",          icon:"⊞", drop:true},
+            {id:"vendors", label:"ספקים",        icon:"🏛️"},
+            {id:"whatsapp",label:"הודעות",       icon:"💬"},
+            {id:"seating", label:"סידורי הושבה", icon:"🪑"},
+            {id:"rsvp",    label:"ניהול אורחים", icon:"👥"},
+            {id:"home",    label:"סקירה כללית",  icon:"📊"},
+          ].map(item=>(
+            <div key={item.id} style={{position:"relative",height:"100%",display:"flex",alignItems:"center"}}>
+              <button onClick={()=>item.drop?setMoreOpen(o=>!o):go(item.id)} className="ls-nav"
+                style={{height:"100%",padding:"0 13px",background:"transparent",border:"none",borderBottom:screen===item.id?"3px solid #5B2DB8":"3px solid transparent",color:screen===item.id?"#5B2DB8":"#6B7280",fontSize:13,fontWeight:screen===item.id?700:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",transition:"color .15s"}}>
+                <span style={{fontSize:13}}>{item.icon}</span>
+                {item.label}
+                {item.drop&&<span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>}
+                {isLocked(item.id)&&<span style={{fontSize:9,background:"#FEF3C7",color:"#D97706",borderRadius:3,padding:"1px 4px"}}>🔒</span>}
+              </button>
+              {item.drop&&moreOpen&&(
+                <div style={{position:"absolute",top:"100%",right:0,background:"#fff",border:"2px solid #EDE8FF",borderRadius:12,boxShadow:"0 8px 24px rgba(91,45,184,.12)",padding:"6px 0",zIndex:200,minWidth:160,direction:"rtl"}}>
+                  {[{id:"import",label:"ייבוא אורחים",icon:"📊"},{id:"budget",label:"ניהול תקציב",icon:"💰"},{id:"ai",label:"AI חכם",icon:"🤖"},{id:"sms",label:"הודעות SMS",icon:"📱"}].map(m=>(
+                    <button key={m.id} onClick={()=>go(m.id)}
+                      style={{width:"100%",background:"none",border:"none",padding:"9px 16px",fontSize:13,fontWeight:500,color:"#374151",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,transition:"background .15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+                      onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <span>{m.icon}</span>{m.label}{isLocked(m.id)&&<span style={{marginRight:"auto",fontSize:9,color:"#D97706"}}>🔒</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {saving&&<div style={{marginRight:8,width:14,height:14,borderRadius:"50%",border:"2px solid #D4C9F0",borderTopColor:"#5B2DB8",animation:"spin .7s linear infinite"}}/>}
+        </nav>
+
+        {/* LEFT: Logo */}
+        <div style={{padding:"0 22px",borderRight:"2px solid #EDE8FF",height:"100%",display:"flex",alignItems:"center",flexShrink:0}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",lineHeight:1}}>
+            <span style={{fontWeight:900,fontSize:19,color:"#5B2DB8",letterSpacing:"-.5px",fontFamily:"Georgia,serif",fontStyle:"italic"}}>Sidor-IL</span>
+            <span style={{fontSize:7,fontWeight:700,color:"#9CA3AF",letterSpacing:1.5,textTransform:"uppercase",marginTop:1}}>EVENTS</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ══ BODY ══ */}
+      <div style={{display:"flex",flex:1,overflow:"hidden",direction:"ltr"}}>
+
+        {/* ══ MAIN ══ */}
+        <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}} onClick={()=>moreOpen&&setMoreOpen(false)}>
+          {screen==="home"&&<LSHomeScreen event={event} setScreen={setScreen} setModal={setModal} guests={guests} tables={tables} seated={seated} total={total} userPackages={userPackages} sb={sb}/>}
+          {screen==="seating"&&<SeatingSection tables={tables} guests={guests} selected={selected} setSelected={setSelected} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={addTable} editGuestData={editGuestData} setEditGuestData={setEditGuestData} editTable={editTable} deleteTable={deleteTable} moveTablePos={moveTablePos} saveTablePos={saveTablePos} setEditTableData={setEditTableData} setModal={setModal} view={view} setView={setView} saving={saving} seated={seated} total={total} venueElements={venueElements} setVenueElements={setVenueElements}/>}
+          {screen==="rsvp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="👥" title="ניהול אורחים" subtitle="ניהול רשימת אורחים לאירוע"/><DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={()=>{}} setTables={()=>{}} onAddGuest={()=>setModal("addGuest")}/></div>)}
+          {screen==="whatsapp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💬" title="הודעות" subtitle="מרכז הודעות"/><WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/></div>)}
+          {screen==="sms"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📱" title="SMS" subtitle="הודעות SMS"/><SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/></div>)}
+          {screen==="import"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📊" title="ייבוא אורחים" subtitle="ייבוא מ-Excel"/><div style={{background:"#fff",borderRadius:18,padding:24,border:"2px solid #EDE8FF"}}><label style={{display:"block",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",borderRadius:11,padding:"12px 24px",fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",marginBottom:16}}>📂 בחר קובץ Excel<input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{const file=e.target.files[0];if(!file)return;try{const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");const buf=await file.arrayBuffer();const wb=read(buf);const ws=wb.Sheets[wb.SheetNames[0]];const rows=utils.sheet_to_json(ws);const toImport=rows.map(r=>({name:String(r["שם"]||r["name"]||"").trim(),phone:String(r["טלפון"]||r["phone"]||"").trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})).filter(g=>g.name.length>1);if(toImport.length>0){await sb.from("guests").insert(toImport);await loadAll();}alert(`✅ יובאו ${toImport.length} אורחים!`);}catch{alert("שגיאה");}}}/></label><textarea id="importTxt2" placeholder="ישראל ישראלי, 050-1234567" style={{width:"100%",background:"#F5F2FF",border:"2px solid #EDE8FF",borderRadius:12,padding:14,fontSize:13,fontFamily:"inherit",minHeight:140,resize:"vertical",outline:"none",marginBottom:12}}/><button onClick={async()=>{const t=document.getElementById("importTxt2")?.value||"";const r=t.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(",");return{name:p[0].trim(),phone:p[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);if(r.length){await sb.from("guests").insert(r);await loadAll();setScreen("rsvp");}}} style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✓ ייבא אורחים</button></div></div>)}
+          {screen==="budget"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💰" title="ניהול תקציב" subtitle="מעקב הוצאות"/><BudgetScreen event={event}/></div>)}
+          {screen==="ai"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="🤖" title="AI חכם" subtitle="סידור אוטומטי"/><AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(a)=>{for(const{guestId,tableId}of a){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setScreen("seating");}}/></div>)}
+          {screen==="packages"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📦" title="חבילות" subtitle="שדרג"/><PackagesScreen event={event} onBack={()=>setScreen("home")}/></div>)}
+          {screen==="settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📋" title="פרטי האירוע" subtitle="הגדרות האירוע"/><EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>sb.auth.signOut()} onUpdate={()=>{}}/></div>)}
+          {screen==="invite"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💌" title="הזמנה" subtitle="עיצוב ושיתוף"/><InviteSettings event={event} onUpdate={()=>setScreen("home")}/></div>)}
+          {screen==="user_settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="⚙️" title="הגדרות" subtitle="הגדרות משתמש"/><MobileSettingsScreen user={user} event={event} sb={sb} setGuests={()=>{}} setScreen={setScreen}/></div>)}
+        </div>
+
+        {/* ══ RIGHT SIDEBAR — בדיוק כמו LunSoul ══ */}
+        <aside style={{width:252,background:"#fff",borderRight:"2px solid #EDE8FF",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",direction:"rtl",boxShadow:"-2px 0 8px rgba(91,45,184,.04)"}}>
 
           {/* Logo */}
-          <div style={{textAlign:"center",marginBottom:24}}>
-            <div style={{width:56,height:56,borderRadius:18,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 6px 20px rgba(107,61,212,.35)"}}>◈</div>
-            <div style={{fontWeight:900,fontSize:22,color:LS.purple}}>Sidor-IL</div>
-            <div style={{fontSize:12,color:LS.muted,marginTop:2}}>סידורי הושבה חכמים לאירועים</div>
+          <div style={{padding:"16px 20px 12px",textAlign:"center",borderBottom:"2px solid #EDE8FF",background:"#FDFCFF"}}>
+            <div style={{fontSize:21,fontWeight:900,color:"#5B2DB8",fontFamily:"Georgia,serif",fontStyle:"italic",letterSpacing:"-.3px",lineHeight:1}}>Sidor-IL</div>
+            <div style={{fontSize:7,fontWeight:700,color:"#9CA3AF",letterSpacing:2,marginTop:2,textTransform:"uppercase"}}>EVENTS</div>
           </div>
 
-          {mode==="reset"?(
-            <div>
-              {resetSent?(
-                <div style={{textAlign:"center",padding:"20px 0"}}>
-                  <div style={{fontSize:44,marginBottom:12}}>📧</div>
-                  <div style={{fontSize:17,fontWeight:800,color:LS.text,marginBottom:8}}>נשלח מייל לשחזור!</div>
-                  <div style={{fontSize:13,color:LS.muted,marginBottom:20}}>בדוק את תיבת הדואר שלך.</div>
-                  <LSBtn ghost onClick={()=>{setMode("login");setResetSent(false);}}>חזרה לכניסה</LSBtn>
-                </div>
-              ):(
-                <>
-                  <LSInput label="אימייל" type="email" value={email} onChange={setEmail} placeholder="your@email.com" style={{marginBottom:14}}/>
-                  {err&&<div style={{background:"#FEF2F2",border:"1px solid #FECDCD",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#DC2626",marginBottom:12}}>{err}</div>}
-                  <LSBtn primary full onClick={submit} disabled={load||!email}>
-                    {load?<><div style={{width:16,height:16,borderRadius:"50%",border:"2.5px solid rgba(255,255,255,.4)",borderTopColor:"#fff",animation:"spin .7s linear infinite"}}/>שולח...</>:"שלח קישור לאיפוס ←"}
-                  </LSBtn>
-                  <p style={{fontSize:13,color:LS.muted,textAlign:"center",marginTop:14}}>
-                    <span onClick={()=>setMode("login")} style={{color:LS.purple,fontWeight:700,cursor:"pointer"}}>חזרה לכניסה</span>
-                  </p>
-                </>
-              )}
-            </div>
-          ):(
-            <>
-              {/* Google */}
-              <button onClick={loginWithGoogle} disabled={googleLoad}
-                style={{width:"100%",background:"#fff",color:"#333",border:`1.5px solid ${LS.border}`,borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-                {googleLoad?<div style={{width:20,height:20,borderRadius:"50%",border:"2.5px solid #D4C9F0",borderTopColor:LS.purple,animation:"spin .7s linear infinite"}}/>:<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>}
-                {googleLoad?"מתחבר...":"התחבר עם Google"}
-              </button>
+          {/* Back to events */}
+          <div style={{padding:"8px 16px",borderBottom:"1.5px solid #EDE8FF"}}>
+            <button onClick={()=>setShowLanding(true)}
+              style={{background:"none",border:"none",color:"#5B2DB8",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4,padding:"4px 0",width:"100%"}}>
+              <span style={{fontSize:14}}>›</span> חזרה לאירועים
+            </button>
+          </div>
 
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-                <div style={{flex:1,height:1,background:LS.border}}/><span style={{fontSize:12,color:LS.muted,fontWeight:600}}>או</span><div style={{flex:1,height:1,background:LS.border}}/>
+          {/* Event name + date + countdown */}
+          <div style={{padding:"14px 16px",borderBottom:"2px solid #EDE8FF"}}>
+            <div style={{fontSize:15,fontWeight:900,color:"#1A1035",marginBottom:5,lineHeight:1.3}}>
+              {event.groom_name&&event.bride_name
+                ?`החתונה של ${event.groom_name} ו${event.bride_name}`
+                :event.name}
+            </div>
+            {event.date&&(
+              <div style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#6B7280",marginBottom:8}}>
+                <span>📅</span>
+                {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})}
               </div>
-
-              {/* Mode toggle */}
-              <div style={{display:"flex",background:LS.purpleXL,borderRadius:12,padding:4,marginBottom:18}}>
-                {[["login","כניסה"],["register","הרשמה"]].map(([v,l])=>(
-                  <button key={v} onClick={()=>{setMode(v);setErr("");}}
-                    style={{flex:1,padding:"10px 0",borderRadius:9,background:mode===v?"#fff":"transparent",border:"none",fontWeight:700,fontSize:14,color:mode===v?LS.purple:LS.muted,cursor:"pointer",fontFamily:"inherit",transition:"all .2s",boxShadow:mode===v?"0 2px 8px rgba(107,61,212,.15)":"none"}}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
-                <LSInput type="email" value={email} onChange={setEmail} placeholder="your@email.com" label="אימייל"/>
-                <LSInput type="password" value={pass} onChange={setPass} placeholder="סיסמה (מינימום 6 תווים)" label="סיסמה" onKeyDown={e=>e.key==="Enter"&&submit()}/>
-              </div>
-
-              {mode==="login"&&(
-                <div style={{textAlign:"left",marginBottom:12}}>
-                  <span onClick={()=>{setMode("reset");setErr("");}} style={{fontSize:13,color:LS.purple,fontWeight:600,cursor:"pointer"}}>שכחתי סיסמה</span>
-                </div>
-              )}
-              {err&&<div style={{background:err.startsWith("✅")?"#ECFDF5":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?"#A7F3D0":"#FECDCD"}`,borderRadius:10,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?"#059669":"#DC2626",marginBottom:12}}>{err}</div>}
-
-              <LSBtn primary full onClick={submit} disabled={load||!email||!pass} style={{fontSize:15}}>
-                {load?<><div style={{width:16,height:16,borderRadius:"50%",border:"2.5px solid rgba(255,255,255,.4)",borderTopColor:"#fff",animation:"spin .7s linear infinite"}}/>מעבד...</>:mode==="login"?"כניסה ←":"צור חשבון ←"}
-              </LSBtn>
-
-              <p style={{fontSize:13,color:LS.muted,textAlign:"center",marginTop:14}}>
-                {mode==="login"?"אין חשבון? ":"יש חשבון? "}
-                <span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:LS.purple,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span>
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-
-function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
-  const [events,setEvents]=useState([]),[loading,setLoading]=useState(true),[creating,setCreating]=useState(false),[showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",bride_name:"",groom_name:"",venue:"",venue_address:"",event_time:"",welcome_text:""});
-  const [editEvent,setEditEvent]=useState(null);
-
-  const updateEvent=async(data)=>{
-    await sb.from("events").update(data).eq("id",editEvent.id);
-    setEvents(evs=>evs.map(e=>e.id===editEvent.id?{...e,...data}:e));
-    setEditEvent(null);
-  };
-  const loadEvents=async()=>{setLoading(true);const{data}=await sb.from("events").select("*").eq("user_id",user.id).order("date",{ascending:true});setEvents(data||[]);setLoading(false);};
-  const create=async()=>{
-    if(!form.name.trim())return;
-    setCreating(true);
-    const invite_code=Math.random().toString(36).slice(2,10);
-    const{data,error}=await sb.from("events").insert({...form,name:form.name.trim(),user_id:user.id,invite_code,invite_active:true}).select().single();
-    if(!error)onSelect(data);
-    setCreating(false);
-  };
-  const eventTypes=[["wedding","💍 חתונה"],["bar_mitzvah","✡️ בר/ת מצווה"],["brit","👶 ברית"],["business","💼 עסקי"],["other","🎉 אחר"]];
-
-  useEffect(()=>{loadEvents();},[]);
-
-  return(<div dir="rtl" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Heebo',sans-serif",paddingBottom:40}}>
-    <div style={{background:`linear-gradient(145deg,${C.blue},${C.blueM})`,padding:"32px 20px 28px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
-      <div style={{position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div><div style={{fontSize:12,color:"rgba(255,255,255,0.65)",fontWeight:600}}>שלום!</div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>{user.email.split("@")[0]}</div></div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={onBackToLanding} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"rgba(255,255,255,.85)",borderRadius:10,padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>🏠 דף הבית</button>
-            <button onClick={onLogout} style={{background:"rgba(255,255,255,.15)",border:"none",color:"rgba(255,255,255,.9)",borderRadius:12,padding:"8px 16px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>יציאה</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style={{padding:"20px 16px",maxWidth:640,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <div style={{fontSize:18,fontWeight:800,color:C.text}}>האירועים שלי</div>
-        <Btn primary small onClick={()=>setShowForm(f=>!f)}>{showForm?"סגור ✕":"+ אירוע חדש"}</Btn>
-      </div>
-
-      {showForm&&<Card style={{padding:18,marginBottom:16,border:`1.5px solid ${C.blueL}`}}>
-        <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>✨ יצירת אירוע חדש</div>
-
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8}}>סוג האירוע</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:14}}>
-          {eventTypes.map(([v,l])=>(
-            <button key={v} onClick={()=>setForm(f=>({...f,event_type:v}))} style={{background:form.event_type===v?`linear-gradient(135deg,${C.blueM},${C.blueL})`:C.blueXL,color:form.event_type===v?"#fff":C.text,border:`2px solid ${form.event_type===v?"transparent":C.border}`,borderRadius:11,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
-          ))}
-        </div>
-
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם האירוע *</div>
-        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="חתונת עמית ואורנה"
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
-
-        {form.event_type==="wedding"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם החתן</div>
-            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="יוסי" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם הכלה</div>
-            <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="רחל" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-        </div>}
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>תאריך</div>
-            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} dir="ltr" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שעה</div>
-            <input type="time" value={form.event_time} onChange={e=>setForm(f=>({...f,event_time:e.target.value}))} style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-        </div>
-
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם האולם</div>
-        <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אולם הגן, תל אביב"
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
-
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>כתובת מלאה (לניווט)</div>
-        <input value={form.venue_address} onChange={e=>setForm(f=>({...f,venue_address:e.target.value}))} placeholder="רחוב הרצל 1, תל אביב"
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
-
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>טקסט הזמנה</div>
-        <textarea value={form.welcome_text} onChange={e=>setForm(f=>({...f,welcome_text:e.target.value}))} placeholder="אנו שמחים להזמין אתכם לחגוג איתנו..."
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",minHeight:70,resize:"vertical",marginBottom:14}}/>
-
-        <Btn primary full disabled={creating||!form.name.trim()} onClick={create}>{creating?"יוצר...":"✨ צור אירוע ←"}</Btn>
-      </Card>}
-
-      {loading?<div style={{display:"flex",justifyContent:"center",padding:48}}><Spinner size={36}/></div>
-        :events.length===0?<div style={{textAlign:"center",padding:"60px 0"}}><div style={{fontSize:52,marginBottom:12}}>🎉</div><p style={{fontWeight:700,color:C.blue,fontSize:16}}>אין עדיין אירועים</p></div>
-        :<div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {events.map(ev=>(<Card key={ev.id} style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}>
-            <div onClick={()=>onSelect(ev)} style={{width:44,height:44,borderRadius:12,background:`linear-gradient(135deg,${C.blue}18,${C.blueL}18)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,cursor:"pointer",flexShrink:0}}>🎊</div>
-            <div onClick={()=>onSelect(ev)} style={{flex:1,cursor:"pointer",minWidth:0}}>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{ev.name}</div>
-              {ev.date&&<div style={{fontSize:11,color:C.muted,marginTop:1}}>📅 {new Date(ev.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}</div>}
-              {ev.venue&&<div style={{fontSize:11,color:C.muted}}>📍 {ev.venue}</div>}
-            </div>
-            <button onClick={e=>{e.stopPropagation();setEditEvent(ev);}} style={{background:C.blueXL,border:`2px solid ${C.blueL}`,borderRadius:10,width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,flexShrink:0}}>✏️</button>
-          </Card>))}
-        </div>
-      }
-    </div>
-
-    {editEvent&&(
-      <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setEditEvent(null)}>
-        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",width:"100%",maxWidth:480,direction:"rtl",maxHeight:"90vh",overflowY:"auto"}}>
-          <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
-          <div style={{fontWeight:800,fontSize:18,color:C.text,marginBottom:16}}>✏️ עריכת אירוע</div>
-
-          <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8}}>סוג האירוע</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:14}}>
-            {[["wedding","💍 חתונה"],["bar_mitzvah","✡️ בר/ת מצווה"],["brit","👶 ברית"],["business","💼 עסקי"],["other","🎉 אחר"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setEditEvent(ev=>({...ev,event_type:v}))} style={{background:(editEvent.event_type||"wedding")===v?`linear-gradient(135deg,${C.blueM},${C.blueL})`:C.blueXL,color:(editEvent.event_type||"wedding")===v?"#fff":C.text,border:`2px solid ${(editEvent.event_type||"wedding")===v?"transparent":C.border}`,borderRadius:11,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
-            ))}
-          </div>
-
-          {[
-            ["שם האירוע","name","text","חתונת עמית ואורנה"],
-            ["שם החתן","groom_name","text","יוסי"],
-            ["שם הכלה","bride_name","text","רחל"],
-            ["תאריך","date","date",""],
-            ["שעה","event_time","time",""],
-            ["שם האולם","venue","text","אולם הגן"],
-            ["כתובת מלאה (לניווט)","venue_address","text","רחוב הרצל 1, תל אביב"],
-          ].map(([label,field,type,ph])=>(
-            <div key={field} style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>{label}</div>
-              <input type={type} value={editEvent[field]||""} onChange={e=>setEditEvent(ev=>({...ev,[field]:e.target.value}))} placeholder={ph}
-                style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            </div>
-          ))}
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>טקסט הזמנה</div>
-            <textarea value={editEvent.welcome_text||""} onChange={e=>setEditEvent(ev=>({...ev,welcome_text:e.target.value}))} placeholder="אנו שמחים להזמין..."
-              style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",minHeight:70,resize:"vertical"}}/>
-          </div>
-          <button onClick={()=>updateEvent(editEvent)} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.blueL}44`}}>
-            💾 שמור שינויים
-          </button>
-        </div>
-      </div>
-    )}
-  </div>);
-}
-
-// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
-  const hasSeating=userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id));
-  const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id));
-  const isFreePlan=userPackages.length===0;
-  const items=[
-    {id:"home",icon:"🏠",label:"ראשי"},
-    {id:"seating",icon:"🪑",label:"הושבה",locked:!hasSeating},
-    {id:"rsvp",icon:"✅",label:"הגעה",locked:!hasRsvp},
-    {id:"add",icon:"➕",label:"הוסף",locked:isFreePlan&&totalGuests>=50},
-    {id:"settings",icon:"⚙️",label:"הגדרות"},
-  ];
-  return(
-    <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:80,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",height:64,boxShadow:"0 -4px 20px rgba(27,58,140,0.08)"}}>
-      {items.map(item=>(
-        <button key={item.id} onClick={()=>{
-          if(item.locked){
-            if(item.id==="seating") alert("🔒 סידורי הושבה זמינים בחבילה המתקדמת ומעלה (₪150)");
-            else if(item.id==="add") alert("🔒 הגעת למגבלת 50 אורחים בחבילה החינמית. שדרג כדי להוסיף עוד.");
-            return;
-          }
-          onChange(item.id);
-        }}
-          style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,border:"none",background:"none",cursor:"pointer",fontFamily:"inherit",padding:"6px 0",position:"relative",opacity:item.locked?.5:1}}>
-          <span style={{fontSize:20,lineHeight:1,filter:active===item.id?"none":"grayscale(1)",opacity:active===item.id?1:.5}}>{item.icon}</span>
-          <span style={{fontSize:10,fontWeight:700,color:active===item.id?C.blue:C.muted}}>{item.label}</span>
-          {item.locked&&<span style={{position:"absolute",top:4,left:"50%",transform:"translateX(-50%)",fontSize:8,background:"#FEF3C7",color:"#B45309",borderRadius:4,padding:"1px 4px",fontWeight:800}}>🔒</span>}
-          {active===item.id&&<div style={{position:"absolute",bottom:0,width:32,height:3,borderRadius:"3px 3px 0 0",background:`linear-gradient(90deg,${C.blueM},${C.blueL})`}}/>}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ─── EDIT TABLE MODAL ─────────────────────────────────────────────────────────
-
-function EditTableModal({ table, onSave, onDelete, onClose }) {
-  const [name,setName]=useState(table.name);
-  const [type,setType]=useState(table.type||"round");
-  const [seats,setSeats]=useState(table.seats||10);
-  return(
-    <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(26,16,53,.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:380,direction:"rtl",boxShadow:"0 8px 40px rgba(107,61,212,.2)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-          <div style={{width:44,height:44,borderRadius:14,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>✏️</div>
-          <div style={{flex:1}}>
-            <div style={{fontWeight:900,fontSize:17,color:LS.text}}>עריכת שולחן</div>
-            <div style={{fontSize:12,color:LS.muted}}>{table.name}</div>
-          </div>
-          <LSBtn danger small onClick={()=>{if(window.confirm("למחוק שולחן זה?"))onDelete();}}>🗑️</LSBtn>
-        </div>
-
-        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:18}}>
-          <LSInput label="שם השולחן" value={name} onChange={setName} placeholder="שולחן 1"/>
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color:LS.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>מספר מושבים</div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>setSeats(s=>Math.max(1,s-1))} style={{width:36,height:36,borderRadius:10,background:LS.purpleXL,border:`1.5px solid ${LS.border}`,fontSize:18,cursor:"pointer",fontFamily:"inherit",color:LS.purple,fontWeight:900}}>−</button>
-              <span style={{fontSize:22,fontWeight:900,color:LS.text,minWidth:40,textAlign:"center"}}>{seats}</span>
-              <button onClick={()=>setSeats(s=>s+1)} style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",border:"none",fontSize:18,cursor:"pointer",fontFamily:"inherit",color:"#fff",fontWeight:900}}>+</button>
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color:LS.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>סוג שולחן</div>
-            <div style={{display:"flex",gap:8}}>
-              {Object.entries(TABLE_TYPES).map(([k,v])=>(
-                <button key={k} onClick={()=>setType(k)}
-                  style={{flex:1,padding:"10px 6px",borderRadius:10,border:`2px solid ${type===k?LS.purple:LS.border}`,background:type===k?LS.purpleXL:"#fff",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all .15s"}}>
-                  <div style={{fontSize:18}}>{v.icon}</div>
-                  <div style={{fontSize:10,fontWeight:700,color:type===k?LS.purple:LS.muted,marginTop:3}}>{v.label}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{display:"flex",gap:8}}>
-          <LSBtn ghost full onClick={onClose}>ביטול</LSBtn>
-          <LSBtn primary full onClick={()=>onSave(name,type,seats)} disabled={!name.trim()}>שמור ✓</LSBtn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest }) {
-  const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null);
-  const assign=async tableId=>{if(!picked)return;await dropOnTable(tableId,picked.id,picked.table_id||null);setPicked(null);setTab("guests");};
-  return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
-    {picked&&<div style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,fontSize:14,flexShrink:0}}>
-      <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{picked.name[0]}</div>
-      <span style={{flex:1,fontWeight:700}}>{picked.name}  -  בחר שולחן</span>
-      <button onClick={()=>setPicked(null)} style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:13,fontFamily:"inherit",fontWeight:700}}>ביטול</button>
-    </div>}
-
-    <div style={{display:"flex",background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-      {[["guests",`👥 אורחים (${guests.length})`],["tables",`🪑 שולחנות (${tables.length})`]].map(([v,l])=>(
-        <button key={v} onClick={()=>setTab(v)} style={{flex:1,padding:"14px 0",border:"none",borderBottom:`3px solid ${tab===v?C.blueL:"transparent"}`,background:"none",color:tab===v?C.blue:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
-      ))}
-    </div>
-
-    <div style={{flex:1,overflowY:"auto",padding:16}}>
-      {tab==="guests"&&<>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש אורח..." style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 16px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14}}/>
-        {guests.length===0
-          ?<div style={{textAlign:"center",padding:"50px 0"}}><div style={{fontSize:52}}>🎉</div><p style={{color:C.success,fontWeight:700,marginTop:10,fontSize:16}}>כולם מוסבים!</p></div>
-          :guests.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
-            <Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 6px",marginBottom:8,border:`1.5px solid ${picked?.id===g.id?C.blueL:C.border}`,background:picked?.id===g.id?C.blueXL:C.surface}}>
-              <div onClick={()=>{setPicked(g);setTab("tables");}} style={{width:38,height:38,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0,cursor:"pointer"}}>{g.name[0]}</div>
-              <div onClick={()=>{setPicked(g);setTab("tables");}} style={{flex:1,cursor:"pointer",minWidth:0}}>
-                <div style={{fontWeight:600,fontSize:14,color:C.text}}>{g.name}</div>
-                {g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}
-              </div>
-              <RsvpBadge rsvp={g.rsvp}/>
-              <button onClick={e=>{e.stopPropagation();onEditGuest(g);}} style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:9,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,flexShrink:0}}>✏️</button>
-            </Card>
-          ))
-        }
-        <div style={{display:"flex",gap:10,marginTop:16}}>
-          <input value={newGuest} onChange={e=>setNewGuest(e.target.value)} placeholder="+ הוסף אורח חדש" onKeyDown={e=>e.key==="Enter"&&addGuest()} style={{flex:1,background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 16px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit"}}/>
-          <button onClick={addGuest} style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"12px 20px",fontSize:20,fontWeight:700,cursor:"pointer"}}>+</button>
-        </div>
-      </>}
-
-      {tab==="tables"&&<>
-        <button onClick={onAddTable} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 14px ${C.blueL}44`}}>
-          ➕ הוסף שולחן חדש
-        </button>
-
-        {tables.length===0&&<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48}}>🪑</div><p style={{color:C.muted,fontSize:14,marginTop:8}}>אין עדיין שולחנות</p></div>}
-
-        {tables.map((t)=>{
-          const sc=sColor(t),exp=expanded===t.id,isFull=(t.guests||[]).length>=t.seats;
-          return(
-            <Card key={t.id} style={{marginBottom:12,overflow:"hidden",border:`1.5px solid ${picked&&!isFull?C.blueL:C.border}`,opacity:picked&&isFull?.4:1}}>
-              <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
-                <div onClick={()=>picked?(!isFull&&assign(t.id)):setExpanded(exp?null:t.id)} style={{display:"flex",alignItems:"center",gap:12,flex:1,cursor:picked&&isFull?"not-allowed":"pointer",background:picked&&!isFull?C.blueXL:"none",margin:"-14px -16px",padding:"14px 16px"}}>
-                  <div style={{width:46,height:46,borderRadius:13,background:sc+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{TABLE_TYPES[t.type]?.icon}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:800,fontSize:15,color:C.text}}>{t.name}</div>
-                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>{TABLE_TYPES[t.type]?.label} · {t.seats-(t.guests||[]).length} פנויים</div>
-                  </div>
-                  {picked
-                    ?isFull?<span style={{fontSize:12,color:C.danger,fontWeight:700}}>מלא</span>:<span style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:700}}>שבץ +</span>
-                    :<div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:sc}}>{(t.guests||[]).length}</div><div style={{fontSize:10,color:C.muted}}>מתוך {t.seats}</div></div>
-                  }
-                </div>
-                {!picked&&<button onClick={e=>{e.stopPropagation();setEditTable(t);}} style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:10,width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15,flexShrink:0}}>✏️</button>}
-              </div>
-              <div style={{height:4,background:C.blueXL}}><div style={{height:"100%",width:`${pct(t)}%`,background:sc,transition:"width .3s"}}/></div>
-              {exp&&!picked&&<div style={{padding:"10px 16px"}}>
-                {(t.guests||[]).length===0
-                  ?<p style={{fontSize:13,color:C.muted,textAlign:"center",padding:"6px 0"}}>אין אורחים בשולחן</p>
-                  :(t.guests||[]).map(g=>(
-                    <div key={g.id} style={{display:"flex",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
-                      <span style={{flex:1,fontSize:14,color:C.text}}>{g.name}</span>
-                      <button onClick={()=>removeFromTable(t.id,g)} style={{background:"#FEF2F2",border:"none",color:C.danger,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",padding:"4px 10px",borderRadius:8}}>הסר</button>
-                    </div>
-                  ))
-                }
-              </div>}
-            </Card>
-          );
-        })}
-      </>}
-    </div>
-
-    {editTable&&<EditTableModal table={editTable} onClose={()=>setEditTable(null)}
-      onSave={async(id,name,type,seats)=>{await onEditTable(id,name,type,seats);setEditTable(null);}}
-      onDelete={async(id)=>{await onDeleteTable(id);setEditTable(null);}}
-    />}
-  </div>);
-}
-
-// ─── SEATING APP ──────────────────────────────────────────────────────────────
-// ─── MOBILE SETTINGS SCREEN ──────────────────────────────────────────────────
-function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
-  const [pwForm,setPwForm]=useState({newP:"",confirm:""});
-  const [pwMsg,setPwMsg]=useState(null);
-  const [notifyRsvp,setNotifyRsvp]=useState(event.settings_json?.notifyRsvp??true);
-  const [notifyApp,setNotifyApp]=useState(event.settings_json?.notifyApp??true);
-
-  const changePw=async()=>{
-    if(pwForm.newP!==pwForm.confirm){setPwMsg({err:true,txt:"הסיסמאות לא תואמות"});return;}
-    if(pwForm.newP.length<6){setPwMsg({err:true,txt:"סיסמה חייבת להכיל לפחות 6 תווים"});return;}
-    const{error}=await sb.auth.updateUser({password:pwForm.newP});
-    if(error)setPwMsg({err:true,txt:error.message});
-    else{setPwMsg({err:false,txt:"✅ הסיסמה עודכנה בהצלחה"});setPwForm({newP:"",confirm:""});}
-  };
-
-  const saveNotify=async(key,val)=>{
-    const settings={...event.settings_json,[key]:val};
-    await sb.from("events").update({settings_json:settings}).eq("id",event.id);
-    Object.assign(event,{settings_json:settings});
-  };
-
-  const Toggle=({val,onChange})=>(
-    <div onClick={()=>onChange(!val)} style={{width:44,height:24,borderRadius:12,background:val?"#1B3A8C":"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
-      <div style={{position:"absolute",top:2,left:val?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
-    </div>
-  );
-
-  return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
-
-      {/* פרופיל */}
-      <div style={{background:"#fff",margin:"12px 16px",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-        <div style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"16px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#fff"}}>
-            {user.email?.[0]?.toUpperCase()}
-          </div>
-          <div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.7)"}}>{user.email}</div>
-          </div>
-        </div>
-        <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-          {[["שם פרטי",event.groom_name||""],["שם משפחה",event.bride_name||""],["מס' נייד",user.phone||"—"]].map(([l,v])=>(
-            <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:8,borderBottom:"1px solid #f5f5f5"}}>
-              <span style={{fontSize:13,color:"#555"}}>{l}</span>
-              <span style={{fontSize:13,fontWeight:700,direction:l==="מס' נייד"?"ltr":"rtl"}}>{v}</span>
-            </div>
-          ))}
-          <button onClick={()=>setScreen("settings")} style={{background:"#EEF2FF",color:"#1B3A8C",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:4}}>
-            📋 עריכת פרטי האירוע
-          </button>
-        </div>
-      </div>
-
-      {/* שינוי סיסמה */}
-      <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-        <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:14}}>🔒 שינוי סיסמה</div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <input type="password" placeholder="סיסמה חדשה" value={pwForm.newP} onChange={e=>setPwForm(f=>({...f,newP:e.target.value}))}
-            style={{border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:13,fontFamily:"inherit",outline:"none"}}/>
-          <input type="password" placeholder="אימות סיסמה חדשה" value={pwForm.confirm} onChange={e=>setPwForm(f=>({...f,confirm:e.target.value}))}
-            style={{border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:13,fontFamily:"inherit",outline:"none"}}/>
-          {pwMsg&&<div style={{fontSize:12,fontWeight:700,color:pwMsg.err?"#C53030":"#276749"}}>{pwMsg.txt}</div>}
-          <button onClick={changePw} style={{background:"#1B3A8C",color:"#fff",border:"none",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-            שמור סיסמה חדשה
-          </button>
-        </div>
-      </div>
-
-      {/* התראות */}
-      <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-        <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:14}}>🔔 הגדרת התראות</div>
-        {[
-          {label:"התראות אפליקציה",desc:"התראות מערכת ועדכונים שוטפים",val:notifyApp,onChange:v=>{setNotifyApp(v);saveNotify("notifyApp",v);}},
-          {label:"אישורי הגעה",desc:"התראה על כל אישור, ביטול או עדכון מהאורחים",val:notifyRsvp,onChange:v=>{setNotifyRsvp(v);saveNotify("notifyRsvp",v);}},
-        ].map(item=>(
-          <div key={item.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid #f5f5f5"}}>
-            <div><div style={{fontSize:13,fontWeight:700,color:"#1a1a1a"}}>{item.label}</div><div style={{fontSize:11,color:"#888",marginTop:2}}>{item.desc}</div></div>
-            <Toggle val={item.val} onChange={item.onChange}/>
-          </div>
-        ))}
-      </div>
-
-      {/* איפוס */}
-      <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-        <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:12}}>⚠️ איפוס</div>
-        <button onClick={async()=>{
-          if(!window.confirm("למחוק את כל אישורי ההגעה?"))return;
-          await sb.from("guests").update({rsvp:"pending"}).eq("event_id",event.id);
-          setGuests(gs=>gs.map(g=>({...g,rsvp:"pending"})));
-        }} style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"1px solid #FED7D7",borderRadius:10,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-          🔄 איפוס טבלת אישורי הגעה
-        </button>
-      </div>
-
-      {/* מחיקת חשבון */}
-      <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-        <div style={{fontSize:14,fontWeight:900,color:"#C53030",marginBottom:8}}>🗑️ מחיקת חשבון</div>
-        <div style={{fontSize:12,color:"#888",marginBottom:12,lineHeight:1.6}}>מחיקת החשבון תמחק לצמיתות את כל הנתונים — אורחים, שולחנות, אירוע ופרטי חשבון. לא ניתן לשחזר.</div>
-        <button onClick={async()=>{
-          const first=window.confirm("האם אתה בטוח שברצונך למחוק את החשבון לצמיתות?\nכל הנתונים יימחקו ולא ניתן לשחזרם.");
-          if(!first)return;
-          const second=window.confirm("אישור אחרון - מחיקה סופית של החשבון?");
-          if(!second)return;
-          try{
-            await sb.from("guests").delete().eq("event_id",event.id);
-            await sb.from("tables").delete().eq("event_id",event.id);
-            await sb.from("events").delete().eq("id",event.id);
-            await sb.rpc("delete_user");
-            await sb.auth.signOut();
-          }catch(e){
-            alert("שגיאה במחיקה: "+e.message);
-          }
-        }} style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"2px solid #FC8181",borderRadius:10,padding:"11px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-          🗑️ מחק חשבון לצמיתות
-        </button>
-      </div>
-
-      {/* התנתקות */}
-      <div style={{padding:"0 16px"}}>
-        <button onClick={async()=>{await sb.auth.signOut();}}
-          style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"1px solid #FED7D7",borderRadius:12,padding:"13px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-          🚪 התנתק
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── MOBILE RSVP SCREEN ──────────────────────────────────────────────────────
-function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal }) {
-  const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
-  const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
-  const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
-  const [statusModal,setStatusModal]=useState(null);
-  const [editModal,setEditModal]=useState(null);
-  const [editForm,setEditForm]=useState({});
-  const openEdit=(g)=>{setEditModal(g);setEditForm({name:g.name||"",phone:g.phone||"",guest_count:g.guest_count||1,relation:g.relation||"ללא שיוך"});};
-  const saveEdit=async()=>{
-    await sb.from("guests").update(editForm).eq("id",editModal.id);
-    setGuests(gs=>gs.map(x=>x.id===editModal.id?{...x,...editForm}:x));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===editModal.id?{...x,...editForm}:x)})));
-    setEditModal(null);
-  };
-  const [search,setSearch]=useState("");
-  const filtered=allGuests.filter(g=>!search||g.name?.includes(search)||g.phone?.includes(search));
-
-  const updateRsvp=async(g,rsvp)=>{
-    await sb.from("guests").update({rsvp}).eq("id",g.id);
-    setGuests(gs=>gs.map(x=>x.id===g.id?{...x,rsvp}:x));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp}:x)})));
-    setStatusModal(null);
-  };
-
-  const rsvpColor=(r)=>r==="confirmed"?"#276749":r==="declined"?"#C53030":"#888";
-  const rsvpBg=(r)=>r==="confirmed"?"#F0FFF4":r==="declined"?"#FFF5F5":"#F7F7F7";
-  const rsvpLabel=(r)=>r==="confirmed"?"✓ מגיע":r==="declined"?"✗ לא מגיע":"⏳ ממתין";
-
-  return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
-
-      {/* מודל עריכת אורח */}
-      {editModal&&<div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setEditModal(null)}>
-        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:24,width:"100%",maxWidth:480,direction:"rtl",maxHeight:"90vh",overflowY:"auto"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontSize:17,fontWeight:900,color:"#1a1a1a"}}>עריכת אורח</div>
-            <button onClick={()=>setEditModal(null)} style={{width:30,height:30,borderRadius:"50%",border:"1px solid #eee",background:"#f5f5f5",cursor:"pointer",fontSize:16,fontWeight:900}}>×</button>
-          </div>
-
-          {/* שם */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:6}}>שם מלא</div>
-            <input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))}
-              style={{width:"100%",border:"1.5px solid #e5e5e5",borderRadius:10,padding:"11px 14px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
-          </div>
-
-          {/* טלפון */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:6}}>מספר טלפון</div>
-            <input value={editForm.phone} onChange={e=>setEditForm(f=>({...f,phone:e.target.value}))} type="tel" dir="ltr"
-              style={{width:"100%",border:"1.5px solid #e5e5e5",borderRadius:10,padding:"11px 14px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box",textAlign:"right"}}/>
-          </div>
-
-          {/* כמות מגיעים */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:6}}>כמות מגיעים</div>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button onClick={()=>setEditForm(f=>({...f,guest_count:Math.max(1,(f.guest_count||1)-1)}))}
-                style={{width:36,height:36,borderRadius:10,border:"1.5px solid #e5e5e5",background:"#f9f9f9",fontSize:18,cursor:"pointer",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>-</button>
-              <div style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,color:"#1B3A8C"}}>{editForm.guest_count||1}</div>
-              <button onClick={()=>setEditForm(f=>({...f,guest_count:(f.guest_count||1)+1}))}
-                style={{width:36,height:36,borderRadius:10,border:"1.5px solid #e5e5e5",background:"#f9f9f9",fontSize:18,cursor:"pointer",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-            </div>
-          </div>
-
-          {/* קטגוריה */}
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>קטגוריה</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-              {Object.keys(RELATION_COLORS).map(r=>(
-                <button key={r} onClick={()=>setEditForm(f=>({...f,relation:r}))}
-                  style={{padding:"7px 14px",borderRadius:50,border:`2px solid ${editForm.relation===r?RELATION_COLORS[r]:"#e5e5e5"}`,
-                    background:editForm.relation===r?RELATION_COLORS[r]:"#fff",
-                    color:editForm.relation===r?"#fff":"#333",
-                    fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* כפתורים */}
-          <button onClick={saveEdit}
-            style={{width:"100%",background:"#3D5475",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
-            💾 שמור שינויים
-          </button>
-          <button onClick={()=>{setStatusModal(editModal);setEditModal(null);}}
-            style={{width:"100%",background:"#EEF2FF",color:"#3D5475",border:"1px solid #C7D2FE",borderRadius:12,padding:"13px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
-            ✏️ שנה סטטוס הגעה
-          </button>
-          <button onClick={async()=>{if(!window.confirm("למחוק?"))return;await sb.from("guests").delete().eq("id",editModal.id);setGuests(gs=>gs.filter(x=>x.id!==editModal.id));setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).filter(x=>x.id!==editModal.id)})));setEditModal(null);}}
-            style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"1px solid #FED7D7",borderRadius:12,padding:"13px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-            🗑️ מחק אורח
-          </button>
-        </div>
-      </div>}
-
-      {/* מודל שינוי סטטוס */}
-      {statusModal&&<div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setStatusModal(null)}>
-        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:360,direction:"rtl"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontSize:16,fontWeight:900}}>שינוי מצב הגעה</div>
-            <button onClick={()=>setStatusModal(null)} style={{width:30,height:30,borderRadius:"50%",border:"1px solid #eee",background:"#f5f5f5",cursor:"pointer",fontSize:16}}>×</button>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {[["confirmed","✓ מגיעים"],["declined","✗ לא מגיעים"],["pending","? אולי מגיעים"],["no_answer","📞 לא ענו"],["sent","✈️ נשלחה הודעה"],["not_shown","🕐 לא הוצגה הזמנה"]].map(([val,label])=>(
-              <button key={val} onClick={()=>updateRsvp(statusModal,val)} style={{background:statusModal.rsvp===val?"#3D5475":"#f5f5f5",color:statusModal.rsvp===val?"#fff":"#333",border:"1.5px solid #e5e5e5",borderRadius:50,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{label}</button>
-            ))}
-          </div>
-        </div>
-      </div>}
-
-      {/* סטטיסטיקות */}
-      <div style={{background:"#fff",padding:"16px 16px 12px",borderBottom:"1px solid #eee"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center",marginBottom:12}}>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{allGuests.length}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מוזמנים</div></div>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#C53030",lineHeight:1}}>{declined}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>לא מגיעים</div></div>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#276749",lineHeight:1}}>{confirmed}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מגיעים</div></div>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setModal("addGuest")} style={{flex:1,background:"#3D5475",color:"#fff",border:"none",borderRadius:50,padding:"10px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>➕ הוסף מוזמן</button>
-        </div>
-      </div>
-
-      {/* חיפוש */}
-      <div style={{padding:"10px 16px"}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..." style={{width:"100%",border:"1px solid #e5e5e5",borderRadius:50,padding:"9px 16px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#f9f9f9"}}/>
-      </div>
-
-      {/* טבלה */}
-      <div style={{background:"#fff",margin:"0 12px",borderRadius:14,overflow:"hidden",border:"1px solid #eee",boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 90px 80px",padding:"10px 14px",background:"#f5f5f5",borderBottom:"1px solid #eee"}}>
-          {["שם מלא","טלפון","סטטוס"].map(h=><div key={h} style={{fontSize:11,fontWeight:800,color:"#555",textAlign:"center"}}>{h}</div>)}
-        </div>
-        {filtered.map((g,i)=>(
-          <div key={g.id} style={{display:"grid",gridTemplateColumns:"1fr 90px 80px",padding:"11px 14px",borderBottom:i<filtered.length-1?"1px solid #f0f0f0":"none",background:i%2===0?"#fff":"#fafafa",alignItems:"center"}}>
-            <div onClick={()=>openEdit(g)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-              <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#1B3A8C,#4A7AFF)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{g.name?.[0]}</div>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:"#1a1a1a"}}>{g.name}</div>
-                {g.guest_count>1&&<div style={{fontSize:10,color:"#888"}}>({g.guest_count})</div>}
-              </div>
-            </div>
-            <div style={{fontSize:10,color:"#666",textAlign:"center"}}>{g.phone||" - "}</div>
-            <div onClick={()=>setStatusModal(g)} style={{textAlign:"center",cursor:"pointer"}}>
-              <span style={{fontSize:10,fontWeight:700,color:rsvpColor(g.rsvp),background:rsvpBg(g.rsvp),borderRadius:50,padding:"3px 8px",whiteSpace:"nowrap"}}>{rsvpLabel(g.rsvp)}</span>
-            </div>
-          </div>
-        ))}
-        {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:"#aaa",fontSize:13}}>לא נמצאו אורחים</div>}
-      </div>
-      <div style={{textAlign:"center",fontSize:11,color:"#999",margin:"8px 0 16px"}}>{filtered.length} מתוך {allGuests.length} אורחים</div>
-    </div>
-  );
-}
-
-// ─── SEATING VIEW UPGRADE ─────────────────────────────────────────────────────
-// מחליף את הקטע שמתחיל ב-{screen!=="home"&&screen==="seating"&&
-// עד סוף ה-</div> שלו
-// סגנון: LunSoul - sidebar שמאלי עם אלמנטים, canvas לבן נקי, תחתית עם סטטיסטיקות
-
-// ELEMENTS שמשתמש יכול לגרור לקנבס
-const VENUE_ELEMENTS = [
-  { id:"stage",   label:"במה",         icon:"🎵", color:"#7B3FD4", bg:"linear-gradient(135deg,#4A1E8C,#7B3FD4)" },
-  { id:"entrance",label:"כניסה",       icon:"🚪", color:"#2C3E50", bg:"linear-gradient(135deg,#2C3E50,#34495E)" },
-  { id:"bar",     label:"בר",          icon:"🍸", color:"#E94560", bg:"linear-gradient(135deg,#1A1A2E,#0F3460)" },
-  { id:"dance",   label:"ריקודים",     icon:"💃", color:"#FF6B6B", bg:"linear-gradient(135deg,#FF6B6B,#FF8E8E)" },
-  { id:"ceremony",label:"חופה",        icon:"💒", color:"#D4A017", bg:"linear-gradient(135deg,#8B6914,#D4A017)" },
-  { id:"photo",   label:"צילום",       icon:"📸", color:"#2E86AB", bg:"linear-gradient(135deg,#1A5276,#2E86AB)" },
-  { id:"gifts",   label:"מתנות",       icon:"🎁", color:"#E91E63", bg:"linear-gradient(135deg,#880E4F,#E91E63)" },
-];
-
-// ─── ELEMENT NODE (לאלמנטים בקנבס) ───
-function VenueElementNode({ el, selected, onMouseDown }) {
-  return (
-    <div onMouseDown={onMouseDown}
-      style={{
-        position:"absolute", left:el.x, top:el.y,
-        width:86, height:86, borderRadius:16,
-        background:VENUE_ELEMENTS.find(v=>v.id===el.type)?.bg||"#666",
-        border:`2.5px solid ${selected?"rgba(255,255,255,.9)":"rgba(255,255,255,.3)"}`,
-        boxShadow: selected
-          ? `0 8px 28px rgba(0,0,0,.35),0 0 0 3px rgba(255,255,255,.3)`
-          : `0 4px 16px rgba(0,0,0,.22)`,
-        cursor:"grab", userSelect:"none",
-        display:"flex", flexDirection:"column",
-        alignItems:"center", justifyContent:"center",
-        gap:4, zIndex: selected ? 15 : 4,
-        transition:"box-shadow .2s, border-color .2s",
-      }}>
-      <div style={{fontSize:26}}>{VENUE_ELEMENTS.find(v=>v.id===el.type)?.icon||"⬜"}</div>
-      <div style={{fontSize:10,fontWeight:800,color:"#fff",letterSpacing:.5,textShadow:"0 1px 3px rgba(0,0,0,.4)"}}>
-        {el.label||VENUE_ELEMENTS.find(v=>v.id===el.type)?.label}
-      </div>
-    </div>
-  );
-}
-
-// ─── UPGRADED SEATING SECTION ───
-// זה מחליף את: {screen!=="home"&&screen==="seating"&&<div ...>
-
-function SeatingSection({ tables, guests, selected, setSelected, search, setSearch,
-  newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable,
-  editGuestData, setEditGuestData, editTable, deleteTable,
-  moveTablePos, saveTablePos, setEditTableData, setModal, view, setView,
-  saving, seated, total, venueElements, setVenueElements }) {
-
-  const [canvasMode, setCanvasMode] = useState("venue"); // "venue" | "grid"
-  const selTable = tables.find(t=>t.id===selected);
-
-  const addVenueElement=(type)=>{
-    const newEl={id:`el_${Date.now()}`,type,x:120+venueElements.length*24,y:80+venueElements.length*18};
-    setVenueElements(v=>[...v,newEl]);
-  };
-
-  const moveElement=(id,x,y)=>setVenueElements(v=>v.map(e=>e.id===id?{...e,x:Math.max(0,x),y:Math.max(0,y)}:e));
-  const removeElement=(id)=>setVenueElements(v=>v.filter(e=>e.id!==id));
-
-  return(
-    <div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 52px)"}}>
-
-      {/* ── LEFT SIDEBAR ── */}
-      <aside style={{width:300,background:"#fff",borderRight:`1px solid ${LS.border}`,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
-        {selTable?(
-          // Selected table view
-          <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
-            <div style={{padding:"12px 14px",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",flexShrink:0}}>
-              <button onClick={()=>setSelected(null)}
-                style={{width:"100%",background:"rgba(255,255,255,.18)",border:"1.5px solid rgba(255,255,255,.5)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"8px",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                ← חזרה לרשימת אורחים
-              </button>
-            </div>
-            <div style={{padding:"12px 14px",borderBottom:`1px solid ${LS.border}`,background:LS.purpleXL,flexShrink:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <span style={{fontWeight:800,fontSize:14,color:LS.text}}>{selTable.name}</span>
-                <span style={{background:sColor(selTable)+"18",color:sColor(selTable),borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 10px",border:`1px solid ${sColor(selTable)}33`}}>
-                  {(selTable.guests||[]).length}/{selTable.seats}
-                </span>
-              </div>
-              <div style={{height:6,background:LS.border,borderRadius:3,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${pct(selTable)}%`,background:"linear-gradient(90deg,#5B2DB8,#7B4AE2)",borderRadius:3,transition:"width .4s"}}/>
-              </div>
-            </div>
-            <div style={{flex:1,overflowY:"auto",padding:"10px 12px"}}>
-              {(selTable.guests||[]).length===0&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{fontSize:32,marginBottom:8}}>🪑</div><p style={{color:LS.muted,fontSize:13}}>גרור אורחים לכאן</p></div>}
-              {(selTable.guests||[]).map(g=>(
-                <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(selTable.id));}}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1.5px solid ${LS.border}`,borderRadius:12,padding:"9px 10px",marginBottom:6,cursor:"grab",transition:"all .15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=LS.purple;e.currentTarget.style.boxShadow=`0 2px 8px rgba(107,61,212,.1)`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=LS.border;e.currentTarget.style.boxShadow="none";}}>
-                  <div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:LS.text}}>{g.name}</div>
-                    {g.relation&&<span style={{fontSize:10,background:RELATION_COLORS[g.relation]+"18"||LS.purpleXL,color:RELATION_COLORS[g.relation]||LS.purple,borderRadius:100,padding:"1px 7px",fontWeight:600}}>{g.relation}</span>}
-                  </div>
-                  <div style={{display:"flex",gap:3}}>
-                    <button onClick={e=>{e.stopPropagation();setEditGuestData(g);}} style={{background:LS.purpleXL,border:"none",color:LS.purple,borderRadius:7,padding:"4px 7px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>✏️</button>
-                    <button onClick={async e=>{e.stopPropagation();await removeFromTable(selTable.id,g);}} style={{background:"#FEF2F2",border:"none",color:"#DC2626",borderRadius:7,padding:"4px 7px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>✕</button>
-                  </div>
-                </div>
-              ))}
-              <div onDragOver={e=>{e.preventDefault();e.stopPropagation();e.currentTarget.style.background=LS.purpleXL;e.currentTarget.style.borderColor=LS.purple;}}
-                onDragLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor=LS.purple+"55";}}
-                onDrop={e=>{e.preventDefault();e.stopPropagation();e.currentTarget.style.background="transparent";const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(selTable.id,gid,f);}}
-                style={{border:`2px dashed ${LS.purple}55`,borderRadius:12,padding:"18px",textAlign:"center",color:LS.purple,fontSize:12,marginTop:10,fontWeight:700,transition:"all .2s",cursor:"copy"}}>
-                ⬇ שחרר אורח כאן
-              </div>
-            </div>
-            <div style={{padding:"10px 14px",borderTop:`1px solid ${LS.border}`,flexShrink:0}}>
-              <LSBtn primary full onClick={()=>setModal("addGuest")}>➕ הוסף אורח לשולחן</LSBtn>
-            </div>
-          </div>
-        ):(
-          // Guest list + elements
-          <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
-            {/* Elements panel - TABS */}
-            <div style={{flexShrink:0}}>
-              <div style={{display:"flex",borderBottom:`1px solid ${LS.border}`}}>
-                {[["אורחים","👥"],["אלמנטים","🏛️"]].map(([l,ic],i)=>(
-                  <button key={l} onClick={()=>document.getElementById("ls-tab-"+i)?.click()}
-                    id={"ls-tab-btn-"+i}
-                    style={{flex:1,padding:"11px",background:"#fff",border:"none",fontSize:13,fontWeight:600,color:LS.muted,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5,borderBottom:`2px solid transparent`,transition:"all .15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.color=LS.purple;}}
-                    onMouseLeave={e=>{e.currentTarget.style.color=LS.muted;}}>
-                    {ic} {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Elements grid */}
-            <div style={{padding:"12px 14px",borderBottom:`1px solid ${LS.border}`,background:LS.purpleXL,flexShrink:0}}>
-              <div style={{fontSize:11,fontWeight:700,color:LS.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>אלמנטים לאולם</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-                {VENUE_ELEMENTS.map(el=>(
-                  <button key={el.id} onClick={()=>addVenueElement(el.id)}
-                    style={{background:el.bg,border:"none",borderRadius:10,padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,boxShadow:"0 2px 6px rgba(0,0,0,.15)",transition:"all .2s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 16px rgba(0,0,0,.25)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 2px 6px rgba(0,0,0,.15)";}}>
-                    <span style={{fontSize:16}}>{el.icon}</span>
-                    <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.9)"}}>{el.label}</span>
-                  </button>
-                ))}
-                <button onClick={onAddTable}
-                  style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",border:"none",borderRadius:10,padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,boxShadow:"0 2px 8px rgba(107,61,212,.3)",transition:"all .2s"}}
-                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-                  onMouseLeave={e=>e.currentTarget.style.transform="none"}>
-                  <span style={{fontSize:16}}>🪑</span>
-                  <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.9)"}}>שולחן</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Guests */}
-            <div style={{padding:"10px 14px",borderBottom:`1px solid ${LS.border}`,background:"#fff",flexShrink:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <span style={{fontWeight:700,fontSize:13,color:LS.text}}>ממתינים להושבה</span>
-                <span style={{background:"#FFFBEB",color:"#D97706",borderRadius:100,fontSize:11,fontWeight:700,padding:"2px 8px",border:"1px solid #FDE68A"}}>{guests.length}</span>
-              </div>
-              <div style={{position:"relative"}}>
-                <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#ccc",pointerEvents:"none"}}>🔍</span>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש אורח..."
-                  style={{width:"100%",background:LS.purpleXL,border:`1.5px solid ${LS.border}`,borderRadius:10,padding:"8px 34px 8px 10px",fontSize:13,color:LS.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",transition:"border-color .2s"}}
-                  onFocus={e=>e.target.style.borderColor=LS.purple} onBlur={e=>e.target.style.borderColor=LS.border}/>
-              </div>
-            </div>
-
-            <div style={{flex:1,overflowY:"auto",padding:"8px 12px"}}>
-              {guests.length===0&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{fontSize:40}}>🎉</div><p style={{color:LS.success,fontWeight:700,fontSize:13,marginTop:8}}>כולם מוסבים!</p></div>}
-              {guests.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
-                <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1.5px solid ${LS.border}`,borderRadius:12,padding:"8px 10px",cursor:"grab",marginBottom:6,transition:"all .15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=LS.purple;e.currentTarget.style.boxShadow=`0 2px 8px rgba(107,61,212,.1)`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=LS.border;e.currentTarget.style.boxShadow="none";}}>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0,position:"relative"}}>
-                    {g.name[0]}
-                    <div style={{position:"absolute",bottom:-1,right:-1,width:10,height:10,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#CBD5E0",border:"2px solid #fff"}}/>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:LS.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
-                    {g.relation&&<span style={{fontSize:10,color:RELATION_COLORS[g.relation]||LS.purple,fontWeight:600}}>{g.relation}</span>}
-                  </div>
-                  <button onClick={e=>{e.stopPropagation();setEditGuestData(g);}} style={{background:LS.purpleXL,border:"none",color:LS.purple,borderRadius:7,padding:"4px 7px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>✏️</button>
-                </div>
-              ))}
-            </div>
-
-            <div style={{padding:"10px 14px",borderTop:`1px solid ${LS.border}`,flexShrink:0}}>
-              <div style={{display:"flex",gap:6,marginBottom:6}}>
-                <input value={newGuest} onChange={e=>setNewGuest(e.target.value)} placeholder="שם אורח חדש..."
-                  style={{flex:1,background:LS.purpleXL,border:`1.5px solid ${LS.border}`,borderRadius:10,padding:"8px 10px",fontSize:13,color:LS.text,outline:"none",fontFamily:"inherit",transition:"border-color .2s"}}
-                  onFocus={e=>e.target.style.borderColor=LS.purple} onBlur={e=>e.target.style.borderColor=LS.border}
-                  onKeyDown={e=>e.key==="Enter"&&addGuest()}/>
-                <button onClick={addGuest} style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"8px 14px",cursor:"pointer",fontSize:18,fontWeight:700}}>+</button>
-              </div>
-              <LSBtn ghost full small onClick={()=>setModal("addGuest")}>➕ הוסף עם פרטים מלאים</LSBtn>
-            </div>
-          </div>
-        )}
-      </aside>
-
-      {/* ── MAIN CANVAS ── */}
-      <main style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column",background:LS.bg}}>
-        {/* Toolbar */}
-        <div style={{height:46,background:"#fff",borderBottom:`1px solid ${LS.border}`,display:"flex",alignItems:"center",padding:"0 16px",gap:8,flexShrink:0}}>
-          {/* Canvas mode toggle */}
-          <div style={{display:"flex",background:LS.purpleXL,borderRadius:10,padding:3,gap:3}}>
-            {[["venue","🏛️ אולם אירועים"],["grid","📐 רשת"]].map(([m,l])=>(
-              <button key={m} onClick={()=>setCanvasMode(m)}
-                style={{background:canvasMode===m?"linear-gradient(135deg,#5B2DB8,#7B4AE2)":"transparent",color:canvasMode===m?"#fff":LS.muted,border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-                {l}
-              </button>
-            ))}
-          </div>
-
-          <div style={{width:1,height:20,background:LS.border}}/>
-
-          {/* View toggle */}
-          <div style={{display:"flex",gap:3}}>
-            {[["map","🗺 מפה"],["list","📋 שולחנות"],["guests","👥 כל האורחים"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)}
-                style={{background:view===v?LS.purpleXL:"transparent",color:view===v?LS.purple:LS.muted,border:`1.5px solid ${view===v?LS.purple+"44":"transparent"}`,borderRadius:8,padding:"5px 10px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-                {l}
-              </button>
-            ))}
-          </div>
-
-          <div style={{flex:1}}/>
-          <LSBtn primary small onClick={onAddTable} icon="🪑">הוסף שולחן</LSBtn>
-          <LSBtn ghost small onClick={()=>setModal("receipt")} icon="🔍">חפש אורח</LSBtn>
-        </div>
-
-        {/* MAP VIEW */}
-        {view==="map"&&(
-          <div onDragOver={e=>e.preventDefault()} onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
-            onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
-            style={{flex:1,overflow:"auto",position:"relative"}}>
-            {(()=>{
-              const MAP_W=Math.max(window.innerWidth-350,900);
-              const MAP_H=Math.max(window.innerHeight-140,620);
-              return(
-                <div style={{
-                  position:"relative",width:MAP_W,height:MAP_H,flexShrink:0,
-                  margin:12,borderRadius:16,overflow:"hidden",
-                  background: canvasMode==="grid"
-                    ? "#fff"
-                    : "linear-gradient(145deg,#F8F6FF,#F0EBFF)",
-                  border:`1.5px solid ${LS.border}`,
-                  boxShadow:"0 2px 16px rgba(107,61,212,.06)"
-                }}
-                onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
-
-                  {/* Background pattern */}
-                  <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}} xmlns="http://www.w3.org/2000/svg">
-                    {canvasMode==="grid"?(
-                      <defs>
-                        <pattern id="lsgrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDE8FF" strokeWidth="1"/>
-                        </pattern>
-                        <pattern id="lsgridBig" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
-                          <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#D8D0F8" strokeWidth="1.5"/>
-                        </pattern>
-                      </defs>
-                    ):(
-                      <defs>
-                        <pattern id="lsdots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
-                          <circle cx="15" cy="15" r="1.5" fill="#C4B5F4" opacity=".4"/>
-                        </pattern>
-                      </defs>
-                    )}
-                    <rect width="100%" height="100%" fill={canvasMode==="grid"?"url(#lsgrid)":"url(#lsdots)"}/>
-                    {canvasMode==="grid"&&<rect width="100%" height="100%" fill="url(#lsgridBig)"/>}
-                  </svg>
-
-                  {/* Wall border */}
-                  <div style={{position:"absolute",inset:0,border:`${canvasMode==="venue"?"3px":"1.5px"} solid ${canvasMode==="venue"?"#A78BFA":"#D8D0F8"}`,borderRadius:15,pointerEvents:"none",zIndex:2}}/>
-
-                  {/* Venue label */}
-                  {canvasMode==="venue"&&(
-                    <div style={{position:"absolute",top:8,right:12,fontSize:11,color:"#A78BFA",fontWeight:700,opacity:.7,pointerEvents:"none",zIndex:3}}>
-                      גררו שולחנות ואלמנטים למיקום הרצוי
-                    </div>
-                  )}
-
-                  {/* Venue Elements */}
-                  {venueElements.map(el=>{
-                    let posX=el.x,posY=el.y;
-                    const hmd=e=>{
-                      e.stopPropagation();
-                      setSelected("el_"+el.id);
-                      const ox=e.clientX-posX,oy=e.clientY-posY;
-                      const mv=me=>{posX=me.clientX-ox;posY=me.clientY-oy;moveElement(el.id,posX,posY);};
-                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);};
-                      window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
-                    };
-                    return <VenueElementNode key={el.id} el={el} selected={selected==="el_"+el.id} onMouseDown={hmd}/>;
-                  })}
-
-                  {/* Tables */}
-                  {tables.map(t=>{
-                    let posX=t.x,posY=t.y;
-                    const hmd=e=>{
-                      e.stopPropagation();setSelected(t.id);
-                      const ox=e.clientX-posX,oy=e.clientY-posY;
-                      const mv=me=>{posX=me.clientX-ox;posY=me.clientY-oy;moveTablePos(t.id,posX,posY);};
-                      const up=()=>{saveTablePos(t.id,posX,posY);window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);};
-                      window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
-                    };
-                    return(
-                      <div key={t.id} style={{position:"absolute",left:t.x,top:t.y,zIndex:selected===t.id?10:3}}>
-                        <TableNode table={t} selected={selected===t.id} onMouseDown={hmd}
-                          onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
-                        {selected===t.id&&(
-                          <button onMouseDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();setEditTableData(t);}}
-                            style={{position:"absolute",top:-12,right:-12,zIndex:30,width:26,height:26,borderRadius:"50%",background:"#fff",border:`2px solid ${LS.purple}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,boxShadow:"0 2px 8px rgba(107,61,212,.3)"}}>✏️</button>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Empty state */}
-                  {tables.length===0&&venueElements.length===0&&(
-                    <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none",gap:12}}>
-                      <div style={{fontSize:48,opacity:.25}}>🪑</div>
-                      <div style={{fontSize:14,fontWeight:700,color:"#C4B5F4"}}>הוסף שולחנות ואלמנטים מהסרגל הצדדי</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* LIST VIEW */}
-        {view==="list"&&(
-          <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
-              {tables.map(t=>(
-                <div key={t.id}
-                  style={{background:"#fff",borderRadius:16,border:`1.5px solid ${selected===t.id?LS.purple:LS.border}`,padding:16,transition:"all .2s",cursor:"pointer"}}
-                  onDragOver={e=>e.preventDefault()}
-                  onDrop={e=>{e.preventDefault();const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}
-                  onMouseEnter={e=>{e.currentTarget.style.boxShadow=`0 4px 16px rgba(107,61,212,.1)`;e.currentTarget.style.borderColor=LS.purple+"55";}}
-                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.borderColor=selected===t.id?LS.purple:LS.border;}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:18}}>{TABLE_TYPES[t.type]?.icon}</span>
-                      <span style={{fontWeight:800,fontSize:14,color:LS.text}}>{t.name}</span>
-                    </div>
-                    <span style={{background:sColor(t)+"18",color:sColor(t),borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 10px",border:`1px solid ${sColor(t)}33`}}>
-                      {(t.guests||[]).length}/{t.seats}
+            )}
+            {/* Countdown boxes — בדיוק כמו LunSoul */}
+            {event.date&&(
+              <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:"wrap"}}>
+                {[["d","ימים"],["h","שעות"],["m","דקות"],["s","שניות"]].map(([k,l],i)=>(
+                  <span key={k} style={{display:"flex",alignItems:"center",gap:3}}>
+                    <span style={{background:"#1A1035",borderRadius:7,padding:"5px 8px",fontSize:14,fontWeight:900,color:"#fff",minWidth:30,textAlign:"center",display:"inline-block",boxShadow:"0 2px 6px rgba(0,0,0,.2)"}}>
+                      {String(countdown[k]).padStart(2,"0")}
                     </span>
-                  </div>
-                  <div style={{height:5,background:LS.purpleXL,borderRadius:3,overflow:"hidden",marginBottom:10}}>
-                    <div style={{height:"100%",width:`${pct(t)}%`,background:"linear-gradient(90deg,#5B2DB8,#7B4AE2)",borderRadius:3,transition:"width .4s"}}/>
-                  </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                    {(t.guests||[]).map(g=>(
-                      <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(t.id));}}
-                        style={{background:LS.purpleXL,borderRadius:100,fontSize:11,color:LS.purple,padding:"3px 8px",fontWeight:600,cursor:"grab"}}>
-                        {g.name.split(" ")[0]}
-                      </div>
-                    ))}
-                    {(t.guests||[]).length===0&&<span style={{fontSize:12,color:LS.muted,fontStyle:"italic"}}>גרור אורחים לכאן</span>}
-                  </div>
-                </div>
-              ))}
-              <button onClick={onAddTable}
-                style={{background:"transparent",border:`2px dashed ${LS.purple}44`,borderRadius:16,padding:16,cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,color:LS.purple,fontWeight:700,fontSize:13,transition:"all .2s",minHeight:100}}
-                onMouseEnter={e=>e.currentTarget.style.background=LS.purpleXL}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <span style={{fontSize:28}}>+</span>
-                הוסף שולחן
-              </button>
+                    <span style={{fontSize:8,color:"#9CA3AF",fontWeight:700,marginLeft:1}}>{l}</span>
+                    {i<3&&<span style={{color:"#D1D5DB",fontSize:14,fontWeight:300}}>:</span>}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Package badge — מודגש עם גבול חד */}
+            <div style={{marginTop:10,display:"inline-flex",alignItems:"center",gap:5,background:"#FEF9C3",color:"#92400E",border:"2px solid #F59E0B",borderRadius:100,padding:"4px 12px",fontSize:12,fontWeight:800,cursor:"pointer",boxShadow:"0 2px 6px rgba(245,158,11,.25)",transition:"all .15s"}}
+              onClick={()=>setScreen("packages")}
+              onMouseEnter={e=>e.currentTarget.style.background="#FEF08A"}
+              onMouseLeave={e=>e.currentTarget.style.background="#FEF9C3"}>
+              ✨ {pkgLabel} • 250 רשומות
             </div>
           </div>
-        )}
 
-        {/* GUESTS VIEW */}
-        {view==="guests"&&(
-          <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10}}>
-              {[...guests,...tables.flatMap(t=>(t.guests||[]).map(g=>({...g,_tableName:t.name})))].map(g=>(
-                <div key={g.id} style={{background:"#fff",borderRadius:14,border:`1.5px solid ${LS.border}`,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=LS.purple+"44";e.currentTarget.style.boxShadow=`0 2px 8px rgba(107,61,212,.08)`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=LS.border;e.currentTarget.style.boxShadow="none";}}>
-                  <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:LS.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</div>
-                    <div style={{fontSize:11,color:g._tableName?"#22C55E":"#F59E0B",fontWeight:600,marginTop:1}}>
-                      {g._tableName?`🪑 ${g._tableName}`:"⏳ לא מוסב"}
-                    </div>
-                  </div>
+          {/* Settings links — with gear-wheel style */}
+          <div style={{padding:"8px 0",borderBottom:"2px solid #EDE8FF"}}>
+            <div style={{padding:"6px 16px 8px",fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:1,textTransform:"uppercase"}}>הגדרות האירוע</div>
+            {settingsLinks.map((item,i)=>(
+              <div key={item.id}
+                onClick={()=>go(item.id==="seating"?"seating":item.id==="packages"?"packages":"settings")}
+                className="ls-set"
+                style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",transition:"background .15s",borderBottom:i<settingsLinks.length-1?"1px solid #F5F2FF":"none"}}>
+                <div style={{width:36,height:36,borderRadius:10,background:"#F0EBFF",border:"1.5px solid #DDD6FE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>
+                  {item.icon}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Stats bar */}
-        <div style={{height:44,background:"#fff",borderTop:`1px solid ${LS.border}`,display:"flex",alignItems:"center",padding:"0 16px",gap:10,flexShrink:0,fontSize:12,fontWeight:700}}>
-          {[
-            {label:`${tables.length} שולחנות`,icon:"🪑",color:LS.purple,bg:LS.purpleXL},
-            {label:`${seated} משובצים`,icon:"👥",color:"#3B82F6",bg:"#EFF6FF"},
-            {label:`${seated+(guests.length)>0?Math.round(seated/(seated+guests.length)*100):0}% שובצו`,icon:"📊",color:seated/(seated+guests.length||1)>=.8?"#22C55E":"#F59E0B",bg:seated/(seated+guests.length||1)>=.8?"#ECFDF5":"#FFFBEB"},
-            {label:`${guests.length} ממתינים`,icon:"⏳",color:guests.length===0?"#22C55E":"#F59E0B",bg:guests.length===0?"#ECFDF5":"#FFFBEB"},
-          ].map(s=>(
-            <div key={s.label} style={{display:"flex",alignItems:"center",gap:5,background:s.bg,borderRadius:100,padding:"4px 12px",border:`1px solid ${s.color}22`}}>
-              <span>{s.icon}</span><span style={{color:s.color}}>{s.label}</span>
-            </div>
-          ))}
-          <div style={{flex:1}}/>
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            <span style={{fontSize:10,color:LS.muted}}>מצב:</span>
-            {[["venue","🏛️ אולם"],["grid","📐 רשת"]].map(([m,l])=>(
-              <button key={m} onClick={()=>setCanvasMode(m)}
-                style={{background:canvasMode===m?LS.purpleXL:"transparent",color:canvasMode===m?LS.purple:LS.muted,border:`1px solid ${canvasMode===m?LS.purple+"44":"transparent"}`,borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                {l}
-              </button>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1A1035"}}>{item.label}</div>
+                  <div style={{fontSize:11,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.sub}</div>
+                </div>
+                <span style={{color:"#C4B5F4",fontSize:12,fontWeight:700}}>‹</span>
+              </div>
             ))}
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
 
-function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
-  const setShowLanding = onBack; // onBack === ()=>setShowLanding(true)
-  const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState("map"),[screen,setScreen]=useState("home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
-  const [sidebarOpen,setSidebarOpen]=useState(true);
-  const [venueElements,setVenueElements]=useState([]);
-  const [userPackages,setUserPackages]=useState([]);
-  const [trialExpired] = useState(false);
-  const [trialHours] = useState(0);
-  const [editTableData,setEditTableData]=useState(null);
-  const hasPkg=(id)=>userPackages.includes(id)||userPackages.includes("vip");
-
-  useEffect(()=>{
-    setScreen("home");
-    loadAll();
-    const fn=()=>setMobile(isMobile());
-    window.addEventListener("resize",fn);
-    return()=>window.removeEventListener("resize",fn);
-  },[event.id]);
-  const loadAll=async()=>{setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
-  const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
-  const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
-  const dropOnTable=async(toId,guestId,fromId)=>{
-    const allG=[...guests,...tables.flatMap(t=>t.guests||[])];
-    const guest=allG.find(g=>String(g.id)===String(guestId));
-    const toTable=tables.find(t=>String(t.id)===String(toId));
-    if(!guest||!toTable)return;
-    // בדוק שהשולחן לא מלא (אלא אם זה אותו שולחן)
-    if(String(fromId)!==String(toId)&&(toTable.guests||[]).length>=toTable.seats)return;
-    // אותו שולחן  -  אל תעשה כלום
-    if(String(fromId)===String(toId))return;
-    setSaving(true);
-    await sb.from("guests").update({table_id:toId}).eq("id",guestId);
-    setTables(ts=>ts.map(t=>{
-      // הסר מהשולחן הקודם
-      if(fromId&&String(t.id)===String(fromId))return{...t,guests:(t.guests||[]).filter(g=>String(g.id)!==String(guestId))};
-      // הוסף לשולחן החדש
-      if(String(t.id)===String(toId))return{...t,guests:[...(t.guests||[]).filter(g=>String(g.id)!==String(guestId)),{...guest,table_id:toId}]};
-      return t;
-    }));
-    // הסר מרשימת הממתינים
-    setGuests(gs=>gs.filter(g=>String(g.id)!==String(guestId)));
-    setSaving(false);
-  };
-  const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
-  const editTable=async(id,name,type,seats)=>{setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
-  const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
-  const addGuest=async(data)=>{
-    const name=(data?.name||newGuest).trim();if(!name)return;
-    setSaving(true);
-    const{data:d}=await sb.from("guests").insert({name,phone:data?.phone||null,rsvp:data?.rsvp||"pending",guest_count:data?.guest_count||1,event_id:event.id,table_id:null}).select().single();
-    if(d)setGuests(gs=>[...gs,d]);
-    setNewGuest("");setSaving(false);
-  };
-  const editGuest=async(id,data)=>{
-    setSaving(true);
-    await sb.from("guests").update({name:data.name,phone:data.phone||null,rsvp:data.rsvp,guest_count:data.guest_count}).eq("id",id);
-    setGuests(gs=>gs.map(g=>g.id===id?{...g,...data}:g));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(g=>g.id===id?{...g,...data}:g)})));
-    setSaving(false);
-  };
-  const addTable=async()=>{setModal("addTable");};
-  const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:100+tables.length*30,y:100+tables.length*20,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
-  const selTable=tables.find(t=>t.id===selected);
-  const seated=tables.reduce((s,t)=>s+(t.guests||[]).length,0);
-  const total=seated+guests.length;
-
-  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,flexDirection:"column",gap:14}}><Spinner size={40}/><p style={{color:C.muted,fontSize:15,fontFamily:"'Heebo',sans-serif"}}>טוען...</p></div>);
-
-  if(mobile){
-    const confirmed=guests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
-    const declined=guests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
-    const eventIcon=event.event_type==="wedding"?"💍":event.event_type==="bar_mitzva"?"✡️":event.event_type==="brit"?"👶":"💼";
-
-    const HomeScreen=()=>(
-      <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"#f5f5f5",minHeight:"100vh",paddingBottom:80}}>
-
-        {/* באנר ניסיון - מוסתר */}
-
-        {/* כותרת האירוע */}
-        <div style={{background:"#fff",padding:"20px 20px 16px",textAlign:"center",borderBottom:"1px solid #eee"}}>
-          <div style={{fontSize:12,color:"#999",fontWeight:600,marginBottom:4}}>
-            {event.event_type==="wedding"?"החתונה של":event.event_type==="bar_mitzva"?"בר-מצווה של":"האירוע של"}
-          </div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}}>
-            <div style={{fontSize:26,fontWeight:900,color:"#1a1a1a",lineHeight:1.1}}>
-              {event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name}
+          {/* Color swatches — בדיוק כמו LunSoul */}
+          <div style={{padding:"14px 16px",borderBottom:"2px solid #EDE8FF"}}>
+            <div style={{display:"flex",gap:7,justifyContent:"center"}}>
+              {[{c:"#EC4899"},{c:"#3B82F6"},{c:"#22C55E"},{c:"#F59E0B"},{c:"#EF4444"},{c:"#8B5CF6",active:true}].map(({c,active},i)=>(
+                <div key={i} style={{
+                  width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",
+                  border:active?"3px solid #fff":"2px solid transparent",
+                  boxShadow:active?`0 0 0 2px ${c}, 0 2px 6px rgba(0,0,0,.15)`:"0 2px 4px rgba(0,0,0,.1)",
+                  transition:"all .15s"
+                }}
+                  onMouseEnter={e=>e.currentTarget.style.transform="scale(1.2)"}
+                  onMouseLeave={e=>e.currentTarget.style.transform="none"}/>
+              ))}
             </div>
-            <span style={{fontSize:28}}>{eventIcon}</span>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,maxWidth:400,margin:"0 auto"}}>
-            <button onClick={()=>window.open(`${window.location.origin}/#/invite/${event.invite_code}`,"_blank")}
-              style={{background:"#C0826A",color:"#fff",border:"none",borderRadius:12,padding:"14px 8px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-              לצפייה בהזמנה
+
+          {/* View invite + help */}
+          <div style={{padding:"14px 16px",borderBottom:"2px solid #EDE8FF"}}>
+            <button onClick={()=>window.open(`${window.location.origin}/#/invite/${event.invite_code||""}`,"_blank")}
+              style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 12px rgba(91,45,184,.35)",marginBottom:8,transition:"all .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-1px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <span>👁</span> צפה בהזמנה
             </button>
-            <button onClick={()=>setScreen("rsvp")}
-              style={{background:"#3D5475",color:"#fff",border:"none",borderRadius:12,padding:"14px 8px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-              אישורי הגעה
+            <button onClick={()=>setScreen("home")}
+              style={{width:"100%",background:"#F5F2FF",color:"#5B2DB8",border:"1.5px solid #DDD6FE",borderRadius:11,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5,transition:"all .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="#EDE8FF"}
+              onMouseLeave={e=>e.currentTarget.style.background="#F5F2FF"}>
+              <span>❓</span> עזרה ותמיכה
             </button>
           </div>
-        </div>
 
-        {/* סטטיסטיקות */}
-        <div style={{background:"#fff",margin:"12px 16px",borderRadius:16,padding:"20px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
-            <div><div style={{fontSize:36,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{total}</div><div style={{fontSize:12,color:"#666",marginTop:4,fontWeight:600}}>מוזמנים</div></div>
-            <div><div style={{fontSize:36,fontWeight:900,color:"#C0392B",lineHeight:1}}>{declined}</div><div style={{fontSize:12,color:"#666",marginTop:4,fontWeight:600}}>לא מגיעים</div></div>
-            <div><div style={{fontSize:36,fontWeight:900,color:"#27AE60",lineHeight:1}}>{confirmed}</div><div style={{fontSize:12,color:"#666",marginTop:4,fontWeight:600}}>מגיעים</div></div>
-          </div>
-          <div style={{marginTop:16,borderTop:"1px solid #f0f0f0",paddingTop:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-              <span style={{fontSize:12,color:"#888",fontWeight:600}}>אורחים מוסבים</span>
-              <span style={{fontSize:12,fontWeight:800,color:"#1B3A8C"}}>{seated}/{total}</span>
+          {/* Social + footer */}
+          <div style={{padding:"14px 16px",marginTop:"auto"}}>
+            <div style={{display:"flex",gap:14,justifyContent:"center",marginBottom:10}}>
+              {[["🎵","TikTok"],["📸","Instagram"],["📘","Facebook"]].map(([ic,l])=>(
+                <span key={l} title={l} style={{fontSize:18,cursor:"pointer",opacity:.55,transition:"opacity .15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.opacity="1"}
+                  onMouseLeave={e=>e.currentTarget.style.opacity=".55"}>{ic}</span>
+              ))}
             </div>
-            <div style={{height:8,background:"#EEF2FF",borderRadius:4,overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${total>0?(seated/total)*100:0}%`,background:"linear-gradient(90deg,#1B3A8C,#4A7AFF)",borderRadius:4,transition:"width .5s"}}/>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:5}}>
+              {["תקנון","נגישות","פרטיות"].map(s=>(
+                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer",textDecoration:"underline",textDecorationColor:"transparent",transition:"all .15s"}}
+                  onMouseEnter={e=>{e.target.style.color="#5B2DB8";e.target.style.textDecorationColor="#5B2DB8";}}
+                  onMouseLeave={e=>{e.target.style.color="#9CA3AF";e.target.style.textDecorationColor="transparent";}}>{s}</span>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+              {["צור קשר","⭐ חוות דעת"].map(s=>(
+                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer",transition:"color .15s"}}
+                  onMouseEnter={e=>e.target.style.color="#5B2DB8"}
+                  onMouseLeave={e=>e.target.style.color="#9CA3AF"}>{s}</span>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* ספירה לאחור */}
-        {event.date&&(()=>{
-          const now=new Date();
-          const diff=new Date(event.date)-now;
-          if(diff<=0)return null;
-          const days=Math.floor(diff/(1000*60*60*24));
-          const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
-          return(
-            <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"14px 20px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-              <div style={{display:"flex",justifyContent:"center",gap:20,alignItems:"center"}}>
-                <span style={{fontSize:12,color:"#888",fontWeight:600}}>לאירוע</span>
-                <div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{hours}</div><div style={{fontSize:10,color:"#888"}}>שעות</div></div>
-                {days>0&&<div style={{textAlign:"center"}}><div style={{fontSize:24,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{days}</div><div style={{fontSize:10,color:"#888"}}>ימים</div></div>}
-                <span style={{fontSize:12,color:"#888",fontWeight:600}}>⏳ עוד</span>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* תפריט */}
-        <div style={{padding:"0 16px"}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#999",marginBottom:10,marginRight:4}}>ניהול האירוע</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-            {[
-              {icon:"💌",label:"הזמנה",nav:"invite",color:"#6B21A8",bg:"#F5F0FF"},
-              {icon:"✅",label:"אישורי הגעה",nav:"rsvp",color:"#276749",bg:"#F0FFF4"},
-              {icon:"🪑",label:"הושבה",nav:"seating",color:"#1B3A8C",bg:"#EEF2FF"},
-              {icon:"🤖",label:"AI חכם",nav:"ai",color:"#7C3AED",bg:"#F5F3FF"},
-              {icon:"📊",label:"ייבוא",nav:"import",color:"#276749",bg:"#F0FFF4"},
-              {icon:"🖨️",label:"חיפוש",nav:"receipt",color:"#1B3A8C",bg:"#EEF2FF"},
-              {icon:"➕",label:"הוסף אורח",nav:"add",color:"#276749",bg:"#F0FFF4"},
-              {icon:"💰",label:"תקציב",nav:"budget",color:"#B45309",bg:"#FFFBEB"},
-              {icon:"📱",label:"SMS",nav:"sms",color:"#1B3A8C",bg:"#EEF2FF"},
-              {icon:"💬",label:"WhatsApp",nav:"whatsapp",color:"#25D366",bg:"#F0FFF4"},
-              {icon:"📦",label:"חבילות",nav:"packages",color:"#B45309",bg:"#FFFBEB"},
-              {icon:"⚙️",label:"הגדרות",nav:"user_settings",color:"#555",bg:"#F7F7F7"},
-            ].map(item=>{
-              const hasPkg=(id)=>userPackages.some(p=>p.package_id===id||["seating","sms","auto","vip","staff"].includes(p.package_id)&&["seating","sms","whatsapp","ai"].includes(id)||p.package_id==="basic"&&id==="rsvp");
-              const isLocked=(()=>{
-                if(["packages","settings","invite","user_settings","home"].includes(item.nav)) return false;
-                if(item.nav==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id));
-                if(item.nav==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id));
-                if(item.nav==="sms") return !userPackages.some(p=>["sms","auto","vip"].includes(p.package_id));
-                if(item.nav==="whatsapp") return !userPackages.some(p=>["auto","vip"].includes(p.package_id));
-                if(item.nav==="ai"||item.nav==="budget"||item.nav==="import") return userPackages.length===0;
-                return false;
-              })();
-              return(
-                <div key={item.nav} onClick={()=>{
-                    if(isLocked){setScreen("packages");return;}
-                    if(item.nav==="receipt")setModal("receipt");
-                    else if(item.nav==="addTable")setModal("addTable");
-                    else setScreen(item.nav);
-                  }}
-                  style={{background:"#fff",borderRadius:14,padding:"16px 8px",textAlign:"center",cursor:"pointer",
-                    boxShadow:"0 2px 8px rgba(0,0,0,.06)",position:"relative",border:`1px solid ${item.color}22`}}>
-                  {isLocked&&<div style={{position:"absolute",top:6,left:6,fontSize:10,background:"#FEF3C7",color:"#B45309",borderRadius:5,padding:"1px 5px",fontWeight:700}}>🔒</div>}
-                  <div style={{width:44,height:44,borderRadius:12,background:item.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,margin:"0 auto 8px"}}>
-                    {item.icon}
-                  </div>
-                  <div style={{fontSize:11,fontWeight:700,color:item.color,lineHeight:1.2}}>{item.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-
-    return(<div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
-      {/* TOP BAR */}
-      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-        {screen==="home"
-          ? <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>← הכל</button>
-          : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>← חזרה</button>
-        }
-        <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="settings"?"⚙️ הגדרות":event.name}
-        </span>
-        {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
+        </aside>
       </div>
 
-      <div style={{flex:1,overflow:"auto"}}>
-        {screen==="home"&&<HomeScreen/>}
-        {screen==="seating"&&<MobileSeating tables={tables} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
-        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
-        {screen==="add"&&(
-          <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
-            <div style={{fontSize:13,color:C.muted,marginBottom:20}}>הוסף אורחים אחד אחד עם כל הפרטים</div>
-            {guests.slice(-5).reverse().map(g=>(
-              <Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}>
-                <div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:600,color:C.text}}>{g.name}</div>
-                  {g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}
-                </div>
-                <RsvpBadge rsvp={g.rsvp}/>
-              </Card>
-            ))}
-            <button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 14px ${C.blueL}44`}}>
-              ➕ הוסף אורח חדש
-            </button>
-            <button onClick={()=>setScreen("contacts")} style={{width:"100%",background:C.surface,color:C.blue,border:`2px solid ${C.blueL}`,borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              📱 ייבא מאנשי קשר
-            </button>
-            <button onClick={()=>{loadAll();setScreen("home");}} style={{width:"100%",background:"transparent",color:C.blue,border:`2px solid ${C.border}`,borderRadius:14,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:10}}>
-              סיום ✓
-            </button>
-          </div>
-        )}
-        {modal==="addGuest"&&(userPackages.length===0&&total>=50
-          ?<div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setModal(null)}>
-            <div style={{background:"#fff",borderRadius:20,padding:24,maxWidth:360,width:"100%",direction:"rtl",textAlign:"center"}}>
-              <div style={{fontSize:48,marginBottom:12}}>🔒</div>
-              <div style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>הגעת למגבלת 50 אורחים</div>
-              <div style={{fontSize:13,color:"#666",marginBottom:20,lineHeight:1.6}}>בחבילה החינמית ניתן להוסיף עד 50 אורחים. שדרג לחבילה הבסיסית (₪50) כדי להוסיף ללא הגבלה.</div>
-              <button onClick={()=>{setModal(null);setScreen("packages");}} style={{width:"100%",background:"linear-gradient(135deg,#1B3A8C,#2952C8)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📦 שדרג חבילה</button>
-            </div>
-          </div>
-          :<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
-        )}
-        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal}/>}
-        {screen==="import"&&(
-          <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
-            <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
-              <div style={{fontSize:36,marginBottom:8}}>📊</div>
-              <div style={{fontSize:15,fontWeight:700,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ .xlsx עם עמודות: שם, טלפון</div>
-              <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
-                📂 בחר קובץ Excel
-                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
-                  const file=e.target.files[0];if(!file)return;
-                  setSaving(true);
-                  try{
-                    const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
-                    const buf=await file.arrayBuffer();
-                    const wb=read(buf);
-                    const ws=wb.Sheets[wb.SheetNames[0]];
-                    const rows=utils.sheet_to_json(ws);
-                    const guestsToImport=rows.map(r=>({
-                      name:String(r["שם"]||r["name"]||r["Name"]||"").trim(),
-                      phone:String(r["טלפון"]||r["phone"]||r["Phone"]||"").trim()||null,
-                      rsvp:"pending",guest_count:1,event_id:event.id,table_id:null
-                    })).filter(g=>g.name.length>1);
-                    if(guestsToImport.length>0){await sb.from("guests").insert(guestsToImport);await loadAll();}
-                    alert(`✅ יובאו ${guestsToImport.length} אורחים!`);
-                  }catch(err){alert("שגיאה בקריאת הקובץ");}
-                  setSaving(false);
-                }}/>
-              </label>
-            </div>
-            <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם אחד בכל שורה (אפשר להוסיף טלפון אחרי פסיק)</div>
-            <textarea placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543\n..."} id="importText"
-              style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:14,fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",minHeight:160,boxSizing:"border-box",marginBottom:14,resize:"vertical"}}/>
-            <button onClick={async()=>{
-              const text=document.getElementById("importText").value;
-              const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);
-              const toInsert=lines.map(l=>{const parts=l.split(",");return{name:parts[0].trim(),phone:parts[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);
-              if(toInsert.length>0){setSaving(true);await sb.from("guests").insert(toInsert);await loadAll();setSaving(false);setScreen("home");}
-            }} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
-              ייבא וסיים ←
-            </button>
-          </div>
-        )}
-        {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
-        {screen==="sms"&&<SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
-        {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
-        {modal==="locked"&&(
-          <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setModal(null)}>
-            <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 44px",width:"100%",maxWidth:480,direction:"rtl"}}>
-              <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
-              <div style={{textAlign:"center",marginBottom:20}}>
-                <div style={{fontSize:48,marginBottom:8}}>🔒</div>
-                <div style={{fontSize:18,fontWeight:900,color:C.text,marginBottom:6}}>פיצ'ר פרימיום</div>
-                <div style={{fontSize:14,color:C.muted,lineHeight:1.7}}>פיצ'ר זה זמין בחבילות בתשלום.<br/>שדרג עכשיו וקבל גישה מלאה.</div>
-              </div>
-              <button onClick={()=>{setModal(null);setScreen("packages");}}
-                style={{width:"100%",background:`linear-gradient(135deg,#B45309,#D97706)`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
-                👑 צפה בחבילות
-              </button>
-              <button onClick={()=>setModal(null)}
-                style={{width:"100%",background:"transparent",color:C.muted,border:`1px solid ${C.border}`,borderRadius:14,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                סגור
-              </button>
-            </div>
-          </div>
-        )}
-        {screen==="invite"&&<InviteSettings event={event} onUpdate={e=>setScreen("home")}/>}
-        {screen==="ai"&&<AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(assignments)=>{
-          setSaving(true);
-          for(const{guestId,tableId}of assignments){
-            await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);
-          }
-          await loadAll();
-          setSaving(false);
-          setScreen("seating");
-        }}/>}
-        {screen==="budget"&&<BudgetScreen event={event}/>}
-        {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
-        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
-        {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
-        {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
-      </div>
-      <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
+      {/* Modals */}
+      {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} desktop={true}/>}
+      {editTableData&&<EditTableModal table={editTableData} onSave={async(name,type,seats)=>{await editTable(editTableData.id,name,type,seats);setEditTableData(null);}} onDelete={async()=>{await deleteTable(editTableData.id);setEditTableData(null);}} onClose={()=>setEditTableData(null)}/>}
+      {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
       {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
-    </div>);
-  }
-// ─── LUNSOUL THEME CONSTANTS ──────────────────────────────────────────────────
-// ─── SCREEN BANNER (Purple header for each screen like LunSoul) ──────────────
+      <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
+        style={{position:"fixed",bottom:24,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:50,height:50,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none",fontSize:22}}>💬</a>
+      <AccessibilityWidget/>
+    </div>
+  );
+}
 
-
-// ─── STAT CARD (Colored cards like LunSoul) ───────────────────────────────────
-
-
-// ─── LS BUTTON ───────────────────────────────────────────────────────────────
-
-
-// ─── LS NAV ITEM ─────────────────────────────────────────────────────────────
-
-
-// ─── DESKTOP HOME SCREEN (LunSoul style) ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════
-// SIDOR-IL — LUNSOUL FULL LAYOUT v3
-// Header + Left Nav + Right Sidebar + HomeScreen
-// ═══════════════════════════════════════════════════════════════
 
 function LSHomeScreen({ event, setScreen, setModal, guests, tables, seated, total, userPackages, sb }) {
   const allGuests = [...guests, ...tables.flatMap(t => t.guests||[])];
@@ -3420,366 +1997,7 @@ function LSHomeScreen({ event, setScreen, setModal, guests, tables, seated, tota
   );
 }
 
-// ─── FULL LUNSOUL DESKTOP APP ─────────────────────────────────────────────────
 
-// ─── LUNSOUL EXACT DESKTOP APP ────────────────────────────────────────────────
-function LSDesktopApp({ user, event, onBack, tables, guests, selected, setSelected,
-  view, setView, screen, setScreen, modal, setModal, editGuestData, setEditGuestData,
-  loading, saving, search, setSearch, newGuest, setNewGuest, mobile,
-  userPackages, trialExpired, trialHours, editTableData, setEditTableData,
-  addGuest, editGuest, addTable, doAddTable, deleteTable, editTable,
-  dropOnTable, removeFromTable, moveTablePos, saveTablePos,
-  seated, total, loadAll, sb, setShowLanding,
-  venueElements, setVenueElements }) {
-
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  const isLocked=(id)=>{
-    if(["home","packages","settings","user_settings","invite"].includes(id)) return false;
-    if(id==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p));
-    if(id==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p));
-    if(["sms","whatsapp"].includes(id)) return !userPackages.some(p=>["auto","vip"].includes(p));
-    if(["ai","budget","import"].includes(id)) return userPackages.length===0;
-    return false;
-  };
-
-  const go=(id)=>{
-    if(isLocked(id)){setScreen("packages");return;}
-    setScreen(id); setMoreOpen(false);
-  };
-
-  const pkgLabel = userPackages.length>0
-    ? userPackages[0]?.toUpperCase?.()
-    : "BASIC";
-
-  // Right sidebar settings list — exactly like LunSoul
-  const settingsLinks = [
-    {id:"settings", icon:"👤", label:"פרטי האירוע",  sub:"שמות, תאריך ומיקום"},
-    {id:"meals",    icon:"🍽️", label:"סוגי מנות",    sub:"העדפות מנות לאורחים"},
-    {id:"gifts",    icon:"💝", label:"מתנות",         sub:"Bit והעברות"},
-    {id:"seating",  icon:"🪑", label:"סידורי הושבה", sub:"מצב הושבה ואפשרויות"},
-    {id:"media",    icon:"🖼️", label:"מדיה",          sub:"תמונה ותיאור"},
-    {id:"design",   icon:"🎨", label:"עיצוב",         sub:"תבנית וצבעים"},
-    {id:"packages", icon:"📦", label:"חבילה",         sub:"בחירת חבילת אורחים"},
-  ];
-
-  return (
-    <div style={{fontFamily:"'Heebo',sans-serif",background:"#F4F0FE",color:"#1A1035",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",direction:"rtl"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#D4C9F0;border-radius:4px}
-        .ls-nav:hover{color:#6D3FD4!important}
-        .ls-link:hover{background:#F0EBFF!important}
-        .ls-set:hover{background:#F5F2FF!important}
-      `}</style>
-
-      {/* ══ TOP HEADER — בדיוק כמו LunSoul ══ */}
-      <header style={{
-        height:54, background:"#fff",
-        borderBottom:"1px solid #EDE8FF",
-        display:"flex", alignItems:"center",
-        padding:"0 0",
-        flexShrink:0, zIndex:100,
-        boxShadow:"0 1px 4px rgba(91,45,184,.06)"
-      }}>
-
-        {/* Right side: user + flag + bell + search */}
-        <div style={{display:"flex",alignItems:"center",gap:2,padding:"0 14px",borderLeft:"1px solid #EDE8FF",height:"100%",flexShrink:0}}>
-          {/* התנתק button — red like LunSoul */}
-          <button onClick={async()=>{await sb.auth.signOut();}}
-            style={{
-              background:"#FFF0EE",color:"#E53935",
-              border:"1.5px solid #FFCDD2",borderRadius:9,
-              padding:"6px 12px",fontSize:13,fontWeight:700,
-              cursor:"pointer",fontFamily:"inherit",
-              display:"flex",alignItems:"center",gap:5,
-              transition:"all .15s"
-            }}
-            onMouseEnter={e=>{e.currentTarget.style.background="#FFEBEE";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="#FFF0EE";}}>
-            <span style={{fontSize:14}}>→</span> התנתק
-          </button>
-
-          {/* User name + dropdown */}
-          <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,cursor:"pointer",transition:"all .15s"}}
-            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            <span style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{event.groom_name||user.email?.split("@")[0]||"משתמש"} {event.bride_name?"& "+event.bride_name:""} </span>
-            <span style={{fontSize:10,color:"#9CA3AF"}}>▾</span>
-          </div>
-
-          {/* Flag */}
-          <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:7,cursor:"pointer",border:"1px solid #EDE8FF"}}
-            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            <span style={{fontSize:16}}>🇮🇱</span>
-            <span style={{fontSize:10,color:"#9CA3AF"}}>▾</span>
-          </div>
-
-          {/* Bell */}
-          <button style={{background:"none",border:"none",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.color="#6D3FD4";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="#9CA3AF";}}>
-            🔔
-          </button>
-
-          {/* Search */}
-          <button style={{background:"none",border:"none",cursor:"pointer",width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:16,color:"#9CA3AF",transition:"all .15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.background="#F5F2FF";e.currentTarget.style.color="#6D3FD4";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="#9CA3AF";}}>
-            🔍
-          </button>
-        </div>
-
-        {/* Nav items — center */}
-        <nav style={{flex:1,display:"flex",alignItems:"center",height:"100%",overflow:"hidden",padding:"0 4px"}}>
-          {[
-            {id:"more",    label:"עוד",          icon:"⋯", hasDropdown:true},
-            {id:"vendors", label:"ספקים",        icon:"🏛️"},
-            {id:"whatsapp",label:"הודעות",       icon:"💬"},
-            {id:"seating", label:"סידורי הושבה", icon:"🪑"},
-            {id:"rsvp",    label:"ניהול אורחים", icon:"👥"},
-            {id:"home",    label:"סקירה כללית",  icon:"📊", active:true},
-          ].map(item=>(
-            <div key={item.id} style={{position:"relative",height:"100%",display:"flex",alignItems:"center"}}>
-              <button onClick={()=>item.hasDropdown?setMoreOpen(o=>!o):go(item.id)}
-                className="ls-nav"
-                style={{
-                  height:"100%", padding:"0 13px",
-                  background:"transparent", border:"none",
-                  borderBottom:screen===item.id?`3px solid #6D3FD4`:"3px solid transparent",
-                  color:screen===item.id?"#6D3FD4":"#6B7280",
-                  fontSize:13, fontWeight:screen===item.id?700:500,
-                  cursor:"pointer", fontFamily:"inherit",
-                  display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",
-                  transition:"color .15s",
-                }}>
-                <span style={{fontSize:14}}>{item.icon}</span>
-                {item.label}
-                {item.hasDropdown&&<span style={{fontSize:9,color:"#9CA3AF"}}>▾</span>}
-                {isLocked(item.id)&&<span style={{fontSize:9,background:"#FEF3C7",color:"#D97706",borderRadius:3,padding:"1px 4px",fontWeight:700}}>🔒</span>}
-              </button>
-              {/* More dropdown */}
-              {item.hasDropdown&&moreOpen&&(
-                <div style={{position:"absolute",top:"100%",right:0,background:"#fff",border:"1px solid #EDE8FF",borderRadius:12,boxShadow:"0 8px 24px rgba(91,45,184,.12)",padding:"6px 0",zIndex:200,minWidth:160,direction:"rtl"}}>
-                  {[{id:"import",label:"ייבוא אורחים",icon:"📊"},{id:"budget",label:"ניהול תקציב",icon:"💰"},{id:"ai",label:"AI חכם",icon:"🤖"},{id:"sms",label:"הודעות SMS",icon:"📱"}].map(m=>(
-                    <button key={m.id} onClick={()=>go(m.id)}
-                      style={{width:"100%",background:"none",border:"none",padding:"9px 16px",fontSize:13,fontWeight:500,color:"#374151",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,transition:"background .15s"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
-                      onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                      <span>{m.icon}</span>{m.label}
-                      {isLocked(m.id)&&<span style={{marginRight:"auto",fontSize:9,color:"#D97706"}}>🔒</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {saving&&<div style={{marginRight:8,width:14,height:14,borderRadius:"50%",border:"2px solid #D4C9F0",borderTopColor:"#6D3FD4",animation:"spin .7s linear infinite"}}/>}
-        </nav>
-
-        {/* Logo — far left (in RTL = far right visually) */}
-        <div style={{padding:"0 20px",borderRight:"1px solid #EDE8FF",height:"100%",display:"flex",alignItems:"center",flexShrink:0}}>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",lineHeight:1}}>
-            <span style={{fontWeight:900,fontSize:18,color:"#6D3FD4",letterSpacing:"-.5px",fontFamily:"serif",fontStyle:"italic"}}>LunSoul</span>
-            <span style={{fontSize:8,fontWeight:600,color:"#9CA3AF",letterSpacing:1}}>EVENTS</span>
-          </div>
-        </div>
-      </header>
-
-      {/* ══ BODY ══ */}
-      <div style={{display:"flex",flex:1,overflow:"hidden",direction:"ltr"}}>
-
-        {/* ══ MAIN CONTENT ══ */}
-        <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}} onClick={()=>moreOpen&&setMoreOpen(false)}>
-          {screen==="home"&&<LSHomeScreen event={event} setScreen={setScreen} setModal={setModal}
-            guests={guests} tables={tables} seated={seated} total={total}
-            userPackages={userPackages} sb={sb}/>}
-
-          {screen==="seating"&&<SeatingSection
-            tables={tables} guests={guests} selected={selected} setSelected={setSelected}
-            search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest}
-            addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable}
-            onAddTable={addTable} editGuestData={editGuestData} setEditGuestData={setEditGuestData}
-            editTable={editTable} deleteTable={deleteTable}
-            moveTablePos={moveTablePos} saveTablePos={saveTablePos}
-            setEditTableData={setEditTableData} setModal={setModal}
-            view={view} setView={setView} saving={saving} seated={seated} total={total}
-            venueElements={venueElements} setVenueElements={setVenueElements}/>}
-
-          {screen==="rsvp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
-            <ScreenBanner icon="👥" title="ניהול אורחים" subtitle="ניהול רשימת אורחים לאירוע"/>
-            <DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={()=>{}} setTables={()=>{}} onAddGuest={()=>setModal("addGuest")}/>
-          </div>)}
-
-          {screen==="whatsapp"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
-            <ScreenBanner icon="💬" title="שליחת הודעות" subtitle="מרכז הודעות"/>
-            <WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
-          </div>)}
-
-          {screen==="sms"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
-            <ScreenBanner icon="📱" title="הודעות SMS" subtitle="שליחת הודעות SMS"/>
-            <SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>
-          </div>)}
-
-          {screen==="import"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}>
-            <ScreenBanner icon="📊" title="ייבוא אורחים" subtitle="ייבוא מ-Excel"/>
-            <div style={{background:"#fff",borderRadius:18,padding:24,border:"1px solid #EDE8FF"}}>
-              <label style={{display:"block",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",borderRadius:11,padding:"12px 24px",fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"center",marginBottom:16}}>
-                📂 בחר קובץ Excel
-                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
-                  const file=e.target.files[0];if(!file)return;
-                  try{const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");const buf=await file.arrayBuffer();const wb=read(buf);const ws=wb.Sheets[wb.SheetNames[0]];const rows=utils.sheet_to_json(ws);const toImport=rows.map(r=>({name:String(r["שם"]||r["name"]||"").trim(),phone:String(r["טלפון"]||r["phone"]||"").trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})).filter(g=>g.name.length>1);if(toImport.length>0){await sb.from("guests").insert(toImport);await loadAll();}alert(`✅ יובאו ${toImport.length} אורחים!`);}catch{alert("שגיאה");}
-                }}/>
-              </label>
-              <textarea id="importTxt" placeholder="ישראל ישראלי, 050-1234567&#10;רונית לוי" style={{width:"100%",background:"#F5F2FF",border:"1.5px solid #EDE8FF",borderRadius:12,padding:14,fontSize:13,fontFamily:"inherit",minHeight:140,resize:"vertical",outline:"none",marginBottom:12}}/>
-              <button onClick={async()=>{const t=document.getElementById("importTxt")?.value||"";const r=t.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(",");return{name:p[0].trim(),phone:p[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);if(r.length){await sb.from("guests").insert(r);await loadAll();setScreen("rsvp");}}}
-                style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                ✓ ייבא אורחים
-              </button>
-            </div>
-          </div>)}
-
-          {screen==="budget"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💰" title="ניהול תקציב" subtitle="מעקב הוצאות"/><BudgetScreen event={event}/></div>)}
-          {screen==="ai"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="🤖" title="AI חכם" subtitle="סידור אוטומטי"/><AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(a)=>{for(const{guestId,tableId}of a){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setScreen("seating");}}/></div>)}
-          {screen==="packages"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📦" title="חבילות" subtitle="שדרג את הגרסה שלך"/><PackagesScreen event={event} onBack={()=>setScreen("home")}/></div>)}
-          {screen==="settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="📋" title="פרטי האירוע" subtitle="הגדרות האירוע"/><EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>sb.auth.signOut()} onUpdate={()=>{}}/></div>)}
-          {screen==="invite"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="💌" title="הזמנה דיגיטלית" subtitle="עיצוב ושיתוף"/><InviteSettings event={event} onUpdate={()=>setScreen("home")}/></div>)}
-          {screen==="user_settings"&&(<div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#F4F0FE",direction:"rtl"}}><ScreenBanner icon="⚙️" title="הגדרות" subtitle="הגדרות משתמש"/><MobileSettingsScreen user={user} event={event} sb={sb} setGuests={()=>{}} setScreen={setScreen}/></div>)}
-        </div>
-
-        {/* ══ RIGHT SIDEBAR — בדיוק כמו LunSoul ══ */}
-        <aside style={{
-          width:256, background:"#fff",
-          borderRight:"1px solid #EDE8FF",
-          display:"flex", flexDirection:"column",
-          flexShrink:0, height:"100%", overflowY:"auto",
-          direction:"rtl"
-        }}>
-
-          {/* Logo at top of sidebar */}
-          <div style={{padding:"18px 20px 14px",textAlign:"center",borderBottom:"1px solid #EDE8FF"}}>
-            <div style={{fontSize:20,fontWeight:900,color:"#6D3FD4",fontFamily:"serif",fontStyle:"italic",letterSpacing:"-.3px",lineHeight:1}}>LunSoul</div>
-            <div style={{fontSize:8,fontWeight:600,color:"#9CA3AF",letterSpacing:1.5,marginTop:1}}>EVENTS</div>
-          </div>
-
-          {/* Back to events */}
-          <div style={{padding:"10px 16px",borderBottom:"1px solid #EDE8FF"}}>
-            <button onClick={()=>setShowLanding(true)}
-              style={{background:"none",border:"none",color:"#6D3FD4",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4,padding:"4px 0"}}>
-              <span style={{fontSize:12}}>›</span> חזרה לאירועים
-            </button>
-          </div>
-
-          {/* Event name + date */}
-          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#1A1035",marginBottom:5}}>
-              {event.groom_name&&event.bride_name
-                ?`החתונה של ${event.groom_name} ו${event.bride_name}`
-                :event.name}
-            </div>
-            {event.date&&(
-              <div style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#6B7280"}}>
-                <span>📅</span>
-                {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})}
-              </div>
-            )}
-            {/* Package badge */}
-            <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:5,background:"#FEF9C3",color:"#D97706",border:"1px solid #FDE68A",borderRadius:100,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}
-              onClick={()=>setScreen("packages")}>
-              ✨ {pkgLabel} • 250 רשומות
-            </div>
-          </div>
-
-          {/* Settings links */}
-          <div style={{padding:"10px 0",borderBottom:"1px solid #EDE8FF"}}>
-            <div style={{padding:"5px 16px 8px",fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:.8,textTransform:"uppercase"}}>הגדרות האירוע</div>
-            {settingsLinks.map(item=>(
-              <div key={item.id}
-                onClick={()=>go(item.id==="seating"?"seating":item.id==="packages"?"packages":"settings")}
-                className="ls-set"
-                style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",transition:"background .15s"}}>
-                <div style={{width:34,height:34,borderRadius:9,background:"#F5F2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
-                  {item.icon}
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:"#1A1035"}}>{item.label}</div>
-                  <div style={{fontSize:11,color:"#9CA3AF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.sub}</div>
-                </div>
-                <span style={{fontSize:11,color:"#D1D5DB"}}>‹</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Color swatches */}
-          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
-            <div style={{display:"flex",gap:7,justifyContent:"center",flexWrap:"wrap"}}>
-              {["#EC4899","#3B82F6","#22C55E","#F59E0B","#EF4444","#8B5CF6"].map((c,i)=>(
-                <div key={c} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",
-                  boxShadow:i===5?`0 0 0 2px #fff, 0 0 0 3.5px ${c}`:"none",
-                  transition:"transform .15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
-                  onMouseLeave={e=>e.currentTarget.style.transform="none"}/>
-              ))}
-            </div>
-          </div>
-
-          {/* View invite button */}
-          <div style={{padding:"14px 16px",borderBottom:"1px solid #EDE8FF"}}>
-            <button onClick={()=>window.open(`${window.location.origin}/#/invite/${event.invite_code||""}`,"_blank")}
-              style={{width:"100%",background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:11,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 3px 10px rgba(91,45,184,.3)",marginBottom:8}}>
-              <span style={{fontSize:15}}>👁</span> צפה בהזמנה
-            </button>
-            <button onClick={()=>setScreen("home")}
-              style={{width:"100%",background:"#F5F2FF",color:"#6D3FD4",border:"none",borderRadius:11,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-              <span style={{fontSize:14}}>❓</span> עזרה ותמיכה
-            </button>
-          </div>
-
-          {/* Social + footer links */}
-          <div style={{padding:"14px 16px",marginTop:"auto"}}>
-            <div style={{display:"flex",gap:14,justifyContent:"center",marginBottom:10}}>
-              {["🎵","📸","📘"].map(s=>(
-                <span key={s} style={{fontSize:18,cursor:"pointer",opacity:.6,transition:"opacity .15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.opacity="1"}
-                  onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>{s}</span>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:6}}>
-              {["תקנון","נגישות","פרטיות"].map(s=>(
-                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer"}}
-                  onMouseEnter={e=>e.target.style.color="#6D3FD4"}
-                  onMouseLeave={e=>e.target.style.color="#9CA3AF"}>{s}</span>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
-              {["צור קשר","⭐ חוות דעת"].map(s=>(
-                <span key={s} style={{fontSize:11,color:"#9CA3AF",cursor:"pointer"}}
-                  onMouseEnter={e=>e.target.style.color="#6D3FD4"}
-                  onMouseLeave={e=>e.target.style.color="#9CA3AF"}>{s}</span>
-              ))}
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* Modals */}
-      {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} desktop={true}/>}
-      {editTableData&&<EditTableModal table={editTableData} onSave={async(name,type,seats)=>{await editTable(editTableData.id,name,type,seats);setEditTableData(null);}} onDelete={async()=>{await deleteTable(editTableData.id);setEditTableData(null);}} onClose={()=>setEditTableData(null)}/>}
-      {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
-      {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
-      {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
-      <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
-        style={{position:"fixed",bottom:24,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:50,height:50,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none",fontSize:22}}>
-        💬
-      </a>
-      <AccessibilityWidget/>
-    </div>
-  );
-}
 
 
 
