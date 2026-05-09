@@ -949,75 +949,177 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         </div>
       </nav>
 
-      {/* HERO — וידאו אמיתי של שולחן ערוך עם כיסאות */}
-      <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-        {/* Real video — wedding tables & chairs */}
-        <video autoPlay muted loop playsInline
-          style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0}}>
-          <source src="https://videos.pexels.com/video-files/4065387/4065387-uhd_2560_1440_24fps.mp4" type="video/mp4"/>
-          <source src="https://videos.pexels.com/video-files/3214174/3214174-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
-          <source src="https://videos.pexels.com/video-files/7578541/7578541-hd_1920_1080_25fps.mp4" type="video/mp4"/>
-        </video>
+      {/* HERO — ים + חוף + חופה */}
+      <section style={{position:"relative",minHeight:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <style>{`
+          @keyframes moveClouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+          @keyframes sunPulse{0%,100%{box-shadow:0 0 40px 16px rgba(255,200,50,.35),0 0 80px 40px rgba(255,180,30,.18)}50%{box-shadow:0 0 55px 22px rgba(255,210,60,.45),0 0 100px 55px rgba(255,190,40,.22)}}
+          @keyframes waveSlide1{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+          @keyframes waveSlide2{from{transform:translateX(-5%)}to{transform:translateX(-55%)}}
+          @keyframes waveSlide3{from{transform:translateX(-10%)}to{transform:translateX(-60%)}}
+          @keyframes shimmerMove{from{transform:translateX(0)}to{transform:translateX(80px)}}
+          @keyframes wetSand{0%,100%{opacity:1}50%{opacity:.6}}
+          @keyframes heroChuppah{0%,100%{transform:translateX(-50%) rotate(-.4deg)}50%{transform:translateX(-50%) rotate(.4deg)}}
+          @keyframes fringeSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+          @keyframes petalFall{0%{transform:translateY(-20px) rotate(0deg);opacity:.9}100%{transform:translateY(160px) rotate(180deg);opacity:0}}
+          @keyframes heroReveal{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+          @keyframes rayRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+          @keyframes seaShimmer{from{transform:translateX(0)}to{transform:translateX(80px)}}
+        `}</style>
 
-        {/* Overlay — סגול כמו LunSoul */}
-        <div style={{position:"absolute",inset:0,background:"linear-gradient(145deg,rgba(45,20,100,.78),rgba(80,35,160,.72),rgba(20,40,120,.68))",zIndex:1}}/>
+        {/* ── SKY ── */}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,#5BA3D9 0%,#87CEEB 25%,#B8E0FF 52%,#C8EDFF 58%,#E8C97A 72%,#F4D88A 80%,#E8B84A 100%)",zIndex:0}}/>
 
-        {/* Floating decorations */}
-        {[{t:"15%",r:"8%",e:"🌸",d:"0s"},{t:"60%",r:"4%",e:"🌺",d:".6s"},{t:"25%",l:"6%",e:"💐",d:"1s"},{b:"20%",l:"8%",e:"🌼",d:".4s"}].map((f,i)=>(
-          <div key={i} style={{position:"absolute",top:f.t,bottom:f.b,right:f.r,left:f.l,fontSize:24,animation:`float ${3.5+i*.4}s ${f.d} ease-in-out infinite`,pointerEvents:"none",zIndex:2,opacity:.8}}>{f.e}</div>
+        {/* Clouds */}
+        <div style={{position:"absolute",top:0,left:0,width:"200%",height:140,animation:"moveClouds 38s linear infinite",zIndex:1,pointerEvents:"none"}}>
+          {[[5,18,110,28,.82],[18,10,80,22,.6],[38,28,140,32,.75],[56,12,90,24,.7],[70,22,120,28,.8],[88,14,70,20,.5],[105,18,110,28,.82],[122,26,85,24,.65],[140,13,130,30,.78],[162,20,95,26,.7]].map(([l,t,w,h,o],i)=>(
+            <div key={i} style={{position:"absolute",top:t,left:`${l}%`,width:w,height:h,background:"#fff",borderRadius:50,opacity:o}}/>
+          ))}
+        </div>
+
+        {/* Sun */}
+        <div style={{position:"absolute",top:48,left:"63%",width:64,height:64,background:"radial-gradient(circle at 40% 40%,#FFED87,#FFB830)",borderRadius:"50%",boxShadow:"0 0 40px 16px rgba(255,200,50,.35),0 0 80px 40px rgba(255,180,30,.18)",animation:"sunPulse 4s ease-in-out infinite",zIndex:2}}>
+          <div style={{position:"absolute",top:"50%",left:"50%",width:120,height:120,transform:"translate(-50%,-50%)",animation:"rayRotate 12s linear infinite"}}>
+            {[0,45,90,135,180,225,270,315].map(deg=>(
+              <div key={deg} style={{position:"absolute",top:"50%",left:"50%",width:90,height:2,background:"linear-gradient(90deg,rgba(255,200,50,.45),transparent)",transformOrigin:"0 50%",transform:`rotate(${deg}deg)`,borderRadius:2}}/>
+            ))}
+          </div>
+        </div>
+
+        {/* ── SEA ── */}
+        <div style={{position:"absolute",bottom:100,left:0,width:"100%",height:"52%",background:"linear-gradient(180deg,#1A8FBF 0%,#1576A8 30%,#0E5C8A 70%,#0A4A72 100%)",zIndex:2,overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",background:"repeating-linear-gradient(90deg,transparent 0px,rgba(255,255,255,.055) 40px,transparent 80px)",animation:"seaShimmer 3s linear infinite"}}/>
+
+          {/* Wave 1 */}
+          <div style={{position:"absolute",width:"200%",top:-26,animation:"waveSlide1 7s linear infinite"}}>
+            <svg width="100%" height="50" viewBox="0 0 1440 50" preserveAspectRatio="none">
+              <path d="M0,25 C120,8 240,42 360,25 C480,8 600,42 720,25 C840,8 960,42 1080,25 C1200,8 1320,42 1440,25 L1440,50 L0,50 Z" fill="#4DB8E8" opacity=".9"/>
+            </svg>
+          </div>
+          {/* Wave 2 */}
+          <div style={{position:"absolute",width:"200%",top:-12,animation:"waveSlide2 9s linear infinite",opacity:.65}}>
+            <svg width="100%" height="40" viewBox="0 0 1440 40" preserveAspectRatio="none">
+              <path d="M0,20 C180,5 360,35 540,20 C720,5 900,35 1080,20 C1260,5 1360,35 1440,20 L1440,40 L0,40 Z" fill="#5DC8F0"/>
+            </svg>
+          </div>
+          {/* Wave 3 */}
+          <div style={{position:"absolute",width:"200%",top:-2,animation:"waveSlide3 11s linear infinite",opacity:.45}}>
+            <svg width="100%" height="30" viewBox="0 0 1440 30" preserveAspectRatio="none">
+              <path d="M0,15 C200,3 400,27 600,15 C800,3 1000,27 1200,15 C1350,3 1400,27 1440,15 L1440,30 L0,30 Z" fill="#7AD8F8"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* ── BEACH ── */}
+        <div style={{position:"absolute",bottom:0,left:0,width:"100%",height:108,background:"linear-gradient(180deg,#F4D88A,#E2B84A)",borderRadius:"55% 55% 0 0 / 26px 26px 0 0",zIndex:3}}>
+          <div style={{position:"absolute",top:0,left:0,width:"100%",height:22,background:"linear-gradient(180deg,rgba(26,143,191,.3),transparent)",borderRadius:"inherit",animation:"wetSand 3.5s ease-in-out infinite"}}/>
+        </div>
+
+        {/* ── CHAIRS ── */}
+        {/* Left row */}
+        <div style={{position:"absolute",bottom:88,left:"calc(50% - 220px)",display:"flex",gap:8,zIndex:4}}>
+          {[0,1,2,3,4].map(i=>(
+            <div key={i} style={{width:18,height:26,background:"linear-gradient(180deg,#8B6914,#6B4F10)",borderRadius:"3px 3px 0 0",boxShadow:"1px 2px 4px rgba(0,0,0,.25)",position:"relative"}}>
+              <div style={{position:"absolute",bottom:-8,left:2,width:14,height:8,background:"#5A4008",borderRadius:"0 0 3px 3px"}}/>
+            </div>
+          ))}
+        </div>
+        {/* Right row */}
+        <div style={{position:"absolute",bottom:88,right:"calc(50% - 220px)",display:"flex",gap:8,zIndex:4}}>
+          {[0,1,2,3,4].map(i=>(
+            <div key={i} style={{width:18,height:26,background:"linear-gradient(180deg,#8B6914,#6B4F10)",borderRadius:"3px 3px 0 0",boxShadow:"1px 2px 4px rgba(0,0,0,.25)",position:"relative"}}>
+              <div style={{position:"absolute",bottom:-8,left:2,width:14,height:8,background:"#5A4008",borderRadius:"0 0 3px 3px"}}/>
+            </div>
+          ))}
+        </div>
+
+        {/* ── CHUPPAH ── */}
+        <div style={{position:"absolute",bottom:96,left:"50%",transform:"translateX(-50%)",width:280,animation:"heroChuppah 5s ease-in-out infinite",zIndex:5}}>
+          {/* Canopy */}
+          <div style={{position:"absolute",top:0,left:-12,width:304}}>
+            <div style={{width:"100%",height:60,background:"linear-gradient(135deg,#fff 0%,#F8F0FF 35%,#EDE0FF 65%,#fff 100%)",borderRadius:"4px 4px 0 0",position:"relative",overflow:"hidden",boxShadow:"0 4px 20px rgba(140,100,220,.22)"}}>
+              <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(0deg,transparent,transparent 14px,rgba(160,120,220,.1) 14px,rgba(160,120,220,.1) 16px)"}}/>
+              <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(90deg,transparent,transparent 18px,rgba(160,120,220,.08) 18px,rgba(160,120,220,.08) 20px)"}}/>
+            </div>
+            {/* Fringe */}
+            <div style={{display:"flex",justifyContent:"space-around",padding:"0 6px"}}>
+              {[18,22,16,24,18,20,14,22,18,16,24,20].map((h,i)=>(
+                <div key={i} style={{width:4,height:h,borderRadius:"0 0 3px 3px",background:"linear-gradient(180deg,#C8A8E8,#A080CC)",animation:`fringeSway 2.5s ${i*.15}s ease-in-out infinite`}}/>
+              ))}
+            </div>
+            {/* Crossbar */}
+            <div style={{position:"absolute",top:58,left:-8,width:296,height:7,background:"linear-gradient(180deg,#9B7420,#7A5A10)",borderRadius:3,boxShadow:"0 3px 8px rgba(0,0,0,.2)"}}/>
+          </div>
+          {/* Poles */}
+          <div style={{position:"absolute",bottom:0,left:10,width:8,height:172,background:"linear-gradient(180deg,#8B6914,#6B4F10)",borderRadius:4,boxShadow:"2px 0 6px rgba(0,0,0,.22)"}}/>
+          <div style={{position:"absolute",bottom:0,right:10,width:8,height:172,background:"linear-gradient(180deg,#8B6914,#6B4F10)",borderRadius:4,boxShadow:"2px 0 6px rgba(0,0,0,.22)"}}/>
+          {/* Flowers on poles */}
+          {[{l:2,t:66},{l:-6,t:80},{r:2,t:66},{r:-6,t:80}].map((f,i)=>(
+            <div key={i} style={{position:"absolute",top:f.t,left:f.l,right:f.r,width:12,height:12,borderRadius:"50%",background:i%2===0?"#FF9EBB":"#FFD1DC",boxShadow:`0 0 6px ${i%2===0?"#FF9EBB":"#FFD1DC"}88`}}/>
+          ))}
+        </div>
+
+        {/* ── COUPLE SILHOUETTES ── */}
+        <div style={{position:"absolute",bottom:86,left:"50%",transform:"translateX(-50%)",display:"flex",gap:12,alignItems:"flex-end",zIndex:6}}>
+          {/* Groom */}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+            <div style={{width:18,height:18,borderRadius:"50%",background:"#1A0D00"}}/>
+            <div style={{width:22,height:46,background:"#1A1A2E",borderRadius:"6px 6px 0 0"}}/>
+          </div>
+          {/* Bride */}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
+            <div style={{position:"absolute",top:-4,left:"50%",transform:"translateX(-50%)",width:28,height:18,background:"rgba(255,255,255,.75)",borderRadius:"50% 50% 0 0"}}/>
+            <div style={{width:16,height:16,borderRadius:"50%",background:"#1A0D00"}}/>
+            <div style={{width:20,height:36,background:"linear-gradient(180deg,#F8F0FF,#EDE0FF)",borderRadius:"6px 6px 40px 40px"}}/>
+          </div>
+        </div>
+
+        {/* Falling petals */}
+        {[[30,5.5,0,"#FFB3CC"],[38,7,1.2,"#FFC0CB",5,7],[55,6,2.5,"#FFD1DC"],[62,8,.8,"#FFB3CC",5,7],[45,5,3.5,"#FFC8D4"],[70,6.5,1.8,"#FFB3CC",4,6]].map(([l,dur,delay,bg,w,h],i)=>(
+          <div key={i} style={{position:"absolute",left:`${l}%`,top:64,width:w||6,height:h||8,borderRadius:"50% 50% 50% 0",background:bg,opacity:.85,zIndex:7,animation:`petalFall ${dur}s ${delay}s linear infinite`}}/>
         ))}
 
-        {/* Content */}
-        <div style={{position:"relative",zIndex:3,textAlign:"center",padding:"100px 6vw 60px",maxWidth:860,width:"100%"}}>
-          <div style={{...hd(0),display:"inline-flex",alignItems:"center",gap:7,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",borderRadius:100,padding:"6px 18px",marginBottom:22,backdropFilter:"blur(10px)"}}>
+        {/* ── HERO TEXT (over the scene) ── */}
+        <div style={{position:"absolute",top:"34%",left:"50%",transform:"translate(-50%,-50%)",zIndex:10,textAlign:"center",width:"90%",maxWidth:720,animation:"heroReveal 1.4s ease both"}}>
+          <div style={{...hd(0),display:"inline-flex",alignItems:"center",gap:7,background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.28)",borderRadius:100,padding:"6px 18px",marginBottom:18,backdropFilter:"blur(10px)"}}>
             <span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 6px #22C55E"}}/>
-            <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.9)"}}>הפלטפורמה המובילה לניהול אירועים בישראל 🇮🇱</span>
+            <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.92)"}}>הפלטפורמה המובילה לניהול אירועים בישראל 🇮🇱</span>
           </div>
-
-          <h1 style={{...hd(1),fontSize:"clamp(40px,7vw,90px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-2px",marginBottom:16,color:"#fff"}}>
+          <h1 style={{...hd(1),fontSize:"clamp(38px,6vw,80px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-2px",marginBottom:10,color:"#fff",textShadow:"0 4px 24px rgba(0,0,60,.4)"}}>
             Sidor-IL
           </h1>
-          <h2 style={{...hd(2),fontSize:"clamp(22px,3.5vw,46px)",fontWeight:900,lineHeight:1.1,marginBottom:18,color:"rgba(255,255,255,.95)"}}>
+          <h2 style={{...hd(2),fontSize:"clamp(18px,2.8vw,36px)",fontWeight:800,marginBottom:16,color:"rgba(255,255,255,.92)",textShadow:"0 2px 12px rgba(0,0,60,.3)"}}>
             ניהול אירוע דיגיטלי
           </h2>
-
-          {/* Script box like LunSoul */}
-          <div style={{...hd(3),display:"inline-block",background:"rgba(255,255,255,.1)",border:"2px solid rgba(212,175,55,.6)",borderRadius:12,padding:"12px 32px",marginBottom:24,backdropFilter:"blur(8px)"}}>
-            <p style={{fontSize:"clamp(13px,1.6vw,17px)",color:"rgba(255,255,255,.9)",fontWeight:600,fontStyle:"italic"}}>
+          <div style={{...hd(3),display:"inline-block",background:"rgba(255,255,255,.1)",border:"2px solid rgba(212,175,55,.55)",borderRadius:10,padding:"10px 28px",marginBottom:22,backdropFilter:"blur(8px)"}}>
+            <p style={{fontSize:"clamp(12px,1.4vw,16px)",color:"rgba(255,255,255,.88)",fontWeight:600,fontStyle:"italic"}}>
               לא עוד ספרי אורחים וטבלאות משלם ✦ ניהול מושלם
             </p>
           </div>
-
-          <p style={{...hd(4),fontSize:"clamp(14px,1.5vw,17px)",color:"rgba(255,255,255,.75)",marginBottom:36,lineHeight:1.75,maxWidth:560,margin:"0 auto 36px"}}>
-            אישורי הגעה בוואטסאפ, ניהול אורחים, סידור הושבה אוטומטי ושליחת הזמנות דיגיטליות — הכל במקום אחד
-          </p>
-
-          <div style={{...hd(5),display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap",marginBottom:44}}>
+          <div style={{...hd(4),display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:28}}>
             <button onClick={()=>onOpenAuth("register")} className="cta1"
-              style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:14,padding:"16px 36px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 28px rgba(91,45,184,.55)",transition:"all .24s"}}>
+              style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:14,padding:"14px 32px",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 28px rgba(91,45,184,.55)",transition:"all .24s"}}>
               ← צרו הזמנה דיגיטלית בחינם
             </button>
             <button className="cta2"
-              style={{background:"rgba(255,255,255,.12)",color:"#fff",border:"2px solid rgba(255,255,255,.35)",borderRadius:14,padding:"15px 28px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",backdropFilter:"blur(8px)",transition:"all .2s"}}>
+              style={{background:"rgba(255,255,255,.12)",color:"#fff",border:"2px solid rgba(255,255,255,.32)",borderRadius:14,padding:"13px 24px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",backdropFilter:"blur(8px)",transition:"all .2s"}}>
               ❓ איך זה עובד?
             </button>
           </div>
-
-          {/* Stats */}
-          <div style={{...hd(6),display:"flex",gap:36,justifyContent:"center",flexWrap:"wrap"}}>
+          <div style={{...hd(5),display:"flex",gap:28,justifyContent:"center",flexWrap:"wrap"}}>
             {[["3%","מענה ממוצע"],["+4K","ביקורים"],["+401","ספקים"]].map(([v,l])=>(
               <div key={l} style={{textAlign:"center"}}>
-                <div style={{fontSize:"clamp(24px,3vw,34px)",fontWeight:900,color:"#fff"}}>{v}</div>
-                <div style={{fontSize:13,color:"rgba(255,255,255,.6)",fontWeight:600}}>{l}</div>
+                <div style={{fontSize:"clamp(22px,2.8vw,32px)",fontWeight:900,color:"#fff",textShadow:"0 2px 8px rgba(0,0,60,.3)"}}>{v}</div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,.65)",fontWeight:600}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div style={{position:"absolute",bottom:28,left:"50%",transform:"translateX(-50%)",zIndex:3,display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:.6}}>
-          <div style={{width:1,height:40,background:"rgba(255,255,255,.4)"}}/>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.6)",fontWeight:600,letterSpacing:1}}>גלול</span>
+        <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",gap:5,opacity:.55}}>
+          <div style={{width:1,height:36,background:"rgba(255,255,255,.5)"}}/>
+          <span style={{fontSize:10,color:"rgba(255,255,255,.7)",fontWeight:600,letterSpacing:1}}>גלול</span>
         </div>
       </section>
 
