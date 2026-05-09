@@ -140,6 +140,131 @@ function LSInput({ value, onChange, placeholder, type="text", onKeyDown, label, 
 }
 
 
+function AuthDrawer({ mode:initMode, onClose, onAuth }) {
+  const [mode,setMode]=useState(initMode);
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [err,setErr]=useState("");
+  const [load,setLoad]=useState(false);
+  const [googleLoad,setGoogleLoad]=useState(false);
+  const [resetSent,setResetSent]=useState(false);
+
+  const submit=async()=>{
+    setErr("");setLoad(true);
+    try{
+      if(mode==="reset"){
+        const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:`https://sidoril.com`});
+        if(error)throw error;
+        setResetSent(true);
+      } else if(mode==="login"){
+        const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+        if(error)throw error;
+        onAuth(data.user);
+      } else {
+        const{data,error}=await sb.auth.signUp({email,password:pass});
+        if(error)throw error;
+        if(data.user&&!data.user.email_confirmed_at)setErr("✅ נשלח מייל אימות!");
+        else onAuth(data.user);
+      }
+    }catch(e){
+      setErr(e.message==="Invalid login credentials"?"❌ אימייל או סיסמה שגויים":e.message);
+    }
+    setLoad(false);
+  };
+
+  const loginWithGoogle=async()=>{setGoogleLoad(true);await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:`https://sidoril.com`}});setGoogleLoad(false);};
+
+  return(
+    <>
+      <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(26,16,53,.6)",backdropFilter:"blur(8px)"}}/>
+      <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 28px 44px",maxWidth:480,margin:"0 auto",direction:"rtl",boxShadow:"0 -8px 40px rgba(107,61,212,.2)"}}>
+        <style>{"@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}"}</style>
+        <div style={{animation:"slideUp .3s ease"}}>
+          <div style={{width:40,height:4,borderRadius:2,background:LS.border,margin:"0 auto 24px"}}/>
+
+          {/* Logo */}
+          <div style={{textAlign:"center",marginBottom:24}}>
+            <div style={{width:56,height:56,borderRadius:18,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 6px 20px rgba(107,61,212,.35)"}}>◈</div>
+            <div style={{fontWeight:900,fontSize:22,color:LS.purple}}>Sidor-IL</div>
+            <div style={{fontSize:12,color:LS.muted,marginTop:2}}>סידורי הושבה חכמים לאירועים</div>
+          </div>
+
+          {mode==="reset"?(
+            <div>
+              {resetSent?(
+                <div style={{textAlign:"center",padding:"20px 0"}}>
+                  <div style={{fontSize:44,marginBottom:12}}>📧</div>
+                  <div style={{fontSize:17,fontWeight:800,color:LS.text,marginBottom:8}}>נשלח מייל לשחזור!</div>
+                  <div style={{fontSize:13,color:LS.muted,marginBottom:20}}>בדוק את תיבת הדואר שלך.</div>
+                  <LSBtn ghost onClick={()=>{setMode("login");setResetSent(false);}}>חזרה לכניסה</LSBtn>
+                </div>
+              ):(
+                <>
+                  <LSInput label="אימייל" type="email" value={email} onChange={setEmail} placeholder="your@email.com" style={{marginBottom:14}}/>
+                  {err&&<div style={{background:"#FEF2F2",border:"1px solid #FECDCD",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#DC2626",marginBottom:12}}>{err}</div>}
+                  <LSBtn primary full onClick={submit} disabled={load||!email}>
+                    {load?<><div style={{width:16,height:16,borderRadius:"50%",border:"2.5px solid rgba(255,255,255,.4)",borderTopColor:"#fff",animation:"spin .7s linear infinite"}}/>שולח...</>:"שלח קישור לאיפוס ←"}
+                  </LSBtn>
+                  <p style={{fontSize:13,color:LS.muted,textAlign:"center",marginTop:14}}>
+                    <span onClick={()=>setMode("login")} style={{color:LS.purple,fontWeight:700,cursor:"pointer"}}>חזרה לכניסה</span>
+                  </p>
+                </>
+              )}
+            </div>
+          ):(
+            <>
+              {/* Google */}
+              <button onClick={loginWithGoogle} disabled={googleLoad}
+                style={{width:"100%",background:"#fff",color:"#333",border:`1.5px solid ${LS.border}`,borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+                {googleLoad?<div style={{width:20,height:20,borderRadius:"50%",border:"2.5px solid #D4C9F0",borderTopColor:LS.purple,animation:"spin .7s linear infinite"}}/>:<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>}
+                {googleLoad?"מתחבר...":"התחבר עם Google"}
+              </button>
+
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                <div style={{flex:1,height:1,background:LS.border}}/><span style={{fontSize:12,color:LS.muted,fontWeight:600}}>או</span><div style={{flex:1,height:1,background:LS.border}}/>
+              </div>
+
+              {/* Mode toggle */}
+              <div style={{display:"flex",background:LS.purpleXL,borderRadius:12,padding:4,marginBottom:18}}>
+                {[["login","כניסה"],["register","הרשמה"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>{setMode(v);setErr("");}}
+                    style={{flex:1,padding:"10px 0",borderRadius:9,background:mode===v?"#fff":"transparent",border:"none",fontWeight:700,fontSize:14,color:mode===v?LS.purple:LS.muted,cursor:"pointer",fontFamily:"inherit",transition:"all .2s",boxShadow:mode===v?"0 2px 8px rgba(107,61,212,.15)":"none"}}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
+                <LSInput type="email" value={email} onChange={setEmail} placeholder="your@email.com" label="אימייל"/>
+                <LSInput type="password" value={pass} onChange={setPass} placeholder="סיסמה (מינימום 6 תווים)" label="סיסמה" onKeyDown={e=>e.key==="Enter"&&submit()}/>
+              </div>
+
+              {mode==="login"&&(
+                <div style={{textAlign:"left",marginBottom:12}}>
+                  <span onClick={()=>{setMode("reset");setErr("");}} style={{fontSize:13,color:LS.purple,fontWeight:600,cursor:"pointer"}}>שכחתי סיסמה</span>
+                </div>
+              )}
+              {err&&<div style={{background:err.startsWith("✅")?"#ECFDF5":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?"#A7F3D0":"#FECDCD"}`,borderRadius:10,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?"#059669":"#DC2626",marginBottom:12}}>{err}</div>}
+
+              <LSBtn primary full onClick={submit} disabled={load||!email||!pass} style={{fontSize:15}}>
+                {load?<><div style={{width:16,height:16,borderRadius:"50%",border:"2.5px solid rgba(255,255,255,.4)",borderTopColor:"#fff",animation:"spin .7s linear infinite"}}/>מעבד...</>:mode==="login"?"כניסה ←":"צור חשבון ←"}
+              </LSBtn>
+
+              <p style={{fontSize:13,color:LS.muted,textAlign:"center",marginTop:14}}>
+                {mode==="login"?"אין חשבון? ":"יש חשבון? "}
+                <span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:LS.purple,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span>
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+
+
 const TABLE_TYPES = {
   round:  { label:"עגול",         icon:"⭕", defaultSeats:8  },
   rect:   { label:"מרובע",        icon:"⬛", defaultSeats:10 },
@@ -895,7 +1020,7 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
   return(
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:"#fff",color:"#1A1035",minHeight:"100vh",overflowX:"hidden"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -908,44 +1033,67 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
         .plan:hover{transform:translateY(-5px)!important;box-shadow:0 20px 48px rgba(91,45,184,.14)!important}
       `}</style>
 
-      {/* NAV */}
+      {/* NAV — בדיוק כמו LunSoul: לבן קבוע, צף, יורד עם גלילה */}
       <nav style={{
-        position:"fixed",top:0,right:0,left:0,zIndex:100,
-        background:scrolled?"rgba(255,255,255,.97)":"transparent",
-        backdropFilter:scrolled?"blur(20px)":"none",
-        borderBottom:scrolled?"1px solid #EDE8FF":"none",
-        height:62,display:"flex",alignItems:"center",
-        padding:"0 6vw",justifyContent:"space-between",
-        transition:"all .3s"
+        position:"fixed", top:0, right:0, left:0, zIndex:200,
+        background:"#fff",
+        borderBottom:"1.5px solid #EDE8FF",
+        height:64,
+        display:"flex", alignItems:"center",
+        padding:"0 28px",
+        justifyContent:"space-between",
+        boxShadow: scrolled ? "0 2px 20px rgba(91,45,184,.10)" : "0 1px 4px rgba(91,45,184,.05)",
+        transform: scrolled ? "translateY(0)" : "translateY(0)",
+        transition:"box-shadow .3s ease",
       }}>
-        <div style={{display:"flex",alignItems:"center",gap:9}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#fff",fontWeight:900,boxShadow:"0 3px 10px rgba(91,45,184,.3)"}}>◈</div>
-          <span style={{fontWeight:900,fontSize:19,color:"#5B2DB8",letterSpacing:"-.5px"}}>Sidor-IL</span>
+
+        {/* שמאל: כפתורים + דגל */}
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>user ? onOpenAuth("events") : onOpenAuth("register")}
+            style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 3px 12px rgba(91,45,184,.35)",transition:"all .2s",whiteSpace:"nowrap"}}
+            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-1px)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+            {user ? "האירועים שלי" : "הרשמה חינם"}
+          </button>
+          <button onClick={()=>user ? onLogout() : onOpenAuth("login")}
+            style={{background:"none",border:"1.5px solid #EDE8FF",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:600,color:"#374151",cursor:"pointer",fontFamily:"inherit",transition:"all .2s",whiteSpace:"nowrap"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#C4B5F4";e.currentTarget.style.color="#5B2DB8";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#EDE8FF";e.currentTarget.style.color="#374151";}}>
+            {user ? "התנתק" : "התחברות"}
+          </button>
+          {/* Flag + dropdown */}
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"7px 10px",border:"1.5px solid #EDE8FF",borderRadius:9,cursor:"pointer",transition:"all .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor="#C4B5F4"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor="#EDE8FF"}>
+            <span style={{fontSize:18,lineHeight:1}}>🇮🇱</span>
+            <span style={{fontSize:11,color:"#9CA3AF",marginTop:1}}>▾</span>
+          </div>
         </div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {user?(
-            <>
-              <button onClick={()=>onOpenAuth("events")} className="cta1"
-                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(91,45,184,.36)",transition:"all .22s"}}>
-                📊 האירועים שלי
-              </button>
-              <button onClick={onLogout} className="nav-a"
-                style={{background:"none",border:"1.5px solid #EDE8FF",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:600,color:"#6B7280",cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-                התנתק
-              </button>
-            </>
-          ):(
-            <>
-              <button onClick={()=>onOpenAuth("login")} className="nav-a"
-                style={{background:"none",border:"1.5px solid #EDE8FF",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:600,color:"#5B2DB8",cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-                התחברות
-              </button>
-              <button onClick={()=>onOpenAuth("register")} className="cta1"
-                style={{background:"linear-gradient(135deg,#5B2DB8,#7B4AE2)",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(91,45,184,.36)",transition:"all .22s"}}>
-                צרו הזמנה בחינם ←
-              </button>
-            </>
-          )}
+
+        {/* מרכז: לוגו — כמו LunSoul */}
+        <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",display:"flex",flexDirection:"column",alignItems:"center",lineHeight:1,cursor:"pointer"}}
+          onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>
+          <span style={{
+            fontFamily:"'Playfair Display', Georgia, serif",
+            fontStyle:"italic",
+            fontSize:26,
+            fontWeight:700,
+            color:"#5B2DB8",
+            letterSpacing:"-.5px",
+            lineHeight:1
+          }}>Sidor-IL</span>
+          <span style={{fontSize:8,fontWeight:700,color:"#9CA3AF",letterSpacing:3,textTransform:"uppercase",marginTop:2}}>EVENTS</span>
+        </div>
+
+        {/* ימין: המבורגר */}
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button style={{background:"none",border:"none",cursor:"pointer",padding:"6px",display:"flex",flexDirection:"column",gap:5,borderRadius:8,transition:"all .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#F5F2FF"}
+            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+            <span style={{display:"block",width:22,height:2,background:"#374151",borderRadius:2,transition:"all .2s"}}/>
+            <span style={{display:"block",width:22,height:2,background:"#374151",borderRadius:2,transition:"all .2s"}}/>
+            <span style={{display:"block",width:22,height:2,background:"#374151",borderRadius:2,transition:"all .2s"}}/>
+          </button>
         </div>
       </nav>
 
