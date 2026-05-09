@@ -159,15 +159,27 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
       } else if(mode==="login"){
         const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
         if(error)throw error;
+        // onAuthStateChange יטפל בניתוב אוטומטי
         onAuth(data.user);
       } else {
         const{data,error}=await sb.auth.signUp({email,password:pass});
         if(error)throw error;
-        if(data.user&&!data.user.email_confirmed_at)setErr("✅ נשלח מייל אימות!");
-        else onAuth(data.user);
+        if(data.user&&!data.user.email_confirmed_at){
+          setErr("✅ נשלח מייל אימות! אנא בדוק את תיבת הדואר.");
+        } else if(data.user){
+          onAuth(data.user);
+        }
       }
     }catch(e){
-      setErr(e.message==="Invalid login credentials"?"❌ אימייל או סיסמה שגויים":e.message);
+      const msg=e.message||"";
+      if(msg.includes("Invalid login credentials")||msg.includes("invalid_credentials"))
+        setErr("❌ אימייל או סיסמה שגויים");
+      else if(msg.includes("Email not confirmed"))
+        setErr("⚠️ יש לאמת את המייל תחילה");
+      else if(msg.includes("User already registered"))
+        setErr("⚠️ משתמש זה כבר קיים — נסה להתחבר");
+      else
+        setErr("❌ "+msg);
     }
     setLoad(false);
   };
@@ -5168,11 +5180,26 @@ export default function App() {
       }
       setChecking(false);
     });
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
+    const{data:{subscription}}=sb.auth.onAuthStateChange(async(event,session)=>{
       if(!session?.user){
-        setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");
+        setUser(null);
+        setEvent(null);
+        localStorage.removeItem("sidor_event_id");
+        setShowLanding(false);
+        setAuthMode(null);
       } else {
-        setUser(session.user);
+        const u = session.user;
+        setUser(u);
+        setAuthMode(null);
+        setShowLanding(false);
+        // טען אירוע שמור
+        if(event==="SIGNED_IN"||event==="INITIAL_SESSION"){
+          const savedId=localStorage.getItem("sidor_event_id");
+          if(savedId){
+            const{data:ev}=await sb.from("events").select("*").eq("id",savedId).eq("user_id",u.id).single();
+            if(ev) setEvent(ev);
+          }
+        }
       }
     });
     return()=>subscription.unsubscribe();
@@ -5290,7 +5317,11 @@ export default function App() {
         <AuthDrawer
           mode={authMode}
           onClose={()=>setAuthMode(null)}
-          onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}
+          onAuth={u=>{
+            // onAuthStateChange כבר מטפל בניתוב — רק סוגרים את ה-drawer
+            setAuthMode(null);
+            setShowLanding(false);
+          }}
         />
       )}
       <AccessibilityWidget/>
