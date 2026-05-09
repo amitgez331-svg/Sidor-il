@@ -951,12 +951,12 @@ function LandingPage({ onOpenAuth, onLogout, user }) {
 
       {/* HERO — וידאו אמיתי של שולחן ערוך עם כיסאות */}
       <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-        {/* Real video background — wedding table seating */}
+        {/* Real video — wedding tables & chairs */}
         <video autoPlay muted loop playsInline
           style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0}}>
-          <source src="https://videos.pexels.com/video-files/6205466/6205466-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
-          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4"/>
-          <source src="https://videos.pexels.com/video-files/5486820/5486820-hd_1920_1080_25fps.mp4" type="video/mp4"/>
+          <source src="https://videos.pexels.com/video-files/4065387/4065387-uhd_2560_1440_24fps.mp4" type="video/mp4"/>
+          <source src="https://videos.pexels.com/video-files/3214174/3214174-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
+          <source src="https://videos.pexels.com/video-files/7578541/7578541-hd_1920_1080_25fps.mp4" type="video/mp4"/>
         </video>
 
         {/* Overlay — סגול כמו LunSoul */}
@@ -5125,11 +5125,41 @@ export default function App() {
     </div>
   );
 
-  if(!user||showLanding||authMode) return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
-    <LandingPage onOpenAuth={mode=>{if(mode==="events"&&user){setShowLanding(false);}else{setAuthMode(mode);}}} onLogout={user?logout:null} user={user}/>
-    {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
-    <AccessibilityWidget/>
-  </>);
+  if(!user||showLanding||authMode) return(
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        @keyframes gradMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        .lp-anim{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+        .feat:hover{transform:translateY(-5px)!important;box-shadow:0 16px 40px rgba(91,45,184,.12)!important;border-color:#C4B5F4!important}
+        .cta1:hover{transform:translateY(-3px)!important;box-shadow:0 14px 36px rgba(91,45,184,.5)!important}
+        .cta2:hover{background:#F0EBFF!important}
+        .nav-a:hover{background:#F0EBFF!important;color:#5B2DB8!important}
+        .plan:hover{transform:translateY(-5px)!important;box-shadow:0 20px 48px rgba(91,45,184,.14)!important}
+      `}</style>
+      <LandingPage
+        onOpenAuth={mode=>{
+          if(mode==="events"&&user){setShowLanding(false);}
+          else{setAuthMode(mode);}
+        }}
+        onLogout={user?logout:null}
+        user={user}
+      />
+      {authMode&&(
+        <AuthDrawer
+          mode={authMode}
+          onClose={()=>setAuthMode(null)}
+          onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}
+        />
+      )}
+      <AccessibilityWidget/>
+    </>
+  );
 
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <MyEventsScreen user={user} onSelectEvent={selectEvent} onLogout={logout} onCreateNew={()=>{}}/>
