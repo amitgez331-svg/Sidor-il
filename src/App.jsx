@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://zcfosfaazvljnzipyzon.supabase.co";
@@ -34,6 +34,23 @@ const ADMIN_PASSWORD="Rene1807";
 const ADMIN_EMAIL="Amitgez331@gmail.com";
 
 // ─── LS UI COMPONENTS ───────────────────────────────────────────────────────
+
+
+class ErrorBoundary extends React.Component {
+  constructor(props){super(props);this.state={err:null};}
+  componentDidCatch(err){this.setState({err});}
+  render(){
+    if(this.state.err){
+      const msg = String(this.state.err);
+      const stack = (this.state.err.stack||"").slice(0,2000);
+      return React.createElement("div",{style:{padding:20,fontFamily:"monospace",direction:"ltr",background:"#FEF2F2",minHeight:"100vh"}},
+        React.createElement("h2",{style:{color:"#DC2626"}},"App Error"),
+        React.createElement("pre",{style:{whiteSpace:"pre-wrap",fontSize:12}},msg+"\n\n"+stack)
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function ScreenBanner({ icon, title, subtitle, extra }) {
   return (
@@ -1669,7 +1686,7 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>תאריך</div>
-            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} dir="ltr" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}  style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שעה</div>
@@ -6593,7 +6610,7 @@ function PrivacyPage() {
   );
 }
 
-export default function App() {
+function AppInner() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
   const [showPrivacy,setShowPrivacy]=useState(window.location.hash==="#/privacy");
   const [showResetPw,setShowResetPw]=useState(false);
@@ -6762,3 +6779,4 @@ export default function App() {
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
   <SeatingApp user={user} event={event} onBack={()=>setShowLanding(true)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
 }
+export default function App(){return React.createElement(ErrorBoundary,null,React.createElement(AppInner,null));}
