@@ -586,7 +586,7 @@ function ReceiptModal({ tables, onClose }) {
             </div>
             <div style={{padding:"0 12px 12px",display:"flex",gap:8}}>
               <LSBtn ghost full small onClick={()=>{setRes(null);setQ("");}}>← חזרה</LSBtn>
-              <LSBtn primary full small onClick={print} style={{flex:2}}>🖨️ הדפס פתק</LSBtn>
+              <LSBtn primary full small onClick={()=>{window.print();}} style={{flex:2}}>🖨️ הדפס פתק</LSBtn>
             </div>
           </div>
         )}
@@ -830,7 +830,7 @@ function AccessibilityWidget() {
 
           {/* אפס */}
           <div style={{padding:"10px 12px",borderTop:"1px solid #E2E8F0"}}>
-            <button onClick={reset} style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"2px solid #FED7D7",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            <button onClick={()=>{setQ("");setRes(null);setNf(false);}} style={{width:"100%",background:"#FFF5F5",color:"#C53030",border:"2px solid #FED7D7",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
               🔄 אפס הכל
             </button>
           </div>
@@ -6738,11 +6738,23 @@ export default function App() {
     </div>
   );
 
-  if(!user||showLanding||authMode) return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
-    <LandingPage onOpenAuth={mode=>{if(mode==="events"&&user){setShowLanding(false);}else{setAuthMode(mode);}}} onLogout={user?logout:null} user={user}/>
-    {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setAuthMode(null);setShowLanding(false);}}/>}
-    <AccessibilityWidget/>
-  </>);
+  if(!user||showLanding||authMode) return(
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+      `}</style>
+      <LandingPage
+        onOpenAuth={mode=>{if(mode==="events"&&user){setShowLanding(false);}else{setAuthMode(mode);}}}
+        onLogout={user?logout:null}
+        user={user}
+      />
+      {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={()=>{setAuthMode(null);setShowLanding(false);}}/>}
+      <AccessibilityWidget/>
+    </>
+  );
 
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <MyEventsScreen user={user} onSelectEvent={selectEvent} onLogout={logout} onCreateNew={()=>{}}/>
