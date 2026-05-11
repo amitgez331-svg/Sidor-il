@@ -5497,13 +5497,11 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
 
   useEffect(()=>{
     sb.from("events").select("*").eq("user_id",user.id).order("created_at",{ascending:false})
-      .then(({data})=>{
+      .then(async({data})=>{
         const evs=data||[];
         setEvents(evs);
-        // אם יש אירוע אחד  -  נכנס ישר
         if(evs.length===1){onSelect(evs[0]);return;}
-        // אם אין אירועים  -  מציגים טופס יצירה
-        if(evs.length===0){setShowForm(true);}
+        if(evs.length===0)setShowForm(true);
         setLoading(false);
       });
   },[]);
@@ -5517,118 +5515,206 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
     setCreating(false);
   };
 
-  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
+  const eventTypeEmoji=(t)=>t==="wedding"?"💍":t==="bar_mitzvah"?"✡️":t==="brit"?"👶":t==="business"?"💼":"🎉";
+  const eventTypeName=(t)=>t==="wedding"?"חתונה":t==="bar_mitzvah"?"בר/ת מצווה":t==="brit"?"ברית":t==="business"?"עסקי":"אחר";
 
-  // אם יש כמה אירועים  -  בחירה
-  if(events.length>1&&!showForm){
-    return(
-      <div dir="rtl" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Heebo',sans-serif",display:"flex",flexDirection:"column"}}>
-        <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>◈ Sidor-IL</div>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setShowForm(true)} style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:10,padding:"7px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ אירוע חדש</button>
-            <button onClick={onLogout} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",borderRadius:10,padding:"7px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
-          </div>
-        </div>
-        <div style={{padding:"32px 24px",maxWidth:600,margin:"0 auto",width:"100%"}}>
-          <div style={{fontSize:20,fontWeight:900,color:C.text,marginBottom:6}}>האירועים שלי</div>
-          <div style={{fontSize:13,color:C.muted,marginBottom:24}}>בחר אירוע להמשך ניהול</div>
-          {events.map(ev=>(
-            <div key={ev.id} onClick={()=>onSelect(ev)}
-              style={{background:"#fff",borderRadius:14,padding:"18px 20px",marginBottom:12,cursor:"pointer",border:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:14,boxShadow:"0 1px 6px rgba(0,0,0,.04)",transition:"all .15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueL;e.currentTarget.style.transform="translateY(-2px)";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
-              <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${C.blue}18,${C.blueL}18)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎊</div>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:800,fontSize:16,color:C.text}}>{ev.name}</div>
-                {ev.date&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>📅 {new Date(ev.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}</div>}
-                {ev.venue&&<div style={{fontSize:12,color:C.muted}}>📍 {ev.venue}</div>}
-              </div>
-              <span style={{color:C.blueL,fontSize:20}}>←</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#f0e6ff,#e6f0ff,#e6fff0)"}}><Spinner size={40} color="#7B3FD4"/></div>);
 
-  // טופס יצירת אירוע
   return(
-    <div dir="rtl" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Heebo',sans-serif",display:"flex",flexDirection:"column"}}>
-      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>◈ Sidor-IL</div>
-        {events.length>0&&<button onClick={()=>setShowForm(false)} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"7px 14px",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>← חזרה</button>}
-        <button onClick={onLogout} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",borderRadius:10,padding:"7px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
-      </div>
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-        <div style={{background:"#fff",borderRadius:20,padding:36,width:"100%",maxWidth:500,boxShadow:"0 4px 24px rgba(27,58,140,.1)"}}>
-          <div style={{textAlign:"center",marginBottom:28}}>
-            <div style={{fontSize:40,marginBottom:8}}>🎊</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text}}>צור אירוע חדש</div>
-            <div style={{fontSize:13,color:C.muted,marginTop:4}}>מלא את הפרטים הבסיסיים  -  ניתן לעדכן מאוחר יותר</div>
-          </div>
+    <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(135deg,#EDE6FF 0%,#E6EEFF 40%,#E6FFF5 100%)",position:"relative",overflowX:"hidden"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(123,63,212,.18)!important;transform:translateY(-3px)!important;}`}</style>
 
-          {/* סוג אירוע */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-            {[["wedding","💍 חתונה"],["bar_mitzvah","✡️ בר/ת מצווה"],["brit","👶 ברית"],["other","🎉 אחר"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setForm(f=>({...f,event_type:v}))}
-                style={{background:form.event_type===v?`linear-gradient(135deg,${C.blueM},${C.blueL})`:C.blueXL,color:form.event_type===v?"#fff":C.text,border:`2px solid ${form.event_type===v?"transparent":C.border}`,borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                {l}
-              </button>
-            ))}
-          </div>
-
-          {/* שמות */}
-          {form.event_type==="wedding"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <div>
-              <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>שם החתן</div>
-              <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="עמית"
-                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>שם הכלה</div>
-              <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="אורנה"
-                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            </div>
-          </div>}
-
-          {/* שם אירוע */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>שם האירוע *</div>
-            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="חתונת עמית ואורנה"
-              style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-
-          {/* תאריך + שעה */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <div>
-              <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>תאריך</div>
-              <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
-                dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>שעה</div>
-              <input type="time" value={form.event_time} onChange={e=>setForm(f=>({...f,event_time:e.target.value}))}
-                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            </div>
-          </div>
-
-          {/* אולם */}
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>שם האולם / מקום</div>
-            <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אולמי Sidor-IL"
-              style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"8px 6px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
-
-          <button onClick={create} disabled={creating||!form.name.trim()}
-            style={{width:"100%",background:form.name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#E8EEFF",color:form.name.trim()?"#fff":C.muted,border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:form.name.trim()?"pointer":"default",fontFamily:"inherit",boxShadow:form.name.trim()?`0 4px 16px ${C.blueL}44`:"none"}}>
-            {creating?"יוצר...":"✨ צור אירוע ←"}
+      {/* TOP NAV */}
+      <header style={{background:"rgba(255,255,255,.7)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(123,63,212,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#7B3FD4,#4A7AFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
+          <span style={{fontWeight:900,fontSize:18,color:"#1a1a2e"}}>Sidor-IL</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{fontSize:13,color:"#888"}}>{user.email}</div>
+          <button onClick={onLogout}
+            style={{background:"#FFF0F0",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+            התנתק ←
           </button>
         </div>
+      </header>
+
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"40px 24px"}}>
+
+        {/* כותרת */}
+        <div style={{background:"linear-gradient(135deg,#7B3FD4,#5B6BF5)",borderRadius:24,padding:"32px 40px",marginBottom:36,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 32px rgba(123,63,212,.25)",animation:"fadeUp .5s ease both"}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{background:"rgba(255,255,255,.15)",borderRadius:100,padding:"4px 12px",fontSize:12,color:"rgba(255,255,255,.9)",fontWeight:600}}>⚙️ ניהול האירועים</span>
+            </div>
+            <h1 style={{fontSize:"clamp(26px,3.5vw,40px)",fontWeight:900,color:"#fff",marginBottom:8,lineHeight:1.1}}>האירועים שלי</h1>
+            <p style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>צרו ונהלו את כל האירועים שלכם במקום אחד</p>
+          </div>
+          <button onClick={()=>setShowForm(true)}
+            style={{background:"#fff",color:"#7B3FD4",border:"none",borderRadius:14,padding:"14px 28px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 16px rgba(0,0,0,.15)",flexShrink:0}}>
+            + אירוע חדש
+          </button>
+        </div>
+
+        {/* כרטיסי אירועים */}
+        {events.length===0&&!showForm&&(
+          <div style={{textAlign:"center",padding:"80px 0",animation:"fadeUp .5s ease both"}}>
+            <div style={{fontSize:64,marginBottom:16}}>🎉</div>
+            <div style={{fontSize:20,fontWeight:800,color:"#1a1a2e",marginBottom:8}}>אין עדיין אירועים</div>
+            <div style={{fontSize:14,color:"#888",marginBottom:28}}>צור את האירוע הראשון שלך עכשיו</div>
+            <button onClick={()=>setShowForm(true)}
+              style={{background:"linear-gradient(135deg,#7B3FD4,#5B6BF5)",color:"#fff",border:"none",borderRadius:14,padding:"14px 36px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              + צור אירוע חדש
+            </button>
+          </div>
+        )}
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:20,marginBottom:32}}>
+          {events.map((ev,i)=>{
+            const confirmedCount=0; // נטען בנפרד אם צריך
+            const typeEmoji=eventTypeEmoji(ev.event_type);
+            const eventDate=ev.date?new Date(ev.date):null;
+            const monthNames=["ינו","פבר","מרץ","אפר","מאי","יוני","יולי","אוג","ספט","אוק","נוב","דצמ"];
+            const dayNum=eventDate?eventDate.getDate():null;
+            const monthStr=eventDate?monthNames[eventDate.getMonth()]:"";
+            const daysLeft=eventDate?Math.ceil((eventDate-new Date())/(1000*60*60*24)):null;
+            return(
+              <div key={ev.id} className="ev-card"
+                onClick={()=>onSelect(ev)}
+                style={{background:"#fff",borderRadius:20,padding:"24px",cursor:"pointer",
+                  boxShadow:"0 2px 16px rgba(123,63,212,.08)",
+                  border:"1px solid rgba(123,63,212,.08)",
+                  animation:`fadeUp .4s ease ${i*.08}s both`,
+                  transition:"all .2s",position:"relative",overflow:"hidden"}}>
+                {/* גרדיאנט עדין בפינה */}
+                <div style={{position:"absolute",top:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"radial-gradient(circle,rgba(123,63,212,.06) 0%,transparent 70%)"}}/>
+
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                      <span style={{background:"#F0FFF4",color:"#276749",border:"1px solid #9AE6B4",borderRadius:100,padding:"2px 10px",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
+                        ✓ פעיל
+                      </span>
+                    </div>
+                    <div style={{fontSize:17,fontWeight:900,color:"#1a1a2e",marginBottom:4}}>{ev.name}</div>
+                    {eventDate&&<div style={{fontSize:12,color:"#888"}}>{eventDate.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}</div>}
+                  </div>
+                  {dayNum&&(
+                    <div style={{background:"linear-gradient(135deg,#7B3FD4,#5B6BF5)",borderRadius:14,padding:"8px 12px",textAlign:"center",flexShrink:0,minWidth:52}}>
+                      <div style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1}}>{dayNum}</div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:600}}>{monthStr}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* פס התקדמות */}
+                <div style={{borderTop:"1px solid #f0f0f0",paddingTop:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:32,height:32,borderRadius:"50%",border:"2.5px solid #7B3FD4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#7B3FD4"}}>0%</div>
+                      <span style={{fontSize:13,color:"#555",fontWeight:600}}>0%</span>
+                    </div>
+                    <span style={{fontSize:13,color:"#888"}}>0 מגיעים</span>
+                  </div>
+                  <div style={{height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:"0%",background:"linear-gradient(90deg,#7B3FD4,#5B6BF5)",borderRadius:2}}/>
+                  </div>
+                </div>
+
+                {daysLeft!==null&&daysLeft>0&&(
+                  <div style={{marginTop:12,fontSize:11,color:"#7B3FD4",fontWeight:700,background:"rgba(123,63,212,.06)",borderRadius:8,padding:"5px 10px",display:"inline-block"}}>
+                    ⏰ עוד {daysLeft} ימים
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* טופס יצירת אירוע */}
+        {showForm&&(
+          <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.4)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={e=>{if(e.target===e.currentTarget)setShowForm(false);}}>
+            <div style={{background:"#fff",borderRadius:24,padding:"36px 32px",width:"100%",maxWidth:520,direction:"rtl",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,.2)",animation:"fadeUp .3s ease both"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28}}>
+                <h2 style={{fontSize:22,fontWeight:900,color:"#1a1a2e"}}>✨ אירוע חדש</h2>
+                <button onClick={()=>setShowForm(false)} style={{background:"#f5f5f5",border:"none",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:18,color:"#666",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              </div>
+
+              {/* סוג אירוע */}
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:10}}>סוג האירוע</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[["wedding","💍","חתונה"],["bar_mitzvah","✡️","בר/ת מצווה"],["brit","👶","ברית"],["business","💼","עסקי"]].map(([v,ic,l])=>(
+                    <button key={v} onClick={()=>setForm(f=>({...f,event_type:v}))}
+                      style={{background:form.event_type===v?"linear-gradient(135deg,#7B3FD4,#5B6BF5)":"#F8F8FC",color:form.event_type===v?"#fff":"#1a1a2e",border:`2px solid ${form.event_type===v?"transparent":"#E2E8F0"}`,borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+                      {ic} {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* שמות (לחתונה) */}
+              {form.event_type==="wedding"&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם החתן</div>
+                    <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="עמית"
+                      style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם הכלה</div>
+                    <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="אורנה"
+                      style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                  </div>
+                </div>
+              )}
+
+              {/* שם האירוע */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם האירוע *</div>
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="חתונת עמית ואורנה"
+                  style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                  onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+              </div>
+
+              {/* תאריך + שעה */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>תאריך</div>
+                  <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                    style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                    onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                </div>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שעה</div>
+                  <input type="time" dir="ltr" value={form.event_time} onChange={e=>setForm(f=>({...f,event_time:e.target.value}))}
+                    style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                    onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                </div>
+              </div>
+
+              {/* אולם */}
+              <div style={{marginBottom:28}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם האולם / מקום</div>
+                <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אולמי הגן, תל אביב"
+                  style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                  onFocus={e=>e.target.style.borderColor="#7B3FD4"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+              </div>
+
+              <button onClick={create} disabled={creating||!form.name.trim()}
+                style={{width:"100%",background:form.name.trim()?"linear-gradient(135deg,#7B3FD4,#5B6BF5)":"#E2E8F0",color:form.name.trim()?"#fff":"#aaa",border:"none",borderRadius:14,padding:"15px",fontSize:16,fontWeight:800,cursor:form.name.trim()?"pointer":"default",fontFamily:"inherit",transition:"all .2s"}}>
+                {creating?"יוצר...":"✨ צור אירוע"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 
 function AdminLogin({ onSuccess, onClose }) {
   const [pass,setPass]=useState("");
