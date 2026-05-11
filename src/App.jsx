@@ -728,7 +728,6 @@ function LandingPage({ onOpenAuth, onLogout }) {
   const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
   const [venuePage,setVenuePage]=useState(false);
-  const [counts,setCounts]=useState({events:0,guests:0,rate:0});
 
   useEffect(()=>{
     const fn=()=>setScrolled(window.scrollY>40);
@@ -736,25 +735,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
     return()=>window.removeEventListener("scroll",fn);
   },[]);
 
-  // אנימציית מספרים
-  useEffect(()=>{
-    const targets={events:500,guests:50000,rate:98};
-    const duration=2000;
-    const steps=60;
-    let step=0;
-    const timer=setInterval(()=>{
-      step++;
-      const p=Math.min(step/steps,1);
-      const ease=1-Math.pow(1-p,3);
-      setCounts({
-        events:Math.round(targets.events*ease),
-        guests:Math.round(targets.guests*ease),
-        rate:Math.round(targets.rate*ease),
-      });
-      if(step>=steps)clearInterval(timer);
-    },duration/steps);
-    return()=>clearInterval(timer);
-  },[]);
+
 
   useEffect(()=>{
     const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting){x.target.style.opacity=1;x.target.style.transform="none";obs.unobserve(x.target);}});},{threshold:.1});
@@ -820,30 +801,30 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
       {menuOpen&&<HamburgerMenu onOpenAuth={onOpenAuth} onClose={()=>setMenuOpen(false)} onVenuePage={()=>setVenuePage(true)} onLogout={onLogout}/>}
 
       {/* ─── HERO ────────────────────────────────────────────────── */}
-      <section style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"100px 6vw 80px"}}>
+      <section style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"100px 6vw 80px",background:"#F0F4FF"}}>
         {/* רקע */}
-        <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 50% 0%,rgba(27,58,140,.45) 0%,transparent 70%)"}}/>
+        <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 60% 50%,rgba(27,58,140,.08) 0%,transparent 70%)"}}/>
         <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1600)",backgroundSize:"cover",backgroundPosition:"center",opacity:.12}}/>
 
         {/* אורות עיגול גלואינג */}
-        <div style={{position:"absolute",top:"20%",right:"10%",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(74,122,255,.15) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:"20%",left:"5%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(138,75,255,.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",top:"20%",right:"10%",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(74,122,255,.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:"20%",left:"5%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(138,75,255,.06) 0%,transparent 70%)",pointerEvents:"none"}}/>
 
         {/* גריד */}
         <div className="hero-grid" style={{maxWidth:1100,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"6vw",position:"relative",zIndex:2}}>
           {/* טקסט */}
           <div style={{flex:1,minWidth:280,animation:"fadeUp .8s ease both"}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(74,122,255,.12)",border:"1px solid rgba(74,122,255,.3)",borderRadius:100,padding:"6px 16px",marginBottom:24}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(74,122,255,.1)",border:"1px solid rgba(74,122,255,.25)",borderRadius:100,padding:"6px 16px",marginBottom:24}}>
               <span style={{width:6,height:6,borderRadius:"50%",background:"#4A7AFF",display:"inline-block",animation:"pulse 2s infinite"}}/>
-              <span style={{fontSize:13,color:"#7DA4FF",fontWeight:600}}>מערכת ניהול אירועים מתקדמת</span>
+              <span style={{fontSize:13,color:"#1B3A8C",fontWeight:600}}>מערכת ניהול אירועים מתקדמת</span>
             </div>
 
-            <h1 style={{fontSize:"clamp(40px,5.5vw,72px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-.03em",marginBottom:20,color:"#fff"}}>
+            <h1 style={{fontSize:"clamp(40px,5.5vw,72px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-.03em",marginBottom:20,color:"#0D1B4B"}}>
               ניהול האירוע שלך<br/>
               <span style={{background:"linear-gradient(135deg,#4A7AFF,#8A4BFF,#4A7AFF)",backgroundSize:"200% 100%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"gradShift 4s ease infinite"}}>בצורה חכמה</span>
             </h1>
 
-            <p style={{fontSize:18,color:"rgba(255,255,255,.6)",lineHeight:1.8,marginBottom:32,maxWidth:480}}>
+            <p style={{fontSize:18,color:"#4A5568",lineHeight:1.8,marginBottom:32,maxWidth:480}}>
               הזמנות דיגיטליות, אישורי הגעה, סידורי הושבה ושליחת SMS  -  הכל במקום אחד. פשוט, מהיר, מושלם.
             </p>
 
@@ -853,7 +834,7 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
                 התחל בחינם ←
               </button>
               <button onClick={()=>onOpenAuth("login")}
-                style={{background:"rgba(255,255,255,.06)",color:"rgba(255,255,255,.85)",border:"1.5px solid rgba(255,255,255,.15)",borderRadius:12,padding:"14px 28px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}
+                style={{background:"transparent",color:"#1B3A8C",border:"1.5px solid #1B3A8C",borderRadius:12,padding:"14px 28px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.1)";}}
                 onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.06)";}}>
                 כניסה למערכת
@@ -864,9 +845,9 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
             <div style={{display:"flex",gap:28,flexWrap:"wrap"}}>
               {[["1","צרו אירוע","הגדירו פרטים בדקות"],["2","הזמינו אורחים","שתפו קישור אישי"],["3","נהלו הכל","הושבה, אישורים, SMS"]].map(([num,t,s])=>(
                 <div key={t} style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:40,height:40,borderRadius:12,background:"rgba(74,122,255,.15)",border:"1px solid rgba(74,122,255,.3)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <div style={{fontSize:9,color:"#7DA4FF",fontWeight:700,lineHeight:1}}>שלב</div>
-                    <div style={{fontSize:18,fontWeight:900,color:"#fff",lineHeight:1}}>{num}</div>
+                  <div style={{width:40,height:40,borderRadius:12,background:"rgba(74,122,255,.1)",border:"1px solid rgba(74,122,255,.25)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <div style={{fontSize:9,color:"#1B3A8C",fontWeight:700,lineHeight:1}}>שלב</div>
+                    <div style={{fontSize:18,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{num}</div>
                   </div>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#fff"}}>{t}</div>
@@ -880,8 +861,8 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
           {/* פלאפון */}
           <div style={{flexShrink:0,order:2,animation:"float 4s ease-in-out infinite",position:"relative"}}>
             {/* גלואינג מאחורה */}
-            <div style={{position:"absolute",inset:-30,borderRadius:60,background:"radial-gradient(circle,rgba(74,122,255,.3) 0%,transparent 70%)",filter:"blur(20px)"}}/>
-            <div style={{width:240,height:500,borderRadius:40,background:"#0A0A14",padding:8,boxShadow:"0 40px 80px rgba(0,0,0,.7)",position:"relative",border:"1px solid rgba(255,255,255,.12)",zIndex:2}}>
+            <div style={{position:"absolute",inset:-30,borderRadius:60,background:"radial-gradient(circle,rgba(74,122,255,.2) 0%,transparent 70%)",filter:"blur(20px)"}}/>
+            <div style={{width:240,height:500,borderRadius:40,background:"#1a1a2e",padding:8,boxShadow:"0 40px 80px rgba(27,58,140,.3)",position:"relative",border:"1px solid rgba(255,255,255,.12)",zIndex:2}}>
               <div style={{position:"absolute",top:13,left:"50%",transform:"translateX(-50%)",width:9,height:9,borderRadius:"50%",background:"#1a1a2e",zIndex:10}}/>
               <div style={{borderRadius:32,overflow:"hidden",height:"100%",background:"#f9f9f9",display:"flex",flexDirection:"column",direction:"rtl"}}>
                 <div style={{height:195,position:"relative",overflow:"hidden"}}>
@@ -917,15 +898,7 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
           </div>
         </div>
 
-        {/* מספרים */}
-        <div style={{position:"absolute",bottom:40,right:0,left:0,display:"flex",justifyContent:"center",gap:"6vw",zIndex:2}}>
-          {[[counts.events+"+","אירועים מנוהלים"],[counts.guests.toLocaleString()+"+","אורחים מוסבו"],[counts.rate+"%","שביעות רצון"]].map(([v,l])=>(
-            <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontSize:"clamp(28px,3.5vw,42px)",fontWeight:900,color:"#fff",lineHeight:1,textShadow:"0 2px 12px rgba(0,0,0,.3)"}}>{v}</div>
-              <div style={{fontSize:13,color:"rgba(255,255,255,.65)",marginTop:4}}>{l}</div>
-            </div>
-          ))}
-        </div>
+
       </section>
 
       {/* ─── FEATURES ────────────────────────────────────────────── */}
