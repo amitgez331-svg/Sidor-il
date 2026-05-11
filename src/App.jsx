@@ -5500,7 +5500,6 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
       .then(async({data})=>{
         const evs=data||[];
         setEvents(evs);
-        if(evs.length===1){onSelect(evs[0]);return;}
         if(evs.length===0)setShowForm(true);
         setLoading(false);
       });
@@ -6007,8 +6006,9 @@ export default function App() {
       if(u){
         const savedId=localStorage.getItem("sidor_event_id");
         if(savedId){
-          const{data:ev}=await sb.from("events").select("*").eq("id",savedId).eq("user_id",u.id).single();
-          if(ev){setEvent(ev);}
+          // לא נטען אוטומטית — תמיד מציגים דף האירועים
+          localStorage.removeItem("sidor_event_id");
+        }
         }
       }
       setChecking(false);
