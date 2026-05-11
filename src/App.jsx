@@ -6006,9 +6006,7 @@ export default function App() {
       if(u){
         const savedId=localStorage.getItem("sidor_event_id");
         if(savedId){
-          // לא נטען אוטומטית — תמיד מציגים דף האירועים
           localStorage.removeItem("sidor_event_id");
-        }
         }
       }
       setChecking(false);
