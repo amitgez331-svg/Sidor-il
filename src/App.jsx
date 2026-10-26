@@ -888,7 +888,7 @@ const StepArt=({kind})=>{
   );
 };
 
-function LandingPage({ onOpenAuth, onLogout }) {
+function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   const [scrolled,setScrolled]=useState(false);
   const [venuePage,setVenuePage]=useState(false);
 
@@ -941,7 +941,7 @@ function LandingPage({ onOpenAuth, onLogout }) {
           ))}
         </div>
         <div style={{flex:1}}/>
-        <button className="lp-btn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>כניסה</button>
+        <button className="lp-btn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>{loggedIn?"האירועים שלי":"כניסה"}</button>
         <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14}}>התחילו להושיב</button>
       </nav>
 
@@ -1947,13 +1947,32 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
-  // התאמת הזום כך שכל האולם ייכנס ברוחב המסך
-  const fitZoom=()=>{
-    const el=mapBoxRef.current;if(!el)return;
-    const MAP_W=Math.max(window.innerWidth-(sidebarOpen?320:0)-48,900);
-    setZoom(+Math.min(1,Math.max(.5,(el.clientWidth-24)/MAP_W)).toFixed(2));
+  const [,setBoxTick]=useState(0);
+  // גודל האולם לפי השטח שבאמת פנוי על המסך, ומספיק גדול כדי להכיל את כל השולחנות
+  const hallSize=(list=tables)=>{
+    const el=mapBoxRef.current;
+    const cw=el?el.clientWidth:window.innerWidth-560, ch=el?el.clientHeight:window.innerHeight-170;
+    const maxR=list.reduce((m,t)=>Math.max(m,t.x+(t.type==="knight"?220:190)),0);
+    const maxB=list.reduce((m,t)=>Math.max(m,t.y+190),0);
+    return {cw,ch,maxR,maxB,W:Math.max(cw-24,maxR+40,640),H:Math.max(ch-24,maxB+60,520)};
   };
-  useEffect(()=>{if(screen==="seating"&&view==="map")fitZoom();},[screen,view,sidebarOpen]);
+  // זום שממלא את המסך באזור שבו נמצאים השולחנות (כך שהם נפתחים גדולים)
+  const fitZoom=(list=tables)=>{
+    if(!mapBoxRef.current)return;
+    const {cw,ch,maxR,maxB}=hallSize(list);
+    if(!list.length){setZoom(1);return;}
+    const z=Math.min((cw-24)/Math.max(maxR+40,560),(ch-24)/Math.max(maxB+50,420));
+    setZoom(+Math.min(1.5,Math.max(.6,z)).toFixed(2));
+  };
+  useEffect(()=>{
+    if(screen!=="seating"||view!=="map"||!mapBoxRef.current)return;
+    fitZoom();
+    const ro=new ResizeObserver(()=>setBoxTick(t=>t+1));
+    ro.observe(mapBoxRef.current);
+    return()=>ro.disconnect();
+  },[screen,view,sidebarOpen,tables.length,loading]);
+  // במסך ההושבה מקפלים את התפריט הראשי כדי לתת למפה יותר מקום (אפשר לפתוח שוב ב-☰)
+  useEffect(()=>{setSidebarOpen(screen!=="seating");},[screen]);
   const [mapFind,setMapFind]=useState("");
   const [userPackages,setUserPackages]=useState([]);
   const [trialExpired] = useState(false);
@@ -2177,8 +2196,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       {/* TOP BAR */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
         {screen==="home"
-          ? <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>← הכל</button>
-          : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit"}}>← חזרה</button>
+          ? <button onClick={onBack} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"}}>→ האירועים שלי</button>
+          : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit"}}>→ חזרה</button>
         }
         <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
           {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="settings"?"⚙️ הגדרות":event.name}
@@ -2337,7 +2356,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
         <span style={{width:16,height:2,background:"#fff",borderRadius:1,display:"block"}}/>
         <span style={{width:16,height:2,background:"#fff",borderRadius:1,display:"block"}}/>
       </button>
-      {screen!=="home"&&<button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>← חזרה</button>}
+      {screen!=="home"
+        ?<button onClick={()=>setScreen("home")} className="sx-btn" style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>→ חזרה</button>
+        :<button onClick={onBack} className="sx-btn" style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>→ כל האירועים</button>}
       <span style={{fontWeight:800,fontSize:15,color:"#fff",flex:1}}>{event.name}</span>
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
       {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋 רשימה"],["guests","👥 אורחים"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",color:view===v?C.blue:"#fff",border:`2px solid ${view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.4)"}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 2px 8px rgba(0,0,0,0.2)":"none",transition:"all .15s"}}>{l}</button>))}</div>}
@@ -2708,19 +2729,20 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                 </div>
                 <button onClick={async()=>{
                   if(!tables.length||!window.confirm("לסדר את כל השולחנות אוטומטית בשורות מתחת לבמה? המיקומים הנוכחיים יוחלפו."))return;
-                  const MAP_W=Math.max(window.innerWidth-(sidebarOpen?320:0)-48,900);
+                  const MAP_W=Math.max(hallSize().cw-24,640);
                   const cell=200,cols=Math.max(1,Math.floor((MAP_W-60)/cell));
                   const startX=Math.max(30,(MAP_W-cols*cell)/2);
                   const next=tables.map((t,i)=>({...t,x:Math.round(startX+(i%cols)*cell+(t.type==="knight"?0:20)),y:Math.round(120+Math.floor(i/cols)*180)}));
                   setTables(next);
                   await Promise.all(next.map(t=>saveTablePos(t.id,t.x,t.y)));
+                  setTimeout(()=>fitZoom(next),50);
                 }} className="sx-btn"
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
                   ✨ סדר אוטומטית
                 </button>
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
                   <button style={zBtn} onClick={()=>setZoom(z=>Math.max(.5,+(z-.1).toFixed(2)))} aria-label="הקטן">−</button>
-                  <button style={{...zBtn,width:48,fontSize:11}} onClick={fitZoom} title="התאם למסך">{Math.round(zoom*100)}%</button>
+                  <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
                   <button style={zBtn} onClick={()=>setZoom(z=>Math.min(1.6,+(z+.1).toFixed(2)))} aria-label="הגדל">+</button>
                 </div>
               </div>
@@ -2733,9 +2755,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
             style={{flex:1,overflow:"auto",background:"#F6F0F8",position:"relative",paddingBottom:40}}>
             {(()=>{
               // מפה ממלאת את כל השטח הזמין
-              const sidebarW=sidebarOpen?320:0;
-              const MAP_W=Math.max(window.innerWidth-sidebarW-48,900);
-              const MAP_H=Math.max(window.innerHeight-170,600);
+              const {W:MAP_W,H:MAP_H}=hallSize();
               const q=mapFind.trim().toLowerCase();
               return(
                 <div style={{width:MAP_W*zoom+16,height:MAP_H*zoom+16,position:"relative"}}>
@@ -5741,7 +5761,7 @@ function InviteSettings({ event, onUpdate }) {
 
 
 // ─── CREATE EVENT SCREEN ──────────────────────────────────────────────────────
-function CreateEventScreen({ user, onSelect, onLogout }) {
+function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [creating,setCreating]=useState(false);
@@ -5779,7 +5799,11 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
       {/* TOP NAV */}
       <header style={{background:"rgba(255,255,255,.7)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#9147D6,#9B6BFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
+          {onBackToLanding&&<button onClick={onBackToLanding} className="sx-btn"
+            style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+            → דף הבית
+          </button>}
+          <div style={{width:32,height:32,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
           <span style={{fontWeight:900,fontSize:18,color:"#2B1D3F"}}>Sidor-IL</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -6371,15 +6395,16 @@ export default function App() {
   );
 
   if(!user||showLanding) return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
-    <LandingPage onOpenAuth={mode=>{setShowLanding(false);setAuthMode(mode);}} onLogout={user?logout:null}/>
+    {/* משתמש מחובר שחזר לדף הבית: כפתורי הכניסה מחזירים אותו ישר למערכת */}
+    <LandingPage onOpenAuth={mode=>{setShowLanding(false);if(!user)setAuthMode(mode);}} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
     <AccessibilityWidget/>
   </>);
 
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout}/>
+    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)}/>
   </>);
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>setShowLanding(true)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout}/></>);
+  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout}/></>);
 }
