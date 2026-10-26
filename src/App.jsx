@@ -2755,7 +2755,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
         )}
       </aside>
       <main style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        {view==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:400,background:"#F6F0F8",display:"flex",flexDirection:"column",direction:"rtl",fontFamily:"'Heebo',sans-serif"}:{display:"contents"}}>
+        {/* zIndex 250: מעל הכותרת והתפריטים, אבל מתחת לחלונות העריכה (300) כדי שייפתחו מעל המסך המלא */}
+        {view==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:250,background:"#F6F0F8",display:"flex",flexDirection:"column",direction:"rtl",fontFamily:"'Heebo',sans-serif"}:{display:"contents"}}>
           {/* ─── סרגל כלים של המפה ─── */}
           {(()=>{
             const allSeats=tables.reduce((s,t)=>s+(t.seats||0),0);
@@ -2800,6 +2801,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
                   <button style={zBtn} onClick={()=>setZoom(z=>Math.min(1.6,+(z+.1).toFixed(2)))} aria-label="הגדל">+</button>
                 </div>
+                {mapFull&&<button onClick={addTable} className="sx-btn"
+                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  + שולחן
+                </button>}
                 <button onClick={()=>setMapFull(f=>!f)} className={mapFull?"sx-btn":"sx-btn sx-btn-primary"}
                   title={mapFull?"יציאה ממסך מלא (Esc)":"פתיחת המפה על כל המסך"}
                   style={{background:mapFull?"#fff":GRAD,color:mapFull?C.blue:"#fff",border:mapFull?`1.5px solid ${C.border}`:"none",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:mapFull?"none":`0 6px 16px -6px ${C.blueM}`}}>
@@ -2941,33 +2946,89 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
               </div>
             </div>
           )}
-          {/* במסך מלא: רשימת הממתינים צפה מעל המפה כדי שאפשר יהיה להמשיך לגרור אורחים */}
-          {mapFull&&(
-            <div style={{position:"absolute",bottom:52,right:16,width:fullListOpen?250:"auto",maxHeight:"min(62vh, calc(100vh - 190px))",display:"flex",flexDirection:"column",
-              background:"rgba(255,255,255,.96)",backdropFilter:"blur(8px)",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 24px 50px -20px rgba(91,60,140,.45)",zIndex:20,overflow:"hidden"}}>
-              <button onClick={()=>setFullListOpen(o=>!o)}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"none",border:"none",borderBottom:fullListOpen?`1px solid ${C.border}`:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:900,color:C.text}}>
-                👥 ממתינים להושבה
-                <span style={{background:C.gold+"26",color:"#B07A12",borderRadius:100,padding:"1px 9px",fontSize:12}}>{guests.length}</span>
-                <span style={{marginRight:"auto",color:C.muted,fontSize:12}}>{fullListOpen?"▲":"▼"}</span>
-              </button>
-              {fullListOpen&&(
-                <div style={{overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:6}}>
-                  {guests.length===0&&<div style={{textAlign:"center",padding:"18px 6px",color:C.success,fontWeight:800,fontSize:13}}>🎉 כולם הושבו!</div>}
-                  {guests.map(g=>(
-                    <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
-                      style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"7px 10px",cursor:"grab"}}>
-                      <span style={{width:26,height:26,borderRadius:"50%",background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,flexShrink:0}}>{g.name[0]}</span>
-                      <div style={{minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
-                        {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
-                      </div>
+          {/* במסך מלא: חלונית צפה  -  שולחן נבחר (העברה/הוצאה/עריכה של אורחים) או רשימת הממתינים */}
+          {mapFull&&(()=>{
+            const panel={position:"absolute",bottom:52,right:16,width:fullListOpen?270:"auto",maxHeight:"min(66vh, calc(100vh - 170px))",display:"flex",flexDirection:"column",
+              background:"rgba(255,255,255,.97)",backdropFilter:"blur(8px)",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 24px 50px -20px rgba(91,60,140,.45)",zIndex:20,overflow:"hidden"};
+            const avatar=g=>(<span style={{width:28,height:28,borderRadius:"50%",background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,flexShrink:0}}>{g.name[0]}</span>);
+            const smallBtn={border:`1px solid ${C.border}`,background:C.blueXL,color:C.blue,borderRadius:8,padding:"4px 7px",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit",flexShrink:0};
+            const dropTo=(tableId)=>({
+              onDragOver:e=>{e.preventDefault();e.stopPropagation();},
+              onDrop:e=>{e.preventDefault();e.stopPropagation();const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(!gid)return;
+                if(tableId)dropOnTable(tableId,gid,f);
+                else if(f){const tb=tables.find(t=>String(t.id)===String(f));const g=tb&&(tb.guests||[]).find(x=>String(x.id)===String(gid));if(g)removeFromTable(tb.id,g);}},
+            });
+
+            // ─── שולחן נבחר ───
+            if(selTable){
+              const tg=selTable.guests||[];const fullT=tg.length>=selTable.seats;
+              return(
+                <div style={{...panel,width:280}}>
+                  <div style={{padding:"12px 14px",borderBottom:`1px solid ${C.border}`,background:`linear-gradient(160deg,${C.blueM}12,#fff)`}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <span style={{fontSize:15,fontWeight:900,color:C.text,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>🪑 {selTable.name}</span>
+                      <span style={{background:fillColor(tg.length,selTable.seats)+"22",color:fullT?C.danger:C.text,borderRadius:100,fontSize:12,fontWeight:900,padding:"2px 9px"}}>{tg.length}/{selTable.seats}</span>
+                      <button onClick={()=>setEditTableData(selTable)} title="עריכת שולחן" style={smallBtn}>✏️</button>
+                      <button onClick={()=>setSelected(null)} title="סגירה" style={{...smallBtn,background:"#fff"}}>✕</button>
                     </div>
-                  ))}
+                    <div style={{height:6,background:"#F1EAF8",borderRadius:100,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${pct(selTable)}%`,background:GRAD,borderRadius:100,transition:"width .4s"}}/>
+                    </div>
+                  </div>
+                  <div style={{overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:6}} {...dropTo(selTable.id)}>
+                    {tg.length===0&&<div style={{textAlign:"center",color:C.muted,fontSize:13,padding:"10px 0"}}>השולחן ריק</div>}
+                    {tg.map(g=>(
+                      <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(selTable.id));}}
+                        style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"7px 9px",cursor:"grab"}}>
+                        {avatar(g)}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
+                          {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
+                        </div>
+                        <button onClick={()=>setEditGuestData(g)} title="עריכת אורח" style={smallBtn}>✏️</button>
+                        <button onClick={()=>removeFromTable(selTable.id,g)} title="הוצאה מהשולחן" style={{...smallBtn,background:"#FFF2F4",color:C.danger,borderColor:"#F9D2D8"}}>הוצא</button>
+                      </div>
+                    ))}
+                    <div style={{border:`2px dashed ${C.blueL}66`,borderRadius:12,padding:"10px",textAlign:"center",color:C.blue,fontSize:12,fontWeight:800,background:C.blueXL}}>
+                      ⬇ שחררו כאן אורח להושבה בשולחן
+                    </div>
+                  </div>
+                  <div style={{padding:"8px 12px",borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted,lineHeight:1.5}}>
+                    💡 להעברה: גררו אורח מהרשימה אל שולחן אחר במפה
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              );
+            }
+
+            // ─── רשימת הממתינים (אפשר גם לגרור לכאן אורח משולחן כדי להוציא אותו) ───
+            return(
+              <div style={panel} {...dropTo(null)}>
+                <button onClick={()=>setFullListOpen(o=>!o)}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"none",border:"none",borderBottom:fullListOpen?`1px solid ${C.border}`:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:900,color:C.text}}>
+                  👥 ממתינים להושבה
+                  <span style={{background:C.gold+"26",color:"#B07A12",borderRadius:100,padding:"1px 9px",fontSize:12}}>{guests.length}</span>
+                  <span style={{marginRight:"auto",color:C.muted,fontSize:12}}>{fullListOpen?"▲":"▼"}</span>
+                </button>
+                {fullListOpen&&(
+                  <div style={{overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:6}}>
+                    {guests.length===0&&<div style={{textAlign:"center",padding:"18px 6px",color:C.success,fontWeight:800,fontSize:13}}>🎉 כולם הושבו!</div>}
+                    {guests.map(g=>(
+                      <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
+                        style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"7px 10px",cursor:"grab"}}>
+                        {avatar(g)}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
+                          {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
+                        </div>
+                        <button onClick={()=>setEditGuestData(g)} title="עריכת אורח" style={smallBtn}>✏️</button>
+                      </div>
+                    ))}
+                    <div style={{fontSize:11,color:C.muted,textAlign:"center",padding:"4px 0 2px"}}>💡 לחצו על שולחן כדי לנהל את האורחים שבו</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>}
         {view==="list"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
