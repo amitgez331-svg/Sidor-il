@@ -57,6 +57,10 @@ const isMobile = () => window.innerWidth < 1024;
 
 // השוואת טלפונים: רק ספרות, ו-972 בהתחלה נחשב כמו 0 (‎+972 52… = 052…)
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
+// כמה יחידות SMS הודעה צורכת. עברית/אימוג'י = UCS-2: עד 70 תווים, ואז 67 לכל חלק (כמו בשרת השליחה)
+const SMS_GSM=/^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+const smsSegments = text => { const n=[...String(text||"")].length; if(!n)return 0; return SMS_GSM.test(text)?(n<=160?1:Math.ceil(n/153)):(n<=70?1:Math.ceil(n/67)); };
+const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
 // ─── שמירת אורח ───────────────────────────────────────────────────────────────
@@ -4726,13 +4730,17 @@ function SMSScreen({ event, guests }) {
     }
   },[event.welcome_text]);
 
-  // טעינת יתרת SMS מ-Supabase
-  useEffect(()=>{
-    sb.from("sms_balance").select("*").eq("event_id",event.id).maybeSingle()
-      .then(({data})=>{
-        setSmsBalance(data?.balance??0);
-      },()=>setSmsBalance(0));
-  },[event.id]);
+  // טעינת יתרת SMS ובקשות רכישה ממתינות
+  const [pendingReq,setPendingReq]=useState([]);
+  const [buyPack,setBuyPack]=useState(null); // חבילה שנבחרה  -  מציג הוראות תשלום
+  const loadBalance=async()=>{
+    const [{data},{data:reqs}]=await Promise.all([
+      sb.from("sms_balance").select("balance").eq("event_id",event.id).maybeSingle(),
+      sb.from("sms_requests").select("id,amount,price,status,created_at").eq("event_id",event.id).eq("status","pending").order("created_at",{ascending:false}),
+    ]);
+    setSmsBalance(data?.balance??0);setPendingReq(reqs||[]);
+  };
+  useEffect(()=>{loadBalance().catch(()=>setSmsBalance(0));},[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=filterRsvp==="all"?withPhone
@@ -4749,23 +4757,20 @@ function SMSScreen({ event, guests }) {
   };
 
   const charCount=msgText.length;
-  const smsCount=charCount<=160?1:Math.ceil(charCount/153);
-  const totalSmsNeeded=smsCount*toSend.length;
+  const smsCount=smsSegments(buildPreview(previewGuest||toSend[0]));
+  // הערכה מדויקת: כל אורח מקבל הודעה אישית באורך שונה
+  const totalSmsNeeded=toSend.reduce((s,g)=>s+smsSegments(buildPreview(g)),0);
   const hasBalance=smsBalance===null||smsBalance>=totalSmsNeeded;
 
-  const buyPackage=async(amount,price)=>{
-    if(!window.confirm(`לרכוש ${amount} SMS ב-₪${price}?\n(תשלום דרך PayPlus יתווסף בקרוב)`))return;
-    // עדכן יתרה ב-Supabase
-    const{data:existing}=await sb.from("sms_balance").select("*").eq("event_id",event.id).maybeSingle();
-    if(existing){
-      const newBal=(existing.balance||0)+amount;
-      await sb.from("sms_balance").update({balance:newBal,total_purchased:(existing.total_purchased||0)+amount,updated_at:new Date().toISOString()}).eq("event_id",event.id);
-      setSmsBalance(newBal);
-    } else {
-      await sb.from("sms_balance").insert({event_id:event.id,balance:amount,total_purchased:amount,total_sent:0});
-      setSmsBalance(amount);
-    }
-    alert(`✅ ${amount} SMS נוספו ליתרה שלך!`);
+  // רכישה: נוצרת בקשה; היתרה נטענת אחרי שהתשלום מאושר באדמין
+  const buyPackage=(amount,price)=>setBuyPack({amount,price});
+  const confirmPurchase=async()=>{
+    const{amount,price}=buyPack;
+    const{error}=await sb.rpc("request_sms",{p_event:event.id,p_amount:amount,p_price:price});
+    if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
+    const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS ב-₪${price} לאירוע "${event.name}".`;
+    window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
+    setBuyPack(null);await loadBalance();
   };
 
   const pickTemplate=(t)=>{setSelectedTemplate(t.id);setMsgText(t.text);};
@@ -4777,31 +4782,23 @@ function SMSScreen({ event, guests }) {
     }
     if(!window.confirm(`לשלוח SMS ל-${toSend.length} אורחים? (${totalSmsNeeded} SMS)`))return;
     setSending(true);setProgress(0);setResults(null);
+    let p=0;const iv=setInterval(()=>{p=Math.min(p+4,92);setProgress(p);},300);
     try{
-      let p=0;
-      const iv=setInterval(()=>{p=Math.min(p+4,92);setProgress(p);},300);
+      // השרת טוען את האורחים מהמסד, מוריד מהיתרה ושולח דרך 019
       const{data,error}=await sb.functions.invoke("send-sms",{
-        body:{
-          guests:toSend.map(g=>({id:g.id,name:g.name,phone:g.phone,table:g.table_id})),
-          message:msgText,
-          inviteUrl,
-          source:"Sidor-IL",
-        }
+        body:{event_id:event.id,guest_ids:toSend.map(g=>g.id),message:msgText,inviteUrl}
       });
-      clearInterval(iv);
-      if(error)throw new Error(error.message);
-      setProgress(100);
-      const res=data?.results||[];
-      setResults(res);
-      const sent=res.filter(r=>r.status?.includes("✓")).length*smsCount;
-      if(sent>0&&smsBalance!==null){
-        const newBal=Math.max(0,smsBalance-sent);
-        await sb.from("sms_balance").update({balance:newBal,updated_at:new Date().toISOString()}).eq("event_id",event.id);
-        setSmsBalance(newBal);
-      }
+      let body=data;
+      if(error){try{body=await error.context?.json();}catch{body=null;}}
+      if(body?.results)setResults(body.results);
+      if(typeof body?.balance==="number")setSmsBalance(body.balance);
+      if(error||body?.error){
+        alert("⚠️ "+(body?.error||error?.message||"שגיאה בשליחה")+(body?.needed?`\nנדרש: ${body.needed} | יתרה: ${body.balance}`:""));
+      }else setProgress(100);
     }catch(e){
       alert("שגיאה בשליחה: "+e.message);
     }
+    clearInterval(iv);
     setSending(false);
   };
 
@@ -4858,8 +4855,32 @@ function SMSScreen({ event, guests }) {
       {/* כפתורי רכישת SMS */}
       <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
         <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>🛒 רכישת SMS</div>
+        {pendingReq.length>0&&(
+          <div style={{background:"#FFF8E8",border:"1px solid #F5DDA6",borderRadius:12,padding:"10px 12px",marginBottom:12,fontSize:12,color:"#8A5A00",fontWeight:700}}>
+            ⏳ ממתין לאישור תשלום: {pendingReq.map(r=>`${r.amount} הודעות (₪${r.price})`).join(" · ")}
+            <div style={{fontWeight:500,marginTop:3}}>היתרה תיטען מיד אחרי שהתשלום יאושר.</div>
+          </div>
+        )}
+        {buyPack&&(
+          <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setBuyPack(null)}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"24px 22px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
+              <div style={{fontSize:40,marginBottom:6}}>📱</div>
+              <div style={{fontSize:19,fontWeight:900,color:C.text}}>{buyPack.amount} הודעות SMS</div>
+              <div style={{fontSize:28,fontWeight:900,background:GRAD,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",margin:"4px 0 12px"}}>₪{buyPack.price}</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:16,textAlign:"right",background:C.blueXL,borderRadius:12,padding:"10px 12px"}}>
+                1. לחיצה על "שלח בקשה" פותחת וואטסאפ עם הפרטים<br/>
+                2. נשלח לך פרטי תשלום (Bit / העברה)<br/>
+                3. אחרי התשלום ההודעות נטענות ליתרה שלך
+              </div>
+              <button onClick={confirmPurchase} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:WA_GREEN,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+                <WaIcon size={18}/> שלח בקשה בוואטסאפ
+              </button>
+              <button onClick={()=>setBuyPack(null)} style={{background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
+            </div>
+          </div>
+        )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-          {[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]].map(([amt,price])=>(
+          {SMS_PACKS.map(([amt,price])=>(
             <div key={amt} onClick={()=>buyPackage(amt,price)}
               style={{border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 8px",textAlign:"center",cursor:"pointer",background:C.bg,transition:"all .15s"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueM;e.currentTarget.style.background=C.blueXL;}}
@@ -4871,7 +4892,7 @@ function SMSScreen({ event, guests }) {
           ))}
         </div>
         <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
-          💳 תשלום מאובטח · Apple Pay · Google Pay · Bit · Visa
+          💳 תשלום ב-Bit או בהעברה · ההודעות נטענות אחרי אישור התשלום
         </div>
       </div>
 
@@ -6435,176 +6456,264 @@ const ALL_PACKAGES=[
 ];
 
 function AdminDashboard({ user, onLogout }) {
-  const [users,setUsers]=useState([]);
+  const [users,setUsers]=useState([]);       // [{user_id,email,created_at,last_sign_in_at,events:[],guests:0}]
   const [events,setEvents]=useState([]);
   const [packages,setPackages]=useState({}); // {user_id: [pkg_id, ...]}
+  const [balances,setBalances]=useState({}); // {event_id: balance}
+  const [requests,setRequests]=useState([]);
+  const [txs,setTxs]=useState([]);
+  const [guestCount,setGuestCount]=useState({}); // {event_id: n}
   const [loading,setLoading]=useState(true);
-  const [tab,setTab]=useState("users");
+  const [tab,setTab]=useState("requests");
   const [search,setSearch]=useState("");
-  const [stats,setStats]=useState({users:0,events:0,guests:0});
   const [saving,setSaving]=useState(null);
+  const [addFor,setAddFor]=useState(null);   // {event, request?}
+  const [addAmount,setAddAmount]=useState(500);
+  const [addNote,setAddNote]=useState("");
+  const [toast,setToast]=useState("");
 
-  useEffect(()=>{loadData();},[]);
+  const flash=m=>{setToast(m);setTimeout(()=>setToast(""),2600);};
 
   const loadData=async()=>{
     setLoading(true);
-    const [{data:evData},{data:gData},{data:pkgData}]=await Promise.all([
-      sb.from("events").select("*").order("created_at",{ascending:false}),
-      sb.from("guests").select("id,event_id"),
-      sb.from("user_packages").select("*"),
+    const [ev,g,pk,bal,req,tx,us]=await Promise.all([
+      sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at").order("created_at",{ascending:false}),
+      sb.from("guests").select("event_id"),
+      sb.from("user_packages").select("user_id,package_id"),
+      sb.from("sms_balance").select("event_id,balance,total_purchased,total_sent"),
+      sb.from("sms_requests").select("*").order("created_at",{ascending:false}).limit(100),
+      sb.from("sms_transactions").select("*").order("created_at",{ascending:false}).limit(60),
+      sb.rpc("admin_list_users"),
     ]);
-    const evList=evData||[];
-    const gList=gData||[];
-    const pkgList=pkgData||[];
-
-    // קיבוץ אירועים לפי user_id
-    const userMap={};
-    evList.forEach(ev=>{
-      if(!userMap[ev.user_id])userMap[ev.user_id]={user_id:ev.user_id,events:[],guests:0};
-      userMap[ev.user_id].events.push(ev);
-    });
-    gList.forEach(g=>{
-      const ev=evList.find(e=>e.id===g.event_id);
-      if(ev&&userMap[ev.user_id])userMap[ev.user_id].guests++;
-    });
-
-    // קיבוץ חבילות לפי user_id
-    const pkgMap={};
-    pkgList.forEach(p=>{
-      if(!pkgMap[p.user_id])pkgMap[p.user_id]=[];
-      pkgMap[p.user_id].push(p.package_id);
-    });
-
-    setEvents(evList);
-    setUsers(Object.values(userMap));
-    setPackages(pkgMap);
-    setStats({users:Object.keys(userMap).length,events:evList.length,guests:gList.length});
+    const evList=ev.data||[];
+    const gc={};(g.data||[]).forEach(x=>{gc[x.event_id]=(gc[x.event_id]||0)+1;});
+    const pkgMap={};(pk.data||[]).forEach(p=>{(pkgMap[p.user_id]||=[]).push(p.package_id);});
+    const balMap={};(bal.data||[]).forEach(b=>{balMap[b.event_id]=b;});
+    // משתמשים: מהרשימה עם המיילים, ואם הפונקציה לא זמינה  -  לפי בעלי האירועים
+    const base=(us.data&&!us.error)?us.data:[...new Set(evList.map(e=>e.user_id))].map(id=>({user_id:id,email:null}));
+    const uList=base.map(u=>{const evs=evList.filter(e=>e.user_id===u.user_id);return {...u,events:evs,guests:evs.reduce((s,e)=>s+(gc[e.id]||0),0)};});
+    setEvents(evList);setGuestCount(gc);setPackages(pkgMap);setBalances(balMap);
+    setRequests(req.data||[]);setTxs(tx.data||[]);setUsers(uList);
     setLoading(false);
   };
+  useEffect(()=>{loadData();},[]);
+
+  const emailOf=uid=>users.find(u=>u.user_id===uid)?.email||(uid?uid.slice(0,8)+"…":"");
+  const eventOf=id=>events.find(e=>e.id===id);
+  const pending=requests.filter(r=>r.status==="pending");
 
   const togglePackage=async(userId,pkgId,hasIt)=>{
     setSaving(`${userId}-${pkgId}`);
-    if(hasIt){
-      await sb.from("user_packages").delete().eq("user_id",userId).eq("package_id",pkgId);
-      setPackages(prev=>({...prev,[userId]:(prev[userId]||[]).filter(p=>p!==pkgId)}));
-    } else {
-      await sb.from("user_packages").insert({user_id:userId,package_id:pkgId});
-      setPackages(prev=>({...prev,[userId]:[...(prev[userId]||[]),pkgId]}));
-    }
+    const{error}=hasIt
+      ?await sb.from("user_packages").delete().eq("user_id",userId).eq("package_id",pkgId)
+      :await sb.from("user_packages").insert({user_id:userId,package_id:pkgId});
+    if(error)flash("❌ "+error.message);
+    else setPackages(prev=>({...prev,[userId]:hasIt?(prev[userId]||[]).filter(p=>p!==pkgId):[...(prev[userId]||[]),pkgId]}));
     setSaving(null);
   };
 
-  const filteredUsers=users.filter(u=>
-    !search||u.events.some(e=>e.name?.toLowerCase().includes(search.toLowerCase()))||
-    u.user_id.toLowerCase().includes(search.toLowerCase())
-  );
-  const filteredEvents=events.filter(e=>
-    e.name?.toLowerCase().includes(search.toLowerCase())||
-    e.user_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const openAdd=(event,request=null)=>{setAddFor({event,request});setAddAmount(request?.amount||500);setAddNote(request?`אישור תשלום ₪${request.price??""}`:"");};
+  const doAdd=async()=>{
+    const amt=parseInt(addAmount,10);
+    if(!amt){flash("הזן כמות");return;}
+    setSaving("add");
+    const{data,error}=await sb.rpc("admin_add_sms",{p_event:addFor.event.id,p_amount:amt,p_note:addNote||null,p_request:addFor.request?.id||null});
+    setSaving(null);
+    if(error){flash("❌ "+error.message);return;}
+    flash(`✅ ${amt>0?"נוספו":"הורדו"} ${Math.abs(amt)} SMS · יתרה חדשה: ${data}`);
+    setAddFor(null);loadData();
+  };
+  const reject=async r=>{
+    if(!window.confirm(`לדחות בקשה ל-${r.amount} הודעות?`))return;
+    const{error}=await sb.rpc("admin_reject_sms_request",{p_request:r.id});
+    if(error)flash("❌ "+error.message);else{flash("הבקשה נדחתה");loadData();}
+  };
+
+  const q=search.trim().toLowerCase();
+  const fUsers=users.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||u.events.some(e=>e.name?.toLowerCase().includes(q)));
+  const fEvents=events.filter(e=>!q||e.name?.toLowerCase().includes(q)||emailOf(e.user_id).toLowerCase().includes(q));
+  const totalBalance=Object.values(balances).reduce((s,b)=>s+(b.balance||0),0);
+  const totalGuests=Object.values(guestCount).reduce((s,n)=>s+n,0);
+  const fmtDate=d=>d?new Date(d).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—";
+  const card={background:"#fff",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"};
+  const chip=(bg,fg)=>({background:bg,color:fg,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"});
+  const TABS=[["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["log","🧾 יומן SMS",null]];
+  const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
-    <div style={{minHeight:"100vh",background:"#0D1117",color:"#E6EDF3",fontFamily:"'Heebo',sans-serif",direction:"rtl"}}>
-      {/* TOP BAR */}
-      <div style={{background:"#161B22",borderBottom:"1px solid #30363D",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◈</div>
-          <div>
-            <div style={{fontWeight:900,fontSize:16,color:"#fff"}}>Sidor-IL Admin</div>
-            <div style={{fontSize:11,color:"#888"}}>{user.email}</div>
+    <div dir="rtl" style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Heebo',sans-serif"}}>
+      <style>{`.adm-tab:hover{background:#fff!important;border-color:${C.blueL}!important}.adm-row:hover{border-color:${C.blueL}!important;box-shadow:0 10px 24px -16px rgba(91,60,140,.5)!important}`}</style>
+
+      {/* כותרת */}
+      <div style={{background:GRAD,color:"#fff",padding:"18px 24px 64px"}}>
+        <div style={{maxWidth:1180,margin:"0 auto",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+          <div style={{width:44,height:44,borderRadius:14,background:"rgba(255,255,255,.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🛡️</div>
+          <div style={{flex:1,minWidth:180}}>
+            <div style={{fontWeight:900,fontSize:22}}>ניהול Sidor-IL</div>
+            <div style={{fontSize:12,opacity:.9}}>{user.email}</div>
           </div>
-        </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <button onClick={loadData} style={{background:"#21262D",color:"#E6EDF3",border:"1px solid #30363D",borderRadius:8,padding:"6px 14px",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>🔄 רענן</button>
-          <button onClick={onLogout} style={{background:"#DA3633",color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
+          <button onClick={()=>{window.location.hash="";}} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>→ לאתר</button>
+          <button onClick={loadData} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 רענן</button>
+          <button onClick={onLogout} className="sx-btn" style={{background:"#fff",color:C.danger,border:"none",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
         </div>
       </div>
 
-      <div style={{padding:"20px"}}>
-        {/* סטטיסטיקות */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
-          {[[stats.users,"👥","משתמשים","#3A2464"],[stats.events,"📅","אירועים","#059669"],[stats.guests,"🎊","אורחים","#B45309"]].map(([v,ic,l,col])=>(
-            <div key={l} style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,padding:"16px",borderTop:`3px solid ${col}`}}>
-              <div style={{fontSize:24,marginBottom:2}}>{ic}</div>
-              <div style={{fontSize:28,fontWeight:900,color:col}}>{v}</div>
-              <div style={{fontSize:12,color:"#888",marginTop:2}}>{l}</div>
+      <div style={{maxWidth:1180,margin:"-46px auto 0",padding:"0 20px 40px"}}>
+        {/* נתונים */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginBottom:18}}>
+          {[["👥","משתמשים",users.length,C.blueL],["📅","אירועים",events.length,C.coral],["🎊","אורחים",totalGuests,C.gold],["📱","יתרת SMS כוללת",totalBalance,C.info],["🛒","בקשות ממתינות",pending.length,pending.length?C.danger:C.success]].map(([ic,l,v,c])=>(
+            <div key={l} style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:44,height:44,borderRadius:14,background:c+"1F",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
+              <div>
+                <div style={{fontSize:24,fontWeight:900,lineHeight:1,color:C.text}}>{loading?"…":v.toLocaleString()}</div>
+                <div style={{fontSize:12,color:C.muted,fontWeight:700,marginTop:3}}>{l}</div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* חיפוש */}
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש לפי שם אירוע..."
-          style={{width:"100%",background:"#161B22",border:"1px solid #30363D",borderRadius:10,padding:"10px 16px",fontSize:14,color:"#E6EDF3",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14}}/>
-
-        {/* טאבים */}
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {[["users","👥 משתמשים + חבילות"],["events","📅 אירועים"]].map(([id,label])=>(
-            <button key={id} onClick={()=>setTab(id)}
-              style={{background:tab===id?"#3A2464":"#21262D",color:"#E6EDF3",border:`1px solid ${tab===id?"#9B6BFF":"#30363D"}`,borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+        {/* טאבים + חיפוש */}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
+          {TABS.map(([id,label,count])=>(
+            <button key={id} onClick={()=>setTab(id)} className={tab===id?"":"adm-tab"}
+              style={{background:tab===id?GRAD:"#fff",color:tab===id?"#fff":C.text,border:`1.5px solid ${tab===id?"transparent":C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,boxShadow:tab===id?`0 8px 18px -8px ${C.blueM}`:"none"}}>
               {label}
+              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":(id==="requests"&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":(id==="requests"&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
             </button>
           ))}
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש לפי מייל או שם אירוע..."
+            style={{marginRight:"auto",minWidth:240,flex:"0 1 320px",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit"}}/>
         </div>
 
         {loading?(
-          <div style={{textAlign:"center",padding:40}}><Spinner size={36}/></div>
-        ):tab==="users"?(
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {filteredUsers.map(u=>(
-              <div key={u.user_id} style={{background:"#161B22",border:"1px solid #30363D",borderRadius:14,padding:"16px"}}>
-                {/* מידע משתמש */}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                  <div>
-                    <div style={{fontSize:11,color:"#888",marginBottom:2}}>User ID</div>
-                    <div style={{fontSize:12,fontWeight:700,color:"#E6EDF3",fontFamily:"monospace"}}>{u.user_id.slice(0,16)}...</div>
-                    <div style={{fontSize:11,color:"#888",marginTop:4}}>{u.events.length} אירועים · {u.guests} אורחים</div>
-                  </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:4,justifyContent:"flex-end"}}>
-                    {u.events.slice(0,2).map(ev=>(
-                      <span key={ev.id} style={{background:"#21262D",border:"1px solid #30363D",borderRadius:6,padding:"3px 8px",fontSize:11,color:"#E6EDF3"}}>{ev.name}</span>
-                    ))}
-                  </div>
+          <div style={{textAlign:"center",padding:60}}><Spinner size={36}/></div>
+        ):tab==="requests"?(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {pending.length===0&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין בקשות רכישה ממתינות</div></div>}
+            {pending.map(r=>{const ev=eventOf(r.event_id);return(
+              <div key={r.id} className="adm-row" style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",borderRight:`4px solid ${C.gold}`}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#FFF4E0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🛒</div>
+                <div style={{flex:1,minWidth:200}}>
+                  <div style={{fontWeight:900,fontSize:16}}>{r.amount.toLocaleString()} הודעות · ₪{r.price??"—"}</div>
+                  <div style={{fontSize:13,color:C.muted}}>{ev?.name||"אירוע"} · {emailOf(r.user_id)} · {fmtDate(r.created_at)}</div>
                 </div>
-
-                {/* חבילות */}
-                <div style={{borderTop:"1px solid #30363D",paddingTop:12}}>
-                  <div style={{fontSize:11,color:"#888",marginBottom:8}}>חבילות פעילות:</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                    {ALL_PACKAGES.map(pkg=>{
-                      const hasIt=(packages[u.user_id]||[]).includes(pkg.id);
-                      const isSaving=saving===`${u.user_id}-${pkg.id}`;
-                      return(
-                        <button key={pkg.id} onClick={()=>togglePackage(u.user_id,pkg.id,hasIt)}
-                          disabled={isSaving}
-                          style={{background:hasIt?pkg.color+"33":"#21262D",border:`1.5px solid ${hasIt?pkg.color:"#30363D"}`,borderRadius:10,padding:"8px 10px",fontSize:12,fontWeight:700,color:hasIt?pkg.color:"#888",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6,transition:"all .2s"}}>
-                          {isSaving?<Spinner size={12} color={pkg.color}/>:<span>{pkg.icon}</span>}
-                          <span style={{flex:1,textAlign:"right"}}>{pkg.name}</span>
-                          <span style={{fontSize:16}}>{hasIt?"✓":"+"}</span>
-                        </button>
-                      );
-                    })}
+                <span style={chip(C.blueXL,C.muted)}>יתרה כרגע: {balances[r.event_id]?.balance??0}</span>
+                <button onClick={()=>ev&&openAdd(ev,r)} className="sx-btn sx-btn-primary" style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 16px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>✅ אשר תשלום והטען</button>
+                <button onClick={()=>reject(r)} className="sx-btn" style={{background:"#fff",color:C.danger,border:`1.5px solid #F4C7CD`,borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>דחה</button>
+              </div>
+            );})}
+            {requests.filter(r=>r.status!=="pending").length>0&&(
+              <div style={{...card,padding:"12px 16px",marginTop:6}}>
+                <div style={{fontSize:13,fontWeight:900,color:C.muted,marginBottom:8}}>בקשות שטופלו</div>
+                {requests.filter(r=>r.status!=="pending").slice(0,10).map(r=>(
+                  <div key={r.id} style={{display:"flex",gap:10,fontSize:13,padding:"6px 0",borderTop:`1px solid ${C.border}`}}>
+                    <span style={chip(r.status==="approved"?"#E9FBF4":"#FDECEE",r.status==="approved"?C.success:C.danger)}>{r.status==="approved"?"אושרה":"נדחתה"}</span>
+                    <span style={{flex:1}}>{r.amount} הודעות · {eventOf(r.event_id)?.name||""}</span>
+                    <span style={{color:C.muted}}>{fmtDate(r.handled_at)}</span>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ):tab==="events"?(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(330px,1fr))",gap:12}}>
+            {fEvents.map(ev=>{const b=balances[ev.id];return(
+              <div key={ev.id} className="adm-row" style={{...card,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:900,fontSize:16,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.name}</div>
+                    <div style={{fontSize:12,color:C.muted}}>{emailOf(ev.user_id)}</div>
+                  </div>
+                  <span style={chip(ev.invite_active?"#E9FBF4":"#FDECEE",ev.invite_active?C.success:C.danger)}>{ev.invite_active?"הזמנה פעילה":"כבויה"}</span>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",fontSize:12}}>
+                  <span style={chip(C.blueXL,C.text)}>📅 {ev.date?fmtDate(ev.date):"ללא תאריך"}</span>
+                  <span style={chip(C.blueXL,C.text)}>🎊 {guestCount[ev.id]||0} אורחים</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,background:C.blueXL,borderRadius:14,padding:"10px 12px"}}>
+                  <div style={{fontSize:22}}>📱</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:20,fontWeight:900,lineHeight:1}}>{(b?.balance??0).toLocaleString()}</div>
+                    <div style={{fontSize:11,color:C.muted,fontWeight:700}}>יתרת SMS · נשלחו {b?.total_sent??0}</div>
+                  </div>
+                  <button onClick={()=>openAdd(ev)} className="sx-btn sx-btn-primary" style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף SMS</button>
+                </div>
+              </div>
+            );})}
+            {fEvents.length===0&&<div style={{...card,padding:30,textAlign:"center",color:C.muted}}>לא נמצאו אירועים</div>}
+          </div>
+        ):tab==="users"?(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {fUsers.map(u=>(
+              <div key={u.user_id} className="adm-row" style={{...card,padding:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:12}}>
+                  <div style={{width:42,height:42,borderRadius:"50%",background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:17}}>{(u.email||"?")[0].toUpperCase()}</div>
+                  <div style={{flex:1,minWidth:200}}>
+                    <div style={{fontWeight:900,fontSize:15,direction:"ltr",textAlign:"right"}}>{u.email||u.user_id}</div>
+                    <div style={{fontSize:12,color:C.muted}}>הצטרף {fmtDate(u.created_at)} · כניסה אחרונה {fmtDate(u.last_sign_in_at)}</div>
+                  </div>
+                  <span style={chip(C.blueXL,C.text)}>{u.events.length} אירועים</span>
+                  <span style={chip(C.blueXL,C.text)}>{u.guests} אורחים</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
+                  {ALL_PACKAGES.map(pkg=>{
+                    const hasIt=(packages[u.user_id]||[]).includes(pkg.id);
+                    const isSaving=saving===`${u.user_id}-${pkg.id}`;
+                    return(
+                      <button key={pkg.id} onClick={()=>togglePackage(u.user_id,pkg.id,hasIt)} disabled={isSaving} className="sx-btn"
+                        style={{background:hasIt?pkg.color+"18":"#fff",border:`1.5px solid ${hasIt?pkg.color:C.border}`,borderRadius:12,padding:"8px 10px",fontSize:13,fontWeight:800,color:hasIt?pkg.color:C.muted,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+                        {isSaving?<Spinner size={12} color={pkg.color}/>:<span>{pkg.icon}</span>}
+                        <span style={{flex:1,textAlign:"right"}}>{pkg.name}</span>
+                        <span style={{fontSize:15}}>{hasIt?"✓":"+"}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
-            {filteredUsers.length===0&&<div style={{textAlign:"center",color:"#888",padding:40}}>אין משתמשים</div>}
+            {fUsers.length===0&&<div style={{...card,padding:30,textAlign:"center",color:C.muted}}>לא נמצאו משתמשים</div>}
           </div>
         ):(
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {filteredEvents.map(ev=>(
-              <div key={ev.id} style={{background:"#161B22",border:"1px solid #30363D",borderRadius:12,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                <div>
-                  <div style={{fontWeight:800,fontSize:15,color:"#E6EDF3",marginBottom:2}}>{ev.name}</div>
-                  <div style={{fontSize:11,color:"#888"}}>{ev.date||"ללא תאריך"} · {ev.event_type||"חתונה"}</div>
-                </div>
-                <span style={{background:ev.invite_active?"#05906922":"#DA363322",color:ev.invite_active?"#10B981":"#F85149",border:`1px solid ${ev.invite_active?"#10B98144":"#F8514944"}`,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:700}}>
-                  {ev.invite_active?"✓ הזמנה פעילה":"✗ כבויה"}
-                </span>
+          <div style={{...card,padding:"8px 16px"}}>
+            {txs.length===0&&<div style={{padding:30,textAlign:"center",color:C.muted}}>אין עדיין תנועות SMS</div>}
+            {txs.map(t=>(
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.border}`,fontSize:13,flexWrap:"wrap"}}>
+                <span style={chip(t.amount>0?"#E9FBF4":"#FFF2F4",t.amount>0?C.success:C.danger)}>{t.amount>0?"+":""}{t.amount}</span>
+                <span style={{fontWeight:800}}>{TX_LABEL[t.kind]||t.kind}</span>
+                <span style={{flex:1,color:C.muted}}>{eventOf(t.event_id)?.name||""}{t.note?` · ${t.note}`:""}</span>
+                <span style={{color:C.muted}}>{new Date(t.created_at).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* חלון הוספת SMS */}
+      {addFor&&(
+        <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setAddFor(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"22px",width:"100%",maxWidth:430,boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
+            <div style={{fontSize:19,fontWeight:900,marginBottom:2}}>📱 {addFor.request?"אישור רכישה":"הוספת SMS"}</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:14}}>{addFor.event.name} · יתרה כרגע {balances[addFor.event.id]?.balance??0}</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
+              {SMS_PACKS.map(([a])=>(
+                <button key={a} onClick={()=>setAddAmount(a)} style={{background:+addAmount===a?GRAD:C.blueXL,color:+addAmount===a?"#fff":C.text,border:"none",borderRadius:10,padding:"9px 0",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>{a}</button>
+              ))}
+            </div>
+            <div style={{fontSize:12,fontWeight:800,color:C.muted,margin:"4px 0 6px"}}>כמות (אפשר מספר שלילי כדי להוריד)</div>
+            <input type="number" value={addAmount} onChange={e=>setAddAmount(e.target.value)} dir="ltr"
+              style={{width:"100%",boxSizing:"border-box",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:18,fontWeight:900,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:10,textAlign:"center"}}/>
+            <input value={addNote} onChange={e=>setAddNote(e.target.value)} placeholder="הערה (למשל: שולם ב-Bit)"
+              style={{width:"100%",boxSizing:"border-box",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:14}}/>
+            <button onClick={doAdd} disabled={saving==="add"} className="sx-btn sx-btn-primary"
+              style={{width:"100%",background:GRAD,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:6,opacity:saving==="add"?.6:1}}>
+              {saving==="add"?"שומר...":+addAmount<0?`הורד ${Math.abs(+addAmount)} SMS`:`טען ${(+addAmount||0).toLocaleString()} SMS`}
+            </button>
+            <button onClick={()=>setAddFor(null)} style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:6}}>ביטול</button>
+          </div>
+        </div>
+      )}
+
+      {toast&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:C.text,color:"#fff",borderRadius:14,padding:"12px 18px",fontSize:14,fontWeight:800,zIndex:400,boxShadow:"0 14px 30px -10px rgba(0,0,0,.4)"}}>{toast}</div>}
     </div>
   );
 }
