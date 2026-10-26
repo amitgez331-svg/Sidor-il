@@ -16,6 +16,26 @@ const C = {
 };
 const GRAD=`linear-gradient(120deg,${C.coral},${C.blueM},${C.blueL})`;
 
+// ─── שיתוף ההזמנה בוואטסאפ ────────────────────────────────────────────────────
+const WA_GREEN="#25D366";
+const inviteShareText=(event,url)=>{
+  const title=event.event_type==="wedding"&&event.groom_name&&event.bride_name
+    ?`💍 ${event.groom_name} ו${event.bride_name} מתחתנים!`:`🎉 ${event.name}`;
+  const date=event.date?new Date(event.date).toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"}):"";
+  return [title,date&&`📅 ${date}${event.event_time?" · "+event.event_time:""}`,event.venue&&`📍 ${event.venue}`,"","נשמח לראותכם! לפרטים ולאישור הגעה 👇",url].filter(x=>x!==false&&x!==undefined&&x!==null).join("\n");
+};
+const shareInviteWA=(event,url)=>window.open("https://wa.me/?text="+encodeURIComponent(inviteShareText(event,url)),"_blank","noopener,noreferrer");
+const WaIcon=({size=16,color="#fff"})=>(
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88m8.41-18.3A11.81 11.81 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg>
+);
+const WaButton=({event,url,label="שלח בוואטסאפ",style={}})=>(
+  <button onClick={()=>shareInviteWA(event,url)} className="sx-btn" title="פותח וואטסאפ עם הודעה מוכנה וקישור להזמנה"
+    style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:7,background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,
+      padding:"10px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 18px -8px rgba(37,211,102,.75)",...style}}>
+    <WaIcon/>{label}
+  </button>
+);
+
 const TABLE_TYPES = {
   round:  { label:"עגול",         icon:"⭕", defaultSeats:8  },
   rect:   { label:"מרובע",        icon:"⬛", defaultSeats:10 },
@@ -2374,10 +2394,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           <div style={{background:"#FBF8FD",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#9147D6",fontFamily:"monospace",marginBottom:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
             🔗 {inviteUrl}
           </div>
-          <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
-            style={{width:"100%",background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-            העתק קישור
-          </button>
+          <div style={{display:"flex",gap:8}}>
+            <WaButton event={event} url={inviteUrl} style={{flex:1.4,padding:"12px",fontSize:14}}/>
+            <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
+              style={{flex:1,background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              🔗 העתק
+            </button>
+          </div>
         </div>
 
         {/* ─── תפריט מהיר ─── */}
@@ -2583,19 +2606,46 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
 
     <div style={{display:"flex",flex:1,overflow:"hidden"}}>
       {/* SIDEBAR */}
-      {sidebarOpen&&(
-        <div style={{width:220,background:"#fff",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",borderLeft:"1px solid #E2E8F0",boxShadow:"2px 0 8px rgba(0,0,0,.04)",scrollbarWidth:"none"}}
-          onScroll={e=>e.currentTarget.style.scrollbarWidth="none"}>
-          <style>{`.sidebar-scroll::-webkit-scrollbar{display:none}`}</style>
-          <div style={{padding:"16px",borderBottom:"1px solid #F0F0F0",background:"linear-gradient(135deg,#EBF8FF,#FBF7FC)"}}>
-            <div style={{fontSize:10,color:"#999",marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em"}}>האירוע הנוכחי</div>
-            <div style={{fontSize:15,fontWeight:900,color:"#1A202C",lineHeight:1.3,marginBottom:4}}>{event.name}</div>
-            {event.date&&<div style={{fontSize:12,color:"#2B6CB0",fontWeight:700}}>
-              📅 {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}
-            </div>}
-            {event.venue&&<div style={{fontSize:11,color:"#718096",marginTop:2}}>📍 {event.venue}</div>}
+      {sidebarOpen&&(()=>{
+        // צבע לכל כפתור  -  אייקון באריח צבעוני; הכפתור הפעיל בגרדיאנט של המותג
+        const NAV_COLORS={home:C.blueM,settings:C.blueL,seating:C.coral,rsvp:C.success,import:C.info,budget:C.gold,packages:"#9147D6",sms:C.info,whatsapp:WA_GREEN,ai:C.blueL,user_settings:C.muted};
+        const days=event.date?Math.ceil((new Date(event.date)-new Date())/864e5):null;
+        return(
+        <div className="sx-side" style={{width:236,background:"linear-gradient(180deg,#FFFFFF 0%,#FBF6FE 100%)",display:"flex",flexDirection:"column",flexShrink:0,height:"100%",overflowY:"auto",borderLeft:`1px solid ${C.border}`,boxShadow:"4px 0 24px -12px rgba(91,60,140,.18)",scrollbarWidth:"none"}}>
+          <style>{`
+            .sx-side::-webkit-scrollbar{display:none}
+            .sx-nav{position:relative;display:flex;align-items:center;gap:11px;margin:3px 10px;padding:9px 10px;border-radius:14px;cursor:pointer;
+              color:${C.text};font-size:14.5px;font-weight:700;border:1px solid transparent;background:transparent;
+              transition:background .18s,transform .18s,box-shadow .2s,border-color .18s,color .18s}
+            .sx-nav .sx-ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+              background:color-mix(in srgb,var(--c) 14%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 22%,transparent);transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+            .sx-nav:hover{background:#fff;border-color:${C.border};transform:translateX(-4px);box-shadow:0 8px 18px -12px rgba(91,60,140,.45)}
+            .sx-nav:hover .sx-ic{transform:scale(1.12) rotate(-6deg)}
+            .sx-nav:focus-visible{outline:3px solid ${C.blueL};outline-offset:1px}
+            .sx-nav.on{background:${GRAD};color:#fff;font-weight:900;box-shadow:0 10px 22px -10px ${C.blueM};transform:none}
+            .sx-nav.on .sx-ic{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+            .sx-nav.on::before{content:"";position:absolute;right:-10px;top:10px;bottom:10px;width:4px;border-radius:4px;background:${C.blueM}}
+            .sx-nav.locked{color:#9C93AE}
+            .sx-nav.locked .sx-ic{filter:grayscale(.6);opacity:.75}
+            @media (prefers-reduced-motion:reduce){.sx-nav,.sx-nav .sx-ic{transition:none}.sx-nav:hover{transform:none}}
+          `}</style>
+
+          {/* כרטיס האירוע הנוכחי */}
+          <div style={{margin:"14px 12px 6px",borderRadius:18,padding:"14px 14px 12px",background:GRAD,color:"#fff",position:"relative",overflow:"hidden",boxShadow:`0 14px 28px -14px ${C.blueM}`,flexShrink:0}}>
+            <div style={{position:"absolute",top:-24,left:-24,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,.16)"}}/>
+            <div style={{position:"absolute",bottom:-30,right:-14,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,.1)"}}/>
+            <div style={{position:"relative"}}>
+              <div style={{fontSize:10,fontWeight:800,opacity:.85,letterSpacing:".04em",marginBottom:4}}>האירוע הנוכחי</div>
+              <div style={{fontSize:15,fontWeight:900,lineHeight:1.3,marginBottom:6}}>{event.name}</div>
+              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                {days!==null&&days>=0&&<span style={{background:"rgba(255,255,255,.24)",borderRadius:100,padding:"2px 9px",fontSize:11,fontWeight:900}}>⏳ עוד {days} ימים</span>}
+                {event.date&&<span style={{fontSize:11,fontWeight:700,opacity:.92}}>📅 {new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"short"})}</span>}
+              </div>
+              {event.venue&&<div style={{fontSize:11,opacity:.85,marginTop:4}}>📍 {event.venue}</div>}
+            </div>
           </div>
-          <nav style={{flex:1,padding:"8px 0"}}>
+
+          <nav style={{flex:"1 0 auto",padding:"6px 0 8px"}} aria-label="תפריט ניהול">
             {navItems.map(item=>{
               const isLocked=(()=>{
                 if(["home","packages","settings","settings_event","user_settings","invite"].includes(item.id)) return false;
@@ -2606,39 +2656,33 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                 if(item.id==="ai"||item.id==="budget"||item.id==="import") return userPackages.length===0;
                 return false;
               })();
+              const on=screen===item.id;
               return(
-                <div key={item.id}
+                <div key={item.id} role="button" tabIndex={0} aria-current={on?"page":undefined}
+                  className={`sx-nav${on?" on":""}${isLocked?" locked":""}`} style={{"--c":NAV_COLORS[item.id]||C.blueL}}
+                  onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.currentTarget.click();}}}
                   onClick={()=>{
                     if(isLocked){setScreen("packages");return;}
                     if(item.id==="receipt")setModal("receipt");
                     else if(item.id==="addTable")setModal("addTable");
                     else setScreen(item.id);
-                  }}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",cursor:"pointer",
-                    color:screen===item.id?"#E53E3E":"#4A5568",
-                    background:screen===item.id?"#FFF5F5":"transparent",
-                    borderRight:`3px solid ${screen===item.id?"#E53E3E":"transparent"}`,
-                    fontSize:15,fontWeight:screen===item.id?700:500,transition:"all .15s"}}
-                  onMouseEnter={e=>{if(screen!==item.id){e.currentTarget.style.background="#F7FAFC";e.currentTarget.style.color="#1A202C";}}}
-                  onMouseLeave={e=>{if(screen!==item.id){e.currentTarget.style.background="transparent";e.currentTarget.style.color="#4A5568";}}}
-                >
-                  <span style={{fontSize:15}}>{item.icon}</span>
+                  }}>
+                  <span className="sx-ic">{item.icon}</span>
                   <span style={{flex:1}}>{item.label}</span>
-                  {isLocked&&<span style={{fontSize:10}}>🔒</span>}
+                  {isLocked&&<span title="דורש חבילה" style={{fontSize:10,background:"#FFF4E0",color:"#B07A12",borderRadius:100,padding:"2px 7px",fontWeight:800}}>🔒</span>}
                 </div>
               );
             })}
           </nav>
-          <div style={{borderTop:"1px solid #F0F0F0",padding:"8px 0"}}>
-            <div onClick={async()=>{await sb.auth.signOut();}}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",cursor:"pointer",color:"#C53030",fontSize:13,fontWeight:600}}
-              onMouseEnter={e=>e.currentTarget.style.background="#FFF5F5"}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <span>🚪</span><span>התנתק</span>
+          <div style={{padding:"8px 10px 14px",borderTop:`1px solid ${C.border}`}}>
+            <div role="button" tabIndex={0} className="sx-nav" style={{"--c":C.danger,color:C.danger,margin:"3px 0"}}
+              onKeyDown={e=>{if(e.key==="Enter")logout();}} onClick={logout}>
+              <span className="sx-ic">🚪</span><span>התנתק</span>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* תוכן ראשי */}
       <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}}>
@@ -2700,6 +2744,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                         style={{background:"#fff",color:"#9147D6",border:"none",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
                         👁 צפה בהזמנה
                       </button>
+                      <WaButton event={event} url={inviteUrl} style={{padding:"10px 18px",fontSize:14,boxShadow:"0 8px 20px -8px rgba(0,0,0,.35)"}}/>
                       <button onClick={()=>{navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"));}}
                         style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                         🔗 העתק קישור
@@ -2770,10 +2815,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   <div style={{background:"#FBF8FD",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:11,color:"#9147D6",fontFamily:"monospace",marginBottom:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
                     {inviteUrl}
                   </div>
+                  <WaButton event={event} url={inviteUrl} label="שלח את ההזמנה בוואטסאפ" style={{width:"100%",padding:"12px",fontSize:14,marginBottom:8}}/>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
                       style={{flex:1,background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                      העתק
+                      🔗 העתק
                     </button>
                     <button onClick={()=>window.open(inviteUrl,"_blank")}
                       style={{flex:1,background:"#F6F0FF",color:"#9147D6",border:"1.5px solid #E9D9F7",borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
@@ -6046,7 +6092,7 @@ function InviteSettings({ event, onUpdate }) {
   const save=async()=>{setSaving(true);await sb.from("events").update({template_id:templateId}).eq("id",event.id);onUpdate({...event,template_id:templateId,invite_code:inviteCode});setSaved(true);setTimeout(()=>setSaved(false),2500);setSaving(false);};
   const inviteUrl=`${window.location.origin}/#/invite/${inviteCode}`;
   const copy=()=>{navigator.clipboard.writeText(inviteUrl).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});};
-  const shareWA=()=>{window.open(`https://wa.me/?text=${encodeURIComponent("💌 הוזמנת ל"+event.name+"!\n"+inviteUrl)}`,"_blank");};
+  const shareWA=()=>shareInviteWA(event,inviteUrl);
   const templates=INVITE_TEMPLATES[event.event_type||"wedding"]||INVITE_TEMPLATES.other;
 
   return(
