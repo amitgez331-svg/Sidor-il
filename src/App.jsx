@@ -4724,7 +4724,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) 
   const build=()=>{
     const saved=event.settings_json?.[storeKey]||[];
     const byId=Object.fromEntries(saved.map(s=>[s.id,s]));
-    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:true,...(byId[d.id]||{})}));
+    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:false,...(byId[d.id]||{})}));
     const extra=saved.filter(s=>s.custom);
     return [...base,...extra];
   };
@@ -4817,6 +4817,37 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) 
   );
 }
 
+// בחירת נמענים (SMS / וואטסאפ): ברירת מחדל  -  אף קבוצה לא מסומנת. נשלח רק למה שמסומן
+const RECIPIENT_GROUPS=[
+  {v:"all",      l:"כולם",      c:"#2B6CB0", match:()=>true},
+  {v:"pending",  l:"ממתינים",   c:"#718096", match:g=>!g.rsvp||g.rsvp==="pending"},
+  {v:"confirmed",l:"מגיעים",    c:"#276749", match:g=>g.rsvp==="confirmed"},
+  {v:"declined", l:"לא מגיעים", c:"#C53030", match:g=>g.rsvp==="declined"},
+];
+const pickRecipients=(withPhone,sel)=>{
+  const groups=RECIPIENT_GROUPS.filter(f=>sel.includes(f.v));
+  return groups.length?withPhone.filter(g=>groups.some(f=>f.match(g))):[];
+};
+// "כולם" מחליף את כל השאר; קבוצה ספציפית מבטלת את "כולם"
+const toggleRecipient=(sel,v)=>sel.includes(v)?sel.filter(x=>x!==v):v==="all"?["all"]:[...sel.filter(x=>x!=="all"),v];
+function RecipientPicker({ withPhone, value, onChange }) {
+  return(
+    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      {RECIPIENT_GROUPS.map(f=>{
+        const on=value.includes(f.v);
+        return(
+          <button key={f.v} onClick={()=>onChange(toggleRecipient(value,f.v))} aria-pressed={on}
+            style={{background:on?f.c:"#fff",color:on?"#fff":f.c,
+              border:`2px solid ${f.c}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,
+              cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+            {on?"✓ ":""}{f.l} ({withPhone.filter(f.match).length})
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function SMSScreen({ event, guests }) {
   const groomName = event.groom_name || "החתן";
   const brideName = event.bride_name || "הכלה";
@@ -4863,14 +4894,12 @@ function SMSScreen({ event, guests }) {
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
-  const [filterRsvp,setFilterRsvp]=useState("all");
+  const [sendTo,setSendTo]=useState([]);
   const [sending,setSending]=useState(false);
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
   const [smsBalance,setSmsBalance]=useState(null);
-  const [showSmsSchedule,setShowSmsSchedule]=useState(false);
-  const [smsScheduleEnabled,setSmsScheduleEnabled]=useState([true,true,true,true]);
 
   useEffect(()=>{
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
@@ -4896,9 +4925,7 @@ function SMSScreen({ event, guests }) {
   useEffect(()=>{loadBalance().catch(()=>setSmsBalance(0));},[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=filterRsvp==="all"?withPhone
-    :filterRsvp==="pending"?withPhone.filter(g=>!g.rsvp||g.rsvp==="pending")
-    :withPhone.filter(g=>g.rsvp===filterRsvp);
+  const toSend=pickRecipients(withPhone,sendTo);
 
   const buildPreview=(g)=>{
     if(!g)return msgText;
@@ -4929,7 +4956,7 @@ function SMSScreen({ event, guests }) {
   const pickTemplate=(t)=>{setSelectedTemplate(t.id);setMsgText(t.text);};
 
   const sendAll=async()=>{
-    if(toSend.length===0){alert("אין אורחים לשליחה עם מספר טלפון");return;}
+    if(toSend.length===0){alert(sendTo.length?"אין אורחים עם מספר טלפון בקבוצה שנבחרה":"בחר למי לשלוח");return;}
     if(smsBalance!==null&&smsBalance<totalSmsNeeded){
       alert(`אין מספיק SMS!\nנדרש: ${totalSmsNeeded} | יתרה: ${smsBalance}\nרכוש SMS נוספים למטה.`);return;
     }
@@ -4993,7 +5020,7 @@ function SMSScreen({ event, guests }) {
           <div>
             <div style={{fontSize:13,fontWeight:800,color:C.text}}>יתרת SMS</div>
             <div style={{fontSize:11,color:C.muted}}>
-              {totalSmsNeeded>0?`נדרש לשליחה: ${totalSmsNeeded} SMS`:"בחר אורחים לשליחה"}
+              {totalSmsNeeded>0?`נדרש לשליחה: ${totalSmsNeeded} SMS`:sendTo.length?"נדרש לשליחה: 0 SMS":"בחר למי לשלוח · נדרש: 0 SMS"}
             </div>
           </div>
         </div>
@@ -5096,20 +5123,9 @@ function SMSScreen({ event, guests }) {
           {/* פילטר */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👥 למי לשלוח?</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {[
-                {v:"all",    l:`כולם (${withPhone.length})`,                                              c:"#2B6CB0"},
-                {v:"pending",l:`ממתינים (${withPhone.filter(g=>!g.rsvp||g.rsvp==="pending").length})`,   c:"#718096"},
-                {v:"confirmed",l:`מגיעים (${withPhone.filter(g=>g.rsvp==="confirmed").length})`,          c:"#276749"},
-                {v:"declined", l:`לא מגיעים (${withPhone.filter(g=>g.rsvp==="declined").length})`,       c:"#C53030"},
-              ].map(f=>(
-                <button key={f.v} onClick={()=>setFilterRsvp(f.v)}
-                  style={{background:filterRsvp===f.v?f.c:"#fff",color:filterRsvp===f.v?"#fff":f.c,
-                    border:`2px solid ${f.c}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,
-                    cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                  {f.l}
-                </button>
-              ))}
+            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
+            <div style={{fontSize:11,color:C.muted,margin:"8px 0 12px"}}>
+              {sendTo.length?`${toSend.length} אורחים · ${totalSmsNeeded} SMS`:"לא נבחרו נמענים  -  לא יישלח כלום"}
             </div>
 
           {/* תזמון שליחה SMS  -  נשמר באירוע */}
@@ -5124,7 +5140,7 @@ function SMSScreen({ event, guests }) {
               color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
               cursor:sending||toSend.length===0||!hasBalance?"default":"pointer",fontFamily:"inherit",
               boxShadow:sending||toSend.length===0||!hasBalance?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
-            {sending?`שולח... ${progress}%`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:`📱 שלח SMS ל-${toSend.length} אורחים`}
+            {sending?`שולח... ${progress}%`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:toSend.length===0?"בחר למי לשלוח":`📱 שלח SMS ל-${toSend.length} אורחים (${totalSmsNeeded} SMS)`}
           </button>
 
           {/* Progress Bar */}
@@ -5262,7 +5278,7 @@ function WhatsAppScreen({ event, guests }) {
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
-  const [filterRsvp,setFilterRsvp]=useState("all");
+  const [sendTo,setSendTo]=useState([]);
   const [sending,setSending]=useState(false);
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
@@ -5280,9 +5296,7 @@ function WhatsAppScreen({ event, guests }) {
   },[guests]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=filterRsvp==="all"?withPhone
-    :filterRsvp==="pending"?withPhone.filter(g=>!g.rsvp||g.rsvp==="pending")
-    :withPhone.filter(g=>g.rsvp===filterRsvp);
+  const toSend=pickRecipients(withPhone,sendTo);
 
   const buildPreview=(g)=>{
     if(!g)return msgText;
@@ -5457,20 +5471,9 @@ function WhatsAppScreen({ event, guests }) {
           {/* פילטר */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👥 למי לשלוח?</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {[
-                {v:"all",    l:`כולם (${withPhone.length})`,                                               c:"#2B6CB0"},
-                {v:"pending",l:`ממתינים (${withPhone.filter(g=>!g.rsvp||g.rsvp==="pending").length})`,    c:"#718096"},
-                {v:"confirmed",l:`מגיעים (${withPhone.filter(g=>g.rsvp==="confirmed").length})`,           c:"#276749"},
-                {v:"declined", l:`לא מגיעים (${withPhone.filter(g=>g.rsvp==="declined").length})`,        c:"#C53030"},
-              ].map(f=>(
-                <button key={f.v} onClick={()=>setFilterRsvp(f.v)}
-                  style={{background:filterRsvp===f.v?f.c:"#fff",color:filterRsvp===f.v?"#fff":f.c,
-                    border:`2px solid ${f.c}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,
-                    cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                  {f.l}
-                </button>
-              ))}
+            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
+            <div style={{fontSize:11,color:C.muted,marginTop:8}}>
+              {sendTo.length?`${toSend.length} אורחים`:"לא נבחרו נמענים  -  לא יישלח כלום"}
             </div>
           </div>
 
@@ -5484,7 +5487,7 @@ function WhatsAppScreen({ event, guests }) {
               color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
               cursor:sending||toSend.length===0?"default":"pointer",fontFamily:"inherit",
               boxShadow:sending||toSend.length===0?"none":"0 4px 20px rgba(37,211,102,.4)",transition:"all .2s"}}>
-            {sending?`שולח... ${progress}%`:`💬 שלח ל-${toSend.length} אורחים`}
+            {sending?`שולח... ${progress}%`:toSend.length===0?"בחר למי לשלוח":`💬 שלח ל-${toSend.length} אורחים`}
           </button>
 
           {/* Progress Bar */}
