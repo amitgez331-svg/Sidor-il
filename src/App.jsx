@@ -64,6 +64,13 @@ const parseGuestLine = line => {
   const name=rest.replace(/[,;|\t]+/g," ").replace(/\s+/g," ").trim().replace(/^[-–:.\s]+|[-–:.\s]+$/g,"");
   return {name,phone,count};
 };
+// אם הקלידו טלפון בתוך שדה השם ("עומרי גז 0526817106") ושדה הטלפון ריק  -  מפרידים
+const splitNamePhone = (name,phone) => {
+  const n=String(name||"").trim();
+  if(normPhone(phone))return {name:n,phone:String(phone).trim()};
+  const p=parseGuestLine(n);
+  return p.phone&&p.name?{name:p.name,phone:p.phone}:{name:n,phone:String(phone||"").trim()};
+};
 // שורה מגיליון אקסל ← שם + טלפון, לפי שמות עמודות נפוצים (ואם אין  -  מנחשים מהתוכן)
 const parseSheetRow = r => {
   const keys=Object.keys(r);
@@ -352,7 +359,10 @@ function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], deskto
 
   const allRelations=[...Object.keys(RELATION_COLORS),...customRelations];
 
+  // טלפון שהוקלד בתוך שדה השם עובר לשדה הטלפון (כשיוצאים מהשדה ובשמירה)
+  const moveNamePhone=()=>{const sp=splitNamePhone(name,phone);if(sp.name!==name.trim()||sp.phone!==phone.trim()){setName(sp.name);setPhone(sp.phone);}return sp;};
   const handleSave=()=>{
+    const sp=moveNamePhone();const name=sp.name,phone=sp.phone;
     if(!name.trim())return;
     // טלפון שכבר קיים (גם בעריכה, אצל אורח אחר)  -  אסור לשמור כפול; מציעים רק לעדכן מספר מוזמנים
     const byPhone=findByPhone(existingGuests,phone,guest?.id);
@@ -417,7 +427,7 @@ function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], deskto
         <div style={{fontWeight:800,fontSize:18,color:C.text,marginBottom:18}}>{isEdit?"✏️ עריכת אורח":"➕ הוסף אורח"}</div>
 
         <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>שם מלא *</div>
-        <input value={name} onChange={e=>setName(e.target.value)} placeholder="ישראל ישראלי"
+        <input value={name} onChange={e=>setName(e.target.value)} onBlur={moveNamePhone} placeholder="ישראל ישראלי"
           style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 14px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14}}/>
 
         <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>מספר פלאפון</div>
@@ -2184,13 +2194,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
   const editTable=async(id,name,type,seats)=>{setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
   const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
   const addGuest=async(data)=>{
-    const name=(data?.name||newGuest).trim();if(!name)return;
+    const sp=splitNamePhone(data?.name||newGuest,data?.phone);
+    const name=sp.name;if(!name)return;
+    // הוספה מהירה (שורת "שם אורח חדש") עם טלפון שכבר קיים  -  לא יוצרים כפול
+    if(!data&&findByPhone([...guests,...tables.flatMap(t=>t.guests||[])],sp.phone)){alert(`📞 המספר ${sp.phone} כבר קיים ברשימה  -  אפשר לעדכן את האורח הקיים דרך ✏️`);return;}
     setSaving(true);
-    const{data:d}=await sb.from("guests").insert({name,phone:data?.phone||null,rsvp:data?.rsvp||"pending",guest_count:data?.guest_count||1,event_id:event.id,table_id:null}).select().single();
+    const{data:d}=await sb.from("guests").insert({name,phone:sp.phone||null,rsvp:data?.rsvp||"pending",guest_count:data?.guest_count||1,event_id:event.id,table_id:null}).select().single();
     if(d)setGuests(gs=>[...gs,d]);
     setNewGuest("");setSaving(false);
   };
   const editGuest=async(id,data)=>{
+    data={...data,...splitNamePhone(data.name,data.phone)};
     setSaving(true);
     await sb.from("guests").update({name:data.name,phone:data.phone||null,rsvp:data.rsvp,guest_count:data.guest_count}).eq("id",id);
     setGuests(gs=>gs.map(g=>g.id===id?{...g,...data}:g));
@@ -3654,6 +3668,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
   const saveEdit=async()=>{
     if(!editG)return;
+    // טלפון שנכתב בתוך השם  -  מעבירים לשדה הטלפון
+    {const sp=splitNamePhone(editG.name,editG.phone);if(sp.name!==String(editG.name||"").trim()){editG.name=sp.name;editG.phone=sp.phone;setEditG({...editG});}}
     // טלפון שכבר שייך לאורח אחר  -  לא שומרים כפול, רק מציעים לעדכן את מספר המוזמנים שלו
     const byPhone=findByPhone(allGuests,editG.phone,editG.id);
     if(byPhone){setPhoneDup(byPhone);setDupCount(Math.max(byPhone.guest_count||1,Number(editG.guest_count)||1));return;}
@@ -5673,7 +5689,7 @@ function InvitePage({ code, guestId }) {
   const [loading,setLoading]=useState(true);
   const [firstName,setFirstName]=useState("");
   const [lastName,setLastName]=useState("");
-  const [phone,setPhone]=useState("");
+  const [phoneState,setPhone]=useState("");
   const [guestCount,setGuestCount]=useState(1);
   const [rsvp,setRsvp]=useState(null);
   const [submitting,setSubmitting]=useState(false);
@@ -5683,6 +5699,7 @@ function InvitePage({ code, guestId }) {
   const [dupGuest,setDupGuest]=useState(null);
   const [showDupModal,setShowDupModal]=useState(false);
   const [phoneDupInv,setPhoneDupInv]=useState(false); // הטלפון כבר רשום  -  מציעים רק עדכון מספר מוזמנים
+  const resolvedRef=useRef(null); // שם/טלפון אחרי הפרדה (אם הטלפון נכתב בשדה השם)
 
   useEffect(()=>{
     sb.from("events").select("*").eq("invite_code",code).eq("invite_active",true).single()
@@ -5710,7 +5727,9 @@ function InvitePage({ code, guestId }) {
   },[code,guestId]);
 
   const doInsert=async()=>{
-    const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    const r=resolvedRef.current;
+    const fullName=r?.name||`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    const phone=r?.phone??phoneState;
     if(knownGuest){
       // עדכן את האורח הידוע מהקישור
       await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||knownGuest.phone||null,views:(knownGuest.views||0)+1}).eq("id",knownGuest.id);
@@ -5722,6 +5741,7 @@ function InvitePage({ code, guestId }) {
 
   const doUpdate=async()=>{
     setSubmitting(true);
+    const phone=resolvedRef.current?.phone??phoneState;
     await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null,views:(dupGuest.views||0)+1}).eq("id",dupGuest.id);
     setSubmitted(true);setSubmitting(false);setShowDupModal(false);setPhoneDupInv(false);
   };
@@ -5729,7 +5749,12 @@ function InvitePage({ code, guestId }) {
   const submit=async()=>{
     if(!firstName.trim()||!rsvp)return;
     setSubmitting(true);
-    const fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    // אורח שכתב את הטלפון בשדה השם  -  מפרידים לפני השמירה
+    const sp=splitNamePhone(`${firstName.trim()} ${lastName.trim()}`,phoneState);
+    let fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
+    let phone=phoneState.trim();
+    if(sp.phone&&sp.phone!==phone){fullName=sp.name;phone=sp.phone;setPhone(sp.phone);const [f,...l]=sp.name.split(" ");setFirstName(f||"");setLastName(l.join(" "));}
+    resolvedRef.current={name:fullName,phone};
     // בדוק כפילות לפי שם או טלפון
     let query=sb.from("guests").select("*").eq("event_id",event.id);
     const nameClean=fullName.trim().toLowerCase();
@@ -5963,7 +5988,7 @@ function InvitePage({ code, guestId }) {
               style={{background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",fontSize:14,color:"#111",outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
           </div>
 
-          <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="מספר נייד" type="tel"
+          <input value={phoneState} onChange={e=>setPhone(e.target.value)} placeholder="מספר נייד" type="tel"
             style={{width:"100%",background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",fontSize:14,color:"#111",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14}}/>
 
           <div style={{textAlign:"center",marginBottom:16}}>
