@@ -39,6 +39,73 @@ const isMobile = () => window.innerWidth < 1024;
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
+// ─── ייבוא אורחים ─────────────────────────────────────────────────────────────
+// טלפון בתצוגה אחידה: 05X-XXXXXXX (אקסל מוחק את ה-0 בהתחלה  -  מחזירים אותו)
+const formatPhone = raw => {
+  let d=String(raw??"").replace(/\D/g,"");
+  if(d.startsWith("972"))d="0"+d.slice(3);
+  if(d.length===9&&/^[2-9]/.test(d))d="0"+d;
+  if(d.length===10&&d.startsWith("05"))return d.slice(0,3)+"-"+d.slice(3);
+  return d||"";
+};
+// שורה חופשית ← שם + טלפון (+ מספר מוזמנים אם יש מספר קטן בסוף, למשל "שרה לוי, 4").
+// הטלפון יכול להיות בכל מקום בשורה, מופרד בפסיק, רווח, טאב או כל דבר אחר
+const parseGuestLine = line => {
+  const s=String(line||"").replace(/‏|‎/g,"").trim();
+  // טלפון ישראלי: מתחיל ב-0 או ב-972 (עם/בלי +), עם או בלי רווחים ומקפים; גיבוי: 9 ספרות שמתחילות ב-5 (אקסל מחק את ה-0)
+  const m=s.match(/(?:\+?972[\s\-.]?|\b0)(?:[\s\-.()]?\d){8,9}(?!\d)/)||s.match(/\b5\d{8}\b/);
+  const phone=m?formatPhone(m[0]):"";
+  const LABEL="(?:נייד|טלפון|טל'?|פלאפון|phone|tel|mobile)";
+  let rest=m?s.slice(0,m.index).replace(new RegExp(LABEL+"\\s*[:.]?\\s*$","i"),"")+" "+s.slice(m.index+m[0].length):s;
+  rest=rest.replace(new RegExp(LABEL+"\\s*:","gi")," ").replace(/\(\s*\)/g," ");
+  let count=1;
+  const cm=rest.match(/(?:^|[\s,;|\t])(\d{1,2})\s*$/);
+  if(cm&&+cm[1]>=1&&+cm[1]<=30){count=+cm[1];rest=rest.slice(0,cm.index);}
+  const name=rest.replace(/[,;|\t]+/g," ").replace(/\s+/g," ").trim().replace(/^[-–:.\s]+|[-–:.\s]+$/g,"");
+  return {name,phone,count};
+};
+// שורה מגיליון אקסל ← שם + טלפון, לפי שמות עמודות נפוצים (ואם אין  -  מנחשים מהתוכן)
+const parseSheetRow = r => {
+  const keys=Object.keys(r);
+  const k=re=>keys.find(x=>re.test(String(x).trim()));
+  const phoneKey=k(/טלפון|פלאפון|נייד|סלולרי|phone|mobile|tel|cell/i);
+  const fullKey=k(/^(שם מלא|שם|name|full ?name|guest)$/i)||k(/שם מלא|full ?name/i);
+  const firstKey=k(/שם פרטי|first/i), lastKey=k(/שם משפחה|משפחה|last|surname/i);
+  const countKey=k(/כמות|מוזמנים|אורחים|מספר אורחים|count|guests|qty/i);
+  let name=fullKey?String(r[fullKey]??""):[firstKey&&r[firstKey],lastKey&&r[lastKey]].filter(Boolean).join(" ");
+  let phone=phoneKey?formatPhone(r[phoneKey]):"";
+  let count=countKey?Math.min(30,Math.max(1,parseInt(r[countKey])||1)):1;
+  if(name&&!phone){
+    // הטלפון נכתב בתוך עמודת השם  -  מפרידים
+    const p=parseGuestLine(name); if(p.phone){name=p.name;phone=p.phone;}
+  }
+  if(!name){
+    // בלי כותרות מוכרות: מחברים את כל התאים ומפרידים לבד
+    const p=parseGuestLine(keys.map(x=>r[x]).join(" "));
+    name=p.name; phone=phone||p.phone; if(!countKey)count=p.count;
+  }
+  return {name:String(name).trim(),phone,count};
+};
+// מכינים רשימה לשמירה: מדלגים על טלפונים שכבר קיימים (באירוע או פעמיים באותו קובץ)
+const prepareImport = (parsed,existing,eventId) => {
+  const seen=new Set((existing||[]).map(g=>normPhone(g.phone)).filter(Boolean));
+  const toInsert=[],dupes=[];
+  for(const p of parsed){
+    if(!p.name||p.name.length<2)continue;
+    const n=normPhone(p.phone);
+    if(n&&seen.has(n)){dupes.push(p);continue;}
+    if(n)seen.add(n);
+    toInsert.push({name:p.name,phone:p.phone||null,rsvp:"pending",guest_count:p.count||1,event_id:eventId,table_id:null});
+  }
+  return {toInsert,dupes};
+};
+const importSummary = ({toInsert,dupes}) => {
+  const withPhone=toInsert.filter(g=>g.phone).length;
+  let msg=`✅ יובאו ${toInsert.length} אורחים (${withPhone} עם טלפון)`;
+  if(dupes.length)msg+=`\n⚠️ ${dupes.length} דולגו כי מספר הטלפון כבר קיים ברשימה:\n`+dupes.slice(0,8).map(d=>`• ${d.name} ${d.phone}`).join("\n")+(dupes.length>8?"\n...":"");
+  return msg;
+};
+
 // חלון "המספר כבר קיים": האפשרות היחידה היא לעדכן את מספר המוזמנים של האורח הקיים
 function PhoneExistsDialog({ guest, count, setCount, onUpdate, onBack, busy=false, zIndex=320 }) {
   return(
@@ -2351,7 +2418,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
             <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
               <div style={{fontSize:36,marginBottom:8}}>📊</div>
               <div style={{fontSize:15,fontWeight:700,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ .xlsx עם עמודות: שם, טלפון</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
               <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
                 📂 בחר קובץ Excel
                 <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
@@ -2363,26 +2430,22 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                     const wb=read(buf);
                     const ws=wb.Sheets[wb.SheetNames[0]];
                     const rows=utils.sheet_to_json(ws);
-                    const guestsToImport=rows.map(r=>({
-                      name:String(r["שם"]||r["name"]||r["Name"]||"").trim(),
-                      phone:String(r["טלפון"]||r["phone"]||r["Phone"]||"").trim()||null,
-                      rsvp:"pending",guest_count:1,event_id:event.id,table_id:null
-                    })).filter(g=>g.name.length>1);
-                    if(guestsToImport.length>0){await sb.from("guests").insert(guestsToImport);await loadAll();}
-                    alert(`✅ יובאו ${guestsToImport.length} אורחים!`);
+                    const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
+                    if(res.toInsert.length>0){await sb.from("guests").insert(res.toInsert);await loadAll();}
+                    alert(importSummary(res));
                   }catch(err){alert("שגיאה בקריאת הקובץ");}
                   setSaving(false);
                 }}/>
               </label>
             </div>
             <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם אחד בכל שורה (אפשר להוסיף טלפון אחרי פסיק)</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
             <textarea placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543\n..."} id="importText"
               style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:14,fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",minHeight:160,boxSizing:"border-box",marginBottom:14,resize:"vertical"}}/>
             <button onClick={async()=>{
               const text=document.getElementById("importText").value;
               const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);
-              const toInsert=lines.map(l=>{const parts=l.split(",");return{name:parts[0].trim(),phone:parts[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);
+              const res=prepareImport(lines.map(parseGuestLine),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);const toInsert=res.toInsert;if(res.dupes.length||toInsert.length)alert(importSummary(res));
               if(toInsert.length>0){setSaving(true);await sb.from("guests").insert(toInsert);await loadAll();setSaving(false);setScreen("home");}
             }} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
               ייבא וסיים ←
@@ -3190,7 +3253,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
             <div style={{fontSize:36,marginBottom:8}}>📊</div>
             <div style={{fontSize:16,fontWeight:800,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ .xlsx עם עמודות: שם, טלפון</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
             <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
               📂 בחר קובץ Excel
               <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
@@ -3202,12 +3265,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   const wb=read(buf);
                   const ws=wb.Sheets[wb.SheetNames[0]];
                   const rows=utils.sheet_to_json(ws);
-                  const toImport=rows.map(r=>({
-                    name:String(r["שם"]||r["name"]||r["Name"]||Object.values(r)[0]||"").trim(),
-                    phone:String(r["טלפון"]||r["phone"]||r["Phone"]||"").trim()||null,
-                    rsvp:"pending",guest_count:1,event_id:event.id,table_id:null
-                  })).filter(g=>g.name.length>1);
-                  if(toImport.length>0){await sb.from("guests").insert(toImport);await loadAll();alert(`✅ יובאו ${toImport.length} אורחים!`);}
+                  const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
+                  if(res.toInsert.length>0){await sb.from("guests").insert(res.toInsert);await loadAll();}
+                  alert(importSummary(res));
                 }catch(err){alert("שגיאה בקריאת הקובץ. וודא שיש עמודת 'שם'");}
                 setSaving(false);
               }}/>
@@ -3215,12 +3275,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           </div>
           {/* ייבוא ידני */}
           <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
-          <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם אחד בכל שורה (אפשר להוסיף טלפון אחרי פסיק)</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
           <textarea id="importTextDesktop" placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543\n..."} style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:14,fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",minHeight:180,boxSizing:"border-box",resize:"vertical",marginBottom:14}}/>
           <button onClick={async()=>{
             const text=document.getElementById("importTextDesktop").value;
             const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);
-            const toInsert=lines.map(l=>{const parts=l.split(",");return{name:parts[0].trim(),phone:parts[1]?.trim()||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null};}).filter(g=>g.name.length>1);
+            const res=prepareImport(lines.map(parseGuestLine),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);const toInsert=res.toInsert;if(res.dupes.length||toInsert.length)alert(importSummary(res));
             if(toInsert.length>0){setSaving(true);await sb.from("guests").insert(toInsert);await loadAll();setSaving(false);setScreen("home");}
           }} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
             ייבא וסיים ←
