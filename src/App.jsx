@@ -35,6 +35,42 @@ const pct    = t => t.seats ? Math.round((t.guests||[]).length/t.seats*100) : 0;
 const sColor = t => { const g=(t.guests||[]).length; return g>=t.seats?C.danger:g>=t.seats*.8?C.gold:C.success; };
 const isMobile = () => window.innerWidth < 1024;
 
+// השוואת טלפונים: רק ספרות, ו-972 בהתחלה נחשב כמו 0 (‎+972 52… = 052…)
+const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
+const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
+
+// חלון "המספר כבר קיים": האפשרות היחידה היא לעדכן את מספר המוזמנים של האורח הקיים
+function PhoneExistsDialog({ guest, count, setCount, onUpdate, onBack, busy=false, zIndex=320 }) {
+  return(
+    <div style={{position:"fixed",inset:0,zIndex,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:"'Heebo',sans-serif"}} onClick={onBack}>
+      <div onClick={e=>e.stopPropagation()} dir="rtl" style={{background:"#fff",borderRadius:24,padding:"26px 22px 22px",width:"100%",maxWidth:420,boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)",animation:"sxPopIn .35s cubic-bezier(.3,1.4,.5,1) both"}}>
+        <div style={{width:58,height:58,borderRadius:18,background:"#FFF4E0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>📞</div>
+        <div style={{fontWeight:900,fontSize:19,color:C.text,textAlign:"center",marginBottom:6}}>המספר הזה כבר קיים ברשימה</div>
+        <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:16,lineHeight:1.6}}>אי אפשר לרשום את אותו מספר טלפון פעמיים.<br/>אפשר לעדכן את מספר המוזמנים של האורח הקיים:</div>
+        <div style={{background:C.blueXL,borderRadius:16,padding:"12px 14px",marginBottom:16,border:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:42,height:42,borderRadius:"50%",background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:900,flexShrink:0}}>{guest.name?.[0]}</div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:15,fontWeight:900,color:C.text}}>{guest.name}</div>
+            <div style={{fontSize:12,color:C.muted,direction:"ltr",textAlign:"right"}}>{guest.phone}</div>
+            <div style={{fontSize:12,color:C.muted}}>כרגע: {guest.guest_count||1} מוזמנים · {guest.rsvp==="confirmed"?"✅ מגיע":guest.rsvp==="declined"?"❌ לא מגיע":"⏳ ממתין"}</div>
+          </div>
+        </div>
+        <div style={{fontSize:12,fontWeight:800,color:C.muted,marginBottom:8,textAlign:"center"}}>מספר מוזמנים מעודכן</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:18}}>
+          <button onClick={()=>setCount(c=>Math.max(1,c-1))} aria-label="פחות" style={{width:44,height:44,borderRadius:14,border:`1.5px solid ${C.border}`,background:"#fff",fontSize:22,fontWeight:900,color:C.blue,cursor:"pointer"}}>−</button>
+          <span style={{fontSize:32,fontWeight:900,color:C.text,minWidth:40,textAlign:"center"}}>{count}</span>
+          <button onClick={()=>setCount(c=>Math.min(30,c+1))} aria-label="יותר" style={{width:44,height:44,borderRadius:14,border:"none",background:GRAD,fontSize:22,fontWeight:900,color:"#fff",cursor:"pointer"}}>+</button>
+        </div>
+        <button onClick={onUpdate} disabled={busy} className="sx-btn sx-btn-primary"
+          style={{width:"100%",background:GRAD,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:8,opacity:busy?.6:1}}>
+          {busy?"מעדכן...":"✅ עדכן מספר מוזמנים"}
+        </button>
+        <button onClick={onBack} style={{width:"100%",background:"transparent",color:C.muted,border:"none",padding:"8px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>→ חזרה</button>
+      </div>
+    </div>
+  );
+}
+
 const Spinner = ({size=24,color=C.blue}) => (
   <div style={{width:size,height:size,borderRadius:"50%",border:`2.5px solid ${color}22`,borderTopColor:color,animation:"spin .7s linear infinite",flexShrink:0}}/>
 );
@@ -229,7 +265,7 @@ function GuestChip({ guest, tableId, onRemove }) {
 }
 
 // ─── ADD/EDIT GUEST MODAL ─────────────────────────────────────────────────────
-function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false }) {
+function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false, onUpdateExisting }) {
   const [name,setName]=useState(guest?.name||"");
   const [phone,setPhone]=useState(guest?.phone||"");
   const [rsvp,setRsvp]=useState(guest?.rsvp||"pending");
@@ -239,6 +275,9 @@ function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], deskto
   const [addingCat,setAddingCat]=useState(false);
   const [newCat,setNewCat]=useState("");
   const [dupGuest,setDupGuest]=useState(null);
+  const [phoneDup,setPhoneDup]=useState(null);
+  const [dupCount,setDupCount]=useState(1);
+  const [busy,setBusy]=useState(false);
   const isEdit=!!guest?.id;
 
   const COLORS=["#E53E3E","#DD6B20","#38A169","#3182CE","#805AD5","#D69E2E","#D53F8C","#319795"];
@@ -248,20 +287,27 @@ function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], deskto
 
   const handleSave=()=>{
     if(!name.trim())return;
+    // טלפון שכבר קיים (גם בעריכה, אצל אורח אחר)  -  אסור לשמור כפול; מציעים רק לעדכן מספר מוזמנים
+    const byPhone=findByPhone(existingGuests,phone,guest?.id);
+    if(byPhone){setPhoneDup(byPhone);setDupCount(Math.max(byPhone.guest_count||1,count));return;}
     if(!isEdit){
       const nameClean=name.trim().toLowerCase();
-      const phoneClean=phone.trim().replace(/\D/g,"");
-      const found=existingGuests.find(g=>{
-        const nameMatch=g.name.trim().toLowerCase()===nameClean;
-        const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean;
-        return nameMatch||phoneMatch;
-      });
+      const found=existingGuests.find(g=>g.name.trim().toLowerCase()===nameClean);
       if(found){setDupGuest(found);return;}
     }
     onSave({name:name.trim(),phone:phone.trim(),rsvp,guest_count:count,relation});
   };
 
-  // מודל כפילות
+  if(phoneDup){
+    return <PhoneExistsDialog guest={phoneDup} count={dupCount} setCount={setDupCount} busy={busy}
+      onBack={()=>setPhoneDup(null)}
+      onUpdate={async()=>{
+        if(!onUpdateExisting){setPhoneDup(null);return;}
+        setBusy(true);await onUpdateExisting(phoneDup,dupCount);setBusy(false);
+      }}/>;
+  }
+
+  // מודל כפילות (שם זהה בלבד  -  יכולים להיות שני אנשים עם אותו שם)
   if(dupGuest){
     return(
       <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
@@ -2263,7 +2309,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       <div style={{flex:1,overflow:"auto"}}>
         {screen==="home"&&<HomeScreen/>}
         {screen==="seating"&&<MobileSeating tables={tables} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
-        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
+        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <div style={{fontSize:13,color:C.muted,marginBottom:20}}>הוסף אורחים אחד אחד עם כל הפרטים</div>
@@ -2297,7 +2343,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
               <button onClick={()=>{setModal(null);setScreen("packages");}} style={{width:"100%",background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📦 שדרג חבילה</button>
             </div>
           </div>
-          :<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
+          :<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
         )}
         {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal}/>}
         {screen==="import"&&(
@@ -3118,7 +3164,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     </div>}
 
     {/* GuestModal לדסקטופ */}
-    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
+    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
 
     {/* EditTableModal לדסקטופ  -  נפתח מכפתור עריכה במפה */}
     {editTableData&&<EditTableModal table={editTableData} onClose={()=>setEditTableData(null)}
@@ -3183,7 +3229,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       </div>
     )}
 
-    {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
+    {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
     {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
     {/* WhatsApp צף */}
@@ -3519,6 +3565,17 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const [editG,setEditG]=useState(null);
   const [saving,setSaving]=useState(false);
   const [filterRsvp,setFilterRsvp]=useState("all");
+  const [phoneDup,setPhoneDup]=useState(null);
+  const [dupCount,setDupCount]=useState(1);
+  // עדכון מספר המוזמנים של האורח הקיים (במקום לשמור טלפון כפול)
+  const updateDupCount=async()=>{
+    setSaving(true);
+    await sb.from("guests").update({guest_count:dupCount}).eq("id",phoneDup.id);
+    const fix=x=>x.id===phoneDup.id?{...x,guest_count:dupCount}:x;
+    setGuests(gs=>gs.map(fix));
+    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(fix)})));
+    setSaving(false);setPhoneDup(null);setEditG(null);
+  };
   const RELATIONS=["משפחה קרובה","משפחה מורחבת","חברים קרובים","חברים רחוקים","חברים של ההורים","ללא שיוך"];
 
   const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -3537,14 +3594,11 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
   const saveEdit=async()=>{
     if(!editG)return;
+    // טלפון שכבר שייך לאורח אחר  -  לא שומרים כפול, רק מציעים לעדכן את מספר המוזמנים שלו
+    const byPhone=findByPhone(allGuests,editG.phone,editG.id);
+    if(byPhone){setPhoneDup(byPhone);setDupCount(Math.max(byPhone.guest_count||1,Number(editG.guest_count)||1));return;}
     const nameClean=editG.name.trim().toLowerCase();
-    const phoneClean=(editG.phone||"").trim().replace(/\D/g,"");
-    const dup=allGuests.find(g=>{
-      if(g.id===editG.id)return false;
-      const nameMatch=g.name.trim().toLowerCase()===nameClean;
-      const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean;
-      return nameMatch||phoneMatch;
-    });
+    const dup=allGuests.find(g=>g.id!==editG.id&&g.name.trim().toLowerCase()===nameClean);
     if(dup){
       const ok=window.confirm(`קיים אורח דומה: "${dup.name}" (${dup.phone||"ללא טלפון"})\nהאם להמשיך בכל זאת?`);
       if(!ok)return;
@@ -3596,6 +3650,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
   return(
     <div style={{direction:"rtl",width:"100%",display:"flex",flexDirection:"column"}}>
+      {phoneDup&&<PhoneExistsDialog guest={phoneDup} count={dupCount} setCount={setDupCount} busy={saving} onBack={()=>setPhoneDup(null)} onUpdate={updateDupCount}/>}
       {/* כותרת + כפתורים */}
       <div style={{padding:"16px 24px 0"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -5567,6 +5622,7 @@ function InvitePage({ code, guestId }) {
   // duplicate detection
   const [dupGuest,setDupGuest]=useState(null);
   const [showDupModal,setShowDupModal]=useState(false);
+  const [phoneDupInv,setPhoneDupInv]=useState(false); // הטלפון כבר רשום  -  מציעים רק עדכון מספר מוזמנים
 
   useEffect(()=>{
     sb.from("events").select("*").eq("invite_code",code).eq("invite_active",true).single()
@@ -5605,8 +5661,9 @@ function InvitePage({ code, guestId }) {
   };
 
   const doUpdate=async()=>{
+    setSubmitting(true);
     await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null,views:(dupGuest.views||0)+1}).eq("id",dupGuest.id);
-    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
+    setSubmitted(true);setSubmitting(false);setShowDupModal(false);setPhoneDupInv(false);
   };
 
   const submit=async()=>{
@@ -5616,13 +5673,18 @@ function InvitePage({ code, guestId }) {
     // בדוק כפילות לפי שם או טלפון
     let query=sb.from("guests").select("*").eq("event_id",event.id);
     const nameClean=fullName.trim().toLowerCase();
-    const phoneClean=phone.trim();
     const{data:existing}=await query;
-    const found=(existing||[]).find(g=>{
-      const nameMatch=g.name.trim().toLowerCase()===nameClean;
-      const phoneMatch=phoneClean&&g.phone&&g.phone.replace(/\D/g,"")===phoneClean.replace(/\D/g,"");
-      return nameMatch||phoneMatch;
-    });
+    // אותו טלפון  -  לא יוצרים אורח כפול; האפשרות היחידה היא לעדכן את מספר המוזמנים
+    const byPhone=findByPhone(existing,phone,knownGuest?.id);
+    if(byPhone){
+      setDupGuest(byPhone);
+      setGuestCount(c=>Math.max(c,1));
+      setPhoneDupInv(true);
+      setSubmitting(false);
+      return;
+    }
+    if(knownGuest){await doInsert();return;} // אורח שזוהה מהקישור האישי  -  מעדכנים אותו ישירות
+    const found=(existing||[]).find(g=>g.name.trim().toLowerCase()===nameClean);
     if(found){
       setDupGuest(found);
       setShowDupModal(true);
@@ -5714,7 +5776,9 @@ function InvitePage({ code, guestId }) {
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
-      {showDupModal&&<DupModal/>}
+      {showDupModal&&DupModal()}
+      {phoneDupInv&&dupGuest&&<PhoneExistsDialog guest={dupGuest} count={guestCount} setCount={setGuestCount} busy={submitting}
+        zIndex={450} onBack={()=>setPhoneDupInv(false)} onUpdate={doUpdate}/>}
 
       {/* אפקט קונפטי */}
       {(event.settings_json?.confetti??true)&&(()=>{
