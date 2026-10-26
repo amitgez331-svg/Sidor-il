@@ -78,7 +78,11 @@ Deno.serve(async (req) => {
     }
 
     // שליחה ל-019 (bulk: הודעה אישית לכל אורח)
-    const source = Deno.env.get("SMS019_SOURCE") || "Sidor-IL";
+    // שם השולח כפי שמאושר ב-019. מנקים רווחים; אם זה מספר טלפון — מנרמלים ל-05XXXXXXXX
+    const rawSource = (Deno.env.get("SMS019_SOURCE") || "Sidor-IL").trim();
+    const srcDigits = rawSource.replace(/[\s\-().+]/g, "");
+    const source = /^\d+$/.test(srcDigits) ? (srcDigits.startsWith("972") ? "0" + srcDigits.slice(3) : srcDigits) : rawSource.replace(/\s+/g, "");
+    const sourceShown = /^\d+$/.test(source) ? source.slice(0, 3) + "****" + source.slice(-3) : source;
     const body = {
       bulk: {
         user: { username: Deno.env.get("SMS019_USERNAME") },
@@ -101,9 +105,10 @@ Deno.serve(async (req) => {
     if (!ok) {
       // 019 לא קיבל את השליחה — מחזירים את כל היחידות
       const { data: refunded } = await admin.rpc("sms_refund", { p_event: event_id, p_amount: units, p_note: `החזר: 019 status ${data?.status ?? "?"}` });
-      console.error("019 failed:", JSON.stringify(data));
+      console.error("019 failed:", JSON.stringify(data), "source:", sourceShown, "raw length:", rawSource.length);
+      const hint = Number(data?.status) === 515 ? ` שם השולח שנשלח: "${sourceShown}" — צריך להיות זהה בדיוק לשולח המאושר ב-019.` : "";
       return json({
-        error: `ספק ה-SMS דחה את השליחה (${data?.message || "שגיאה לא ידועה"}). היתרה הוחזרה.`,
+        error: `ספק ה-SMS דחה את השליחה (${data?.message || "שגיאה לא ידועה"}).${hint} היתרה הוחזרה.`,
         provider_status: data?.status ?? null, balance: refunded,
         results: valid.map((i) => ({ name: i.name, phone: i.phone, status: "שגיאה ✗" })).concat(skipped),
       }, 502);
