@@ -39,6 +39,31 @@ const isMobile = () => window.innerWidth < 1024;
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
+// ─── שמירת אורח ───────────────────────────────────────────────────────────────
+// עדכון/הוספה עם בדיקת שגיאות. אם עמודת הקטגוריה (relation) עוד לא קיימת במסד  -  שומרים את שאר הפרטים ומודיעים
+const RELATION_MISSING_MSG="⚠️ הפרטים נשמרו, אבל הקטגוריה לא נשמרה (חסרה עמודת קטגוריה במסד הנתונים).";
+const isRelationErr=e=>!!e&&/relation/i.test(`${e.message||""} ${e.details||""} ${e.hint||""}`);
+const saveGuestRow=async(id,patch)=>{
+  let {error}=await sb.from("guests").update(patch).eq("id",id);
+  if(error&&"relation" in patch&&isRelationErr(error)){
+    const {relation,...rest}=patch;
+    ({error}=await sb.from("guests").update(rest).eq("id",id));
+    if(!error){alert(RELATION_MISSING_MSG);return {ok:true,relationSkipped:true};}
+  }
+  if(error){alert("❌ השמירה נכשלה: "+(error.message||"שגיאה לא ידועה"));return {ok:false,error};}
+  return {ok:true};
+};
+const insertGuestRow=async(row)=>{
+  let {data,error}=await sb.from("guests").insert(row).select().single();
+  if(error&&"relation" in row&&isRelationErr(error)){
+    const {relation,...rest}=row;
+    ({data,error}=await sb.from("guests").insert(rest).select().single());
+    if(!error)alert(RELATION_MISSING_MSG);
+  }
+  if(error)alert("❌ ההוספה נכשלה: "+(error.message||"שגיאה לא ידועה"));
+  return {data,error};
+};
+
 // ─── ייבוא אורחים ─────────────────────────────────────────────────────────────
 // טלפון בתצוגה אחידה: 05X-XXXXXXX (אקסל מוחק את ה-0 בהתחלה  -  מחזירים אותו)
 const formatPhone = raw => {
@@ -1951,9 +1976,12 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   const [editForm,setEditForm]=useState({});
   const openEdit=(g)=>{setEditModal(g);setEditForm({name:g.name||"",phone:g.phone||"",guest_count:g.guest_count||1,relation:g.relation||"ללא שיוך"});};
   const saveEdit=async()=>{
-    await sb.from("guests").update(editForm).eq("id",editModal.id);
-    setGuests(gs=>gs.map(x=>x.id===editModal.id?{...x,...editForm}:x));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===editModal.id?{...x,...editForm}:x)})));
+    const form={...editForm,...splitNamePhone(editForm.name,editForm.phone)};
+    const res=await saveGuestRow(editModal.id,form);
+    if(!res.ok)return;
+    const applied=res.relationSkipped?(({relation,...r})=>r)(form):form;
+    setGuests(gs=>gs.map(x=>x.id===editModal.id?{...x,...applied}:x));
+    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===editModal.id?{...x,...applied}:x)})));
     setEditModal(null);
   };
   const [search,setSearch]=useState("");
@@ -2199,16 +2227,23 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     // הוספה מהירה (שורת "שם אורח חדש") עם טלפון שכבר קיים  -  לא יוצרים כפול
     if(!data&&findByPhone([...guests,...tables.flatMap(t=>t.guests||[])],sp.phone)){alert(`📞 המספר ${sp.phone} כבר קיים ברשימה  -  אפשר לעדכן את האורח הקיים דרך ✏️`);return;}
     setSaving(true);
-    const{data:d}=await sb.from("guests").insert({name,phone:sp.phone||null,rsvp:data?.rsvp||"pending",guest_count:data?.guest_count||1,event_id:event.id,table_id:null}).select().single();
-    if(d)setGuests(gs=>[...gs,d]);
+    const row={name,phone:sp.phone||null,rsvp:data?.rsvp||"pending",guest_count:data?.guest_count||1,event_id:event.id,table_id:null};
+    if(data?.relation)row.relation=data.relation;
+    const{data:d}=await insertGuestRow(row);
+    if(d)setGuests(gs=>[...gs,{relation:row.relation,...d}]);
     setNewGuest("");setSaving(false);
   };
   const editGuest=async(id,data)=>{
     data={...data,...splitNamePhone(data.name,data.phone)};
     setSaving(true);
-    await sb.from("guests").update({name:data.name,phone:data.phone||null,rsvp:data.rsvp,guest_count:data.guest_count}).eq("id",id);
-    setGuests(gs=>gs.map(g=>g.id===id?{...g,...data}:g));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(g=>g.id===id?{...g,...data}:g)})));
+    const patch={name:data.name,phone:data.phone||null,rsvp:data.rsvp,guest_count:data.guest_count};
+    if(data.relation!==undefined)patch.relation=data.relation;
+    const res=await saveGuestRow(id,patch);
+    if(res.ok){
+      const applied=res.relationSkipped?(({relation,...r})=>r)(data):data;
+      setGuests(gs=>gs.map(g=>g.id===id?{...g,...applied}:g));
+      setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(g=>g.id===id?{...g,...applied}:g)})));
+    }
     setSaving(false);
   };
   const addTable=async()=>{setModal("addTable");};
@@ -3682,11 +3717,12 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     setSaving(true);
     const oldGift=allGuests.find(g=>g.id===editG.id)?.gift||0;
     const newGift=Number(editG.gift||0);
-    await sb.from("guests").update({
+    const res=await saveGuestRow(editG.id,{
       name:editG.name,phone:editG.phone,rsvp:editG.rsvp,
       guest_count:editG.guest_count,relation:editG.relation,
       note:editG.note||"",gift:newGift
-    }).eq("id",editG.id);
+    });
+    if(!res.ok){setSaving(false);return;}
     // סנכרון מתנה לניהול תקציב
     if(newGift!==oldGift){
       const budgetName=`מתנה  -  ${editG.name}`;
