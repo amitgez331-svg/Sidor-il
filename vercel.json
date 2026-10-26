@@ -1,6 +1,9 @@
 {
   "rewrites": [
     { "source": "/invite/:code", "destination": "/" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/((?!api/).*)", "destination": "/" }
+  ],
+  "crons": [
+    { "path": "/api/keepalive", "schedule": "0 6 * * *" }
   ]
 }
