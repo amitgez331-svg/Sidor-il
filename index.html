@@ -26,6 +26,9 @@
       @keyframes sxFloatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-14px) scale(1.08)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-46px) scale(1)}}
       @keyframes sxConfetti{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}
       @keyframes sxToastIn{0%{opacity:0;transform:translate(-50%,20px) scale(.9)}12%,85%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-10px)}}
+      .sx-fixture{transition:box-shadow .2s,outline-color .2s;outline:2px dashed transparent;outline-offset:3px}
+      .sx-fixture:hover{outline-color:#9B6BFF}
+      .sx-fixture:active{cursor:grabbing!important}
       .sx-chair-new{transform-box:fill-box;transform-origin:center;animation:sxChairPop .55s cubic-bezier(.3,1.6,.5,1) both}
       .sx-shine{position:absolute;inset:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:sxShine 2.6s ease-in-out infinite}
       @media (prefers-reduced-motion:reduce){.sx-btn,.sx-btn:hover{transform:none!important;animation:none!important}

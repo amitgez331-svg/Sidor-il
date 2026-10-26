@@ -254,7 +254,7 @@ const Burst=({big})=>(
   </div>
 );
 
-function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
+function TableNode({ table, selected, highlight=false, locked=false, onMouseDown, onDrop }) {
   const [over,setOver]=useState(false);
   const guests=table.guests||[];
   const occupied=guests.length;
@@ -292,7 +292,7 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
     :selected?`drop-shadow(0 8px 22px ${C.blueL}88)`:"drop-shadow(0 4px 10px rgba(58,36,100,.14))";
   const wrap=(w,h,left,top,children,label)=>(
     <div onMouseDown={onMouseDown} {...dp} title={tip}
-      style={{position:"absolute",left,top,width:w,height:h,cursor:"grab",userSelect:"none",zIndex:selected||over?10:1,
+      style={{position:"absolute",left,top,width:w,height:h,cursor:locked?"pointer":"grab",userSelect:"none",zIndex:selected||over?10:1,
         filter:glow,transform:over?"scale(1.06)":highlight?"scale(1.04)":"none",transition:"transform .18s,filter .2s"}}>
       <svg width={w} height={h} style={{overflow:"visible"}}>
         <defs>
@@ -2204,6 +2204,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
   // במסך ההושבה מקפלים את התפריט הראשי כדי לתת למפה יותר מקום (אפשר לפתוח שוב ב-☰)
   useEffect(()=>{setSidebarOpen(screen!=="seating");},[screen]);
   const [mapFind,setMapFind]=useState("");
+  // פריסת האולם (מיקום במה/בר/כניסה + נעילת מפה) נשמרת באירוע: settings_json.hall
+  const [hall,setHall]=useState(()=>event.settings_json?.hall||{});
+  const hallRef=useRef(hall);hallRef.current=hall;
+  useEffect(()=>{setHall(event.settings_json?.hall||{});},[event.id]);
+  const mapLocked=!!hall.locked;
+  const saveHall=async next=>{
+    setHall(next);
+    const settings={...(event.settings_json||{}),hall:next};
+    event.settings_json=settings;
+    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    if(error)alert("❌ פריסת האולם לא נשמרה: "+error.message);
+  };
   const [userPackages,setUserPackages]=useState([]);
   const [trialExpired] = useState(false);
   const [trialHours] = useState(0);
@@ -2991,7 +3003,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                     style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
                   {q&&<span style={{position:"absolute",left:8,top:8,fontSize:11,fontWeight:800,color:found?C.success:C.danger}}>{found?`${found} ✓`:"לא נמצא"}</span>}
                 </div>
-                <button onClick={async()=>{
+                <button onClick={()=>saveHall({...hallRef.current,locked:!mapLocked})} className="sx-btn" aria-pressed={mapLocked}
+                  title={mapLocked?"המפה נעולה  -  לחצו כדי לאפשר הזזה":"נעילת המפה: שולחנות, במה, בר וכניסה לא יזוזו (גרירת אורחים עדיין עובדת)"}
+                  style={{background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  {mapLocked?"🔒 המפה נעולה":"🔓 נעל מפה"}
+                </button>
+                <button disabled={mapLocked} onClick={async()=>{
                   if(!tables.length||!window.confirm("לסדר את כל השולחנות אוטומטית בשורות מתחת לבמה? המיקומים הנוכחיים יוחלפו."))return;
                   const MAP_W=Math.max(hallSize().cw-24,640);
                   const cell=200,cols=Math.max(1,Math.floor((MAP_W-60)/cell));
@@ -3000,8 +3017,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   setTables(next);
                   await Promise.all(next.map(t=>saveTablePos(t.id,t.x,t.y)));
                   setTimeout(()=>fitZoom(next),50);
-                }} className="sx-btn"
-                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                }} className="sx-btn" title={mapLocked?"המפה נעולה":undefined}
+                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1}}>
                   ✨ סדר אוטומטית
                 </button>
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
@@ -3058,33 +3075,59 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                     ))}
                   </div>
 
-                  {/* ─── במה  -  למעלה מרכז ─── */}
-                  <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:300,height:70,
-                    background:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",borderRadius:"0 0 26px 26px",
-                    boxShadow:"0 14px 30px -10px rgba(240,96,158,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,pointerEvents:"none"}}>
-                    <div style={{position:"absolute",top:7,left:24,right:24,display:"flex",justifyContent:"space-between"}}>
-                      {[0,1,2,3,4,5,6].map(i=>{const c=["#FFF3C4","#FFD3E6","#E6DAFF"][i%3];return <span key={i} className="sx-anim" style={{width:7,height:7,borderRadius:"50%",background:c,boxShadow:`0 0 10px ${c}`,animation:`sxTwinkle ${1.4+(i%3)*.5}s ease-in-out ${i*.18}s infinite`}}/>;})}
-                    </div>
-                    <div style={{textAlign:"center",marginTop:12,color:"#fff"}}>
-                      <div style={{fontSize:15,fontWeight:900,letterSpacing:1}}>🎤 במה</div>
-                      <div style={{fontSize:10,opacity:.85,fontWeight:700}}>חתן · כלה · להקה</div>
-                    </div>
-                  </div>
-
-                  {/* ─── בר ─── */}
-                  <div style={{position:"absolute",top:0,left:"calc(50% + 190px)",width:130,height:56,
-                    background:"#fff",border:"1.5px solid #EADFF3",borderTop:"none",borderRadius:"0 0 18px 18px",
-                    boxShadow:"0 10px 24px -14px rgba(91,60,140,.4)",display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:5,pointerEvents:"none"}}>
-                    <span style={{fontSize:18}}>🥂</span>
-                    <span style={{fontSize:12,fontWeight:900,color:C.blue}}>בר</span>
-                  </div>
-
-                  {/* ─── כניסה  -  למטה מרכז ─── */}
-                  <div style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:150,height:34,
-                    background:"#fff",border:"1.5px solid #EADFF3",borderBottom:"none",borderRadius:"16px 16px 0 0",
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:5,pointerEvents:"none"}}>
-                    <span style={{fontSize:12,fontWeight:900,color:C.muted}}>🚪 כניסה</span>
-                  </div>
+                  {/* ─── במה, בר וכניסה  -  ניתנים לגרירה (אלא אם המפה נעולה); המיקום נשמר באירוע ─── */}
+                  {(()=>{
+                    const FIX={
+                      stage:{w:300,h:70,def:{x:MAP_W/2-150,y:0}},
+                      bar:{w:130,h:56,def:{x:MAP_W/2+190,y:0}},
+                      entrance:{w:150,h:34,def:{x:MAP_W/2-75,y:MAP_H-34}},
+                    };
+                    const posOf=k=>{const p=hall[k];return p&&typeof p.x==="number"?{x:Math.min(Math.max(0,p.x),MAP_W-FIX[k].w),y:Math.min(Math.max(0,p.y),MAP_H-FIX[k].h)}:FIX[k].def;};
+                    // פינות מעוגלות לפי המיקום: צמוד לקיר העליון/התחתון או באמצע האולם
+                    const radius=(k,p,r)=>p.y<=2?`0 0 ${r}px ${r}px`:p.y>=MAP_H-FIX[k].h-2?`${r}px ${r}px 0 0`:`${r}px`;
+                    const startDrag=(k,e)=>{
+                      if(mapLocked||e.button!==0)return;
+                      e.stopPropagation();e.preventDefault();
+                      const s=posOf(k),sx=e.clientX,sy=e.clientY;let nx=s.x,ny=s.y;
+                      const mv=me=>{
+                        nx=Math.round(Math.min(Math.max(0,s.x+(me.clientX-sx)/zoom),MAP_W-FIX[k].w));
+                        ny=Math.round(Math.min(Math.max(0,s.y+(me.clientY-sy)/zoom),MAP_H-FIX[k].h));
+                        setHall(h=>({...h,[k]:{x:nx,y:ny}}));
+                      };
+                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                        if(nx!==s.x||ny!==s.y)saveHall({...hallRef.current,[k]:{x:nx,y:ny}});};
+                      window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
+                    };
+                    const common=k=>{const p=posOf(k);return {
+                      onMouseDown:e=>startDrag(k,e),
+                      title:mapLocked?undefined:"גררו כדי להזיז",
+                      className:mapLocked?"":"sx-fixture",
+                      style:{position:"absolute",left:p.x,top:p.y,width:FIX[k].w,height:FIX[k].h,zIndex:5,userSelect:"none",cursor:mapLocked?"default":"grab"},
+                    };};
+                    const st=posOf("stage"),br=posOf("bar"),en=posOf("entrance");
+                    return(<>
+                      <div {...common("stage")} style={{...common("stage").style,background:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",borderRadius:radius("stage",st,26),
+                        boxShadow:"0 14px 30px -10px rgba(240,96,158,.6)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{position:"absolute",top:7,left:24,right:24,display:"flex",justifyContent:"space-between",pointerEvents:"none"}}>
+                          {[0,1,2,3,4,5,6].map(i=>{const c=["#FFF3C4","#FFD3E6","#E6DAFF"][i%3];return <span key={i} className="sx-anim" style={{width:7,height:7,borderRadius:"50%",background:c,boxShadow:`0 0 10px ${c}`,animation:`sxTwinkle ${1.4+(i%3)*.5}s ease-in-out ${i*.18}s infinite`}}/>;})}
+                        </div>
+                        <div style={{textAlign:"center",marginTop:12,color:"#fff",pointerEvents:"none"}}>
+                          <div style={{fontSize:15,fontWeight:900,letterSpacing:1}}>🎤 במה</div>
+                          <div style={{fontSize:10,opacity:.85,fontWeight:700}}>חתן · כלה · להקה</div>
+                        </div>
+                      </div>
+                      <div {...common("bar")} style={{...common("bar").style,background:"#fff",border:"1.5px solid #EADFF3",borderRadius:radius("bar",br,18),
+                        boxShadow:"0 10px 24px -14px rgba(91,60,140,.4)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span style={{fontSize:18,pointerEvents:"none"}}>🥂</span>
+                        <span style={{fontSize:12,fontWeight:900,color:C.blue,pointerEvents:"none"}}>בר</span>
+                      </div>
+                      <div {...common("entrance")} style={{...common("entrance").style,background:"#fff",border:"1.5px solid #EADFF3",borderRadius:radius("entrance",en,16),
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span style={{fontSize:12,fontWeight:900,color:C.muted,pointerEvents:"none"}}>🚪 כניסה</span>
+                      </div>
+                    </>);
+                  })()}
+                  {mapLocked&&<div style={{position:"absolute",top:10,left:10,zIndex:6,background:"rgba(255,244,224,.95)",border:`1px solid ${C.gold}`,color:"#8A5A00",borderRadius:100,padding:"4px 12px",fontSize:12,fontWeight:900,pointerEvents:"none"}}>🔒 המפה נעולה · גרירת אורחים פעילה</div>}
 
                   {tables.length===0&&(
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10,color:C.muted,pointerEvents:"none"}}>
@@ -3100,6 +3143,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                       if(e.button!==0)return;
                       e.stopPropagation();
                       setSelected(t.id);
+                      if(mapLocked)return; // מפה נעולה: אפשר לבחור שולחן, לא להזיז
                       const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y;let posX=bx,posY=by;
                       const mv=me=>{
                         posX=Math.min(Math.max(0,bx+(me.clientX-sx)/zoom),MAP_W-60);
@@ -3116,7 +3160,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                         {/* כניסה מדורגת של השולחנות כשהמפה נפתחת */}
                         <div className="sx-anim" style={{position:"absolute",left:0,top:0,animation:`sxPopIn .55s cubic-bezier(.3,1.4,.5,1) ${Math.min(ti,12)*.07}s both`}}>
                         {/* המיקום נקבע ע"י העוטף  -  השולחן עצמו מצויר ביחס אליו */}
-                        <TableNode table={{...t,x:0,y:0}} selected={selected===t.id} highlight={hit} onMouseDown={hmd}
+                        <TableNode table={{...t,x:0,y:0}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
                           onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
                         </div>
                         {selected===t.id&&(
