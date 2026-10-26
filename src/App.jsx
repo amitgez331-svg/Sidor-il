@@ -5737,82 +5737,58 @@ function InvitePage({ code, guestId }) {
   const [phoneDupInv,setPhoneDupInv]=useState(false); // הטלפון כבר רשום  -  מציעים רק עדכון מספר מוזמנים
   const resolvedRef=useRef(null); // שם/טלפון אחרי הפרדה (אם הטלפון נכתב בשדה השם)
 
+  // דף ההזמנה פתוח לאורחים שלא מחוברים, לכן כל הגישה למסד עוברת דרך פונקציות מאובטחות:
+  // get_invite (אירוע אחד לפי קוד) · get_invite_guest (קישור אישי) · submit_rsvp (שמירה + בדיקת טלפון כפול)
+  const [saveError,setSaveError]=useState("");
   useEffect(()=>{
-    sb.from("events").select("*").eq("invite_code",code).eq("invite_active",true).single()
-      .then(async({data})=>{
-        setEvent(data||null);setLoading(false);
-        if(data){
-          sb.from("events").update({views:(data.views||0)+1}).eq("id",data.id);
-          // אם יש guestId  -  טען את פרטי האורח ומלא אוטומטית
-          if(guestId){
-            const{data:g}=await sb.from("guests").select("*").eq("id",guestId).single();
-            if(g){
-              setKnownGuest(g);
-              const parts=g.name?.split(" ")||[];
-              setFirstName(parts[0]||"");
-              setLastName(parts.slice(1).join(" ")||"");
-              setPhone(g.phone||"");
-              setGuestCount(g.guest_count||1);
-              if(g.rsvp&&g.rsvp!=="pending")setRsvp(g.rsvp);
-              // עדכן צפיות של האורח
-              sb.from("guests").update({views:(g.views||0)+1}).eq("id",g.id);
-            }
-          }
+    (async()=>{
+      const{data,error}=await sb.rpc("get_invite",{p_code:code});
+      setEvent(!error&&data?data:null);setLoading(false);
+      // קישור אישי (?g=)  -  ממלאים את פרטי האורח אוטומטית
+      if(data&&guestId){
+        const{data:g}=await sb.rpc("get_invite_guest",{p_code:code,p_guest:guestId});
+        if(g){
+          setKnownGuest(g);
+          const parts=g.name?.split(" ")||[];
+          setFirstName(parts[0]||"");
+          setLastName(parts.slice(1).join(" ")||"");
+          setPhone(g.phone||"");
+          setGuestCount(g.guest_count||1);
+          if(g.rsvp&&g.rsvp!=="pending")setRsvp(g.rsvp);
         }
-      });
+      }
+    })();
   },[code,guestId]);
 
-  const doInsert=async()=>{
-    const r=resolvedRef.current;
-    const fullName=r?.name||`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
-    const phone=r?.phone??phoneState;
-    if(knownGuest){
-      // עדכן את האורח הידוע מהקישור
-      await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||knownGuest.phone||null,views:(knownGuest.views||0)+1}).eq("id",knownGuest.id);
-    } else {
-      await sb.from("guests").insert({name:fullName,phone:phone.trim()||null,rsvp,guest_count:guestCount,event_id:event.id,table_id:null,views:1});
+  // שליחה לשרת. updateExisting=true  -  אחרי שהאורח אישר "עדכן מספר מוזמנים" לטלפון שכבר קיים
+  const sendRsvp=async(updateExisting=false)=>{
+    const r=resolvedRef.current||{};
+    const{data,error}=await sb.rpc("submit_rsvp",{
+      p_code:code,p_name:r.name||"",p_phone:(r.phone||"").trim(),p_count:guestCount,p_rsvp:rsvp,
+      p_guest:knownGuest?.id||null,p_update_existing:updateExisting,
+    });
+    if(error||!data||["no_invite","no_name"].includes(data.status)){
+      setSaveError(error?"לא הצלחנו לשמור את האישור. בדקו את החיבור ונסו שוב.":data?.status==="no_name"?"נא למלא שם":"ההזמנה כבר לא פעילה");
+      setSubmitting(false);return;
     }
-    setSubmitted(true);setSubmitting(false);setShowDupModal(false);
-  };
-
-  const doUpdate=async()=>{
-    setSubmitting(true);
-    const phone=resolvedRef.current?.phone??phoneState;
-    await sb.from("guests").update({rsvp,guest_count:guestCount,phone:phone.trim()||dupGuest.phone||null,views:(dupGuest.views||0)+1}).eq("id",dupGuest.id);
+    if(data.status==="phone_exists"){
+      setDupGuest(data);setGuestCount(c=>Math.max(c,1));setPhoneDupInv(true);setSubmitting(false);return;
+    }
     setSubmitted(true);setSubmitting(false);setShowDupModal(false);setPhoneDupInv(false);
   };
+  const doInsert=()=>sendRsvp(false);
+  const doUpdate=async()=>{setSubmitting(true);await sendRsvp(true);};
 
   const submit=async()=>{
     if(!firstName.trim()||!rsvp)return;
-    setSubmitting(true);
+    setSubmitting(true);setSaveError("");
     // אורח שכתב את הטלפון בשדה השם  -  מפרידים לפני השמירה
     const sp=splitNamePhone(`${firstName.trim()} ${lastName.trim()}`,phoneState);
     let fullName=`${firstName.trim()}${lastName.trim()?" "+lastName.trim():""}`;
     let phone=phoneState.trim();
     if(sp.phone&&sp.phone!==phone){fullName=sp.name;phone=sp.phone;setPhone(sp.phone);const [f,...l]=sp.name.split(" ");setFirstName(f||"");setLastName(l.join(" "));}
     resolvedRef.current={name:fullName,phone};
-    // בדוק כפילות לפי שם או טלפון
-    let query=sb.from("guests").select("*").eq("event_id",event.id);
-    const nameClean=fullName.trim().toLowerCase();
-    const{data:existing}=await query;
-    // אותו טלפון  -  לא יוצרים אורח כפול; האפשרות היחידה היא לעדכן את מספר המוזמנים
-    const byPhone=findByPhone(existing,phone,knownGuest?.id);
-    if(byPhone){
-      setDupGuest(byPhone);
-      setGuestCount(c=>Math.max(c,1));
-      setPhoneDupInv(true);
-      setSubmitting(false);
-      return;
-    }
-    if(knownGuest){await doInsert();return;} // אורח שזוהה מהקישור האישי  -  מעדכנים אותו ישירות
-    const found=(existing||[]).find(g=>g.name.trim().toLowerCase()===nameClean);
-    if(found){
-      setDupGuest(found);
-      setShowDupModal(true);
-      setSubmitting(false);
-      return;
-    }
-    await doInsert();
+    await sendRsvp(false);
   };
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#111"}}><Spinner size={40} color="#fff"/></div>);
@@ -6045,6 +6021,7 @@ function InvitePage({ code, guestId }) {
             </button>
           </div>
 
+          {saveError&&<div role="alert" style={{background:"#FDECEE",color:"#C53030",border:"1px solid #F9D2D8",borderRadius:12,padding:"10px 12px",fontSize:13,fontWeight:700,marginBottom:10,textAlign:"center"}}>⚠️ {saveError}</div>}
           <button onClick={submit} disabled={!firstName.trim()||!rsvp||submitting}
             style={{width:"100%",background:firstName.trim()&&rsvp?"#1B3A8C":"#ccc",color:"#fff",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:firstName.trim()&&rsvp?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
             {submitting?"שולח...":"שלח אישור ←"}
