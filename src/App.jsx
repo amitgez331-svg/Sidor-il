@@ -57,9 +57,6 @@ const isMobile = () => window.innerWidth < 1024;
 
 // השוואת טלפונים: רק ספרות, ו-972 בהתחלה נחשב כמו 0 (‎+972 52… = 052…)
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
-// כמה יחידות SMS הודעה צורכת. עברית/אימוג'י = UCS-2: עד 70 תווים, ואז 67 לכל חלק (כמו בשרת השליחה)
-const SMS_GSM=/^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
-const smsSegments = text => { const n=[...String(text||"")].length; if(!n)return 0; return SMS_GSM.test(text)?(n<=160?1:Math.ceil(n/153)):(n<=70?1:Math.ceil(n/67)); };
 const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
@@ -4937,9 +4934,8 @@ function SMSScreen({ event, guests }) {
   };
 
   const charCount=msgText.length;
-  const smsCount=smsSegments(buildPreview(previewGuest||toSend[0]));
-  // הערכה מדויקת: כל אורח מקבל הודעה אישית באורך שונה
-  const totalSmsNeeded=toSend.reduce((s,g)=>s+smsSegments(buildPreview(g)),0);
+  // כל אורח = הודעה אחת מהיתרה, בלי קשר לאורך (כמו בשרת השליחה)
+  const totalSmsNeeded=toSend.length;
   const hasBalance=smsBalance===null||smsBalance>=totalSmsNeeded;
 
   // רכישה: נוצרת בקשה; היתרה נטענת אחרי שהתשלום מאושר באדמין
@@ -5114,9 +5110,7 @@ function SMSScreen({ event, guests }) {
             {/* ספירת תווים */}
             <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:11,color:C.muted}}>
               <span>{charCount} תווים</span>
-              <span style={{color:smsCount>1?C.danger:C.muted,fontWeight:smsCount>1?700:400}}>
-                {smsCount} SMS {smsCount>1?"(מרובה)":""}
-              </span>
+              <span>הודעה אחת לכל אורח</span>
             </div>
           </div>
 
@@ -5216,7 +5210,7 @@ function SMSScreen({ event, guests }) {
             <div style={{marginTop:14,background:!hasBalance&&smsBalance!==null?"#FFF5F5":C.blueXL,border:`1.5px solid ${!hasBalance&&smsBalance!==null?"#FC8181":C.border}`,borderRadius:10,padding:"10px 14px"}}>
               <div style={{fontSize:12,color:C.text,lineHeight:1.8}}>
                 ✅ מחובר ל-<strong>019 SMS</strong><br/>
-                📊 {smsCount} SMS × {toSend.length} אורחים = <strong>{totalSmsNeeded} SMS</strong><br/>
+                📊 {toSend.length} אורחים × 1 = <strong>{totalSmsNeeded} SMS</strong><br/>
                 💳 יתרה: <strong style={{color:!hasBalance&&smsBalance!==null?"#E53E3E":"#276749"}}>{smsBalance===null?"טוען...":`${smsBalance} SMS`}</strong>
               </div>
             </div>

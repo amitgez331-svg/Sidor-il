@@ -1,7 +1,7 @@
 // send-sms · שליחת SMS אישי לאורחים דרך 019, עם יתרה שמנוהלת בשרת בלבד.
 // 1. מזהה את המשתמש לפי ה-JWT ובודק שהאירוע שלו (או אדמין)
 // 2. טוען את האורחים מהמסד (לא סומך על טלפונים שהגיעו מהדפדפן)
-// 3. מחשב כמה יחידות SMS ההודעות צורכות, ומוריד מהיתרה לפני השליחה (אטומי)
+// 3. מוריד מהיתרה הודעה אחת לכל אורח (בלי קשר לאורך) לפני השליחה (אטומי)
 // 4. שולח ב-bulk של 019 (הודעה אישית לכל אורח). אם 019 נכשל — מחזיר את היתרה
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -15,13 +15,6 @@ const json = (body: unknown, status = 200) =>
 const ADMIN_EMAIL = "amitgez331@gmail.com";
 const MAX_RECIPIENTS = 2500; // מגבלת bulk של 019
 
-// GSM-7 בסיסי. כל תו אחר (כמו עברית) הופך את ההודעה ל-UCS-2: 70 תווים, 67 לכל חלק בהודעה מרובת חלקים
-const GSM = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\\[~\]|€]*$/;
-const segments = (text: string) => {
-  const len = [...text].length;
-  if (GSM.test(text)) return len <= 160 ? 1 : Math.ceil(len / 153);
-  return len <= 70 ? 1 : Math.ceil(len / 67);
-};
 const normPhone = (p: string) => {
   let d = String(p || "").replace(/\D/g, "");
   if (d.startsWith("972")) d = "0" + d.slice(3);
@@ -62,7 +55,7 @@ Deno.serve(async (req) => {
         .replace(/{שם מלא}/g, g.name || "")
         .replace(/{קישור}/g, inviteUrl ? `${inviteUrl}?g=${g.id}` : "")
         .replace(/{שולחן}/g, tableName(g.table_id));
-      return { id: g.id, name: g.name, phone, text, units: phone ? segments(text) : 0 };
+      return { id: g.id, name: g.name, phone, text, units: phone ? 1 : 0 };
     });
     const valid = items.filter((i) => i.phone);
     const skipped = items.filter((i) => !i.phone).map((i) => ({ name: i.name, phone: "", status: "דולג ✗ (אין נייד תקין)" }));
