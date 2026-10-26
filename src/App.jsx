@@ -57,6 +57,9 @@ const isMobile = () => window.innerWidth < 1024;
 
 // השוואת טלפונים: רק ספרות, ו-972 בהתחלה נחשב כמו 0 (‎+972 52… = 052…)
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
+// הודעת SMS אחת בעברית = עד 70 תווים (אימוג'י = 2). הקישור האישי ב-SMS הוא קצר: sidoril.com/i/<קוד>
+const SMS_MAX=70;
+const SHORT_LINK_HOST="sidoril.com/i/";
 const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
@@ -2538,7 +2541,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           </div>
         )}
         {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
-        {screen==="sms"&&<SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="sms"&&<SMSScreen event={event} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {modal==="locked"&&(
           <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setModal(null)}>
@@ -3379,7 +3382,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     {screen!=="home"&&screen!=="seating"&&(
       <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 24px",boxSizing:"border-box"}}>
         {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
-        {screen==="sms"&&<SMSScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="sms"&&<SMSScreen event={event} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="ai"&&<AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(assignments)=>{setSaving(true);for(const{guestId,tableId}of assignments){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setSaving(false);setScreen("seating");}}/>}
@@ -4845,7 +4848,7 @@ function RecipientPicker({ withPhone, value, onChange }) {
   );
 }
 
-function SMSScreen({ event, guests }) {
+function SMSScreen({ event, guests, tables=[] }) {
   const groomName = event.groom_name || "החתן";
   const brideName = event.bride_name || "הכלה";
 
@@ -4863,29 +4866,27 @@ function SMSScreen({ event, guests }) {
   const eventName=eventType==="wedding"?`חתונת ${groomName} ו${brideName}`:eventType==="bar_mitzvah"?`בר-מצווה של ${groomName||event.name}`:eventType==="brit"?`ברית של ${event.name}`:event.name;
   const coupleRef=eventType==="wedding"?`${groomName} ו${brideName}`:(groomName||event.name);
 
-  const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
-  const smsInviteText=event.welcome_text?.trim()||defaultSmsInviteText;
-
+  // נוסחים קצרים: כל הודעה עד 70 תווים (הודעת SMS אחת)
   const TEMPLATES = [
     {
       id:"invite",
       label:"💌 הזמנה לאירוע",
-      text:smsInviteText,
+      text:`{שם}, מוזמנים ל${eventName}! אישור הגעה: {קישור}`,
     },
     {
       id:"reminder",
       label:"🔔 תזכורת לממתינים",
-      text:`שלום {שם}! עוד לא אישרת הגעה ל${eventName}.\nנשמח לדעת אם תגיע 🙏\nלאישור הגעה: {קישור}`,
+      text:`{שם}, נשמח לאישור הגעה ל${eventName}: {קישור}`,
     },
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`,
+      text:`{שם}, השולחן שלך ב${eventName}: {שולחן}. מחכים לך!`,
     },
     {
       id:"thanks",
       label:"💙 תודה אחרי האירוע",
-      text:`שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
+      text:`{שם}, תודה שחגגת איתנו! באהבה, ${coupleRef}`,
     },
   ];
 
@@ -4902,13 +4903,6 @@ function SMSScreen({ event, guests }) {
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
   },[guests]);
 
-  // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
-  useEffect(()=>{
-    if(selectedTemplate==="invite"){
-      setMsgText(smsInviteText);
-    }
-  },[event.welcome_text]);
-
   // טעינת יתרת SMS ובקשות רכישה ממתינות
   const [pendingReq,setPendingReq]=useState([]);
   const [buyPack,setBuyPack]=useState(null); // חבילה שנבחרה  -  מציג הוראות תשלום
@@ -4923,18 +4917,23 @@ function SMSScreen({ event, guests }) {
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=pickRecipients(withPhone,sendTo);
+  const tableOf=id=>tables.find(t=>t.id===id)?.name||"—";
 
+  // אותה החלפה כמו בשרת השליחה (קישור קצר אישי)
   const buildPreview=(g)=>{
     if(!g)return msgText;
     return msgText
       .replace(/{שם}/g,g.name.split(" ")[0])
       .replace(/{שם מלא}/g,g.name)
-      .replace(/{קישור}/g,`${inviteUrl}?g=${g.id}`)
-      .replace(/{שולחן}/g,"3");
+      .replace(/{קישור}/g,`${SHORT_LINK_HOST}${g.short_code||"xxxxxxx"}`)
+      .replace(/{שולחן}/g,tableOf(g.table_id));
   };
 
-  const charCount=msgText.length;
-  // כל אורח = הודעה אחת מהיתרה, בלי קשר לאורך (כמו בשרת השליחה)
+  // האורך נבדק על ההודעה האישית הארוכה ביותר (שם ושולחן משתנים בין אורחים)
+  const lenGuests=toSend.length?toSend:withPhone;
+  const longest=lenGuests.reduce((m,g)=>{const t=buildPreview(g);return t.length>m.len?{len:t.length,name:g.name}:m;},{len:buildPreview(previewGuest).length,name:previewGuest?.name||""});
+  const tooLong=longest.len>SMS_MAX;
+  // כל אורח = הודעה אחת מהיתרה
   const totalSmsNeeded=toSend.length;
   const hasBalance=smsBalance===null||smsBalance>=totalSmsNeeded;
 
@@ -4953,6 +4952,7 @@ function SMSScreen({ event, guests }) {
 
   const sendAll=async()=>{
     if(toSend.length===0){alert(sendTo.length?"אין אורחים עם מספר טלפון בקבוצה שנבחרה":"בחר למי לשלוח");return;}
+    if(tooLong){alert(`ההודעה ארוכה מ-${SMS_MAX} תווים (${longest.len} אצל ${longest.name}). קצר את הנוסח.`);return;}
     if(smsBalance!==null&&smsBalance<totalSmsNeeded){
       alert(`אין מספיק SMS!\nנדרש: ${totalSmsNeeded} | יתרה: ${smsBalance}\nרכוש SMS נוספים למטה.`);return;
     }
@@ -5108,10 +5108,11 @@ function SMSScreen({ event, guests }) {
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
                 boxSizing:"border-box",direction:"rtl",color:C.text}}/>
             {/* ספירת תווים */}
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:11,color:C.muted}}>
-              <span>{charCount} תווים</span>
-              <span>הודעה אחת לכל אורח</span>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:6,fontSize:11,color:tooLong?C.danger:C.muted,fontWeight:tooLong?800:400}}>
+              <span>{longest.len}/{SMS_MAX} תווים{longest.name?` (הכי ארוכה: ${longest.name})`:""}</span>
+              <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ הודעה אחת"}</span>
             </div>
+            <div style={{fontSize:10,color:C.muted,marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
           </div>
 
           {/* פילטר */}
@@ -5129,12 +5130,12 @@ function SMSScreen({ event, guests }) {
           </div>
 
           {/* כפתור שליחה */}
-          <button onClick={sendAll} disabled={sending||toSend.length===0||!hasBalance}
-            style={{width:"100%",background:sending||toSend.length===0||!hasBalance?"#A0AEC0":`linear-gradient(135deg,${C.blue},${C.blueM})`,
+          <button onClick={sendAll} disabled={sending||toSend.length===0||!hasBalance||tooLong}
+            style={{width:"100%",background:sending||toSend.length===0||!hasBalance||tooLong?"#A0AEC0":`linear-gradient(135deg,${C.blue},${C.blueM})`,
               color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
-              cursor:sending||toSend.length===0||!hasBalance?"default":"pointer",fontFamily:"inherit",
-              boxShadow:sending||toSend.length===0||!hasBalance?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
-            {sending?`שולח... ${progress}%`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:toSend.length===0?"בחר למי לשלוח":`📱 שלח SMS ל-${toSend.length} אורחים (${totalSmsNeeded} SMS)`}
+              cursor:sending||toSend.length===0||!hasBalance||tooLong?"default":"pointer",fontFamily:"inherit",
+              boxShadow:sending||toSend.length===0||!hasBalance||tooLong?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
+            {sending?`שולח... ${progress}%`:tooLong?`⚠️ ההודעה ארוכה מ-${SMS_MAX} תווים`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:toSend.length===0?"בחר למי לשלוח":`📱 שלח SMS ל-${toSend.length} אורחים (${totalSmsNeeded} SMS)`}
           </button>
 
           {/* Progress Bar */}
@@ -6782,6 +6783,24 @@ function PrivacyPage() {
   );
 }
 
+// קישור אישי קצר מ-SMS (sidoril.com/i/<קוד>)  -  מתרגם לדף ההזמנה של האורח
+function ShortLinkRedirect({ short }) {
+  const [missing,setMissing]=useState(false);
+  useEffect(()=>{
+    sb.rpc("resolve_guest_link",{p_short:short}).then(({data})=>{
+      if(data?.code)window.location.replace(`/#/invite/${data.code}?g=${data.guest}`);
+      else setMissing(true);
+    }).catch(()=>setMissing(true));
+  },[short]);
+  return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,flexDirection:"column",gap:14,fontFamily:"'Heebo',sans-serif",direction:"rtl"}}>
+      {missing
+        ?<><div style={{fontSize:40}}>💌</div><p style={{color:C.text,fontSize:16,fontWeight:700}}>הקישור לא נמצא או שההזמנה כבר לא פעילה</p></>
+        :<><Spinner size={40}/><p style={{color:C.muted,fontSize:15}}>פותח את ההזמנה...</p></>}
+    </div>
+  );
+}
+
 export default function App() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
   const [showPrivacy,setShowPrivacy]=useState(window.location.hash==="#/privacy");
@@ -6855,6 +6874,9 @@ export default function App() {
       <p style={{color:C.muted,fontSize:15}}>מאמת את המייל שלך...</p>
     </div>);
   }
+
+  const shortMatch=path.match(/^\/i\/([a-z0-9]+)\/?$/i);
+  if(shortMatch)return <ShortLinkRedirect short={shortMatch[1]}/>;
 
   const inviteMatch=path.match(/^\/invite\/([a-z0-9]+)/i)||hash.match(/^#\/invite\/([a-z0-9]+)/i);
   if(inviteMatch){

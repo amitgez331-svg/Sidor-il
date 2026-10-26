@@ -14,6 +14,8 @@ const json = (body: unknown, status = 200) =>
 
 const ADMIN_EMAIL = "amitgez331@gmail.com";
 const MAX_RECIPIENTS = 2500; // מגבלת bulk של 019
+const SMS_MAX = 70; // הודעת SMS אחת בעברית (UCS-2); אורך לפי יחידות UTF-16, כך שאימוג'י = 2
+const SHORT_LINK_HOST = "sidoril.com/i/";
 
 const normPhone = (p: string) => {
   let d = String(p || "").replace(/\D/g, "");
@@ -44,7 +46,7 @@ Deno.serve(async (req) => {
     if (!ev || (ev.user_id !== user.id && !isAdmin)) return json({ error: "אין הרשאה לאירוע הזה" }, 403);
 
     // האורחים — רק מהאירוע הזה, רק עם נייד תקין
-    const { data: guests } = await admin.from("guests").select("id,name,phone,table_id").eq("event_id", event_id).in("id", guest_ids);
+    const { data: guests } = await admin.from("guests").select("id,name,phone,table_id,short_code").eq("event_id", event_id).in("id", guest_ids);
     const { data: tables } = await admin.from("tables").select("id,name").eq("event_id", event_id);
     const tableName = (id: string | null) => tables?.find((t) => t.id === id)?.name || "—";
 
@@ -53,11 +55,14 @@ Deno.serve(async (req) => {
       const text = String(message)
         .replace(/{שם}/g, String(g.name || "").split(" ")[0])
         .replace(/{שם מלא}/g, g.name || "")
-        .replace(/{קישור}/g, inviteUrl ? `${inviteUrl}?g=${g.id}` : "")
+        .replace(/{קישור}/g, g.short_code ? `${SHORT_LINK_HOST}${g.short_code}` : inviteUrl ? `${inviteUrl}?g=${g.id}` : "")
         .replace(/{שולחן}/g, tableName(g.table_id));
       return { id: g.id, name: g.name, phone, text, units: phone ? 1 : 0 };
     });
     const valid = items.filter((i) => i.phone);
+    // כל הודעה חייבת להיכנס ב-SMS אחד
+    const long = valid.find((i) => i.text.length > SMS_MAX);
+    if (long) return json({ error: `ההודעה ל-${long.name} ארוכה מ-${SMS_MAX} תווים (${long.text.length}). קצר את הנוסח.` }, 400);
     const skipped = items.filter((i) => !i.phone).map((i) => ({ name: i.name, phone: "", status: "דולג ✗ (אין נייד תקין)" }));
     if (!valid.length) return json({ results: skipped, error: "אין אורחים עם מספר נייד תקין" }, 400);
     const units = valid.reduce((s, i) => s + i.units, 0);
