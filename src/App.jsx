@@ -979,7 +979,6 @@ const StepArt=({kind})=>{
 
 function LandingPage({ onOpenAuth, onLogout }) {
   const [scrolled,setScrolled]=useState(false);
-  const [menuOpen,setMenuOpen]=useState(false);
   const [venuePage,setVenuePage]=useState(false);
 
   useEffect(()=>{
@@ -1031,15 +1030,9 @@ function LandingPage({ onOpenAuth, onLogout }) {
           ))}
         </div>
         <div style={{flex:1}}/>
-        <button className="lp-btn lp-ghost lp-hide-sm" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>כניסה</button>
+        <button className="lp-btn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>כניסה</button>
         <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14}}>התחילו להושיב</button>
-        <button onClick={()=>setMenuOpen(true)} aria-label="תפריט"
-          style={{background:"#fff",border:"1px solid #E6DDF5",borderRadius:12,width:42,height:42,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0}}>
-          {[0,1,2].map(i=><span key={i} style={{width:16,height:2,background:LP.ink,borderRadius:1,display:"block"}}/>)}
-        </button>
       </nav>
-
-      {menuOpen&&<HamburgerMenu onOpenAuth={onOpenAuth} onClose={()=>setMenuOpen(false)} onVenuePage={()=>setVenuePage(true)} onLogout={onLogout}/>}
 
       {/* ─── HERO ────────────────────────────────────────────────── */}
       <section id="top" style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"150px 6vw 90px",
@@ -1304,6 +1297,18 @@ const AUTH_ERRORS={
   "Unable to validate email address: invalid format":"❌ כתובת המייל לא תקינה",
   "Email rate limit exceeded":"⏳ נשלחו יותר מדי מיילים  -  נסו שוב בעוד כמה דקות",
 };
+const AUTH_DOWN="⚠️ שרת ההתחברות לא זמין כרגע. נסו שוב בעוד כמה דקות, ואם זה ממשיך  -  צרו קשר בוואטסאפ.";
+// שגיאות רשת (השרת לא עונה) מגיעות בלי הודעה ברורה  -  מציגים הודעה מובנת
+const authErrorText=e=>{
+  if(!e)return "";
+  if(e.name==="AuthRetryableFetchError"||e.status===0||/fetch|network|load failed/i.test(e.message||""))return AUTH_DOWN;
+  return AUTH_ERRORS[e.message]||("❌ "+e.message);
+};
+// בדיקה מהירה שהשרת זמין לפני מעבר לעמוד של Google (אחרת הדפדפן נתקע בדף שגיאה)
+const authServerUp=async()=>{
+  try{const r=await fetch(`${SUPABASE_URL}/auth/v1/health`,{headers:{apikey:SUPABASE_KEY}});return r.ok;}
+  catch{return false;}
+};
 
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   const [mode,setMode]=useState(initMode);
@@ -1335,15 +1340,16 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
         else onAuth(data.user);
       }
     }catch(e){
-      setErr(AUTH_ERRORS[e.message]||("❌ "+e.message));
+      setErr(authErrorText(e));
     }
     setLoad(false);
   };
 
   const loginWithGoogle=async()=>{
     setGoogleLoad(true);setErr("");
+    if(!(await authServerUp())){setErr(AUTH_DOWN);setGoogleLoad(false);return;}
     const{error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
-    if(error){setErr("❌ "+error.message);setGoogleLoad(false);}
+    if(error){setErr(authErrorText(error));setGoogleLoad(false);}
   };
 
   return(<>
@@ -6013,7 +6019,7 @@ function AdminLogin({ onSuccess, onClose }) {
     setLoad(true);setErr("");
     const{data,error}=await sb.auth.signInWithPassword({email:email.trim(),password:pass});
     setLoad(false);
-    if(error){setErr(AUTH_ERRORS[error.message]||"❌ "+error.message);return;}
+    if(error){setErr(authErrorText(error));return;}
     if(!isAdminUser(data.user)){await sb.auth.signOut();setErr("⛔ לחשבון הזה אין הרשאת אדמין");return;}
     onSuccess(data.user);
   };
@@ -6388,7 +6394,7 @@ export default function App() {
             if(resetPw.newP.length<6){setResetPw(r=>({...r,msg:{err:true,txt:"סיסמה חייבת להכיל לפחות 6 תווים"}}));return;}
             setResetPw(r=>({...r,loading:true,msg:null}));
             const{error}=await sb.auth.updateUser({password:resetPw.newP});
-            if(error){setResetPw(r=>({...r,loading:false,msg:{err:true,txt:error.message}}));}
+            if(error){setResetPw(r=>({...r,loading:false,msg:{err:true,txt:authErrorText(error)}}));}
             else{
               setResetPw(r=>({...r,loading:false,msg:{err:false,txt:"✅ הסיסמה עודכנה בהצלחה!"}}));
               setTimeout(()=>{setShowResetPw(false);window.location.hash="";},2000);
