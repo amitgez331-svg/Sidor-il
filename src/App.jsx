@@ -1971,6 +1971,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     ro.observe(mapBoxRef.current);
     return()=>ro.disconnect();
   },[screen,view,sidebarOpen,tables.length,loading]);
+  // מסך מלא למפה: Esc יוצא; ביציאה מההושבה או מתצוגת המפה  -  חוזרים לתצוגה רגילה
+  const [mapFull,setMapFull]=useState(false);
+  const [fullListOpen,setFullListOpen]=useState(true);
+  useEffect(()=>{if(screen!=="seating"||view!=="map")setMapFull(false);},[screen,view]);
+  useEffect(()=>{
+    if(!mapFull)return;
+    const onKey=e=>{if(e.key==="Escape")setMapFull(false);};
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[mapFull]);
+  useEffect(()=>{if(screen==="seating"&&view==="map")setTimeout(()=>fitZoom(),30);},[mapFull]);
   // במסך ההושבה מקפלים את התפריט הראשי כדי לתת למפה יותר מקום (אפשר לפתוח שוב ב-☰)
   useEffect(()=>{setSidebarOpen(screen!=="seating");},[screen]);
   const [mapFind,setMapFind]=useState("");
@@ -2700,7 +2711,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
         )}
       </aside>
       <main style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        {view==="map"&&<>
+        {view==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:400,background:"#F6F0F8",display:"flex",flexDirection:"column",direction:"rtl",fontFamily:"'Heebo',sans-serif"}:{display:"contents"}}>
           {/* ─── סרגל כלים של המפה ─── */}
           {(()=>{
             const allSeats=tables.reduce((s,t)=>s+(t.seats||0),0);
@@ -2745,6 +2756,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
                   <button style={zBtn} onClick={()=>setZoom(z=>Math.min(1.6,+(z+.1).toFixed(2)))} aria-label="הגדל">+</button>
                 </div>
+                <button onClick={()=>setMapFull(f=>!f)} className={mapFull?"sx-btn":"sx-btn sx-btn-primary"}
+                  title={mapFull?"יציאה ממסך מלא (Esc)":"פתיחת המפה על כל המסך"}
+                  style={{background:mapFull?"#fff":GRAD,color:mapFull?C.blue:"#fff",border:mapFull?`1.5px solid ${C.border}`:"none",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:mapFull?"none":`0 6px 16px -6px ${C.blueM}`}}>
+                  {mapFull?"✕ יציאה ממסך מלא":"⛶ מסך מלא"}
+                </button>
               </div>
             );
           })()}
@@ -2851,7 +2867,34 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
             {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
             <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · עמדו על שולחן לראות מי יושב בו</span>
           </div>
-        </>}
+          {/* במסך מלא: רשימת הממתינים צפה מעל המפה כדי שאפשר יהיה להמשיך לגרור אורחים */}
+          {mapFull&&(
+            <div style={{position:"absolute",bottom:52,right:16,width:fullListOpen?250:"auto",maxHeight:"min(62vh, calc(100vh - 190px))",display:"flex",flexDirection:"column",
+              background:"rgba(255,255,255,.96)",backdropFilter:"blur(8px)",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 24px 50px -20px rgba(91,60,140,.45)",zIndex:20,overflow:"hidden"}}>
+              <button onClick={()=>setFullListOpen(o=>!o)}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"none",border:"none",borderBottom:fullListOpen?`1px solid ${C.border}`:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:900,color:C.text}}>
+                👥 ממתינים להושבה
+                <span style={{background:C.gold+"26",color:"#B07A12",borderRadius:100,padding:"1px 9px",fontSize:12}}>{guests.length}</span>
+                <span style={{marginRight:"auto",color:C.muted,fontSize:12}}>{fullListOpen?"▲":"▼"}</span>
+              </button>
+              {fullListOpen&&(
+                <div style={{overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:6}}>
+                  {guests.length===0&&<div style={{textAlign:"center",padding:"18px 6px",color:C.success,fontWeight:800,fontSize:13}}>🎉 כולם הושבו!</div>}
+                  {guests.map(g=>(
+                    <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
+                      style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"7px 10px",cursor:"grab"}}>
+                      <span style={{width:26,height:26,borderRadius:"50%",background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,flexShrink:0}}>{g.name[0]}</span>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
+                        {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>}
         {view==="list"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
             {tables.map(t=>(
