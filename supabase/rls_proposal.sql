@@ -1,7 +1,8 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- Sidor-IL · הצעה לנעילת הרשאות (RLS)  —  טיוטה, לא הורצה
--- כל השינויים בקובץ הזה צריכים לרוץ יחד עם עדכון קוד בדף ההזמנה (שלב 2),
--- אחרת אורחים לא יוכלו לפתוח הזמנה.
+-- Sidor-IL · נעילת הרשאות (RLS)  —  הורץ ב-26.10.2026 כ-migrations:
+--   rls_step1_helper_and_invite_functions, rls_step1b_get_invite_no_views,
+--   rls_step2_lock_tables, rls_step3_is_admin_signed_in_only
+-- דף ההזמנה בקוד עובד דרך get_invite / get_invite_guest / submit_rsvp.
 -- ════════════════════════════════════════════════════════════════════════════
 
 -- ─── שלב 0: מי האדמין ───────────────────────────────────────────────────────
@@ -9,7 +10,8 @@ create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = '' as $$
   select coalesce(lower(auth.jwt() ->> 'email'), '') = 'amitgez331@gmail.com'
 $$;
-grant execute on function public.is_admin() to anon, authenticated;
+revoke execute on function public.is_admin() from anon, public;
+grant execute on function public.is_admin() to authenticated;
 
 -- בעלים של אירוע (או אדמין)
 create or replace function public.owns_event(p_event uuid)
@@ -28,16 +30,12 @@ create policy events_owner on public.events for all to authenticated
   with check (user_id = auth.uid() or public.is_admin());
 
 -- ─── שלב 2: דף ההזמנה דרך פונקציות (מחזירות רק אירוע אחד לפי קוד) ─────────
--- פרטי ההזמנה לפי קוד, בלי user_id והגדרות פנימיות; סופר צפייה
+-- פרטי ההזמנה לפי קוד, בלי user_id והגדרות פנימיות (לטבלת events אין עמודת views)
 create or replace function public.get_invite(p_code text)
-returns jsonb language plpgsql security definer set search_path = '' as $$
-declare r jsonb;
-begin
-  update public.events set views = coalesce(views,0) + 1
-   where invite_code = p_code and invite_active
-  returning to_jsonb(events) - 'user_id' - 'settings_json' into r;
-  return r;
-end $$;
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select to_jsonb(e) - 'user_id' - 'settings_json'
+    from public.events e where e.invite_code = p_code and e.invite_active limit 1
+$$;
 
 -- פרטי אורח מקישור אישי (?g=) — רק אם האורח שייך לאותה הזמנה
 create or replace function public.get_invite_guest(p_code text, p_guest uuid)
