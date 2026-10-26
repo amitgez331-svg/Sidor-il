@@ -6515,8 +6515,14 @@ function AdminDashboard({ user, onLogout }) {
   const [addAmount,setAddAmount]=useState(500);
   const [addNote,setAddNote]=useState("");
   const [toast,setToast]=useState("");
+  const [provider,setProvider]=useState(null); // יתרה בחשבון 019 מול מה שכבר נמכר ללקוחות
 
   const flash=m=>{setToast(m);setTimeout(()=>setToast(""),2600);};
+  const loadProvider=async()=>{
+    const{data,error}=await sb.functions.invoke("sms-provider-balance",{body:{}});
+    setProvider(error?{error:"לא ניתן לבדוק את היתרה ב-019"}:data);
+  };
+  useEffect(()=>{loadProvider();},[]);
 
   const loadData=async()=>{
     setLoading(true);
@@ -6557,9 +6563,13 @@ function AdminDashboard({ user, onLogout }) {
   };
 
   const openAdd=(event,request=null)=>{setAddFor({event,request});setAddAmount(request?.amount||500);setAddNote(request?`אישור תשלום ₪${request.price??""}`:"");};
+  // כמה חסר ב-019 כדי לכסות את מה שכבר נמכר + הכמות החדשה (0 = יש מספיק / לא ידוע)
+  const providerShort=amt=>provider?.ok&&amt>0?Math.max(0,(provider.committed||0)+amt-(provider.provider_balance||0)):0;
   const doAdd=async()=>{
     const amt=parseInt(addAmount,10);
     if(!amt){flash("הזן כמות");return;}
+    const short=providerShort(amt);
+    if(short>0&&!window.confirm(`⚠️ בחשבון ה-019 חסרות ${short.toLocaleString()} הודעות כדי לכסות את כל מה שנמכר ללקוחות.\nמומלץ לטעון את חשבון ה-019 קודם.\n\nלהמשיך בכל זאת?`))return;
     setSaving("add");
     const{data,error}=await sb.rpc("admin_add_sms",{p_event:addFor.event.id,p_amount:amt,p_note:addNote||null,p_request:addFor.request?.id||null});
     setSaving(null);
@@ -6614,6 +6624,23 @@ function AdminDashboard({ user, onLogout }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* יתרה בספק (019) מול מה שנמכר ללקוחות */}
+        <div style={{...card,padding:"14px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",
+          borderRight:`4px solid ${!provider?C.border:provider.ok?(providerShort(1)>0?C.danger:C.success):C.gold}`}}>
+          <div style={{width:44,height:44,borderRadius:14,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🏦</div>
+          <div style={{flex:1,minWidth:220}}>
+            <div style={{fontWeight:900,fontSize:15}}>חשבון 019 (ספק ה-SMS)</div>
+            {!provider?<div style={{fontSize:13,color:C.muted}}>בודק יתרה…</div>
+              :provider.ok?<div style={{fontSize:13,color:C.muted}}>
+                יתרה ב-019: <b style={{color:C.text}}>{(provider.provider_balance??0).toLocaleString()}</b> ·
+                נמכרו ללקוחות ועוד לא נשלחו: <b style={{color:C.text}}>{(provider.committed??0).toLocaleString()}</b> ·
+                פנוי למכירה: <b style={{color:(provider.provider_balance-provider.committed)<0?C.danger:C.success}}>{((provider.provider_balance??0)-(provider.committed??0)).toLocaleString()}</b>
+              </div>
+              :<div style={{fontSize:13,color:"#8A5A00"}}>{provider.configured===false?"⚠️ החיבור ל-019 עוד לא הוגדר (SMS019_USERNAME / SMS019_TOKEN)":`⚠️ ${provider.error||"019 החזיר שגיאה"}${provider.provider_status!=null?` (סטטוס ${provider.provider_status})`:""}`}</div>}
+          </div>
+          <button onClick={loadProvider} className="sx-btn" style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 בדוק שוב</button>
         </div>
 
         {/* טאבים + חיפוש */}
@@ -6746,6 +6773,11 @@ function AdminDashboard({ user, onLogout }) {
             <div style={{fontSize:12,fontWeight:800,color:C.muted,margin:"4px 0 6px"}}>כמות (אפשר מספר שלילי כדי להוריד)</div>
             <input type="number" value={addAmount} onChange={e=>setAddAmount(e.target.value)} dir="ltr"
               style={{width:"100%",boxSizing:"border-box",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:18,fontWeight:900,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:10,textAlign:"center"}}/>
+            {providerShort(+addAmount||0)>0&&(
+              <div style={{background:"#FDECEE",border:"1px solid #F4C7CD",color:C.danger,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:800,marginBottom:10}}>
+                ⚠️ אחרי ההוספה יחסרו ב-019 {providerShort(+addAmount).toLocaleString()} הודעות. כדאי לטעון את חשבון ה-019 קודם.
+              </div>
+            )}
             <input value={addNote} onChange={e=>setAddNote(e.target.value)} placeholder="הערה (למשל: שולם ב-Bit)"
               style={{width:"100%",boxSizing:"border-box",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:14}}/>
             <button onClick={doAdd} disabled={saving==="add"} className="sx-btn sx-btn-primary"
