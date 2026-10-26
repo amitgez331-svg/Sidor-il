@@ -36,13 +36,13 @@ const Spinner = ({size=24,color=C.blue}) => (
 );
 
 const Btn = ({children,primary,ghost,danger,small,full,onClick,disabled,style={}}) => (
-  <button onClick={onClick} disabled={disabled} style={{
-    background:danger?C.danger:primary?`linear-gradient(135deg,${C.blueM},${C.blueL})`:ghost?"transparent":C.surface,
+  <button onClick={onClick} disabled={disabled} className={`sx-btn${primary?" sx-btn-primary":""}`} style={{
+    background:danger?C.danger:primary?`linear-gradient(135deg,${C.blueM},${C.blueL},#8A4BFF)`:ghost?"transparent":C.surface,
     color:(primary||danger)?"#fff":ghost?C.blue:C.text,
     border:`1.5px solid ${danger?C.danger:primary?"transparent":ghost?C.blue:C.border}`,
     borderRadius:14,padding:small?"7px 16px":"11px 22px",fontSize:small?12:14,fontWeight:700,
-    cursor:"pointer",opacity:disabled?.45:1,fontFamily:"inherit",transition:"all .15s",
-    width:full?"100%":"auto",boxShadow:primary?`0 4px 16px ${C.blueL}44`:"none",...style,
+    cursor:disabled?"not-allowed":"pointer",opacity:disabled?.45:1,fontFamily:"inherit",transition:"transform .18s,box-shadow .2s,filter .2s",
+    width:full?"100%":"auto",boxShadow:primary?`0 6px 20px ${C.blueL}55`:"none",backgroundSize:primary?"200% 100%":undefined,...style,
   }}>{children}</button>
 );
 
@@ -724,6 +724,259 @@ function AccessibilityWidget() {
   );
 }
 
+// ─── LANDING ─────────────────────────────────────────────────────────────────
+const LP={ink:"#2B1D3F",muted:"#6E6585",rose:"#F0609E",coral:"#FF8A65",violet:"#9B6BFF",gold:"#E8B04A",mint:"#3CC8A0",sky:"#5AA9FF",cream:"#FFFBF7",lav:"#F4EEFF"};
+const LANDING_CSS=`
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes pulse{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.25)}}
+  @keyframes shine{0%{transform:translateX(120%) skewX(-20deg)}60%,100%{transform:translateX(-220%) skewX(-20deg)}}
+  @keyframes seatIn{0%,6%{fill:#ECE6F5}16%,90%{fill:var(--c)}100%{fill:#ECE6F5}}
+  @keyframes dragGuest{0%,10%{transform:translate(0,0) rotate(-4deg);opacity:0}18%{opacity:1}55%{transform:translate(-178px,96px) rotate(3deg);opacity:1}64%,100%{transform:translate(-178px,96px) scale(.4);opacity:0}}
+  @keyframes toastIn{0%,58%{opacity:0;transform:translateY(10px) scale(.95)}64%,92%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-6px)}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(50%)}}
+  @keyframes blob{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.08)}66%{transform:translate(-25px,20px) scale(.95)}}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+  @keyframes bulb{0%,100%{opacity:.55}50%{opacity:1}}
+  @keyframes ring{from{stroke-dashoffset:176}to{stroke-dashoffset:44}}
+  @keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+  .lp a{color:inherit}
+  .lp-btn{position:relative;overflow:hidden;border:none;cursor:pointer;font-family:inherit;font-weight:800;border-radius:16px;transition:transform .2s,box-shadow .25s,background .2s,border-color .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+  .lp-btn:hover{transform:translateY(-3px)}
+  .lp-btn:active{transform:translateY(0) scale(.98)}
+  .lp-btn:focus-visible{outline:3px solid ${"#9B6BFF"};outline-offset:3px}
+  .lp-primary{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF 100%);background-size:200% 100%;color:#fff;box-shadow:0 12px 30px -8px rgba(240,96,158,.6),inset 0 1px 0 rgba(255,255,255,.35);animation:gradShift 6s ease infinite;text-shadow:0 1px 2px rgba(80,20,60,.2)}
+  .lp-primary:hover{box-shadow:0 20px 44px -10px rgba(240,96,158,.75),0 0 0 5px rgba(240,96,158,.14)}
+  .lp-primary::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shine 3.2s ease-in-out infinite}
+  .lp-ghost{background:#fff;color:#2B1D3F;border:1.5px solid #E6DDF5;box-shadow:0 4px 14px rgba(43,29,63,.06)}
+  .lp-ghost:hover{border-color:#F0609E;color:#C2397A;box-shadow:0 10px 26px rgba(240,96,158,.18)}
+  .lp-nav-link{color:#5A5070;text-decoration:none;font-size:14px;font-weight:700;padding:8px 14px;border-radius:10px;transition:all .2s}
+  .lp-nav-link:hover{color:#C2397A;background:#FFEFF5}
+  .lp-card{position:relative;background:#fff;border:1px solid #EFE8F7;border-radius:24px;box-shadow:0 6px 24px -10px rgba(91,60,140,.15);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .3s;overflow:hidden}
+  .lp-card::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:linear-gradient(135deg,#FF8A65,#F0609E,#9B6BFF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s;pointer-events:none}
+  .lp-card:hover{transform:translateY(-8px);box-shadow:0 28px 60px -22px rgba(155,107,255,.45)}
+  .lp-card:hover::before{opacity:1}
+  .lp-card:hover .lp-ic{transform:scale(1.1) rotate(-6deg)}
+  .lp-ic{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .lp-ev{transition:transform .35s,box-shadow .35s}
+  .lp-ev:hover img{transform:scale(1.08)}
+  .lp-ev:hover{transform:translateY(-6px);box-shadow:0 26px 50px -20px rgba(240,96,158,.4)}
+  .lp-grad{background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF,#F0609E,#FF8A65);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 7s ease infinite}
+  .lp-underline{position:relative;display:inline-block}
+  .lp-underline svg{position:absolute;right:0;left:0;bottom:-10px;width:100%;height:16px}
+  .fu{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+  @media(max-width:960px){.lp-hero{flex-direction:column!important;text-align:center}.lp-hero p{margin-inline:auto}.lp-hero-cta{justify-content:center}.lp-plan{transform:scale(.88);margin:-24px 0}.lp-hide-sm{display:none!important}.lp-steps{grid-template-columns:1fr!important}.lp-feat{grid-template-columns:1fr 1fr!important}}
+  @media(max-width:600px){.lp-feat{grid-template-columns:1fr!important}.lp-plan{transform:scale(.7);margin:-66px -60px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.fu{opacity:1!important;transform:none!important}}
+`;
+
+// אייקונים בקו דק (בסגנון אחיד במקום אימוג'י)
+const LP_ICONS={
+  map:<><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></>,
+  ai:<><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></>,
+  users:<><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.6.1 4.6 1.8 5.3 4.9"/></>,
+  check:<><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></>,
+  msg:<><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></>,
+  print:<><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></>,
+};
+const LpIcon=({name,color,size=26})=>(
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{LP_ICONS[name]}</svg>
+);
+
+// נצנוצים פזורים ברקע
+const Sparkles=({items})=>(<>
+  {items.map(([top,left,size,delay,color],i)=>(
+    <svg key={i} width={size} height={size} viewBox="0 0 20 20" aria-hidden="true"
+      style={{position:"absolute",top,left,animation:`twinkle ${2.6+i%3*.7}s ease-in-out ${delay}s infinite`,pointerEvents:"none"}}>
+      <path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill={color}/>
+    </svg>
+  ))}
+</>);
+
+// שרשרת נורות תלויה מעל ה-Hero
+function StringLights() {
+  const pts=Array.from({length:26},(_,i)=>i);
+  const y=x=>30+Math.sin((x/1200)*Math.PI*3)*22+Math.sin((x/1200)*Math.PI*12)*6;
+  const colors=["#E8B04A","#F0609E","#9B6BFF","#3CC8A0","#5AA9FF","#FF8A65"];
+  return(
+    <svg viewBox="0 0 1200 90" preserveAspectRatio="none" style={{position:"absolute",top:62,left:0,width:"100%",height:90,pointerEvents:"none"}} aria-hidden="true">
+      <path d={"M0 "+y(0)+pts.map(i=>{const x=i*48;return ` L${x} ${y(x)}`;}).join("")} fill="none" stroke="#CBBFE0" strokeWidth="1.5"/>
+      {pts.map(i=>{const x=i*48+24;const c=colors[i%colors.length];return(
+        <g key={i} style={{animation:`bulb ${1.8+(i%4)*.5}s ease-in-out ${i*.15}s infinite`}}>
+          <circle cx={x} cy={y(x)+10} r="9" fill={c} opacity=".18"/>
+          <rect x={x-2.5} y={y(x)} width="5" height="5" rx="1" fill="#B8AACF"/>
+          <ellipse cx={x} cy={y(x)+10} rx="4.2" ry="5.5" fill={c}/>
+          <ellipse cx={x-1.3} cy={y(x)+8} rx="1.2" ry="1.8" fill="#fff" opacity=".7"/>
+        </g>
+      );})}
+    </svg>
+  );
+}
+
+// מפת אולם מאוירת ומונפשת: שולחנות שמתמלאים באורחים
+function SeatingPlanDemo() {
+  const tables=[
+    {x:78,y:150,n:"1",c:LP.rose,d:0},{x:78,y:270,n:"2",c:LP.rose,d:.6},
+    {x:382,y:150,n:"3",c:LP.sky,d:1.2},{x:382,y:270,n:"4",c:LP.sky,d:1.8},
+    {x:150,y:375,n:"5",c:LP.mint,d:2.4},{x:310,y:375,n:"6",c:LP.gold,d:3},
+  ];
+  const chairs=10;
+  return(
+    <div className="lp-plan" style={{position:"relative",width:460,height:460,flexShrink:0}}>
+      <div style={{position:"absolute",inset:-50,background:"radial-gradient(circle at 60% 40%,rgba(240,96,158,.28),transparent 60%),radial-gradient(circle at 30% 70%,rgba(155,107,255,.25),transparent 60%)",filter:"blur(30px)"}}/>
+      <div style={{position:"relative",width:"100%",height:"100%",borderRadius:32,background:"#fff",border:"1px solid #EFE8F7",boxShadow:"0 50px 100px -40px rgba(91,60,140,.45),0 0 0 8px rgba(255,255,255,.6)",overflow:"hidden"}}>
+        <svg direction="ltr" viewBox="0 0 460 460" width="460" height="460" style={{position:"absolute",inset:0}} role="img" aria-label="הדגמה של מפת הושבה באולם">
+          <defs>
+            <pattern id="lpDots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#E9E1F5"/></pattern>
+            <pattern id="lpParquet" width="20" height="20" patternUnits="userSpaceOnUse">
+              <rect width="20" height="20" fill="#FBF3E4"/><path d="M0 0h10v10H0zM10 10h10v10H10z" fill="#F6E7CC"/>
+            </pattern>
+            <radialGradient id="lpCloth" cx="40%" cy="35%" r="70%"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#F3EDFB"/></radialGradient>
+            <linearGradient id="lpHead" x1="0" x2="1"><stop offset="0%" stopColor="#FFE3EE"/><stop offset="100%" stopColor="#EEE4FF"/></linearGradient>
+            <filter id="lpSh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#5B3C8C" floodOpacity=".16"/></filter>
+          </defs>
+          <rect width="460" height="460" fill="url(#lpDots)"/>
+          {/* כותרת המפה */}
+          <text x="430" y="34" textAnchor="end" fill={LP.ink} fontSize="15" fontWeight="900" fontFamily="Heebo">מפת האולם</text>
+          <text x="430" y="52" textAnchor="end" fill={LP.muted} fontSize="11" fontFamily="Heebo">חתונת נועה ואיתי · 214 אורחים</text>
+          <g transform="translate(30,26)"><rect width="74" height="24" rx="12" fill="#E9FBF4"/><circle cx="14" cy="12" r="4" fill={LP.mint}/><text x="44" y="16" textAnchor="middle" fill="#1F8F6C" fontSize="11" fontWeight="800" fontFamily="Heebo">נשמר</text></g>
+          {/* שולחן חתן-כלה */}
+          <g filter="url(#lpSh)">
+            <rect x="150" y="72" width="160" height="34" rx="17" fill="url(#lpHead)" stroke="#F3B6CF"/>
+          </g>
+          {Array.from({length:6}).map((_,i)=><rect key={i} x={166+i*24} y="110" width="14" height="9" rx="4" fill={LP.rose} opacity=".85"/>)}
+          <text x="230" y="94" textAnchor="middle" fill="#B13B72" fontSize="12" fontWeight="900" fontFamily="Heebo">💍 שולחן חתן וכלה</text>
+          {/* רחבת ריקודים */}
+          <g filter="url(#lpSh)"><rect x="168" y="160" width="124" height="150" rx="18" fill="url(#lpParquet)" stroke="#EBCB8F"/></g>
+          <text x="230" y="232" textAnchor="middle" fill="#A87A22" fontSize="13" fontWeight="900" fontFamily="Heebo">רחבת ריקודים</text>
+          <text x="230" y="252" textAnchor="middle" fontSize="18">✨</text>
+          {/* שולחנות עגולים */}
+          {tables.map(t=>(
+            <g key={t.n}>
+              {Array.from({length:chairs}).map((_,i)=>{
+                const deg=i*(360/chairs);const a=deg*Math.PI/180;
+                const cx=t.x+40*Math.sin(a),cy=t.y-40*Math.cos(a);
+                return <rect key={i} x="-7" y="-5" width="14" height="10" rx="4.5" transform={`translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${deg})`}
+                  fill="#ECE6F5" style={{"--c":t.c,animation:`seatIn 8s ease-in-out ${t.d+i*.13}s infinite`}}/>;
+              })}
+              <g filter="url(#lpSh)"><circle cx={t.x} cy={t.y} r="29" fill="url(#lpCloth)" stroke={t.c} strokeOpacity=".45" strokeWidth="1.5"/></g>
+              {/* סידור פרחים במרכז */}
+              {[0,72,144,216,288].map(d=>{const a=d*Math.PI/180;return <circle key={d} cx={t.x+6*Math.cos(a)} cy={t.y-4+6*Math.sin(a)} r="4" fill={t.c} opacity=".55"/>;})}
+              <circle cx={t.x} cy={t.y-4} r="3" fill={LP.gold}/>
+              <text x={t.x} y={t.y+17} textAnchor="middle" fill={LP.ink} fontSize="10" fontWeight="900" fontFamily="Heebo">שולחן {t.n}</text>
+            </g>
+          ))}
+          {/* מקרא */}
+          <g transform="translate(30,428)" fontFamily="Heebo" fontSize="11" fontWeight="700" fill={LP.muted}>
+            {[["משפחה",LP.rose],["חברים",LP.sky],["עבודה",LP.mint],["שכנים",LP.gold]].map(([l,c],i)=>(
+              <g key={l} transform={`translate(${i*72},0)`}><circle cx="6" cy="-4" r="5" fill={c}/><text x="16" y="0">{l}</text></g>
+            ))}
+          </g>
+        </svg>
+        {/* אורח נגרר */}
+        <div style={{position:"absolute",top:142,right:14,animation:"dragGuest 8s ease-in-out infinite",zIndex:3}}>
+          <div style={{background:"#fff",color:LP.ink,borderRadius:100,padding:"6px 12px 6px 8px",fontSize:12,fontWeight:800,boxShadow:"0 12px 28px rgba(91,60,140,.3)",border:"1px solid #F3D3E2",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:7}}>
+            <span style={{width:22,height:22,borderRadius:"50%",background:`linear-gradient(135deg,${LP.coral},${LP.rose})`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>ר</span>
+            דודה רחל
+          </div>
+          <div style={{fontSize:20,marginTop:-2,marginRight:8}}>👆</div>
+        </div>
+        {/* טוסט הצלחה */}
+        <div style={{position:"absolute",bottom:52,right:20,left:20,background:"#fff",border:"1px solid #BDEFDD",borderRadius:14,padding:"10px 14px",color:"#1F8F6C",fontSize:13,fontWeight:800,display:"flex",alignItems:"center",gap:8,animation:"toastIn 8s ease infinite",boxShadow:"0 14px 30px -10px rgba(60,200,160,.5)"}}>
+          <span style={{width:22,height:22,borderRadius:"50%",background:LP.mint,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12}}>✓</span>
+          דודה רחל הושבה בשולחן 2 · משפחה · 9/10
+        </div>
+      </div>
+      {/* כרטיסים צפים */}
+      <div className="lp-hide-sm" style={{position:"absolute",top:-22,left:-44,background:"#fff",borderRadius:20,padding:"12px 16px",boxShadow:"0 22px 44px -14px rgba(91,60,140,.4)",animation:"float 5s ease-in-out infinite",display:"flex",alignItems:"center",gap:12,border:"1px solid #EFE8F7"}}>
+        <div style={{width:40,height:40,borderRadius:12,background:`linear-gradient(135deg,${LP.violet},${LP.rose})`,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name="ai" color="#fff" size={22}/></div>
+        <div>
+          <div style={{fontSize:11,color:LP.violet,fontWeight:800}}>AI סידר עכשיו</div>
+          <div style={{fontSize:18,fontWeight:900,color:LP.ink,lineHeight:1.1}}>214 אורחים</div>
+          <div style={{fontSize:11,color:LP.muted}}>ב-22 שולחנות · 12 שניות</div>
+        </div>
+      </div>
+      <div className="lp-hide-sm" style={{position:"absolute",bottom:96,left:-58,background:"#fff",borderRadius:20,padding:"12px 16px",boxShadow:"0 22px 44px -14px rgba(91,60,140,.4)",animation:"float 6s ease-in-out 1s infinite",display:"flex",alignItems:"center",gap:12,border:"1px solid #EFE8F7"}}>
+        <svg width="46" height="46" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#F1ECF8" strokeWidth="7"/>
+          <circle cx="32" cy="32" r="28" fill="none" stroke={LP.mint} strokeWidth="7" strokeLinecap="round" strokeDasharray="176" strokeDashoffset="44" transform="rotate(-90 32 32)" style={{animation:"ring 2.2s ease-out both"}}/>
+          <text x="32" y="37" textAnchor="middle" fontSize="15" fontWeight="900" fill={LP.ink} fontFamily="Heebo">75%</text>
+        </svg>
+        <div>
+          <div style={{fontSize:13,fontWeight:900,color:LP.ink}}>אישרו הגעה</div>
+          <div style={{fontSize:11,color:LP.muted}}>מתעדכן בהושבה אוטומטית</div>
+        </div>
+      </div>
+      <div className="lp-hide-sm" style={{position:"absolute",top:120,right:-40,background:"#fff",borderRadius:16,padding:"9px 13px",boxShadow:"0 18px 36px -14px rgba(91,60,140,.4)",animation:"float 5.5s ease-in-out .5s infinite",fontSize:12,fontWeight:800,color:"#C2397A",border:"1px solid #F8D6E5"}}>
+        🚫 לא ליד דוד משה
+      </div>
+    </div>
+  );
+}
+
+// איורים קטנים לשלבי "איך זה עובד"
+const StepArt=({kind})=>{
+  const box={width:"100%",height:130,display:"block",marginBottom:18};
+  if(kind===1) return(
+    <svg direction="ltr" viewBox="0 0 240 130" style={box} aria-hidden="true">
+      <rect x="40" y="10" width="160" height="112" rx="14" fill="#fff" stroke="#EFE8F7"/>
+      <rect x="40" y="10" width="160" height="26" rx="14" fill="#F4EEFF"/><rect x="40" y="24" width="160" height="12" fill="#F4EEFF"/>
+      <text x="186" y="28" textAnchor="end" fontSize="11" fontWeight="900" fill={LP.ink} fontFamily="Heebo">רשימת מוזמנים</text>
+      {[[LP.rose,"משפחה",112],[LP.sky,"חברים",92],[LP.mint,"עבודה",104],[LP.gold,"שכנים",80]].map(([c,l,w],i)=>(
+        <g key={l} transform={`translate(0,${48+i*18})`}>
+          <circle cx="186" cy="0" r="5" fill={c}/>
+          <rect x={176-w} y="-4" width={w-46} height="8" rx="4" fill="#EEE9F6"/>
+          <rect x="54" y="-7" width="40" height="14" rx="7" fill={c} opacity=".15"/>
+          <text x="74" y="4" textAnchor="middle" fontSize="9" fontWeight="800" fill={c} fontFamily="Heebo">{l}</text>
+        </g>
+      ))}
+      <g style={{animation:"float 3.5s ease-in-out infinite"}}>
+        <rect x="6" y="64" width="44" height="52" rx="8" fill="#1F9D55"/><text x="28" y="96" textAnchor="middle" fontSize="16" fontWeight="900" fill="#fff" fontFamily="Heebo">X</text>
+        <path d="M50 88h14" stroke={LP.violet} strokeWidth="2.5" strokeLinecap="round" strokeDasharray="3 4"/>
+      </g>
+    </svg>
+  );
+  if(kind===2) return(
+    <svg direction="ltr" viewBox="0 0 240 130" style={box} aria-hidden="true">
+      {Array.from({length:10}).map((_,i)=>{const d=i*36,a=d*Math.PI/180;return <rect key={i} x="-9" y="-6" width="18" height="12" rx="5" transform={`translate(${(120+48*Math.sin(a)).toFixed(1)},${(66-48*Math.cos(a)).toFixed(1)}) rotate(${d})`} fill={i<7?[LP.rose,LP.sky,LP.violet][i%3]:"#ECE6F5"}/>;})}
+      <circle cx="120" cy="66" r="34" fill="#fff" stroke="#EADFF7" strokeWidth="2"/>
+      {[0,72,144,216,288].map(d=>{const a=d*Math.PI/180;return <circle key={d} cx={120+8*Math.cos(a)} cy={62+8*Math.sin(a)} r="5" fill={LP.rose} opacity=".5"/>;})}
+      <circle cx="120" cy="62" r="4" fill={LP.gold}/>
+      <text x="120" y="88" textAnchor="middle" fontSize="10" fontWeight="900" fill={LP.ink} fontFamily="Heebo">7/10</text>
+      <g style={{animation:"float 3s ease-in-out infinite"}}>
+        <rect x="170" y="14" width="62" height="24" rx="12" fill="#fff" stroke="#F3D3E2"/><circle cx="220" cy="26" r="7" fill={LP.coral}/>
+        <text x="196" y="30" textAnchor="middle" fontSize="10" fontWeight="800" fill={LP.ink} fontFamily="Heebo">סבתא</text>
+        <path d="M176 40 Q160 52 156 50" stroke={LP.violet} strokeWidth="2" fill="none" strokeDasharray="3 4"/>
+      </g>
+    </svg>
+  );
+  return(
+    <svg direction="ltr" viewBox="0 0 240 130" style={box} aria-hidden="true">
+      <rect x="80" y="4" width="80" height="124" rx="16" fill={LP.ink}/><rect x="86" y="12" width="68" height="108" rx="11" fill="#FBF8FF"/>
+      <rect x="108" y="16" width="24" height="5" rx="2.5" fill={LP.ink}/>
+      <g style={{animation:"float 3.2s ease-in-out infinite"}}>
+        <rect x="92" y="34" width="56" height="44" rx="10" fill="#DCF8C6"/>
+        <text x="142" y="50" textAnchor="end" fontSize="8" fontWeight="700" fill="#2B4A2B" fontFamily="Heebo">היי רחל 💛</text>
+        <text x="142" y="62" textAnchor="end" fontSize="8" fill="#2B4A2B" fontFamily="Heebo">השולחן שלך</text>
+        <text x="120" y="75" textAnchor="middle" fontSize="12" fontWeight="900" fill="#1F7A3F" fontFamily="Heebo">שולחן 7</text>
+      </g>
+      <rect x="92" y="84" width="56" height="26" rx="8" fill="#fff" stroke="#EFE8F7"/>
+      <text x="120" y="101" textAnchor="middle" fontSize="9" fontWeight="800" fill={LP.violet} fontFamily="Heebo">✓ אישרתי הגעה</text>
+      <g transform="translate(176,40)" style={{animation:"sway 3s ease-in-out infinite",transformOrigin:"24px 0"}}>
+        <path d="M24 0v10" stroke="#CBBFE0"/><rect x="2" y="10" width="44" height="54" rx="6" fill="#fff" stroke="#EADFF7"/>
+        <text x="24" y="32" textAnchor="middle" fontSize="9" fill={LP.muted} fontFamily="Heebo">כרטיס הושבה</text>
+        <text x="24" y="52" textAnchor="middle" fontSize="18" fontWeight="900" fill={LP.rose} fontFamily="Heebo">7</text>
+      </g>
+      <g transform="translate(24,52)"><rect width="42" height="42" rx="12" fill="#E9FBF4"/><path d="M12 22l7 7 12-14" stroke={LP.mint} strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></g>
+    </svg>
+  );
+};
+
 function LandingPage({ onOpenAuth, onLogout }) {
   const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
@@ -735,212 +988,171 @@ function LandingPage({ onOpenAuth, onLogout }) {
     return()=>window.removeEventListener("scroll",fn);
   },[]);
 
-
-
   useEffect(()=>{
-    const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting){x.target.style.opacity=1;x.target.style.transform="none";obs.unobserve(x.target);}});},{threshold:.1});
-    setTimeout(()=>document.querySelectorAll(".fu").forEach(el=>obs.observe(el)),100);
-    return()=>obs.disconnect();
-  },[]);
+    const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting){x.target.style.opacity=1;x.target.style.transform="none";obs.unobserve(x.target);}});},{threshold:.12});
+    const t=setTimeout(()=>document.querySelectorAll(".fu").forEach(el=>obs.observe(el)),100);
+    return()=>{clearTimeout(t);obs.disconnect();};
+  },[venuePage]);
 
   if(venuePage) return <VenuePage onBack={()=>setVenuePage(false)} onOpenAuth={onOpenAuth}/>;
 
+  const sectionTitle=(kicker,title,accent,sub)=>(
+    <div className="fu" style={{textAlign:"center",marginBottom:56}}>
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,color:"#C2397A",background:"#FFEFF5",border:"1px solid #F8D6E5",borderRadius:100,padding:"6px 16px",marginBottom:18}}>✦ {kicker}</div>
+      <h2 style={{fontSize:"clamp(30px,4.2vw,54px)",fontWeight:900,lineHeight:1.15,letterSpacing:"-.02em",marginBottom:16,color:LP.ink}}>
+        {title} {accent&&<span className="lp-grad">{accent}</span>}
+      </h2>
+      {sub&&<p style={{fontSize:17,color:LP.muted,maxWidth:560,margin:"0 auto",lineHeight:1.75}}>{sub}</p>}
+    </div>
+  );
+
+  const marqueeItems=[["🪑","גרירה ושחרור לשולחנות",LP.rose],["✨","סידור הושבה ב-AI",LP.violet],["👨‍👩‍👧","קיבוץ לפי משפחות וחברים",LP.sky],["🚫","הפרדה בין אורחים",LP.coral],["🖨️","כרטיסי הושבה להדפסה",LP.gold],["✅","אישורי הגעה בזמן אמת",LP.mint],["📱","מספר שולחן ב-SMS ו-WhatsApp",LP.sky],["📊","ייבוא מאקסל",LP.mint]];
+
   return(
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:"#08080C",color:"#fff",minHeight:"100vh",overflowX:"hidden"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-        @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-        @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-        @media(min-width:768px){.nav-link{display:block!important;}}
-        @media(max-width:767px){.hide-mobile{display:none!important;} .hero-grid{flex-direction:column!important;} .feat-grid{grid-template-columns:1fr!important;}}
-        .glow-btn:hover{box-shadow:0 0 30px rgba(74,122,255,.5)!important;transform:translateY(-2px)!important;}
-        .feat-card:hover{border-color:rgba(74,122,255,.5)!important;transform:translateY(-6px)!important;}
-        .event-card:hover img{transform:scale(1.07)!important;}
-      `}</style>
+    <div className="lp" dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
+      <style>{LANDING_CSS}</style>
 
       {/* ─── NAV ─────────────────────────────────────────────────── */}
-      <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,
-        background:scrolled?"rgba(255,255,255,.97)":"transparent",
-backdropFilter:scrolled?"blur(20px)":"none",
-borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
-        height:66,display:"flex",alignItems:"center",padding:"0 5vw",
-        flexDirection:"row-reverse",transition:"all .3s"}}>
-        <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="17" fill="url(#ng)"/>
-            <defs><radialGradient id="ng" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#4A7AFF"/><stop offset="100%" stopColor="#1B3A8C"/></radialGradient></defs>
-            <circle cx="18" cy="18" r="9" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
-            {[0,60,120,180,240,300].map((deg,i)=>{const rad=deg*Math.PI/180;return <circle key={i} cx={18+13*Math.cos(rad)} cy={18+13*Math.sin(rad)} r="2.8" fill="rgba(255,255,255,0.85)"/>;} )}
+      <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,
+        background:scrolled?"rgba(255,251,247,.85)":"transparent",backdropFilter:scrolled?"blur(18px) saturate(1.5)":"none",
+        borderBottom:scrolled?"1px solid #F0E8F4":"1px solid transparent",boxShadow:scrolled?"0 6px 24px -14px rgba(91,60,140,.25)":"none",transition:"all .3s"}}>
+        <a href="#top" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0}}>
+          <svg width="40" height="40" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <defs><linearGradient id="lpLogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF8A65"/><stop offset="55%" stopColor="#F0609E"/><stop offset="100%" stopColor="#9B6BFF"/></linearGradient></defs>
+            <circle cx="18" cy="18" r="17" fill="url(#lpLogo)"/>
+            <circle cx="18" cy="18" r="7.5" fill="rgba(255,255,255,.3)" stroke="#fff" strokeWidth="1.5"/>
+            {[0,60,120,180,240,300].map((deg,i)=>{const rad=deg*Math.PI/180;return <circle key={i} cx={18+12.5*Math.cos(rad)} cy={18+12.5*Math.sin(rad)} r="2.6" fill="#fff"/>;})}
           </svg>
-          <span style={{fontWeight:900,fontSize:20,color:scrolled?"#1B3A8C":"#fff",letterSpacing:"-.02em"}}>Sidor-IL</span>
-        </div>
-        <div style={{flex:1,display:"flex",gap:4,alignItems:"center",flexDirection:"row-reverse",justifyContent:"flex-end"}}>
-          {[["#how","איך עובד"],["#events","סוגי אירועים"],["#pricing","מחירים"],["#contact","צור קשר"]].map(([h,l])=>(
-            <a key={h} href={h} className="nav-link"
-              style={{color:scrolled?"#333":"rgba(255,255,255,.7)",textDecoration:"none",fontSize:14,fontWeight:500,padding:"6px 14px",borderRadius:8,display:"none",transition:"all .2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.color=scrolled?"#1B3A8C":"#fff";e.currentTarget.style.background=scrolled?"#EEF2FF":"rgba(255,255,255,.08)";}}
-              onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,.7)";e.currentTarget.style.background="none";}}>{l}</a>
+          <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
+        </a>
+        <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>
+          {[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים"]].map(([h,l])=>(
+            <a key={h} href={h} className="lp-nav-link">{l}</a>
           ))}
-          <button onClick={()=>onOpenAuth("login")}
-            style={{background:"transparent",color:scrolled?"#1B3A8C":"rgba(255,255,255,.8)",border:scrolled?"1.5px solid #1B3A8C":"1.5px solid rgba(255,255,255,.25)",borderRadius:8,padding:"7px 18px",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0,transition:"all .2s"}}>
-            כניסה
-          </button>
-          <button onClick={()=>setMenuOpen(true)}
-            style={{background:scrolled?"#F7F7F7":"rgba(255,255,255,.06)",border:scrolled?"1px solid #E2E8F0":"1px solid rgba(255,255,255,.12)",borderRadius:8,width:38,height:38,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0,marginRight:8}}>
-            <span style={{width:16,height:1.5,background:scrolled?"#333":"rgba(255,255,255,.8)",borderRadius:1,display:"block"}}/>
-            <span style={{width:16,height:1.5,background:scrolled?"#333":"rgba(255,255,255,.8)",borderRadius:1,display:"block"}}/>
-            <span style={{width:16,height:1.5,background:scrolled?"#333":"rgba(255,255,255,.8)",borderRadius:1,display:"block"}}/>
-          </button>
         </div>
+        <div style={{flex:1}}/>
+        <button className="lp-btn lp-ghost lp-hide-sm" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>כניסה</button>
+        <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14}}>התחילו להושיב</button>
+        <button onClick={()=>setMenuOpen(true)} aria-label="תפריט"
+          style={{background:"#fff",border:"1px solid #E6DDF5",borderRadius:12,width:42,height:42,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:0}}>
+          {[0,1,2].map(i=><span key={i} style={{width:16,height:2,background:LP.ink,borderRadius:1,display:"block"}}/>)}
+        </button>
       </nav>
 
       {menuOpen&&<HamburgerMenu onOpenAuth={onOpenAuth} onClose={()=>setMenuOpen(false)} onVenuePage={()=>setVenuePage(true)} onLogout={onLogout}/>}
 
       {/* ─── HERO ────────────────────────────────────────────────── */}
-      <section style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"100px 6vw 80px",background:"#F0F4FF"}}>
-        {/* רקע */}
-        <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 60% 50%,rgba(27,58,140,.08) 0%,transparent 70%)"}}/>
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=1600)",backgroundSize:"cover",backgroundPosition:"center",opacity:.12}}/>
+      <section id="top" style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"150px 6vw 90px",
+        background:"linear-gradient(180deg,#FFF4EE 0%,#FFF7FB 45%,#FFFBF7 100%)"}}>
+        <div style={{position:"absolute",top:"-8%",right:"-6%",width:520,height:520,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.22),transparent 65%)",animation:"blob 16s ease-in-out infinite"}}/>
+        <div style={{position:"absolute",bottom:"-10%",left:"-8%",width:560,height:560,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.2),transparent 65%)",animation:"blob 20s ease-in-out 2s infinite"}}/>
+        <div style={{position:"absolute",top:"30%",left:"35%",width:340,height:340,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.16),transparent 65%)",animation:"blob 18s ease-in-out 4s infinite"}}/>
+        <StringLights/>
+        <Sparkles items={[["22%","6%",18,0,LP.gold],["70%","44%",14,.8,LP.rose],["30%","52%",12,1.4,LP.violet],["82%","12%",20,.4,LP.coral],["18%","88%",14,1.1,LP.violet],["60%","92%",12,.2,LP.gold]]}/>
 
-        {/* אורות עיגול גלואינג */}
-        <div style={{position:"absolute",top:"20%",right:"10%",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(74,122,255,.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:"20%",left:"5%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(138,75,255,.06) 0%,transparent 70%)",pointerEvents:"none"}}/>
-
-        {/* גריד */}
-        <div className="hero-grid" style={{maxWidth:1100,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"6vw",position:"relative",zIndex:2}}>
-          {/* טקסט */}
-          <div style={{flex:1,minWidth:280,animation:"fadeUp .8s ease both"}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(74,122,255,.1)",border:"1px solid rgba(74,122,255,.25)",borderRadius:100,padding:"6px 16px",marginBottom:24}}>
-              <span style={{width:6,height:6,borderRadius:"50%",background:"#4A7AFF",display:"inline-block",animation:"pulse 2s infinite"}}/>
-              <span style={{fontSize:13,color:"#1B3A8C",fontWeight:600}}>מערכת ניהול אירועים מתקדמת</span>
+        <div className="lp-hero" style={{maxWidth:1200,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",position:"relative",zIndex:2}}>
+          <div style={{flex:1,minWidth:280,animation:"fadeUp .9s ease both"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #F0E3EF",borderRadius:100,padding:"7px 16px 7px 10px",marginBottom:26,boxShadow:"0 6px 20px -8px rgba(240,96,158,.35)"}}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:LP.mint,display:"inline-block",animation:"pulse 2s infinite"}}/>
+              <span style={{fontSize:13,color:"#5A5070",fontWeight:700}}>🪑 מערכת סידורי ההושבה החכמה לאירועים</span>
             </div>
 
-            <h1 style={{fontSize:"clamp(40px,5.5vw,72px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-.03em",marginBottom:20,color:"#0D1B4B"}}>
-              ניהול האירוע שלך<br/>
-              <span style={{background:"linear-gradient(135deg,#4A7AFF,#8A4BFF,#4A7AFF)",backgroundSize:"200% 100%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",animation:"gradShift 4s ease infinite"}}>בצורה חכמה</span>
+            <h1 style={{fontSize:"clamp(44px,6vw,84px)",fontWeight:900,lineHeight:1.04,letterSpacing:"-.035em",marginBottom:26,color:LP.ink}}>
+              כל אורח.<br/>
+              <span className="lp-underline"><span className="lp-grad">במקום הנכון.</span>
+                <svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true"><path d="M4 11 C 80 2, 200 2, 296 9" stroke="url(#lpUl)" strokeWidth="5" fill="none" strokeLinecap="round"/><defs><linearGradient id="lpUl"><stop offset="0%" stopColor="#9B6BFF"/><stop offset="100%" stopColor="#FF8A65"/></linearGradient></defs></svg>
+              </span>
             </h1>
 
-            <p style={{fontSize:18,color:"#4A5568",lineHeight:1.8,marginBottom:32,maxWidth:480}}>
-              הזמנות דיגיטליות, אישורי הגעה, סידורי הושבה ושליחת SMS  -  הכל במקום אחד. פשוט, מהיר, מושלם.
+            <p style={{fontSize:"clamp(16px,1.5vw,19px)",color:LP.muted,lineHeight:1.85,marginBottom:34,maxWidth:520}}>
+              סידור ההושבה הוא החלק הכי מלחיץ בתכנון האירוע  -  עד עכשיו.
+              גוררים אורחים לשולחנות על מפת האולם, נותנים ל-AI לסדר לפי משפחות וחברים,
+              ושולחים לכל אורח את מספר השולחן שלו. <b style={{color:LP.ink}}>בלי אקסלים, בלי ויכוחים.</b>
             </p>
 
-            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:48}}>
-              <button className="glow-btn" onClick={()=>onOpenAuth("register")}
-                style={{background:"linear-gradient(135deg,#1B3A8C,#4A7AFF)",color:"#fff",border:"none",borderRadius:12,padding:"14px 32px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 0 20px rgba(74,122,255,.3)",transition:"all .2s"}}>
-                התחל בחינם ←
+            <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:40}}>
+              <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"18px 36px",fontSize:17}}>
+                סדרו את האולם בחינם ←
               </button>
-              <button onClick={()=>onOpenAuth("login")}
-                style={{background:"transparent",color:"#1B3A8C",border:"1.5px solid #1B3A8C",borderRadius:12,padding:"14px 28px",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}
-                onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.1)";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,.06)";}}>
-                כניסה למערכת
-              </button>
+              <a href="#how" className="lp-btn lp-ghost" style={{padding:"18px 28px",fontSize:16}}>
+                <span style={{width:26,height:26,borderRadius:"50%",background:"#FFEFF5",color:LP.rose,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10}}>▶</span>
+                איך זה עובד
+              </a>
             </div>
 
-            {/* 3 שלבים */}
-            <div style={{display:"flex",gap:28,flexWrap:"wrap"}}>
-              {[["1","צרו אירוע","הגדירו פרטים בדקות"],["2","הזמינו אורחים","שתפו קישור אישי"],["3","נהלו הכל","הושבה, אישורים, SMS"]].map(([num,t,s])=>(
-                <div key={t} style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:40,height:40,borderRadius:12,background:"rgba(74,122,255,.1)",border:"1px solid rgba(74,122,255,.25)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <div style={{fontSize:9,color:"#1B3A8C",fontWeight:700,lineHeight:1}}>שלב</div>
-                    <div style={{fontSize:18,fontWeight:900,color:"#1B3A8C",lineHeight:1}}>{num}</div>
-                  </div>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:800,color:"#fff"}}>{t}</div>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,.45)"}}>{s}</div>
+            <div className="lp-hero-cta" style={{display:"flex",gap:22,flexWrap:"wrap"}}>
+              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","0 ₪","להתחלה",LP.mint,"#E9FBF4"],["users","עברית","מותאם לאירועים בישראל",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg])=>(
+                <div key={small} style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:44,height:44,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name={ic} color={c} size={22}/></div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:16,fontWeight:900}}>{big}</div>
+                    <div style={{fontSize:12,color:LP.muted}}>{small}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* פלאפון */}
-          <div style={{flexShrink:0,order:2,animation:"float 4s ease-in-out infinite",position:"relative"}}>
-            {/* גלואינג מאחורה */}
-            <div style={{position:"absolute",inset:-30,borderRadius:60,background:"radial-gradient(circle,rgba(74,122,255,.2) 0%,transparent 70%)",filter:"blur(20px)"}}/>
-            <div style={{width:240,height:500,borderRadius:40,background:"#1a1a2e",padding:8,boxShadow:"0 40px 80px rgba(27,58,140,.3)",position:"relative",border:"1px solid rgba(255,255,255,.12)",zIndex:2}}>
-              <div style={{position:"absolute",top:13,left:"50%",transform:"translateX(-50%)",width:9,height:9,borderRadius:"50%",background:"#1a1a2e",zIndex:10}}/>
-              <div style={{borderRadius:32,overflow:"hidden",height:"100%",background:"#f9f9f9",display:"flex",flexDirection:"column",direction:"rtl"}}>
-                <div style={{height:195,position:"relative",overflow:"hidden"}}>
-                  <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.55))"}}/>
-                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#fff",padding:12}}>
-                    <div style={{fontSize:20,fontWeight:900,textShadow:"0 2px 8px rgba(0,0,0,.6)"}}>עמית & אורנה</div>
-                    <div style={{fontSize:11,opacity:.9,marginTop:3,fontWeight:600}}>מתחתנים 💍</div>
-                  </div>
+          <SeatingPlanDemo/>
+        </div>
+      </section>
+
+      {/* ─── MARQUEE ─────────────────────────────────────────────── */}
+      <div style={{overflow:"hidden",padding:"22px 0",background:"#fff",borderTop:"1px solid #F3ECF5",borderBottom:"1px solid #F3ECF5"}} aria-hidden="true">
+        <div style={{display:"flex",gap:14,width:"max-content",animation:"marquee 38s linear infinite"}}>
+          {[...marqueeItems,...marqueeItems].map(([ic,t,c],i)=>(
+            <span key={i} style={{fontSize:15,fontWeight:800,color:LP.ink,whiteSpace:"nowrap",background:c+"14",border:`1px solid ${c}33`,borderRadius:100,padding:"9px 18px",display:"inline-flex",alignItems:"center",gap:8}}>{ic} {t}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── HOW ─────────────────────────────────────────────────── */}
+      <section id="how" style={{padding:"110px 6vw",position:"relative"}}>
+        <div style={{maxWidth:1120,margin:"0 auto"}}>
+          {sectionTitle("איך זה עובד","מרשימת מוזמנים לאולם מסודר","ב-3 צעדים","בלי לשבור את הראש מי יושב ליד מי. אתם מחליטים, המערכת עושה את העבודה.")}
+          <div className="lp-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,position:"relative"}}>
+            {[
+              [1,"מעלים את המוזמנים","מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה...",LP.rose],
+              [2,"מסדרים את השולחנות","בונים את מפת האולם, גוררים אורחים לשולחנות  -  או לוחצים על AI ומקבלים סידור מלא תוך שניות.",LP.violet],
+              [3,"האורחים יודעים איפה לשבת","שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",LP.mint],
+            ].map(([n,t,d,c],i)=>(
+              <div key={n} className="lp-card fu" style={{padding:"26px 26px 30px",transitionDelay:`${i*.12}s`}}>
+                <div style={{background:`linear-gradient(160deg,${c}12,#fff 70%)`,borderRadius:18,margin:"-6px -6px 4px",padding:"6px 6px 0"}}>
+                  <StepArt kind={n}/>
                 </div>
-                <div style={{flex:1,background:"#fff",borderRadius:"14px 14px 0 0",marginTop:-12,padding:"12px 10px",overflow:"hidden"}}>
-                  <div style={{textAlign:"center",borderBottom:"1px solid #eee",paddingBottom:8,marginBottom:8}}>
-                    <div style={{fontSize:9,color:"#555",fontWeight:600}}>יום חמישי, 30 באפריל 2026</div>
-                    <div style={{fontSize:20,fontWeight:900,color:"#111",lineHeight:1.1,marginTop:1}}>19:30</div>
-                    <div style={{fontSize:10,fontWeight:700,color:"#222",marginTop:2}}>אולמי Sidor-IL</div>
-                    <div style={{fontSize:9,color:"#888",marginTop:1}}>📍 השושנים 30, נוף הגליל</div>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:8}}>
-                    {[["🔗","שתפו"],["📅","יומן"],["🚗","נווט"]].map(([ic,t])=>(
-                      <div key={t} style={{background:"#f7f7f7",border:"1px solid #eee",borderRadius:8,padding:"5px 2px",textAlign:"center"}}><div style={{fontSize:13}}>{ic}</div><div style={{fontSize:8,color:"#555",fontWeight:600,marginTop:1}}>{t}</div></div>
-                    ))}
-                  </div>
-                  <div style={{background:"#f9f9f9",borderRadius:10,padding:"8px"}}>
-                    <div style={{fontSize:11,fontWeight:900,color:"#111",textAlign:"center",marginBottom:2}}>אישור הגעה</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-                      <div style={{background:"#2D9B5A",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#fff",textAlign:"center"}}>✓ מגיעים</div>
-                      <div style={{background:"#fff",border:"2px solid #D63B3B",borderRadius:6,padding:"5px",fontSize:9,fontWeight:700,color:"#D63B3B",textAlign:"center"}}>✗ לא מגיעים</div>
-                    </div>
-                  </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <span style={{width:32,height:32,borderRadius:10,background:c,color:"#fff",fontWeight:900,fontSize:15,display:"inline-flex",alignItems:"center",justifyContent:"center",boxShadow:`0 6px 14px -4px ${c}`}}>{n}</span>
+                  <div style={{fontSize:19,fontWeight:900}}>{t}</div>
                 </div>
+                <div style={{fontSize:15,color:LP.muted,lineHeight:1.75}}>{d}</div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
-
-
       </section>
 
       {/* ─── FEATURES ────────────────────────────────────────────── */}
-      <section style={{padding:"100px 6vw",background:"#F4F6FF",position:"relative"}} id="how">
-        {/* קו מפריד */}
-        <div style={{position:"absolute",top:0,right:"6vw",left:"6vw",height:1,background:"linear-gradient(90deg,transparent,rgba(74,122,255,.2),transparent)"}}/>
-
-        <div style={{maxWidth:1100,margin:"0 auto"}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(24px)",transition:"opacity .7s,transform .7s",textAlign:"center",marginBottom:72}}>
-            <div style={{display:"inline-block",fontSize:12,fontWeight:700,color:"#1B3A8C",background:"#E8EEFF",border:"1px solid #C7D2FE",borderRadius:100,padding:"5px 18px",marginBottom:16,letterSpacing:".08em"}}>
-              הפיצ'רים
-            </div>
-            <h2 style={{fontSize:"clamp(28px,4vw,52px)",fontWeight:900,color:"#1a1a2e",lineHeight:1.1,marginBottom:16,letterSpacing:"-.02em"}}>
-              כל מה שצריך לאירוע<br/>
-              <span style={{color:"#1B3A8C"}}>מושלם</span>
-            </h2>
-            <p style={{fontSize:17,color:"#6B7DB3",maxWidth:500,margin:"0 auto",lineHeight:1.7}}>
-              פלטפורמה אחת לכל צרכי האירוע שלך.
-            </p>
-          </div>
-
-          <div className="feat-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20}}>
+      <section id="features" style={{padding:"100px 6vw 110px",position:"relative",background:"linear-gradient(180deg,#FFFBF7,#F8F3FF 50%,#FFFBF7)"}}>
+        <Sparkles items={[["8%","10%",16,0,LP.violet],["14%","86%",14,.6,LP.gold],["88%","50%",12,1,LP.rose]]}/>
+        <div style={{maxWidth:1120,margin:"0 auto",position:"relative"}}>
+          {sectionTitle("היכולות","כל מה שצריך להושבה","מושלמת","כלים שנבנו במיוחד לחתונות, בר מצוות ואירועים גדולים.")}
+          <div className="lp-feat" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:22}}>
             {[
-              {icon:"🪑",title:"סידורי הושבה",desc:"מפה אינטראקטיבית, גרירת אורחים לשולחנות, ופתק הושבה להדפסה מיידית.",tag:"פופולרי",tagColor:"#4A7AFF",border:"rgba(74,122,255,.25)"},
-              {icon:"💌",title:"הזמנות דיגיטליות",desc:"עשרות תבניות מעוצבות, קישור אישי לכל אורח, עיצוב מותאם אישית.",tag:"",tagColor:"",border:"rgba(255,255,255,.08)"},
-              {icon:"✅",title:"אישורי הגעה",desc:"האורחים מאשרים ישירות מהקישור  -  המערכת מתעדכנת אוטומטית בזמן אמת.",tag:"",tagColor:"",border:"rgba(255,255,255,.08)"},
-              {icon:"📱",title:"SMS ו-WhatsApp",desc:"שליחה אישית לכל אורח עם שמו. תזכורות, מספר שולחן, ותודה אחרי האירוע.",tag:"",tagColor:"",border:"rgba(255,255,255,.08)"},
-              {icon:"🤖",title:"AI סידור חכם",desc:"תאר העדפות  -  AI יסדר את כל האורחים לשולחנות תוך שניות.",tag:"חדש",tagColor:"#8A4BFF",border:"rgba(138,75,255,.25)"},
-              {icon:"📊",title:"ייבוא מ-Excel",desc:"העלה רשימת אורחים בקובץ Excel תוך שניות. ללא הקלדה ידנית.",tag:"",tagColor:"",border:"rgba(255,255,255,.08)"},
+              {icon:"map",c:LP.rose,title:"מפת אולם אינטראקטיבית",desc:"שולחנות עגולים, מרובעים ושולחן אבירים. גוררים, מזיזים ורואים בזמן אמת כמה מקומות נשארו.",tag:"הכי פופולרי"},
+              {icon:"ai",c:LP.violet,title:"סידור הושבה ב-AI",desc:"כותבים העדפות בשפה חופשית  -  \"סבתא ליד הרחבה, החברים מהעבודה ביחד\"  -  וה-AI מסדר את כולם.",tag:"חדש"},
+              {icon:"users",c:LP.sky,title:"קבוצות וצבעים",desc:"כל קבוצת אורחים בצבע משלה, כך שרואים במבט אחד שמשפחה יושבת יחד וחברים ליד חברים."},
+              {icon:"check",c:LP.mint,title:"אישורי הגעה מחוברים להושבה",desc:"מי שאישר נכנס לסידור, מי שביטל משחרר מקום. ההושבה תמיד מעודכנת למספרים האמיתיים."},
+              {icon:"msg",c:LP.coral,title:"מספר שולחן לכל אורח",desc:"הודעה אישית ב-SMS או WhatsApp עם שם האורח ומספר השולחן שלו. בלי תורים בכניסה."},
+              {icon:"print",c:LP.gold,title:"כרטיסי הושבה וקבלה",desc:"מפיקים רשימות לכל שולחן וכרטיסי הושבה להדפסה, מוכנים לעמדת הקבלה באולם."},
             ].map((f,i)=>(
-              <div key={f.title} className="feat-card fu"
-                style={{opacity:0,transform:"translateY(24px)",transition:`opacity .6s ${i*.08}s,transform .6s ${i*.08}s`,
-                  background:"#fff",border:"1px solid #E2E8F0",borderRadius:20,padding:"28px 24px",
-                  position:"relative",overflow:"hidden",cursor:"default",boxShadow:"0 2px 12px rgba(27,58,140,.05)"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor="#4A7AFF";e.currentTarget.style.transform="translateY(-6px)";e.currentTarget.style.boxShadow="0 8px 32px rgba(27,58,140,.12)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor="#E2E8F0";e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 2px 12px rgba(27,58,140,.05)";}}>
-                {/* גלואינג */}
-                <div style={{position:"absolute",top:0,right:0,width:120,height:120,borderRadius:"50%",background:"radial-gradient(circle,rgba(74,122,255,.08) 0%,transparent 70%)",pointerEvents:"none"}}/>
-                {f.tag&&<span style={{position:"absolute",top:16,left:16,background:f.tagColor+"22",border:`1px solid ${f.tagColor}44`,color:f.tagColor,fontSize:11,fontWeight:700,borderRadius:100,padding:"2px 10px"}}>{f.tag}</span>}
-                <div style={{fontSize:36,marginBottom:16}}>{f.icon}</div>
-                <div style={{fontSize:17,fontWeight:800,color:"#1a1a2e",marginBottom:10}}>{f.title}</div>
-                <div style={{fontSize:14,color:"#6B7DB3",lineHeight:1.7}}>{f.desc}</div>
+              <div key={f.title} className="lp-card fu" style={{padding:"30px 26px",transitionDelay:`${i*.07}s`}}>
+                <div style={{position:"absolute",top:-40,left:-40,width:140,height:140,borderRadius:"50%",background:`radial-gradient(circle,${f.c}22,transparent 70%)`,pointerEvents:"none"}}/>
+                {f.tag&&<span style={{position:"absolute",top:20,left:20,background:f.c+"18",border:`1px solid ${f.c}55`,color:f.c,fontSize:11,fontWeight:900,borderRadius:100,padding:"3px 11px"}}>{f.tag}</span>}
+                <div className="lp-ic" style={{width:58,height:58,borderRadius:18,background:`linear-gradient(135deg,${f.c}26,${f.c}0D)`,border:`1px solid ${f.c}33`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20}}>
+                  <LpIcon name={f.icon} color={f.c} size={28}/>
+                </div>
+                <div style={{fontSize:18,fontWeight:900,marginBottom:10}}>{f.title}</div>
+                <div style={{fontSize:14.5,color:LP.muted,lineHeight:1.75}}>{f.desc}</div>
               </div>
             ))}
           </div>
@@ -948,83 +1160,60 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
       </section>
 
       {/* ─── EVENTS ──────────────────────────────────────────────── */}
-      <section style={{padding:"100px 6vw",background:"#fff"}} id="events">
-        <div style={{position:"relative"}}>
-          <div style={{position:"absolute",top:0,right:"0",left:"0",height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)"}}/>
-        </div>
-        <div style={{maxWidth:1100,margin:"0 auto"}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(24px)",transition:"opacity .7s,transform .7s",textAlign:"center",marginBottom:60}}>
-            <h2 style={{fontSize:"clamp(26px,3.5vw,48px)",fontWeight:900,color:"#1a1a2e",marginBottom:12,letterSpacing:"-.02em"}}>
-              איזה רגע מיוחד<br/>
-              <span style={{color:"#1B3A8C"}}>אתם מתכננים?</span>
-            </h2>
-            <p style={{fontSize:16,color:"#6B7DB3"}}>Sidor-IL מותאמת לכל סוג אירוע</p>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:20}}>
+      <section id="events" style={{padding:"100px 6vw"}}>
+        <div style={{maxWidth:1120,margin:"0 auto"}}>
+          {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה  -  Sidor-IL מסדרת את כולם.")}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:22}}>
             {[
-              {emoji:"💍",title:"חתונות",desc:"ניהול מלא מהזמנות ועד סידורי הושבה",img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80"},
-              {emoji:"✡️",title:"בר/ת מצווה",desc:"תכנון נכון לרגע הגדול של המשפחה",img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500&q=80"},
-              {emoji:"👶",title:"בריתות",desc:"ארגון מהיר ויעיל גם בטווח קצר",img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&q=80"},
-              {emoji:"💼",title:"אירועים עסקיים",desc:"מערכת מקצועית לכל גודל אירוע",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80"},
+              {emoji:"💍",title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים  -  כל אחד בשולחן הנכון",img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80",c:LP.rose},
+              {emoji:"✡️",title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500&q=80",c:LP.sky},
+              {emoji:"👶",title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&q=80",c:LP.mint},
+              {emoji:"💼",title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות  -  מקצועי ומדויק",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80",c:LP.violet},
             ].map((ev,i)=>(
-              <div key={ev.title} className="event-card fu"
-                style={{opacity:0,transform:"translateY(24px)",transition:`opacity .6s ${i*.1}s,transform .6s ${i*.1}s`,
-                  borderRadius:20,overflow:"hidden",border:"1px solid rgba(255,255,255,.06)",cursor:"pointer"}}
-                onClick={()=>onOpenAuth("register")}>
+              <button key={ev.title} className="lp-ev fu" onClick={()=>onOpenAuth("register")}
+                style={{transitionDelay:`${i*.1}s`,borderRadius:24,overflow:"hidden",border:"1px solid #EFE8F7",cursor:"pointer",background:"#fff",textAlign:"right",fontFamily:"inherit",color:LP.ink,padding:0,boxShadow:"0 8px 26px -14px rgba(91,60,140,.25)"}}>
                 <div style={{height:200,overflow:"hidden",position:"relative"}}>
-                  <img src={ev.img} alt={ev.title} style={{width:"100%",height:"100%",objectFit:"cover",transition:"transform .5s ease"}}/>
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 60%)"}}/>
-                  <div style={{position:"absolute",bottom:14,right:16,fontSize:13,fontWeight:800,color:"#fff"}}>{ev.emoji} {ev.title}</div>
+                  <img src={ev.img} alt={ev.title} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",transition:"transform .6s ease"}}/>
+                  <div style={{position:"absolute",inset:0,background:`linear-gradient(to top,${ev.c}55,transparent 55%)`}}/>
+                  <div style={{position:"absolute",bottom:12,right:12,background:"rgba(255,255,255,.92)",backdropFilter:"blur(6px)",borderRadius:100,padding:"6px 14px",fontSize:15,fontWeight:900}}>{ev.emoji} {ev.title}</div>
                 </div>
-                <div style={{padding:"16px 18px 20px",background:"#F8FAFF"}}>
-                  <p style={{fontSize:13,color:"#6B7DB3",lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
-                  <span style={{fontSize:13,color:"#4A7AFF",fontWeight:700}}>התחל עכשיו ←</span>
+                <div style={{padding:"16px 18px 20px"}}>
+                  <p style={{fontSize:14,color:LP.muted,lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
+                  <span style={{fontSize:14,color:ev.c,fontWeight:900}}>התחילו להושיב ←</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       </section>
 
       {/* ─── PRICING ─────────────────────────────────────────────── */}
-      <section style={{padding:"100px 6vw",background:"#F4F6FF"}} id="pricing">
-        <div style={{maxWidth:1100,margin:"0 auto",textAlign:"center"}}>
-          <div className="fu" style={{opacity:0,transform:"translateY(24px)",transition:"opacity .7s,transform .7s",marginBottom:60}}>
-            <h2 style={{fontSize:"clamp(26px,3.5vw,48px)",fontWeight:900,color:"#fff",marginBottom:12,letterSpacing:"-.02em"}}>
-              מחירים שקופים
-            </h2>
-            <p style={{fontSize:16,color:"#6B7DB3"}}>התחל בחינם, שדרג כשתצטרך</p>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:20,maxWidth:900,margin:"0 auto"}}>
+      <section id="pricing" style={{padding:"100px 6vw",background:"linear-gradient(180deg,#FFFBF7,#FFF3F7 50%,#FFFBF7)"}}>
+        <div style={{maxWidth:1020,margin:"0 auto"}}>
+          {sectionTitle("מחירים","מחירים","שקופים","מתחילים בחינם, משדרגים כשהאירוע מתקרב.")}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
-              {name:"חינם",price:"₪0",desc:"תמיד",features:["הזמנה דיגיטלית","שיתוף ידני"],cta:"התחל בחינם",highlight:false},
-              {name:"בסיסית",price:"₪50",desc:"לאירוע",features:["הכל בחינם","אישורי הגעה","WhatsApp אישי"],cta:"שדרג עכשיו",highlight:true},
-              {name:"מתקדמת",price:"₪150",desc:"לאירוע",features:["הכל בבסיסית","סידורי הושבה","AI חכם","ייבוא Excel"],cta:"הכי פופולרי",highlight:false},
+              {name:"חינם",price:"₪0",desc:"תמיד",features:["הזמנה דיגיטלית","שיתוף ידני של הקישור"],cta:"התחילו בחינם",highlight:false,c:LP.sky},
+              {name:"מתקדמת",price:"₪150",desc:"לאירוע",features:["כל מה שבבסיסית","מפת סידורי הושבה מלאה","סידור הושבה ב-AI","ייבוא מוזמנים מאקסל"],cta:"אני רוצה הושבה מושלמת",highlight:true,c:LP.rose},
+              {name:"בסיסית",price:"₪50",desc:"לאירוע",features:["כל מה שבחינם","אישורי הגעה","WhatsApp אישי"],cta:"בחירה בבסיסית",highlight:false,c:LP.mint},
             ].map((pkg,i)=>(
-              <div key={pkg.name} className="fu"
-                style={{opacity:0,transform:"translateY(24px)",transition:`opacity .6s ${i*.1}s,transform .6s ${i*.1}s`,
-                  background:pkg.highlight?"linear-gradient(145deg,#1B3A8C,#2952C8)":"#fff",
-                  border:pkg.highlight?"1px solid rgba(74,122,255,.5)":"1px solid #E2E8F0",
-                  borderRadius:24,padding:"32px 28px",
-                  boxShadow:pkg.highlight?"0 0 40px rgba(74,122,255,.2)":"none",
-                  position:"relative",textAlign:"right"}}>
-                {pkg.highlight&&<div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:"#4A7AFF",color:"#fff",fontSize:11,fontWeight:800,borderRadius:100,padding:"4px 16px",whiteSpace:"nowrap"}}>⭐ הכי פופולרי</div>}
-                <div style={{fontSize:14,fontWeight:700,color:pkg.highlight?"rgba(255,255,255,.8)":"#888",marginBottom:8}}>{pkg.name}</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:4}}>
-                  <span style={{fontSize:44,fontWeight:900,color:"#fff",lineHeight:1}}>{pkg.price}</span>
+              <div key={pkg.name} className="lp-card fu"
+                style={{transitionDelay:`${i*.1}s`,borderRadius:28,padding:"38px 30px",display:"flex",flexDirection:"column",overflow:"visible",
+                  ...(pkg.highlight?{background:"linear-gradient(170deg,#fff,#FFF2F8)",border:"2px solid #F7B7D3",boxShadow:"0 34px 80px -30px rgba(240,96,158,.55)"}:{})}}>
+                {pkg.highlight&&<div style={{position:"absolute",top:-15,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",fontSize:12,fontWeight:900,borderRadius:100,padding:"6px 18px",whiteSpace:"nowrap",boxShadow:"0 8px 20px -6px rgba(240,96,158,.6)"}}>⭐ הכי משתלם להושבה</div>}
+                <div style={{fontSize:15,fontWeight:900,color:pkg.c,marginBottom:10}}>{pkg.name}</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:4}}>
+                  <span style={{fontSize:52,fontWeight:900,lineHeight:1,color:LP.ink}}>{pkg.price}</span>
+                  <span style={{fontSize:14,color:LP.muted}}>{pkg.desc}</span>
                 </div>
-                <div style={{fontSize:13,color:pkg.highlight?"rgba(255,255,255,.6)":"#aaa",marginBottom:24}}>{pkg.desc}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:28}}>
+                <div style={{display:"flex",flexDirection:"column",gap:12,margin:"26px 0 30px",flex:1}}>
                   {pkg.features.map(f=>(
-                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:pkg.highlight?"rgba(255,255,255,.85)":"#555"}}>
-                      <span style={{color:pkg.highlight?"#90D4FF":"#4A7AFF",fontSize:15}}>✓</span>{f}
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,color:"#4A4060"}}>
+                      <span style={{width:22,height:22,borderRadius:"50%",background:pkg.c+"1F",color:pkg.c,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,flexShrink:0}}>✓</span>{f}
                     </div>
                   ))}
                 </div>
-                <button onClick={()=>onOpenAuth("register")} className="glow-btn"
-                  style={{width:"100%",background:pkg.highlight?"rgba(255,255,255,.15)":"rgba(74,122,255,.15)",color:"#fff",border:pkg.highlight?"1.5px solid rgba(255,255,255,.3)":"1.5px solid rgba(74,122,255,.3)",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
+                <button onClick={()=>onOpenAuth("register")} className={`lp-btn ${pkg.highlight?"lp-primary":"lp-ghost"}`} style={{width:"100%",padding:"15px",fontSize:15}}>
                   {pkg.cta}
                 </button>
               </div>
@@ -1034,24 +1223,34 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
       </section>
 
       {/* ─── CTA ─────────────────────────────────────────────────── */}
-      <section style={{padding:"100px 6vw",background:"linear-gradient(135deg,#1B3A8C,#2952C8)",textAlign:"center"}} id="contact">
-        <div style={{position:"relative",maxWidth:700,margin:"0 auto"}}>
-          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:500,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(74,122,255,.15) 0%,transparent 70%)",pointerEvents:"none"}}/>
-          <div className="fu" style={{opacity:0,transform:"translateY(24px)",transition:"opacity .8s,transform .8s",position:"relative",zIndex:1}}>
-            <h2 style={{fontSize:"clamp(28px,4.5vw,56px)",fontWeight:900,color:"#fff",marginBottom:16,letterSpacing:"-.02em"}}>
-              מוכן לאירוע מושלם?
+      <section id="contact" style={{padding:"70px 6vw 110px"}}>
+        <div className="fu" style={{maxWidth:1060,margin:"0 auto",borderRadius:36,padding:"70px 30px",textAlign:"center",position:"relative",overflow:"hidden",
+          background:"linear-gradient(120deg,#FF9A76 0%,#F0609E 50%,#9B6BFF 100%)",boxShadow:"0 40px 100px -34px rgba(240,96,158,.7)"}}>
+          <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,.25) 1.5px,transparent 1.5px)",backgroundSize:"22px 22px",opacity:.6}}/>
+          {/* שולחנות מאוירים בצדדים */}
+          <svg className="lp-hide-sm" viewBox="0 0 120 120" width="150" height="150" style={{position:"absolute",top:20,right:24,opacity:.35,animation:"float 6s ease-in-out infinite"}} aria-hidden="true">
+            {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return <rect key={i} x="-8" y="-6" width="16" height="12" rx="5" transform={`translate(${(60+42*Math.sin(a)).toFixed(1)},${(60-42*Math.cos(a)).toFixed(1)}) rotate(${d})`} fill="#fff"/>;})}
+            <circle cx="60" cy="60" r="28" fill="#fff"/>
+          </svg>
+          <svg className="lp-hide-sm" viewBox="0 0 120 120" width="120" height="120" style={{position:"absolute",bottom:20,left:30,opacity:.3,animation:"float 7s ease-in-out 1s infinite"}} aria-hidden="true">
+            {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return <rect key={i} x="-8" y="-6" width="16" height="12" rx="5" transform={`translate(${(60+42*Math.sin(a)).toFixed(1)},${(60-42*Math.cos(a)).toFixed(1)}) rotate(${d})`} fill="#fff"/>;})}
+            <circle cx="60" cy="60" r="28" fill="#fff"/>
+          </svg>
+          <Sparkles items={[["14%","30%",18,0,"#fff"],["70%","70%",14,.8,"#fff"],["24%","78%",12,1.3,"#FFE7A8"]]}/>
+          <div style={{position:"relative",zIndex:1,color:"#fff"}}>
+            <h2 style={{fontSize:"clamp(30px,4.6vw,58px)",fontWeight:900,marginBottom:16,letterSpacing:"-.02em",lineHeight:1.1,textShadow:"0 2px 12px rgba(120,30,90,.2)"}}>
+              הגיע הזמן להושיב את כולם 🪑
             </h2>
-            <p style={{fontSize:17,color:"rgba(255,255,255,.75)",marginBottom:40,lineHeight:1.7}}>
-              הצטרף לאלפי זוגות שכבר ניהלו את האירוע שלהם עם Sidor-IL
+            <p style={{fontSize:18,color:"rgba(255,255,255,.95)",marginBottom:36,lineHeight:1.7,maxWidth:560,marginInline:"auto"}}>
+              פותחים אירוע בחינם, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה שכולם יאהבו.
             </p>
             <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
-              <button onClick={()=>onOpenAuth("register")} className="glow-btn"
-                style={{background:"linear-gradient(135deg,#1B3A8C,#4A7AFF)",color:"#fff",border:"none",borderRadius:14,padding:"16px 40px",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 0 30px rgba(74,122,255,.3)",transition:"all .2s"}}>
-                🚀 התחל בחינם
+              <button onClick={()=>onOpenAuth("register")} className="lp-btn" style={{background:"#fff",color:"#C2397A",padding:"18px 40px",fontSize:18,boxShadow:"0 16px 40px rgba(90,20,70,.3)"}}>
+                🚀 צרו סידור הושבה עכשיו
               </button>
-              <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
-                style={{background:"rgba(37,211,102,.12)",color:"#25D366",border:"1.5px solid rgba(37,211,102,.3)",borderRadius:14,padding:"16px 32px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
-                💬 צור קשר
+              <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" className="lp-btn"
+                style={{background:"rgba(255,255,255,.18)",color:"#fff",border:"1.5px solid rgba(255,255,255,.7)",padding:"18px 30px",fontSize:16,backdropFilter:"blur(6px)"}}>
+                💬 דברו איתנו
               </a>
             </div>
           </div>
@@ -1059,43 +1258,36 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
       </section>
 
       {/* ─── FOOTER ──────────────────────────────────────────────── */}
-      <footer style={{background:"#1a1a2e",borderTop:"1px solid rgba(255,255,255,.08)",padding:"48px 6vw 32px"}}>
-        <div style={{maxWidth:1100,margin:"0 auto"}}>
+      <footer style={{borderTop:"1px solid #EFE6F5",padding:"48px 6vw 32px",background:"#F8F3FF"}}>
+        <div style={{maxWidth:1120,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:40,marginBottom:40}}>
-            <div style={{maxWidth:300}}>
+            <div style={{maxWidth:320}}>
               <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:14}}>
-                <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#1B3A8C,#4A7AFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
-                <span style={{fontWeight:900,fontSize:18,color:"#fff"}}>Sidor-IL</span>
+                <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#FF8A65,#F0609E,#9B6BFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
+                <span style={{fontWeight:900,fontSize:18}}>Sidor-IL</span>
               </div>
-              <p style={{fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.8}}>פלטפורמה ישראלית לניהול סידורי הושבה חכמים. בנויה עבור זוגות ומפיקי אירועים.</p>
+              <p style={{fontSize:14,color:LP.muted,lineHeight:1.8}}>פלטפורמה ישראלית לסידורי הושבה חכמים, אישורי הגעה והזמנות דיגיטליות. בנויה עבור זוגות, משפחות ומפיקי אירועים.</p>
             </div>
             <div>
-              <div style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)",marginBottom:14}}>צור קשר</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,fontSize:13,color:"rgba(255,255,255,.55)"}}>
+              <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
+              <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
                 <div>📍 השושנים 30, נוף הגליל</div>
-                <a href="https://wa.me/972526817102" style={{color:"#25D366",textDecoration:"none",fontWeight:600}}>💬 WhatsApp</a>
-                <div>📞 052-681-7102</div>
+                <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}>💬 WhatsApp</a>
+                <a href="tel:0526817102" style={{textDecoration:"none"}}>📞 052-681-7102</a>
               </div>
             </div>
           </div>
-          <div style={{borderTop:"1px solid rgba(255,255,255,.08)",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:12,color:"rgba(255,255,255,.45)",alignItems:"center"}}>
-            <span>© 2025 Sidor-IL · כל הזכויות שמורות</span>
-            <div style={{display:"flex",gap:14}}>
-              <a href="#/privacy" style={{color:"rgba(255,255,255,.45)",textDecoration:"none"}}
-                onMouseEnter={e=>e.target.style.color="rgba(255,255,255,.6)"}
-                onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.25)"}>
-                מדיניות פרטיות
-              </a>
-              {["📘","📸","🎵"].map(s=>(<span key={s} style={{cursor:"pointer"}}>{s}</span>))}
-            </div>
+          <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
+            <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
+            <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
             <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
           </div>
         </div>
       </footer>
 
       {/* WhatsApp FAB */}
-      <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
-        style={{position:"fixed",bottom:88,left:24,background:"#25D366",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 4px 20px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
+      <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
+        style={{position:"fixed",bottom:88,left:24,background:"#25D366",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         לחץ לצ'אט
       </a>
@@ -1103,6 +1295,15 @@ borderBottom:scrolled?"1px solid rgba(0,0,0,.08)":"none",
   );
 }
 
+
+const AUTH_ERRORS={
+  "Invalid login credentials":"❌ אימייל או סיסמה שגויים",
+  "Email not confirmed":"📧 המייל עדיין לא אומת  -  בדקו את תיבת הדואר (וגם בספאם)",
+  "User already registered":"⚠️ המייל הזה כבר רשום  -  נסו להיכנס או לשחזר סיסמה",
+  "Password should be at least 6 characters":"❌ הסיסמה חייבת להכיל לפחות 6 תווים",
+  "Unable to validate email address: invalid format":"❌ כתובת המייל לא תקינה",
+  "Email rate limit exceeded":"⏳ נשלחו יותר מדי מיילים  -  נסו שוב בעוד כמה דקות",
+};
 
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   const [mode,setMode]=useState(initMode);
@@ -1117,35 +1318,42 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
     setErr("");setLoad(true);
     try{
       if(mode==="reset"){
-        const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:`https://sidoril.com`});
+        const{error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin});
         if(error)throw error;
         setResetSent(true);
       } else if(mode==="login"){
-        const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+        const{data,error}=await sb.auth.signInWithPassword({email:email.trim(),password:pass});
         if(error)throw error;
         onAuth(data.user);
       } else {
-        const{data,error}=await sb.auth.signUp({email,password:pass});
+        if(pass.length<6)throw new Error("Password should be at least 6 characters");
+        const{data,error}=await sb.auth.signUp({email:email.trim(),password:pass,options:{emailRedirectTo:window.location.origin}});
         if(error)throw error;
-        if(data.user&&!data.user.email_confirmed_at)setErr("✅ נשלח מייל אימות!");
+        // Supabase מחזיר משתמש בלי identities כשהמייל כבר רשום
+        if(data.user&&data.user.identities?.length===0)throw new Error("User already registered");
+        if(!data.session)setErr("✅ נשלח מייל אימות! לחצו על הקישור במייל כדי להפעיל את החשבון.");
         else onAuth(data.user);
       }
     }catch(e){
-      setErr(e.message==="Invalid login credentials"?"❌ אימייל או סיסמה שגויים":e.message);
+      setErr(AUTH_ERRORS[e.message]||("❌ "+e.message));
     }
     setLoad(false);
   };
 
-  const loginWithGoogle=async()=>{setGoogleLoad(true);await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:`https://sidoril.com`}});setGoogleLoad(false);};
+  const loginWithGoogle=async()=>{
+    setGoogleLoad(true);setErr("");
+    const{error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
+    if(error){setErr("❌ "+error.message);setGoogleLoad(false);}
+  };
 
   return(<>
     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)"}}/>
     <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}>
       <div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/>
       <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{width:52,height:52,borderRadius:15,background:`linear-gradient(135deg,${C.blue},${C.blueL})`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:24,marginBottom:10}}>◈</div>
-        <div style={{fontWeight:900,fontSize:20,color:C.blue}}>Sidor-IL</div>
-        <div style={{fontSize:12,color:C.muted,marginTop:2}}>סידורי הושבה חכמים</div>
+        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>🪑</div>
+        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
+        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
       </div>
 
       {/* שחזור סיסמה */}
@@ -1815,7 +2023,9 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   );
 }
 
-function SeatingApp({ user, event, onBack }) {
+function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
+  const updateEvent=async(data)=>{await sb.from("events").update(data).eq("id",event.id);onUpdate?.(data);};
+  const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState("map"),[screen,setScreen]=useState("home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [userPackages,setUserPackages]=useState([]);
@@ -1884,7 +2094,7 @@ function SeatingApp({ user, event, onBack }) {
   if(mobile){
     const confirmed=guests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
     const declined=guests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
-    const eventIcon=event.event_type==="wedding"?"💍":event.event_type==="bar_mitzva"?"✡️":event.event_type==="brit"?"👶":"💼";
+    const eventIcon=event.event_type==="wedding"?"💍":event.event_type==="bar_mitzvah"?"✡️":event.event_type==="brit"?"👶":"💼";
 
     const HomeScreen=()=>{
       const allG=[...guests,...tables.flatMap(t=>t.guests||[])];
@@ -1916,7 +2126,7 @@ function SeatingApp({ user, event, onBack }) {
           <div style={{position:"relative",zIndex:1}}>
             <div style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600,marginBottom:4}}>סקירה כללית</div>
             <div style={{fontSize:22,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.2}}>
-              {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ואורנה`:event.name}
+              {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
             </div>
             {daysLeft!==null&&daysLeft>0?(
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -2167,9 +2377,9 @@ function SeatingApp({ user, event, onBack }) {
         }}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
-        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
+        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
-        {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
+        {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
       </div>
       <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
       {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
@@ -2399,7 +2609,7 @@ function SeatingApp({ user, event, onBack }) {
                   <div style={{background:"#F8F8FC",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:11,color:"#7B3FD4",fontFamily:"monospace",marginBottom:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
                     {inviteUrl}
                   </div>
-                  <div style={{display:"flex",gap:8"}}>
+                  <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
                       style={{flex:1,background:"linear-gradient(135deg,#7B3FD4,#5B6BF5)",color:"#fff",border:"none",borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                       העתק
@@ -2760,7 +2970,7 @@ function SeatingApp({ user, event, onBack }) {
         {screen==="ai"&&<AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(assignments)=>{setSaving(true);for(const{guestId,tableId}of assignments){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setSaving(false);setScreen("seating");}}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
-        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={async()=>{await sb.auth.signOut();}} onUpdate={async(data)=>{await sb.from("events").update(data).eq("id",event.id);Object.assign(event,data);}}/>}
+        {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
         {screen==="rsvp"&&<DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={setGuests} setTables={setTables} onAddGuest={()=>setModal("addGuest")}/>}
         {screen==="import"&&<div style={{direction:"rtl"}}>
@@ -3184,7 +3394,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     // סנכרון מתנה לניהול תקציב
     if(newGift!==oldGift){
       const budgetName=`מתנה  -  ${editG.name}`;
-      const{data:existing}=await sb.from("budget_items").select("id").eq("event_id",event.id).eq("name",budgetName).single();
+      const{data:existing}=await sb.from("budget_items").select("id").eq("event_id",event.id).eq("name",budgetName).maybeSingle();
       if(newGift>0){
         if(existing){
           await sb.from("budget_items").update({amount:newGift}).eq("id",existing.id);
@@ -4139,10 +4349,10 @@ function SMSScreen({ event, guests }) {
 
   // טעינת יתרת SMS מ-Supabase
   useEffect(()=>{
-    sb.from("sms_balance").select("*").eq("event_id",event.id).single()
+    sb.from("sms_balance").select("*").eq("event_id",event.id).maybeSingle()
       .then(({data})=>{
         setSmsBalance(data?.balance??0);
-      }).catch(()=>setSmsBalance(0));
+      },()=>setSmsBalance(0));
   },[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
@@ -4167,7 +4377,7 @@ function SMSScreen({ event, guests }) {
   const buyPackage=async(amount,price)=>{
     if(!window.confirm(`לרכוש ${amount} SMS ב-₪${price}?\n(תשלום דרך PayPlus יתווסף בקרוב)`))return;
     // עדכן יתרה ב-Supabase
-    const{data:existing}=await sb.from("sms_balance").select("*").eq("event_id",event.id).single().catch(()=>({data:null}));
+    const{data:existing}=await sb.from("sms_balance").select("*").eq("event_id",event.id).maybeSingle();
     if(existing){
       const newBal=(existing.balance||0)+amount;
       await sb.from("sms_balance").update({balance:newBal,total_purchased:(existing.total_purchased||0)+amount,updated_at:new Date().toISOString()}).eq("event_id",event.id);
@@ -4396,7 +4606,7 @@ function SMSScreen({ event, guests }) {
                           </button>
                         </div>
                         {showSmsSchedule&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-                          <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><input type="date" dir="ltr" defaultValue={s.date} id={`sms_date_${i}`} dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
+                          <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><input type="date" dir="ltr" defaultValue={s.date} id={`sms_date_${i}`} style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div><input type="time" defaultValue={s.time} id={`sms_time_${i}`} style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
                         </div>}
                         </>}
@@ -4833,8 +5043,7 @@ function WhatsAppScreen({ event, guests }) {
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                             <div>
                               <div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div>
-                              <input type="date" dir="ltr" defaultValue={s.date} id={`wa_date_${i}`}
-                                dir="ltr" style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+                              <input type="date" dir="ltr" defaultValue={s.date} id={`wa_date_${i}`} style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
                             </div>
                             <div>
                               <div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div>
@@ -5562,8 +5771,6 @@ function InviteSettings({ event, onUpdate }) {
 }
 
 
-// ─── ADMIN LOGIN ──────────────────────────────────────────────────────────────
-const ADMIN_PASSWORD="Rene1807";
 
 // ─── CREATE EVENT SCREEN ──────────────────────────────────────────────────────
 function CreateEventScreen({ user, onSelect, onLogout }) {
@@ -5793,15 +6000,22 @@ function CreateEventScreen({ user, onSelect, onLogout }) {
 }
 
 
+// ─── ADMIN LOGIN ──────────────────────────────────────────────────────────────
+// כניסת אדמין דרך חשבון Supabase אמיתי (לא סיסמה בקוד שכל אחד יכול לקרוא)
 function AdminLogin({ onSuccess, onClose }) {
+  const [email,setEmail]=useState(ADMIN_EMAIL);
   const [pass,setPass]=useState("");
   const [err,setErr]=useState("");
+  const [load,setLoad]=useState(false);
 
-  const submit=()=>{
+  const submit=async()=>{
     if(!pass){setErr("הכנס סיסמה");return;}
-    if(pass!==ADMIN_PASSWORD){setErr("❌ סיסמה שגויה");return;}
-    localStorage.setItem("sidor_admin","1");
-    onSuccess({email:ADMIN_EMAIL,id:"admin"});
+    setLoad(true);setErr("");
+    const{data,error}=await sb.auth.signInWithPassword({email:email.trim(),password:pass});
+    setLoad(false);
+    if(error){setErr(AUTH_ERRORS[error.message]||"❌ "+error.message);return;}
+    if(!isAdminUser(data.user)){await sb.auth.signOut();setErr("⛔ לחשבון הזה אין הרשאת אדמין");return;}
+    onSuccess(data.user);
   };
 
   return(
@@ -5809,14 +6023,16 @@ function AdminLogin({ onSuccess, onClose }) {
       <div style={{background:"#161B22",border:"1px solid #30363D",borderRadius:20,padding:"40px 32px",width:"90%",maxWidth:360,textAlign:"center"}}>
         <div style={{fontSize:48,marginBottom:16}}>🔐</div>
         <div style={{fontSize:22,fontWeight:900,color:"#fff",marginBottom:4}}>Sidor-IL Admin</div>
-        <div style={{fontSize:13,color:"#888",marginBottom:28}}>הכנס סיסמת אדמין</div>
+        <div style={{fontSize:13,color:"#888",marginBottom:28}}>כניסה עם חשבון האדמין</div>
+        <input type="email" dir="ltr" value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} placeholder="אימייל"
+          style={{width:"100%",background:"#21262D",border:"1.5px solid #30363D",borderRadius:12,padding:"13px 16px",fontSize:15,color:"#E6EDF3",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
         <input type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}}
           onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="סיסמה" autoFocus
           style={{width:"100%",background:"#21262D",border:`1.5px solid ${err?"#F85149":"#30363D"}`,borderRadius:12,padding:"13px 16px",fontSize:16,color:"#E6EDF3",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:err?8:16,textAlign:"right"}}/>
         {err&&<div style={{fontSize:13,color:"#F85149",marginBottom:12}}>{err}</div>}
-        <button onClick={submit} disabled={!pass}
+        <button onClick={submit} disabled={!pass||load}
           style={{width:"100%",background:!pass?"#21262D":"#1B3A8C",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:16,fontWeight:700,cursor:!pass?"default":"pointer",fontFamily:"inherit",marginBottom:12}}>
-          כניסה ←
+          {load?"מתחבר...":"כניסה ←"}
         </button>
         <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
           חזרה לאתר
@@ -5827,7 +6043,9 @@ function AdminLogin({ onSuccess, onClose }) {
 }
 
 // ─── ADMIN DASHBOARD ─────────────────────────────────────────────────────────
-const ADMIN_EMAIL="Amitgez331@gmail.com";
+const ADMIN_EMAIL="amitgez331@gmail.com";
+// Supabase שומר מיילים באותיות קטנות  -  השוואה בלי תלות ברישיות
+const isAdminUser=u=>!!u?.email&&u.email.toLowerCase()===ADMIN_EMAIL;
 
 const ALL_PACKAGES=[
   {id:"basic",name:"בסיס + הושבה",color:"#1B3A8C",icon:"🪑"},
@@ -6081,15 +6299,17 @@ export default function App() {
     sb.auth.getSession().then(async({data})=>{
       const u=data.session?.user||null;
       setUser(u);
-      if(u){
-        const savedId=localStorage.getItem("sidor_event_id");
-        if(savedId){
-          localStorage.removeItem("sidor_event_id");
-        }
+      // שחזור האירוע האחרון אחרי רענון דף
+      const savedId=localStorage.getItem("sidor_event_id");
+      if(u&&savedId){
+        const{data:ev}=await sb.from("events").select("*").eq("id",savedId).eq("user_id",u.id).maybeSingle();
+        if(ev)setEvent(ev);
+        else localStorage.removeItem("sidor_event_id");
       }
       setChecking(false);
-    });
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
+    }).catch(()=>setChecking(false));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((evt,session)=>{
+      if(evt==="PASSWORD_RECOVERY")setShowResetPw(true);
       if(!session?.user){
         setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");
       } else {
@@ -6099,7 +6319,7 @@ export default function App() {
     return()=>subscription.unsubscribe();
   },[]);
 
-  const logout=async()=>{await sb.auth.signOut();setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");setShowLanding(false);};
+  const logout=async()=>{await sb.auth.signOut();setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");localStorage.removeItem("sidor_admin");setShowLanding(false);};
 
   const path=window.location.pathname;
   const hash=window.location.hash;
@@ -6136,7 +6356,7 @@ export default function App() {
 
   // ניתוב לדף אדמין  -  לפני כל שאר הניתובים!
   if(isAdmin){
-    if(!user||(user.email!==ADMIN_EMAIL&&localStorage.getItem("sidor_admin")!=="1"))return(
+    if(!isAdminUser(user))return(
       <AdminLogin onSuccess={u=>{setUser(u);}} onClose={()=>window.location.hash=""}/>
     );
     return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -6193,5 +6413,5 @@ export default function App() {
   </>);
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>setShowLanding(true)} onUpdate={e=>setEvent(e)} onLogout={logout}/></>);
+  <SeatingApp user={user} event={event} onBack={()=>setShowLanding(true)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout}/></>);
 }
