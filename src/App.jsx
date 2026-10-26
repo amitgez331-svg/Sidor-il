@@ -67,15 +67,32 @@ const guestColor=g=>RELATION_COLORS[g?.relation]||C.blueL;
 const fillColor=(occ,total)=>occ===0?"#DCCFEA":occ>=total?C.danger:occ>=total*.8?C.gold:C.success;
 
 // כיסא מעוגל שמסובב לכיוון השולחן
-const Chair=({x,y,deg,guest,w=13,h=10})=>(
+// אורח שהושב הרגע מקבל אנימציית "קפיצה" של הכיסא
+const Chair=({x,y,deg,guest,freshIds,w=13,h=10})=>(
   <g transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg})`}>
-    <rect x={-w/2} y={-h/2+1.2} width={w} height={h} rx={4.5} fill="rgba(58,36,100,.12)"/>
-    <rect x={-w/2} y={-h/2} width={w} height={h} rx={4.5}
-      fill={guest?guestColor(guest):EMPTY_SEAT} stroke={guest?"rgba(255,255,255,.9)":EMPTY_SEAT_STROKE} strokeWidth={1.3}>
-      {guest&&<title>{guest.name}</title>}
-    </rect>
-    <rect x={-w/2+2.5} y={-h/2-2.6} width={w-5} height={3} rx={1.5} fill={guest?guestColor(guest):EMPTY_SEAT_STROKE} opacity={.75}/>
+    <g className={guest&&freshIds?.has(guest.id)?"sx-chair-new":undefined}>
+      <rect x={-w/2} y={-h/2+1.2} width={w} height={h} rx={4.5} fill="rgba(58,36,100,.12)"/>
+      <rect x={-w/2} y={-h/2} width={w} height={h} rx={4.5}
+        fill={guest?guestColor(guest):EMPTY_SEAT} stroke={guest?"rgba(255,255,255,.9)":EMPTY_SEAT_STROKE} strokeWidth={1.3}>
+        {guest&&<title>{guest.name}</title>}
+      </rect>
+      <rect x={-w/2+2.5} y={-h/2-2.6} width={w-5} height={3} rx={1.5} fill={guest?guestColor(guest):EMPTY_SEAT_STROKE} opacity={.75}/>
+    </g>
   </g>
+);
+
+// פרץ נצנוצים סביב שולחן כשאורח מושב בו (גדול יותר כשהשולחן מתמלא)
+const BURST_COLORS=["#FF8A65","#F0609E","#9B6BFF","#E8B04A","#2FA57A","#5AA9FF"];
+const Burst=({big})=>(
+  <div className="sx-anim" style={{position:"absolute",left:"50%",top:"50%",width:0,height:0,pointerEvents:"none",zIndex:20}}>
+    {Array.from({length:big?22:12}).map((_,i,arr)=>(
+      <span key={i} style={{position:"absolute",left:0,top:0,width:big?9:7,height:big?9:7,borderRadius:i%3?"50%":2,
+        background:BURST_COLORS[i%BURST_COLORS.length],"--a":`${i*(360/arr.length)}deg`,"--d":`${(big?78:58)+(i%3)*10}px`,
+        animation:`sxBurst ${big?.95:.75}s cubic-bezier(.2,.7,.3,1) both`}}/>
+    ))}
+    {big&&<span style={{position:"absolute",left:0,top:-40,whiteSpace:"nowrap",background:GRAD,color:"#fff",fontSize:12,fontWeight:900,
+      borderRadius:100,padding:"4px 12px",boxShadow:`0 8px 18px -6px ${C.blueM}`,animation:"sxFloatUp 1.6s ease both"}}>מלא! 🎉</span>}
+  </div>
 );
 
 function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
@@ -86,6 +103,23 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
   const full=occupied>=total;
   const ring=fillColor(occupied,total);
   const uid=String(table.id).replace(/[^a-z0-9]/gi,"");
+  // מזהים אורחים שנוספו מאז הרינדור הקודם  -  לאנימציית כיסא ופרץ נצנוצים
+  const prevIds=useRef(null);
+  const [fresh,setFresh]=useState(()=>new Set());
+  const [burst,setBurst]=useState(null);
+  const idsKey=guests.map(g=>g.id).join(",");
+  useEffect(()=>{
+    const now=new Set(guests.map(g=>g.id));
+    const before=prevIds.current;
+    prevIds.current=now;
+    if(!before)return; // רינדור ראשון  -  בלי אנימציה
+    const added=[...now].filter(id=>!before.has(id));
+    if(!added.length)return;
+    setFresh(new Set(added));
+    setBurst({big:occupied>=total,key:Date.now()});
+    const t1=setTimeout(()=>setFresh(new Set()),700),t2=setTimeout(()=>setBurst(null),1700);
+    return()=>{clearTimeout(t1);clearTimeout(t2);};
+  },[idsKey]);
   const dp={
     onDragOver:e=>{e.preventDefault();e.stopPropagation();if(!over)setOver(true);},
     onDragLeave:()=>setOver(false),
@@ -108,6 +142,7 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
         {children}
       </svg>
       {label}
+      {burst&&<Burst key={burst.key} big={burst.big}/>}
     </div>
   );
   const labelBox=(style,big=20)=>(
@@ -126,8 +161,8 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
     const W=180,H=60,pad=16,SW=W+pad*2,SH=H+pad*2;
     const top=Math.ceil(total/2),bottom=total-top;
     const chairs=[];
-    for(let i=0;i<top;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(top+1)*(i+1)} y={pad-8} deg={0} guest={guests[i]}/>);
-    for(let i=0;i<bottom;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottom+1)*(i+1)} y={pad+H+8} deg={180} guest={guests[top+i]}/>);
+    for(let i=0;i<top;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(top+1)*(i+1)} y={pad-8} deg={0} freshIds={fresh} guest={guests[i]}/>);
+    for(let i=0;i<bottom;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottom+1)*(i+1)} y={pad+H+8} deg={180} freshIds={fresh} guest={guests[top+i]}/>);
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-6} y={pad-6} width={W+12} height={H+12} rx={18} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
@@ -142,10 +177,10 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
     const W=110,H=80,pad=18,SW=W+pad*2,SH=H+pad*2;
     const topN=Math.ceil(total/4),bottomN=Math.ceil(total/4),leftN=Math.floor(total/4),rightN=total-topN-bottomN-leftN;
     let k=0;const chairs=[];
-    for(let i=0;i<topN;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(topN+1)*(i+1)} y={pad-9} deg={0} guest={guests[k++]}/>);
-    for(let i=0;i<rightN;i++)chairs.push(<Chair key={"r"+i} x={pad+W+9} y={pad+H/(rightN+1)*(i+1)} deg={90} guest={guests[k++]}/>);
-    for(let i=0;i<bottomN;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottomN+1)*(i+1)} y={pad+H+9} deg={180} guest={guests[k++]}/>);
-    for(let i=0;i<leftN;i++)chairs.push(<Chair key={"l"+i} x={pad-9} y={pad+H/(leftN+1)*(i+1)} deg={270} guest={guests[k++]}/>);
+    for(let i=0;i<topN;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(topN+1)*(i+1)} y={pad-9} deg={0} freshIds={fresh} guest={guests[k++]}/>);
+    for(let i=0;i<rightN;i++)chairs.push(<Chair key={"r"+i} x={pad+W+9} y={pad+H/(rightN+1)*(i+1)} deg={90} freshIds={fresh} guest={guests[k++]}/>);
+    for(let i=0;i<bottomN;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottomN+1)*(i+1)} y={pad+H+9} deg={180} freshIds={fresh} guest={guests[k++]}/>);
+    for(let i=0;i<leftN;i++)chairs.push(<Chair key={"l"+i} x={pad-9} y={pad+H/(leftN+1)*(i+1)} deg={270} freshIds={fresh} guest={guests[k++]}/>);
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-7} y={pad-7} width={W+14} height={H+14} rx={20} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
@@ -159,7 +194,7 @@ function TableNode({ table, selected, highlight=false, onMouseDown, onDrop }) {
   const circ=2*Math.PI*(R+5);
   const chairs=Array.from({length:total},(_,i)=>{
     const deg=i*(360/total);const a=deg*Math.PI/180;
-    return <Chair key={i} x={cx+seatDist*Math.sin(a)} y={cy-seatDist*Math.cos(a)} deg={deg} guest={guests[i]}/>;
+    return <Chair key={i} x={cx+seatDist*Math.sin(a)} y={cy-seatDist*Math.cos(a)} deg={deg} freshIds={fresh} guest={guests[i]}/>;
   });
   return wrap(S,S,table.x,table.y,<>
     {chairs}
@@ -1971,6 +2006,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     ro.observe(mapBoxRef.current);
     return()=>ro.disconnect();
   },[screen,view,sidebarOpen,tables.length,loading]);
+  // חגיגה כשכל האורחים הושבו: קונפטי והודעה (רק במעבר ל-100%, לא בכל טעינה)
+  const [celebrate,setCelebrate]=useState(false);
+  const prevSeatedRef=useRef(null);
+  useEffect(()=>{
+    if(loading)return;
+    const s=tables.reduce((n,t)=>n+(t.guests||[]).length,0), all=s+guests.length;
+    const was=prevSeatedRef.current;prevSeatedRef.current=s;
+    if(was!==null&&all>0&&s===all&&was<all){setCelebrate(true);const t=setTimeout(()=>setCelebrate(false),3600);return()=>clearTimeout(t);}
+  },[tables,guests,loading]);
   // מסך מלא למפה: Esc יוצא; ביציאה מההושבה או מתצוגת המפה  -  חוזרים לתצוגה רגילה
   const [mapFull,setMapFull]=useState(false);
   const [fullListOpen,setFullListOpen]=useState(true);
@@ -2725,7 +2769,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                 <div style={{display:"flex",alignItems:"center",gap:10,minWidth:220}}>
                   <div style={{fontSize:13,fontWeight:900,color:C.text,whiteSpace:"nowrap"}}>{seated}/{total} הושבו</div>
                   <div style={{flex:1,height:8,background:"#F1EAF8",borderRadius:100,overflow:"hidden",minWidth:90}}>
-                    <div style={{height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .4s"}}/>
+                    <div style={{position:"relative",overflow:"hidden",height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}><span className="sx-shine"/></div>
                   </div>
                   <span style={{fontSize:12,fontWeight:900,color:C.blueM}}>{p}%</span>
                 </div>
@@ -2789,12 +2833,24 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                     <rect width="100%" height="100%" fill="url(#hallGlow)"/>
                   </svg>
 
+                  {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
+                  <div className="sx-anim" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:"18%",left:"-6%",width:360,height:360,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.13),transparent 65%)",animation:"sxBlob 18s ease-in-out infinite"}}/>
+                    <div style={{position:"absolute",bottom:"-10%",right:"-4%",width:420,height:420,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.13),transparent 65%)",animation:"sxBlob 22s ease-in-out 3s infinite"}}/>
+                    <div style={{position:"absolute",top:"45%",left:"42%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.10),transparent 65%)",animation:"sxBlob 20s ease-in-out 6s infinite"}}/>
+                    {[["12%","8%",14,0,"#E8B04A"],["70%","6%",11,.7,"#F0609E"],["24%","92%",13,1.2,"#9B6BFF"],["82%","88%",15,.4,"#FF8A65"],["55%","50%",10,1.6,"#9B6BFF"],["88%","40%",12,.9,"#E8B04A"]].map(([top,left,s,d,c],i)=>(
+                      <svg key={i} width={s} height={s} viewBox="0 0 20 20" style={{position:"absolute",top,left,animation:`sxTwinkle ${2.4+(i%3)*.7}s ease-in-out ${d}s infinite`}}>
+                        <path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill={c}/>
+                      </svg>
+                    ))}
+                  </div>
+
                   {/* ─── במה  -  למעלה מרכז ─── */}
                   <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:300,height:70,
                     background:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",borderRadius:"0 0 26px 26px",
                     boxShadow:"0 14px 30px -10px rgba(240,96,158,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,pointerEvents:"none"}}>
                     <div style={{position:"absolute",top:7,left:24,right:24,display:"flex",justifyContent:"space-between"}}>
-                      {[0,1,2,3,4,5,6].map(i=><span key={i} style={{width:7,height:7,borderRadius:"50%",background:"#FFF3C4",boxShadow:"0 0 10px #FFE08A",opacity:.95}}/>)}
+                      {[0,1,2,3,4,5,6].map(i=>{const c=["#FFF3C4","#FFD3E6","#E6DAFF"][i%3];return <span key={i} className="sx-anim" style={{width:7,height:7,borderRadius:"50%",background:c,boxShadow:`0 0 10px ${c}`,animation:`sxTwinkle ${1.4+(i%3)*.5}s ease-in-out ${i*.18}s infinite`}}/>;})}
                     </div>
                     <div style={{textAlign:"center",marginTop:12,color:"#fff"}}>
                       <div style={{fontSize:15,fontWeight:900,letterSpacing:1}}>🎤 במה</div>
@@ -2826,7 +2882,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   )}
 
                   {/* ─── שולחנות ─── */}
-                  {tables.map(t=>{
+                  {tables.map((t,ti)=>{
                     const hmd=e=>{
                       if(e.button!==0)return;
                       e.stopPropagation();
@@ -2844,9 +2900,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                     const hit=!!q&&(t.guests||[]).some(g=>g.name.toLowerCase().includes(q));
                     return(
                       <div key={t.id} style={{position:"absolute",left:t.x,top:t.y,zIndex:selected===t.id?10:3,opacity:q&&!hit?.35:1,transition:"opacity .2s"}}>
+                        {/* כניסה מדורגת של השולחנות כשהמפה נפתחת */}
+                        <div className="sx-anim" style={{position:"absolute",left:0,top:0,animation:`sxPopIn .55s cubic-bezier(.3,1.4,.5,1) ${Math.min(ti,12)*.07}s both`}}>
                         {/* המיקום נקבע ע"י העוטף  -  השולחן עצמו מצויר ביחס אליו */}
                         <TableNode table={{...t,x:0,y:0}} selected={selected===t.id} highlight={hit} onMouseDown={hmd}
                           onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
+                        </div>
                         {selected===t.id&&(
                           <button onMouseDown={e=>e.stopPropagation()}
                             onClick={e=>{e.stopPropagation();setEditTableData(t);}} title="עריכת שולחן"
@@ -2867,6 +2926,21 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
             {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
             <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · עמדו על שולחן לראות מי יושב בו</span>
           </div>
+          {celebrate&&(
+            <div className="sx-anim" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:600,overflow:"hidden"}}>
+              {Array.from({length:70}).map((_,i)=>(
+                <span key={i} style={{position:"absolute",top:-20,left:`${(i*37)%100}%`,width:i%4?8:12,height:i%3?12:7,borderRadius:i%5?2:"50%",
+                  background:BURST_COLORS[i%BURST_COLORS.length],opacity:.9,
+                  animation:`sxConfetti ${2.4+(i%7)*.25}s cubic-bezier(.3,.6,.5,1) ${(i%10)*.09}s both`}}/>
+              ))}
+              <div style={{position:"absolute",left:"50%",top:"38%",background:"#fff",borderRadius:22,padding:"18px 28px",textAlign:"center",
+                boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)",border:`2px solid ${C.blueM}33`,animation:"sxToastIn 3.4s ease both"}}>
+                <div style={{fontSize:34,marginBottom:4}}>🎉</div>
+                <div style={{fontSize:20,fontWeight:900,background:GRAD,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent"}}>כל האורחים הושבו!</div>
+                <div style={{fontSize:13,color:C.muted,marginTop:4}}>סידור ההושבה מוכן · {seated} אורחים</div>
+              </div>
+            </div>
+          )}
           {/* במסך מלא: רשימת הממתינים צפה מעל המפה כדי שאפשר יהיה להמשיך לגרור אורחים */}
           {mapFull&&(
             <div style={{position:"absolute",bottom:52,right:16,width:fullListOpen?250:"auto",maxHeight:"min(62vh, calc(100vh - 190px))",display:"flex",flexDirection:"column",
