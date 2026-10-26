@@ -30,19 +30,23 @@ create policy events_owner on public.events for all to authenticated
   with check (user_id = auth.uid() or public.is_admin());
 
 -- ─── שלב 2: דף ההזמנה דרך פונקציות (מחזירות רק אירוע אחד לפי קוד) ─────────
--- פרטי ההזמנה לפי קוד, בלי user_id והגדרות פנימיות (לטבלת events אין עמודת views)
+-- פרטי ההזמנה לפי קוד, כולל הגדרות התצוגה (settings_json), בלי user_id
+-- (עודכן ב-27.10.2026 · migration invite_functions_settings_and_table; לטבלת events אין עמודת views)
 create or replace function public.get_invite(p_code text)
 returns jsonb language sql stable security definer set search_path = '' as $$
-  select to_jsonb(e) - 'user_id' - 'settings_json'
+  select to_jsonb(e) - 'user_id'
     from public.events e where e.invite_code = p_code and e.invite_active limit 1
 $$;
 
--- פרטי אורח מקישור אישי (?g=) — רק אם האורח שייך לאותה הזמנה
+-- פרטי אורח מקישור אישי (?g=) — רק אם האורח שייך לאותה הזמנה; כולל השולחן שלו
 create or replace function public.get_invite_guest(p_code text, p_guest uuid)
 returns jsonb language sql stable security definer set search_path = '' as $$
   select jsonb_build_object('id',g.id,'name',g.name,'phone',g.phone,
-                            'guest_count',g.guest_count,'rsvp',g.rsvp)
-    from public.guests g join public.events e on e.id = g.event_id
+                            'guest_count',g.guest_count,'rsvp',g.rsvp,
+                            'table_id',g.table_id,'table_name',t.name)
+    from public.guests g
+    join public.events e on e.id = g.event_id
+    left join public.tables t on t.id = g.table_id
    where e.invite_code = p_code and e.invite_active and g.id = p_guest
 $$;
 
