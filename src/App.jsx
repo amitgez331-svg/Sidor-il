@@ -313,7 +313,7 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     onDragLeave:()=>setOver(false),
     onDrop:e=>{e.preventDefault();e.stopPropagation();setOver(false);onDrop(e);},
   };
-  const tableNum=table.name?.match(/\d+/)?.[0]||"";
+  const tableNum=table.num?String(table.num):(table.name?.match(/\d+/)?.[0]||"");
   const tableName=table.name?.replace(/^\d+\s*/,"").trim()||"";
   const tip=`${table.name} · ${occupied}/${total}`+(guests.length?"\n"+guests.map(g=>"• "+g.name).join("\n"):"");
   const glow=over?(full?`drop-shadow(0 0 14px ${C.danger}aa)`:`drop-shadow(0 0 16px ${C.blueM}cc)`)
@@ -593,7 +593,7 @@ function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], deskto
 
 function ReceiptModal({ tables, onClose }) {
   const [q,setQ]=useState(""),[res,setRes]=useState(null),[nf,setNf]=useState(false);
-  const search=v=>{setQ(v);setRes(null);setNf(false);if(!v.trim())return;for(let i=0;i<tables.length;i++){const t=tables[i],g=(t.guests||[]).find(g=>g.name.toLowerCase().includes(v.toLowerCase()));if(g){setRes({guest:g,table:t,num:i+1});return;}}setNf(true);};
+  const search=v=>{setQ(v);setRes(null);setNf(false);if(!v.trim())return;for(let i=0;i<tables.length;i++){const t=tables[i],g=(t.guests||[]).find(g=>g.name.toLowerCase().includes(v.toLowerCase()));if(g){setRes({guest:g,table:t,num:t.num||i+1});return;}}setNf(true);};
   const print=()=>{if(!res)return;const w=window.open("","_blank","width=320,height=420");w.document.write(`<html><head><style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;direction:rtl}.logo{text-align:center;font-size:18px;font-weight:900;border-bottom:2px dashed #000;padding-bottom:10px;margin-bottom:14px}.name{font-size:26px;font-weight:900;margin-bottom:14px}.box{border:3px solid #000;border-radius:8px;padding:12px;text-align:center;margin-bottom:14px}.num{font-size:56px;font-weight:900;line-height:1}.footer{text-align:center;font-size:11px;border-top:1px dashed #000;padding-top:10px;color:#888}</style></head><body><div class="logo">Sidor-IL</div><div style="font-size:12px;color:#666">שם האורח</div><div class="name">${res.guest.name}</div><div class="box"><div style="font-size:13px;color:#444">שולחן מספר</div><div class="num">${res.num}</div><div style="font-size:16px;font-weight:700">${res.table.name}</div></div><div class="footer">ברוך הבא! sidor-il.co.il</div></body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print();},400);};
   return(<div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
     <div onClick={e=>e.stopPropagation()} style={{background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
@@ -1767,6 +1767,7 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
   const [name,setName]=useState(table.name);
   const [type,setType]=useState(table.type);
   const [seats,setSeats]=useState(table.seats);
+  const [num,setNum]=useState(table.num||"");
   return(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
@@ -1783,8 +1784,19 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
           ))}
         </div>
 
-        <input value={name} onChange={e=>setName(e.target.value)} placeholder="שם השולחן..."
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:12}}/>
+        <div style={{display:"flex",gap:10,marginBottom:12}}>
+          <label style={{display:"flex",flexDirection:"column",gap:4,width:90,flexShrink:0}}>
+            <span style={{fontSize:11,fontWeight:800,color:C.muted}}>מספר שולחן</span>
+            <input type="number" min="1" value={num} onChange={e=>setNum(e.target.value.replace(/\D/g,""))} aria-label="מספר שולחן"
+              style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"11px 10px",fontSize:16,fontWeight:900,color:C.blue,textAlign:"center",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4,flex:1}}>
+            <span style={{fontSize:11,fontWeight:800,color:C.muted}}>שם השולחן</span>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="שם השולחן..."
+              style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </label>
+        </div>
+        {num&&<div style={{fontSize:11,color:C.muted,marginTop:-6,marginBottom:12}}>אם המספר תפוס בשולחן אחר — השולחנות יחליפו מספרים</div>}
 
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,background:C.blueXL,borderRadius:12,padding:"10px 14px"}}>
           <span style={{fontSize:14,fontWeight:600,color:C.text,flex:1}}>מספר מקומות</span>
@@ -1795,7 +1807,7 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>onDelete(table.id)} style={{background:"#FEF2F2",color:C.danger,border:`1px solid ${C.danger}30`,borderRadius:12,padding:"12px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🗑️ מחק</button>
-          <button onClick={()=>name.trim()&&onSave(table.id,name,type,seats)} disabled={!name.trim()} style={{flex:1,background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#F6F0FF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
+          <button onClick={()=>name.trim()&&onSave(table.id,name,type,seats,parseInt(num,10)||null)} disabled={!name.trim()} style={{flex:1,background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#F6F0FF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
             שמור שינויים ✓
           </button>
         </div>
@@ -1805,7 +1817,7 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 }
 
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
-function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest }) {
+function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint }) {
   const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null);
   const assign=async tableId=>{if(!picked)return;await dropOnTable(tableId,picked.id,picked.table_id||null);setPicked(null);setTab("guests");};
   return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
@@ -1848,6 +1860,9 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
         <button onClick={onAddTable} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 14px ${C.blueL}44`}}>
           ➕ הוסף שולחן חדש
         </button>
+        {onPrint&&tables.length>0&&<button onClick={onPrint} style={{width:"100%",background:C.surface,color:C.blue,border:`2px solid ${C.blueL}`,borderRadius:14,padding:"12px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>
+          🖨️ הדפס סידור הושבה
+        </button>}
 
         {tables.length===0&&<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48}}>🪑</div><p style={{color:C.muted,fontSize:14,marginTop:8}}>אין עדיין שולחנות</p></div>}
 
@@ -1857,9 +1872,11 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
             <Card key={t.id} style={{marginBottom:12,overflow:"hidden",border:`1.5px solid ${picked&&!isFull?C.blueL:C.border}`,opacity:picked&&isFull?.4:1}}>
               <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
                 <div onClick={()=>picked?(!isFull&&assign(t.id)):setExpanded(exp?null:t.id)} style={{display:"flex",alignItems:"center",gap:12,flex:1,cursor:picked&&isFull?"not-allowed":"pointer",background:picked&&!isFull?C.blueXL:"none",margin:"-14px -16px",padding:"14px 16px"}}>
-                  <div style={{width:46,height:46,borderRadius:13,background:sc+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{TABLE_TYPES[t.type]?.icon}</div>
+                  <div title="מספר שולחן" style={{width:46,height:46,borderRadius:13,background:GRAD,color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,lineHeight:1}}>
+                    <span style={{fontSize:20,fontWeight:900}}>{t.num||""}</span><span style={{fontSize:11}}>{TABLE_TYPES[t.type]?.icon}</span>
+                  </div>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:800,fontSize:15,color:C.text}}>{t.name}</div>
+                    <div style={{fontWeight:800,fontSize:15,color:C.text}}>{String(t.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${t.num}`}</div>
                     <div style={{fontSize:12,color:C.muted,marginTop:2}}>{TABLE_TYPES[t.type]?.label} · {t.seats-(t.guests||[]).length} פנויים</div>
                   </div>
                   {picked
@@ -2343,6 +2360,74 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
     if(error)alert("❌ פריסת האולם לא נשמרה: "+error.message);
   };
+  // ─── מספרי שולחנות: נשמרים באירוע (settings_json.table_nums = {tableId: מספר}) ───
+  // שולחן בלי מספר מקבל אחד אוטומטית: המספר שבתחילת השם (אם פנוי), אחרת המספר הפנוי הקטן ביותר
+  const [tableNums,setTableNums]=useState(()=>event.settings_json?.table_nums||{});
+  const tableNumsRef=useRef(tableNums);tableNumsRef.current=tableNums;
+  useEffect(()=>{setTableNums(event.settings_json?.table_nums||{});},[event.id]);
+  const saveTableNums=async next=>{
+    setTableNums(next);tableNumsRef.current=next;
+    const settings={...(event.settings_json||{}),table_nums:next};
+    event.settings_json=settings;
+    await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+  };
+  const withNumbers=(list,nums)=>{
+    const next={};list.forEach(t=>{if(nums[t.id])next[t.id]=nums[t.id];});
+    const used=new Set(Object.values(next));
+    list.filter(t=>!next[t.id]).forEach(t=>{
+      const lead=parseInt(String(t.name||"").match(/^\s*(\d+)/)?.[1]||"",10);
+      let n=lead>0&&!used.has(lead)?lead:1;while(used.has(n))n++;
+      next[t.id]=n;used.add(n);
+    });
+    return next;
+  };
+  useEffect(()=>{
+    if(loading||!tables.length)return;
+    const next=withNumbers(tables,tableNumsRef.current);
+    const cur=tableNumsRef.current;
+    if(Object.keys(next).length!==Object.keys(cur).length||Object.keys(next).some(k=>next[k]!==cur[k]))saveTableNums(next);
+  },[loading,tables.map(t=>t.id).join(",")]);
+  const numOf=t=>tableNumsRef.current[t?.id]||tableNums[t?.id]||"";
+  // שינוי מספר: אם המספר תפוס בשולחן אחר — מחליפים ביניהם
+  const setTableNum=(id,n)=>{
+    n=parseInt(n,10);if(!(n>0))return;
+    const cur={...tableNumsRef.current},old=cur[id];
+    const other=Object.keys(cur).find(k=>k!==id&&cur[k]===n);
+    if(other)cur[other]=old;
+    cur[id]=n;saveTableNums(cur);
+  };
+  const tablesNum=[...tables].map(t=>({...t,num:numOf(t)})).sort((a,b)=>(a.num||999)-(b.num||999));
+  // הדפסת סידור ההושבה: לפי שולחנות + אינדקס אורחים לפי א-ב (לכניסה לאולם)
+  const printSeating=()=>{
+    const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const ppl=g=>g.guest_count||1;
+    const tName=t=>String(t.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${t.num}`;
+    const cards=tablesNum.map(t=>{const gs=[...(t.guests||[])].sort((a,b)=>a.name.localeCompare(b.name,"he"));const n=gs.reduce((s,g)=>s+ppl(g),0);
+      return `<section class="t"><header><span class="num">${t.num}</span><span class="nm">${esc(tName(t))}</span><span class="cnt">${n} אורחים · ${gs.length}/${t.seats} מקומות</span></header>
+      ${gs.length?`<ol>${gs.map(g=>`<li>${esc(g.name)}${ppl(g)>1?` <b>×${ppl(g)}</b>`:""}${g.relation&&g.relation!=="ללא שיוך"?` <i>${esc(g.relation)}</i>`:""}</li>`).join("")}</ol>`:`<p class="empty">אין אורחים</p>`}</section>`;}).join("");
+    const idx=tablesNum.flatMap(t=>(t.guests||[]).map(g=>({g,t}))).sort((a,b)=>a.g.name.localeCompare(b.g.name,"he"))
+      .map(({g,t})=>`<tr><td>${esc(g.name)}</td><td class="c">${ppl(g)}</td><td class="c"><b>${t.num}</b></td><td>${esc(tName(t))}</td></tr>`).join("");
+    const waiting=guests.length?`<h2>ממתינים להושבה (${guests.length})</h2><p class="wait">${guests.map(g=>esc(g.name)).join(" · ")}</p>`:"";
+    const title=esc(event.name||"סידור הושבה"),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
+    const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
+    w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סידור הושבה · ${title}</title><style>
+      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+      *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}
+      h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 18px;font-size:13px}h2{font-size:17px;margin:26px 0 10px;border-bottom:2px solid #2B1D3F;padding-bottom:4px}
+      .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.t{border:1.5px solid #CFC3E0;border-radius:10px;padding:10px 12px;break-inside:avoid}
+      .t header{display:flex;align-items:center;gap:8px;border-bottom:1px solid #EEE6F7;padding-bottom:6px;margin-bottom:6px}
+      .num{background:#2B1D3F;color:#fff;border-radius:8px;min-width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:16px}
+      .nm{font-weight:900;flex:1}.cnt{font-size:11px;color:#6E6585}ol{margin:0;padding-inline-start:20px;font-size:13px;line-height:1.6}i{color:#8A7FA0;font-size:11px;font-style:normal}
+      .empty,.wait{color:#8A7FA0;font-size:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #EEE6F7;padding:5px 8px;text-align:right}th{background:#F4EEFC}td.c{text-align:center}
+      .idx{columns:2;column-gap:24px}.idx table{break-inside:auto}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}
+      @media print{.bar{display:none}body{margin:10mm}.grid{grid-template-columns:repeat(3,1fr)}h2{break-after:avoid}.pb{break-before:page}}
+    </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+    <h1>סידור הושבה · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · ${tablesNum.length} שולחנות · ${seated} מתוך ${total} הושבו</div>
+    <h2>לפי שולחנות</h2><div class="grid">${cards}</div>
+    <h2 class="pb">לפי שם אורח (א-ב)</h2><div class="idx"><table><thead><tr><th>שם</th><th>אורחים</th><th>שולחן</th><th>שם השולחן</th></tr></thead><tbody>${idx}</tbody></table></div>
+    ${waiting}</body></html>`);
+    w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+  };
   const [userPackages,setUserPackages]=useState([]);
   const [trialExpired] = useState(false);
   const [trialHours] = useState(0);
@@ -2446,7 +2531,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     setSaving(false);
   };
   const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);pushUndo(`הוצאת ${guest.name}`,()=>restoreGuests([{id:guest.id,table_id:tid}]));setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
-  const editTable=async(id,name,type,seats)=>{setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
+  const editTable=async(id,name,type,seats,num)=>{if(num&&Number(num)!==Number(tableNumsRef.current[id]))setTableNum(id,num);setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
   const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
   const addGuest=async(data)=>{
     const sp=splitNamePhone(data?.name||newGuest,data?.phone);
@@ -2685,7 +2770,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
       <div style={{flex:1,overflow:"auto"}}>
         {screen==="home"&&<HomeScreen/>}
-        {screen==="seating"&&<MobileSeating tables={tables} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
+        {screen==="seating"&&<MobileSeating tables={tablesNum} onPrint={printSeating} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
         {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
@@ -2793,7 +2878,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
       </div>
       <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
-      {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
+      {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
       {autoSeatModal}
     </div>);
@@ -3366,7 +3451,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         {/* כניסה מדורגת של השולחנות כשהמפה נפתחת */}
                         <div className="sx-anim" style={{position:"absolute",left:0,top:0,animation:`sxPopIn .55s cubic-bezier(.3,1.4,.5,1) ${Math.min(ti,12)*.07}s both`}}>
                         {/* המיקום נקבע ע"י העוטף  -  השולחן עצמו מצויר ביחס אליו */}
-                        <TableNode table={{...t,x:0,y:0}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
+                        <TableNode table={{...t,x:0,y:0,num:numOf(t)}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
                           onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
                         </div>
                         {selected===t.id&&(
@@ -3488,16 +3573,28 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           })()}
         </div>}
         {view==="list"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:200}}>
+              <div style={{fontSize:16,fontWeight:900,color:C.text}}>📋 סידור ההושבה לפי מספר שולחן</div>
+              <div style={{fontSize:12,color:C.muted}}>{tables.length} שולחנות · {seated} מתוך {total} הושבו · לשינוי מספר: ✏️ על השולחן</div>
+            </div>
+            <button onClick={printSeating} className="sx-btn sx-btn-primary"
+              style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"10px 18px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 8px 18px -8px ${C.blueM}`}}>
+              🖨️ הדפס סידור הושבה
+            </button>
+          </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
-            {tables.map(t=>(
+            {tablesNum.map(t=>(
               <Card key={t.id} style={{padding:16,border:`1.5px solid ${selected===t.id?C.blueL:C.border}`}}
                 onDragOver={e=>e.preventDefault()}
                 onDrop={e=>{e.preventDefault();const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}>
                 {/* כותרת שולחן */}
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                    <span title="מספר שולחן" style={{minWidth:30,height:30,borderRadius:9,background:GRAD,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:15,flexShrink:0,padding:"0 6px"}}>{t.num}</span>
                     <span style={{fontSize:16}}>{TABLE_TYPES[t.type]?.icon}</span>
-                    <span style={{fontWeight:800,fontSize:14,color:C.text}}>{t.name}</span>
+                    <span style={{fontWeight:800,fontSize:14,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{String(t.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${t.num}`}</span>
+                    <button onClick={()=>setEditTableData(t)} title="עריכת שולחן ומספר" style={{background:"none",border:"none",cursor:"pointer",fontSize:12,padding:2}}>✏️</button>
                   </div>
                   <span style={{background:sColor(t)+"22",color:sColor(t),borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px"}}>{(t.guests||[]).length}/{t.seats}</span>
                 </div>
@@ -3561,7 +3658,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{g.name}</div>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:2}}>
                       {g.relation&&<span style={{fontSize:10,background:C.blueXL,color:C.blue,borderRadius:100,padding:"1px 6px"}}>{g.relation}</span>}
-                      {tbl&&<span style={{fontSize:10,background:"#F0FFF4",color:C.success,borderRadius:100,padding:"1px 6px"}}>🪑 {tbl.name}</span>}
+                      {tbl&&<span style={{fontSize:10,background:"#F0FFF4",color:C.success,borderRadius:100,padding:"1px 6px"}}>🪑 שולחן {numOf(tbl)} · {tbl.name}</span>}
                       <RsvpBadge rsvp={g.rsvp}/>
                     </div>
                   </div>
@@ -3578,8 +3675,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
 
     {/* EditTableModal לדסקטופ  -  נפתח מכפתור עריכה במפה */}
-    {editTableData&&<EditTableModal table={editTableData} onClose={()=>setEditTableData(null)}
-      onSave={async(id,name,type,seats)=>{await editTable(id,name,type,seats);setEditTableData(null);}}
+    {editTableData&&<EditTableModal table={{...editTableData,num:numOf(editTableData)}} onClose={()=>setEditTableData(null)}
+      onSave={async(id,name,type,seats,num)=>{await editTable(id,name,type,seats,num);setEditTableData(null);}}
       onDelete={async(id)=>{await deleteTable(id);setEditTableData(null);setSelected(null);}}
     />}
 
@@ -3637,7 +3734,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     )}
 
     {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
-    {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
+    {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
     {autoSeatModal}
     {/* WhatsApp צף */}
