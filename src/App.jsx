@@ -2287,6 +2287,23 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
   const selTable=tables.find(t=>t.id===selected);
   const seated=tables.reduce((s,t)=>s+(t.guests||[]).length,0);
   const total=seated+guests.length;
+  // הושבה אוטומטית (מתוך סידורי הושבה): עדכון אחד לכל שולחן במקום אחד לכל אורח
+  const applyAutoSeating=async assignments=>{
+    setSaving(true);
+    const byTable={};assignments.forEach(a=>{(byTable[a.tableId]||=[]).push(a.guestId);});
+    const res=await Promise.all(Object.entries(byTable).map(([tid,ids])=>sb.from("guests").update({table_id:tid}).in("id",ids)));
+    const err=res.find(r=>r.error)?.error;
+    await loadAll();setSaving(false);
+    if(err){alert("❌ חלק מהאורחים לא שובצו: "+err.message);return;}
+    setModal(null);
+  };
+  const autoSeatModal=modal==="autoSeat"&&(
+    <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={()=>setModal(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:22,width:"100%",maxWidth:720,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
+        <AISeatingScreen event={event} tables={tables} guests={guests} onApply={applyAutoSeating} onClose={()=>setModal(null)} saving={saving}/>
+      </div>
+    </div>
+  );
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,flexDirection:"column",gap:14}}><Spinner size={40}/><p style={{color:C.muted,fontSize:15,fontFamily:"'Heebo',sans-serif"}}>טוען...</p></div>);
 
@@ -2459,6 +2476,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="settings"?"⚙️ הגדרות":event.name}
         </span>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
+        {screen==="seating"&&<button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>}
       </div>
 
       <div style={{flex:1,overflow:"auto"}}>
@@ -2564,15 +2582,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           </div>
         )}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={e=>setScreen("home")}/>}
-        {screen==="ai"&&<AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(assignments)=>{
-          setSaving(true);
-          for(const{guestId,tableId}of assignments){
-            await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);
-          }
-          await loadAll();
-          setSaving(false);
-          setScreen("seating");
-        }}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
@@ -2582,6 +2591,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
       {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
+      {autoSeatModal}
     </div>);
   }
 
@@ -2595,7 +2605,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     {id:"packages",icon:"📦",label:"חבילות"},
     {id:"sms",icon:"📱",label:"הודעות SMS"},
     {id:"whatsapp",icon:"💬",label:"WhatsApp"},
-    {id:"ai",icon:"🤖",label:"AI סידור חכם"},
     {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
 
@@ -2615,7 +2624,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
       {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋 רשימה"],["guests","👥 אורחים"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",color:view===v?C.blue:"#fff",border:`2px solid ${view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.4)"}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 2px 8px rgba(0,0,0,0.2)":"none",transition:"all .15s"}}>{l}</button>))}</div>}
       <span style={{background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 12px"}}>{seated}/{total}</span>
-      {screen==="seating"&&<><button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
+      {screen==="seating"&&<><button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
+      <button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
       <button onClick={()=>setModal("receipt")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🖨️ חפש</button></>}
       <button onClick={()=>setShowLanding(true)} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>🏠 דף הבית</button>
     </header>
@@ -3385,7 +3395,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
         {screen==="sms"&&<SMSScreen event={event} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
-        {screen==="ai"&&<AISeatingScreen event={event} tables={tables} guests={guests} onApply={async(assignments)=>{setSaving(true);for(const{guestId,tableId}of assignments){await sb.from("guests").update({table_id:tableId||null}).eq("id",guestId);}await loadAll();setSaving(false);setScreen("seating");}}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
@@ -3435,6 +3444,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
     {modal==="receipt"&&<ReceiptModal tables={tables} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
+    {autoSeatModal}
     {/* WhatsApp צף */}
     <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
       style={{position:"fixed",bottom:90,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none"}}>
@@ -5615,69 +5625,72 @@ function WhatsAppScreen({ event, guests }) {
 }
 
 // ─── AI SEATING SCREEN ────────────────────────────────────────────────────────
-function AISeatingScreen({ event, tables, guests, onApply }) {
+// הושבה אוטומטית של האורחים שעוד לא שובצו. מקום = רשומת אורח (כמו בתצוגת השולחנות).
+// byCategory: כל קטגוריה ביחד — קודם לשולחן שכבר יושבים בו אנשים מאותה קטגוריה, אחר כך לשולחן חדש.
+// fillEmpty: שולחנות ריקים קודם (העדפה לשולחן ריק שהקבוצה נכנסת אליו בשלמותה), ואז הכי פחות מלאים.
+function planAutoSeating(guests,tables,{byCategory=true,fillEmpty=true}={}){
+  const relOf=g=>g.relation||"ללא שיוך";
+  const slots=tables.map((t,i)=>{
+    const rels={};(t.guests||[]).forEach(g=>{rels[relOf(g)]=(rels[relOf(g)]||0)+1;});
+    return {id:t.id,name:t.name,idx:i,used:(t.guests||[]).length,free:Math.max(0,(t.seats||10)-(t.guests||[]).length),rels};
+  });
+  const main=s=>Object.entries(s.rels).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  const pick=(rel,need)=>{
+    const open=slots.filter(s=>s.free>0);
+    if(!open.length)return null;
+    if(rel){const same=open.filter(s=>s.used>0&&main(s)===rel).sort((a,b)=>b.free-a.free);if(same.length)return same[0];}
+    if(fillEmpty){
+      const empty=open.filter(s=>s.used===0);
+      if(empty.length){const fits=empty.filter(s=>s.free>=need).sort((a,b)=>a.free-b.free);return fits[0]||empty.sort((a,b)=>b.free-a.free)[0];}
+      return open.sort((a,b)=>a.used-b.used||a.idx-b.idx)[0];
+    }
+    return open.sort((a,b)=>a.idx-b.idx)[0];
+  };
+  const groups={};
+  if(byCategory)guests.forEach(g=>{(groups[relOf(g)]||=[]).push(g);});
+  else groups[""]=[...guests];
+  const assignments=[];
+  Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).forEach(([rel,list])=>{
+    const rest=[...list];
+    while(rest.length){
+      const s=pick(rel,rest.length);if(!s)break;
+      rest.splice(0,s.free).forEach(g=>{
+        assignments.push({guestId:g.id,tableId:s.id,reason:`${rel?rel+" → ":""}${s.name}`});
+        s.used++;s.free--;s.rels[relOf(g)]=(s.rels[relOf(g)]||0)+1;
+      });
+    }
+  });
+  return assignments;
+}
+
+function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false }) {
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const [groupByRelation,setGroupByRelation]=useState(true);
   const [fillEmpty,setFillEmpty]=useState(true);
+  useEffect(()=>{setResult(null);},[groupByRelation,fillEmpty]);
 
   const runSmartSeating=()=>{
     setLoading(true);
     setTimeout(()=>{
-      const unseated=[...guests]; // רק ממתינים
-      const assignments=[];
-
-      // קבץ לפי קטגוריה
-      const byRelation={};
-      unseated.forEach(g=>{
-        const rel=g.relation||"ללא שיוך";
-        if(!byRelation[rel])byRelation[rel]=[];
-        byRelation[rel].push(g);
-      });
-
-      // עותק של שולחנות עם מקומות פנויים
-      const tableSlots=tables.map(t=>({
-        ...t,
-        used:(t.guests||[]).length,
-        free:t.seats-(t.guests||[]).length
-      })).filter(t=>t.free>0);
-
-      if(groupByRelation){
-        // שבץ לפי קטגוריה  -  כל קטגוריה לשולחן אחד
-        Object.entries(byRelation).forEach(([rel,gList])=>{
-          let remaining=[...gList];
-          for(const tbl of tableSlots){
-            if(remaining.length===0)break;
-            while(tbl.free>0&&remaining.length>0){
-              const g=remaining.shift();
-              assignments.push({guestId:g.id,tableId:tbl.id,reason:`${rel} → ${tbl.name}`});
-              tbl.free--;tbl.used++;
-            }
-          }
-        });
-      }else{
-        // שבץ לפי סדר  -  מלא שולחן אחד לפני הבא
-        let remaining=[...unseated];
-        for(const tbl of tableSlots){
-          while(tbl.free>0&&remaining.length>0){
-            const g=remaining.shift();
-            assignments.push({guestId:g.id,tableId:tbl.id,reason:`סידור לפי זמינות → ${tbl.name}`});
-            tbl.free--;
-          }
-        }
-      }
-
-      const summary=`שובצו ${assignments.length} אורחים מתוך ${unseated.length} ממתינים`;
+      const assignments=planAutoSeating(guests,tables,{byCategory:groupByRelation,fillEmpty});
+      const left=guests.length-assignments.length;
+      const summary=`שובצו ${assignments.length} אורחים מתוך ${guests.length} ממתינים${left>0?` · ${left} נשארו בלי מקום (הוסף שולחנות)`:""}`;
       setResult({assignments,summary});
       setLoading(false);
-    },600);
+    },300);
   };
 
   return(
     <div style={{direction:"rtl",padding:24,maxWidth:700,margin:"0 auto"}}>
-      <div style={{fontSize:20,fontWeight:900,color:"#1A202C",marginBottom:6}}>🪑 סידור הושבה חכם</div>
-      <div style={{fontSize:13,color:"#718096",marginBottom:20}}>סידור אוטומטי לפי קטגוריות ומקומות פנויים</div>
+      <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:20}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:20,fontWeight:900,color:"#1A202C",marginBottom:6}}>🤖 הושבה אוטומטית</div>
+          <div style={{fontSize:13,color:"#718096"}}>משבץ את האורחים שעוד לא יושבים, לפי קטגוריות ומקומות פנויים. אורחים שכבר שובצו לא זזים.</div>
+        </div>
+        {onClose&&<button onClick={onClose} aria-label="סגירה" style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:10,width:36,height:36,fontSize:16,cursor:"pointer",flexShrink:0}}>✕</button>}
+      </div>
 
       {/* סטטיסטיקות */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
@@ -5694,15 +5707,15 @@ function AISeatingScreen({ event, tables, guests, onApply }) {
       <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:800,color:"#1A202C",marginBottom:14}}>⚙️ אפשרויות סידור</div>
         {[
-          {key:"groupByRelation",label:"קבץ לפי קטגוריית קרבה",desc:"משפחה קרובה ביחד, חברים ביחד וכו'",val:groupByRelation,set:setGroupByRelation},
-          {key:"fillEmpty",label:"מלא שולחנות ריקים קודם",desc:"תעדוף שולחנות עם פחות אורחים",val:fillEmpty,set:setFillEmpty},
+          {key:"groupByRelation",label:"סדר לפי קטגוריות",desc:"משפחה קרובה ביחד, חברים ביחד — וליד מי שכבר יושב מאותה קטגוריה",val:groupByRelation,set:setGroupByRelation},
+          {key:"fillEmpty",label:"מלא שולחנות ריקים קודם",desc:"קבוצה עוברת לשולחן ריק שהיא נכנסת אליו בשלמותה, ואז לשולחנות הכי פחות מלאים",val:fillEmpty,set:setFillEmpty},
         ].map(item=>(
           <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #F7FAFC"}}>
             <div>
               <div style={{fontSize:14,fontWeight:700,color:"#1A202C"}}>{item.label}</div>
               <div style={{fontSize:12,color:"#718096"}}>{item.desc}</div>
             </div>
-            <div onClick={()=>item.set(s=>!s)}
+            <div role="switch" aria-checked={item.val} tabIndex={0} onClick={()=>item.set(s=>!s)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();item.set(s=>!s);}}}
               style={{width:44,height:24,borderRadius:12,background:item.val?"#276749":"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,right:item.val?2:20,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"right .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
             </div>
@@ -5760,9 +5773,9 @@ function AISeatingScreen({ event, tables, guests, onApply }) {
           style={{flex:2,background:guests.length===0?"#E2E8F0":"#2B6CB0",color:guests.length===0?"#aaa":"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:15,fontWeight:700,cursor:guests.length===0?"default":"pointer",fontFamily:"inherit"}}>
           {loading?"מסדר...":"🚀 סדר אוטומטית"}
         </button>
-        {result&&<button onClick={()=>onApply(result.assignments)}
-          style={{flex:1,background:"#276749",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-          ✅ אשר וסיים
+        {result&&result.assignments.length>0&&<button onClick={()=>onApply(result.assignments)} disabled={saving}
+          style={{flex:1,background:"#276749",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,cursor:saving?"default":"pointer",fontFamily:"inherit",opacity:saving?.6:1}}>
+          {saving?"שומר...":"✅ אשר והושב"}
         </button>}
       </div>
     </div>
