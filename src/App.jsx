@@ -24,6 +24,22 @@ const inviteShareText=(event,url)=>{
   const date=event.date?new Date(event.date).toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"}):"";
   return [title,date&&`📅 ${date}${event.event_time?" · "+event.event_time:""}`,event.venue&&`📍 ${event.venue}`,"","נשמח לראותכם! לפרטים ולאישור הגעה 👇",url].filter(x=>x!==false&&x!==undefined&&x!==null).join("\n");
 };
+// שדה תאריך מימין לשמאל: מציג את התאריך בעברית ("יום ב׳, 14 ביוני 2027") ופותח את בורר התאריכים של הדפדפן.
+// שדה ה-date המקורי מציג 14/06/2027 משמאל לימין עם האייקון בצד הלא נכון.
+function DateField({ value, onChange, style, compact=false, placeholder="בחרו תאריך" }) {
+  const ref=useRef(null);
+  const d=value?new Date(value+"T00:00:00"):null;
+  const txt=d&&!isNaN(d)?d.toLocaleDateString("he-IL",compact?{day:"numeric",month:"short",year:"numeric"}:{weekday:"short",day:"numeric",month:"long",year:"numeric"}):placeholder;
+  const open=()=>{try{ref.current?.showPicker();}catch{ref.current?.focus();}};
+  return(
+    <div onClick={open} style={{...style,position:"relative",display:"flex",alignItems:"center",gap:6,direction:"rtl",textAlign:"right",cursor:"pointer"}}>
+      <span style={{flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:d?undefined:"#A0AEC0"}}>{txt}</span>
+      <span aria-hidden="true" style={{flexShrink:0}}>📅</span>
+      <input ref={ref} type="date" value={value||""} onChange={e=>onChange(e.target.value)} aria-label={txt}
+        style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0,border:"none",padding:0,margin:0,cursor:"pointer"}}/>
+    </div>
+  );
+}
 const shareInviteWA=(event,url)=>window.open("https://wa.me/?text="+encodeURIComponent(inviteShareText(event,url)),"_blank","noopener,noreferrer");
 const WaIcon=({size=16,color="#fff"})=>(
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88m8.41-18.3A11.81 11.81 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg>
@@ -1613,7 +1629,7 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>תאריך</div>
-            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} dir="ltr" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <DateField compact value={form.date} onChange={v=>setForm(f=>({...f,date:v}))} style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 8px",fontSize:14,color:C.text,fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שעה</div>
@@ -3638,9 +3654,9 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>תאריך האירוע</div>
-            <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
-              dir="ltr" style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-            {form.date&&<div style={{fontSize:11,color:"#718096",marginTop:6,fontWeight:600}}>📅 <span dir="ltr">{hebrewDate(form.date)}</span></div>}
+            <DateField value={form.date} onChange={v=>setForm(f=>({...f,date:v}))}
+              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,fontFamily:"inherit",boxSizing:"border-box",background:"#fff"}}/>
+            {form.date&&<div style={{fontSize:11,color:"#718096",marginTop:6,fontWeight:600}}>✡️ <span dir="rtl">{hebrewDate(form.date)}</span></div>}
           </div>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>שעת קבלת פנים</div>
@@ -4896,7 +4912,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
                     <select value={s.templateId} onChange={e=>update(s.id,{templateId:e.target.value})} style={inp}>
                       {templates.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
                     </select></div>}
-                  <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><input type="date" dir="ltr" value={s.date||""} onChange={e=>update(s.id,{date:e.target.value})} style={inp}/></div>
+                  <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><DateField compact value={s.date||""} onChange={v=>update(s.id,{date:v})} style={inp}/></div>
                   <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div><input type="time" dir="ltr" value={s.time||""} onChange={e=>update(s.id,{time:e.target.value})} style={inp}/></div>
                 </div>}
               </>}
@@ -6493,9 +6509,8 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>תאריך</div>
-                  <input type="date" dir="ltr" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
-                    style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                    onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                  <DateField value={form.date} onChange={v=>setForm(f=>({...f,date:v}))}
+                    style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",boxSizing:"border-box",background:"#fff"}}/>
                 </div>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שעה</div>
