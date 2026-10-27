@@ -2229,9 +2229,67 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     window.addEventListener("resize",fn);
     return()=>window.removeEventListener("resize",fn);
   },[event.id]);
-  const loadAll=async()=>{setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
+  const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
+
+  // ─── ביטול פעולה (↩): שיבוץ/הוצאת אורחים, הושבה אוטומטית, הזזה ויישור שולחנות ───
+  const [undoStack,setUndoStack]=useState([]);
+  const pushUndo=(label,run)=>setUndoStack(s=>[...s.slice(-19),{label,run}]);
+  // מחזיר אורחים לשולחן שהיו בו ([{id,table_id}])
+  const restoreGuests=async list=>{
+    const by={};list.forEach(({id,table_id})=>{(by[table_id??"null"]||=[]).push(id);});
+    await Promise.all(Object.entries(by).map(([tid,ids])=>sb.from("guests").update({table_id:tid==="null"?null:tid}).in("id",ids)));
+    await loadAll(true);
+  };
+  // מחזיר שולחנות למיקום הקודם ([{id,x,y}])
+  const restoreTablePos=async list=>{
+    setTables(ts=>ts.map(t=>{const p=list.find(o=>o.id===t.id);return p?{...t,x:p.x,y:p.y}:t;}));
+    await Promise.all(list.map(p=>saveTablePos(p.id,p.x,p.y)));
+  };
+  const undo=async()=>{
+    const top=undoStack[undoStack.length-1];if(!top||saving)return;
+    setUndoStack(s=>s.slice(0,-1));setSaving(true);
+    try{await top.run();}catch(e){alert("❌ הביטול לא הצליח: "+(e?.message||e));}
+    setSaving(false);
+  };
+  const lastUndo=undoStack[undoStack.length-1];
+  // Ctrl+Z במסך ההושבה (לא בתוך שדה טקסט)
+  const undoRef=useRef(undo);undoRef.current=undo;
+  useEffect(()=>{
+    if(screen!=="seating")return;
+    const onKey=e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==="z"&&!/input|textarea|select/i.test(e.target.tagName)){e.preventDefault();undoRef.current();}};
+    window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);
+  },[screen]);
+  const undoBtn=(style={})=>(
+    <button onClick={undo} disabled={!lastUndo||saving} title={lastUndo?`ביטול: ${lastUndo.label} (Ctrl+Z)`:"אין פעולה לבטל"} className="sx-btn"
+      style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:lastUndo?"pointer":"default",fontFamily:"inherit",whiteSpace:"nowrap",opacity:lastUndo?1:.45,...style}}>
+      ↩ בטל{lastUndo?` · ${lastUndo.label}`:""}
+    </button>
+  );
+
+  // יישור שולחנות במקום: שורות לפי הגובה שבו הונחו, ריווח אחיד בתוך השורה, בלי להזיז את המפה
+  const alignTables=async()=>{
+    if(!tables.length)return;
+    const snap=v=>Math.max(0,Math.round(v/10)*10);
+    const wOf=t=>t.type==="knight"?240:200;
+    const sorted=[...tables].sort((a,b)=>a.y-b.y);
+    const rows=[];
+    sorted.forEach(t=>{const r=rows[rows.length-1];if(r&&t.y-r[0].y<100)r.push(t);else rows.push([t]);});
+    const next={};let prevY=-Infinity;
+    rows.forEach(r=>{
+      const y=Math.max(snap(r.reduce((s,t)=>s+t.y,0)/r.length),prevY+180);prevY=y;
+      let prevX=-Infinity,prevW=0;
+      [...r].sort((a,b)=>a.x-b.x).forEach(t=>{const x=Math.max(snap(t.x),prevX+prevW);next[t.id]={x,y};prevX=x;prevW=wOf(t);});
+    });
+    const before=tables.map(t=>({id:t.id,x:t.x,y:t.y}));
+    const changed=tables.filter(t=>next[t.id].x!==t.x||next[t.id].y!==t.y);
+    if(!changed.length)return;
+    setTables(ts=>ts.map(t=>({...t,...next[t.id]})));
+    await Promise.all(changed.map(t=>saveTablePos(t.id,next[t.id].x,next[t.id].y)));
+    pushUndo("יישור שולחנות",()=>restoreTablePos(before));
+  };
+
   const dropOnTable=async(toId,guestId,fromId)=>{
     const allG=[...guests,...tables.flatMap(t=>t.guests||[])];
     const guest=allG.find(g=>String(g.id)===String(guestId));
@@ -2243,6 +2301,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     if(String(fromId)===String(toId))return;
     setSaving(true);
     await sb.from("guests").update({table_id:toId}).eq("id",guestId);
+    pushUndo(`הושבת ${guest.name}`,()=>restoreGuests([{id:guest.id,table_id:guest.table_id||null}]));
     setTables(ts=>ts.map(t=>{
       // הסר מהשולחן הקודם
       if(fromId&&String(t.id)===String(fromId))return{...t,guests:(t.guests||[]).filter(g=>String(g.id)!==String(guestId))};
@@ -2254,7 +2313,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     setGuests(gs=>gs.filter(g=>String(g.id)!==String(guestId)));
     setSaving(false);
   };
-  const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
+  const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);pushUndo(`הוצאת ${guest.name}`,()=>restoreGuests([{id:guest.id,table_id:tid}]));setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
   const editTable=async(id,name,type,seats)=>{setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
   const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
   const addGuest=async(data)=>{
@@ -2293,7 +2352,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
     const byTable={};assignments.forEach(a=>{(byTable[a.tableId]||=[]).push(a.guestId);});
     const res=await Promise.all(Object.entries(byTable).map(([tid,ids])=>sb.from("guests").update({table_id:tid}).in("id",ids)));
     const err=res.find(r=>r.error)?.error;
-    await loadAll();setSaving(false);
+    pushUndo(`הושבה אוטומטית (${assignments.length})`,()=>restoreGuests(assignments.map(a=>({id:a.guestId,table_id:null}))));
+    await loadAll(true);setSaving(false);
     if(err){alert("❌ חלק מהאורחים לא שובצו: "+err.message);return;}
     setModal(null);
   };
@@ -2476,6 +2536,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
           {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="settings"?"⚙️ הגדרות":event.name}
         </span>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
+        {screen==="seating"&&<button onClick={undo} disabled={!lastUndo||saving} aria-label="ביטול פעולה" title={lastUndo?`ביטול: ${lastUndo.label}`:"אין פעולה לבטל"} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:lastUndo?"pointer":"default",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap",opacity:lastUndo?1:.5}}>↩ בטל</button>}
         {screen==="seating"&&<button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>}
       </div>
 
@@ -2624,7 +2685,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
       {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋 רשימה"],["guests","👥 אורחים"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",color:view===v?C.blue:"#fff",border:`2px solid ${view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.4)"}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 2px 8px rgba(0,0,0,0.2)":"none",transition:"all .15s"}}>{l}</button>))}</div>}
       <span style={{background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 12px"}}>{seated}/{total}</span>
-      {screen==="seating"&&<><button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
+      {screen==="seating"&&<>{view!=="map"&&undoBtn({padding:"5px 12px",border:"1px solid rgba(255,255,255,.3)"})}<button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
       <button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
       <button onClick={()=>setModal("receipt")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🖨️ חפש</button></>}
       <button onClick={()=>setShowLanding(true)} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>🏠 דף הבית</button>
@@ -3018,19 +3079,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                   style={{background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                   {mapLocked?"🔒 המפה נעולה":"🔓 נעל מפה"}
                 </button>
-                <button disabled={mapLocked} onClick={async()=>{
-                  if(!tables.length||!window.confirm("לסדר את כל השולחנות אוטומטית בשורות מתחת לבמה? המיקומים הנוכחיים יוחלפו."))return;
-                  const MAP_W=Math.max(hallSize().cw-24,640);
-                  const cell=200,cols=Math.max(1,Math.floor((MAP_W-60)/cell));
-                  const startX=Math.max(30,(MAP_W-cols*cell)/2);
-                  const next=tables.map((t,i)=>({...t,x:Math.round(startX+(i%cols)*cell+(t.type==="knight"?0:20)),y:Math.round(120+Math.floor(i/cols)*180)}));
-                  setTables(next);
-                  await Promise.all(next.map(t=>saveTablePos(t.id,t.x,t.y)));
-                  setTimeout(()=>fitZoom(next),50);
-                }} className="sx-btn" title={mapLocked?"המפה נעולה":undefined}
+                <button disabled={mapLocked} onClick={alignTables} className="sx-btn"
+                  title={mapLocked?"המפה נעולה":"מיישר את השולחנות לשורות ועמודות ישרות, קרוב למקום שבו הנחתם אותם"}
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1}}>
-                  ✨ סדר אוטומטית
+                  📐 יישר שולחנות
                 </button>
+                {undoBtn()}
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
                   <button style={zBtn} onClick={()=>setZoom(z=>Math.max(.5,+(z-.1).toFixed(2)))} aria-label="הקטן">−</button>
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
@@ -3160,7 +3214,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                         posY=Math.min(Math.max(0,by+(me.clientY-sy)/zoom),MAP_H-60);
                         moveTablePos(t.id,posX,posY);
                       };
-                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(posX!==bx||posY!==by)saveTablePos(t.id,Math.round(posX),Math.round(posY));};
+                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(posX!==bx||posY!==by){saveTablePos(t.id,Math.round(posX),Math.round(posY));pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}};
                       window.addEventListener("mousemove",mv);
                       window.addEventListener("mouseup",up);
                     };
@@ -5627,8 +5681,9 @@ function WhatsAppScreen({ event, guests }) {
 // ─── AI SEATING SCREEN ────────────────────────────────────────────────────────
 // הושבה אוטומטית של האורחים שעוד לא שובצו. מקום = רשומת אורח (כמו בתצוגת השולחנות).
 // byCategory: כל קטגוריה ביחד — קודם לשולחן שכבר יושבים בו אנשים מאותה קטגוריה, אחר כך לשולחן חדש.
+// cats: רק הקטגוריות האלה יושבות ביחד (null = כולן); השאר משובצים אחריהן במקומות שנשארו.
 // fillEmpty: שולחנות ריקים קודם (העדפה לשולחן ריק שהקבוצה נכנסת אליו בשלמותה), ואז הכי פחות מלאים.
-function planAutoSeating(guests,tables,{byCategory=true,fillEmpty=true}={}){
+function planAutoSeating(guests,tables,{byCategory=true,fillEmpty=true,cats=null}={}){
   const relOf=g=>g.relation||"ללא שיוך";
   const slots=tables.map((t,i)=>{
     const rels={};(t.guests||[]).forEach(g=>{rels[relOf(g)]=(rels[relOf(g)]||0)+1;});
@@ -5646,11 +5701,11 @@ function planAutoSeating(guests,tables,{byCategory=true,fillEmpty=true}={}){
     }
     return open.sort((a,b)=>a.idx-b.idx)[0];
   };
-  const groups={};
-  if(byCategory)guests.forEach(g=>{(groups[relOf(g)]||=[]).push(g);});
-  else groups[""]=[...guests];
+  const groups={},rest0=[];
+  guests.forEach(g=>{if(byCategory&&(!cats||cats.includes(relOf(g))))(groups[relOf(g)]||=[]).push(g);else rest0.push(g);});
   const assignments=[];
-  Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).forEach(([rel,list])=>{
+  // קודם הקטגוריות שיושבות ביחד (הגדולה ראשונה), בסוף כל השאר
+  [...Object.entries(groups).sort((a,b)=>b[1].length-a[1].length),...(rest0.length?[["",rest0]]:[])].forEach(([rel,list])=>{
     const rest=[...list];
     while(rest.length){
       const s=pick(rel,rest.length);if(!s)break;
@@ -5669,12 +5724,17 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
   const [result,setResult]=useState(null);
   const [groupByRelation,setGroupByRelation]=useState(true);
   const [fillEmpty,setFillEmpty]=useState(true);
-  useEffect(()=>{setResult(null);},[groupByRelation,fillEmpty]);
+  // הקטגוריות של מי שעוד לא יושב; ברירת מחדל: כולן מסומנות לישיבה ביחד
+  const catCounts=guests.reduce((acc,g)=>{const r=g.relation||"ללא שיוך";acc[r]=(acc[r]||0)+1;return acc;},{});
+  const catList=Object.keys(catCounts).sort((a,b)=>catCounts[b]-catCounts[a]);
+  const [cats,setCats]=useState(catList);
+  const toggleCat=c=>setCats(s=>s.includes(c)?s.filter(x=>x!==c):[...s,c]);
+  useEffect(()=>{setResult(null);},[groupByRelation,fillEmpty,cats.join("|")]);
 
   const runSmartSeating=()=>{
     setLoading(true);
     setTimeout(()=>{
-      const assignments=planAutoSeating(guests,tables,{byCategory:groupByRelation,fillEmpty});
+      const assignments=planAutoSeating(guests,tables,{byCategory:groupByRelation,fillEmpty,cats});
       const left=guests.length-assignments.length;
       const summary=`שובצו ${assignments.length} אורחים מתוך ${guests.length} ממתינים${left>0?` · ${left} נשארו בלי מקום (הוסף שולחנות)`:""}`;
       setResult({assignments,summary});
@@ -5707,7 +5767,7 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
       <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:800,color:"#1A202C",marginBottom:14}}>⚙️ אפשרויות סידור</div>
         {[
-          {key:"groupByRelation",label:"סדר לפי קטגוריות",desc:"משפחה קרובה ביחד, חברים ביחד — וליד מי שכבר יושב מאותה קטגוריה",val:groupByRelation,set:setGroupByRelation},
+          {key:"groupByRelation",label:"סדר לפי קטגוריות",desc:"הקטגוריות המסומנות יושבות ביחד — וליד מי שכבר יושב מאותה קטגוריה",val:groupByRelation,set:setGroupByRelation},
           {key:"fillEmpty",label:"מלא שולחנות ריקים קודם",desc:"קבוצה עוברת לשולחן ריק שהיא נכנסת אליו בשלמותה, ואז לשולחנות הכי פחות מלאים",val:fillEmpty,set:setFillEmpty},
         ].map(item=>(
           <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #F7FAFC"}}>
@@ -5721,6 +5781,22 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
             </div>
           </div>
         ))}
+        {groupByRelation&&catList.length>0&&(
+          <div style={{paddingTop:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <div style={{flex:1,fontSize:12,fontWeight:800,color:"#4A3D66"}}>אילו קטגוריות ישבו ביחד? <span style={{fontWeight:500,color:"#718096"}}>(השאר ישובצו בכל מקום פנוי)</span></div>
+              <button onClick={()=>setCats(cats.length===catList.length?[]:catList)} style={{background:"none",border:"none",color:"#2B6CB0",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{cats.length===catList.length?"נקה הכל":"סמן הכל"}</button>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {catList.map(c=>{const on=cats.includes(c),col=RELATION_COLORS[c]||"#718096";return(
+                <button key={c} onClick={()=>toggleCat(c)} aria-pressed={on}
+                  style={{display:"flex",alignItems:"center",gap:6,background:on?col:"#fff",color:on?"#fff":col,border:`1.5px solid ${col}`,borderRadius:20,padding:"5px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                  {on?"✓":"○"} {c} <span style={{opacity:.85}}>({catCounts[c]})</span>
+                </button>
+              );})}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* קטגוריות קיימות */}
