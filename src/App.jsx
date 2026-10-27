@@ -277,7 +277,14 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   const total=table.seats||10;
   const full=occupied>=total;
   const ring=fillColor(occupied,total);
+  // צבע השולחן לפי הקטגוריה הנפוצה אצל היושבים בו (כמו מפת האולם בדף הבית); שולחן ריק — סגול עדין
+  const accent=(()=>{const cnt={};guests.forEach(g=>{const r=g.relation||"ללא שיוך";cnt[r]=(cnt[r]||0)+1;});const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0];return top?(RELATION_COLORS[top]||"#B8AECB"):"#C9B6EC";})();
   const uid=String(table.id).replace(/[^a-z0-9]/gi,"");
+  // סידור פרחים במרכז השולחן (עלי כותרת בצבע השולחן ולב זהוב)
+  const Flowers=({x,y,s=1})=>(<g pointerEvents="none">
+    {[0,72,144,216,288].map(d=>{const a=(d-90)*Math.PI/180;return <circle key={d} cx={x+5.5*s*Math.cos(a)} cy={y+5.5*s*Math.sin(a)} r={3.6*s} fill={accent} opacity=".6"/>;})}
+    <circle cx={x} cy={y} r={2.8*s} fill="#E8B04A"/>
+  </g>);
   // מזהים אורחים שנוספו מאז הרינדור הקודם  -  לאנימציית כיסא ופרץ נצנוצים
   const prevIds=useRef(null);
   const [fresh,setFresh]=useState(()=>new Set());
@@ -312,7 +319,7 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
         filter:glow,transform:over?"scale(1.06)":highlight?"scale(1.04)":"none",transition:"transform .18s,filter .2s"}}>
       <svg width={w} height={h} style={{overflow:"visible"}}>
         <defs>
-          <radialGradient id={`tc${uid}`} cx="40%" cy="35%" r="75%"><stop offset="0%" stopColor="#fff"/><stop offset="100%" stopColor="#F6EEFC"/></radialGradient>
+          <radialGradient id={`tc${uid}`} cx="40%" cy="35%" r="75%"><stop offset="0%" stopColor="#fff"/><stop offset="70%" stopColor="#FDFAFF"/><stop offset="100%" stopColor={accent} stopOpacity=".22"/></radialGradient>
         </defs>
         {children}
       </svg>
@@ -341,9 +348,11 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-6} y={pad-6} width={W+12} height={H+12} rx={18} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
+      <rect x={pad} y={pad} width={W} height={H} rx={14} fill="#fff"/>
       <rect x={pad} y={pad} width={W} height={H} rx={14} fill={`url(#tc${uid})`} stroke={ring} strokeWidth={2.5}/>
-      <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={10} fill="none" stroke="#EADCF5" strokeDasharray="4 4"/>
+      <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={10} fill="none" stroke={accent} strokeOpacity=".4" strokeDasharray="4 4"/>
       <text x={pad+14} y={pad+H/2+5} fontSize="14" textAnchor="middle">👑</text>
+      <Flowers x={pad+W-18} y={pad+H/2} s={.8}/>
     </>,labelBox({left:pad,top:pad,width:W,height:H},16));
   }
 
@@ -359,9 +368,11 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-7} y={pad-7} width={W+14} height={H+14} rx={20} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
+      <rect x={pad} y={pad} width={W} height={H} rx={16} fill="#fff"/>
       <rect x={pad} y={pad} width={W} height={H} rx={16} fill={`url(#tc${uid})`} stroke={ring} strokeWidth={2.5}/>
-      <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={11} fill="none" stroke="#EADCF5" strokeDasharray="4 4"/>
-    </>,labelBox({left:pad,top:pad,width:W,height:H}));
+      <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={11} fill="none" stroke={accent} strokeOpacity=".4" strokeDasharray="4 4"/>
+      <Flowers x={pad+W/2} y={pad+14} s={.7}/>
+    </>,labelBox({left:pad,top:pad+8,width:W,height:H-8}));
   }
 
   // ─── שולחן עגול: כיסאות סביב, טבעת התקדמות ומרכז פרחוני ───
@@ -374,14 +385,15 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   return wrap(S,S,table.x,table.y,<>
     {chairs}
     {selRing(<circle cx={cx} cy={cy} r={R+11} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
-    <circle cx={cx} cy={cy} r={R} fill={`url(#tc${uid})`} stroke="#EADCF5" strokeWidth={1.5}/>
+    <circle cx={cx} cy={cy} r={R} fill="#fff"/>
+    <circle cx={cx} cy={cy} r={R} fill={`url(#tc${uid})`} stroke={accent} strokeOpacity=".45" strokeWidth={1.5}/>
     {/* טבעת התקדמות  -  כמה מהשולחן מלא */}
     <circle cx={cx} cy={cy} r={R+5} fill="none" stroke="#F1EAF8" strokeWidth={3.5}/>
     <circle cx={cx} cy={cy} r={R+5} fill="none" stroke={ring} strokeWidth={3.5} strokeLinecap="round"
       strokeDasharray={`${circ*Math.min(occupied/total,1)} ${circ}`} transform={`rotate(-90 ${cx} ${cy})`} style={{transition:"stroke-dasharray .4s"}}/>
-    <circle cx={cx} cy={cy} r={R-9} fill="none" stroke="#EFE4F8" strokeDasharray="3 5"/>
-    {!occupied&&[0,72,144,216,288].map(d=>{const a=d*Math.PI/180;return <circle key={d} cx={cx+7*Math.cos(a)} cy={cy-20+7*Math.sin(a)} r={4.2} fill={C.blueM} opacity={.28}/>;})}
-  </>,labelBox({inset:0},22));
+    <circle cx={cx} cy={cy} r={R-9} fill="none" stroke={accent} strokeOpacity=".3" strokeDasharray="3 5"/>
+    <Flowers x={cx} y={cy-29} s={.85}/>
+  </>,labelBox({inset:0,paddingTop:12},22));
 }
 
 // ─── RSVP BADGE ──────────────────────────────────────────────────────────────
@@ -2166,7 +2178,7 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   );
 }
 
-function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
+function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(data)=>{await sb.from("events").update(data).eq("id",event.id);onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState("map"),[screen,setScreen]=useState("home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
@@ -2174,26 +2186,33 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
   const [,setBoxTick]=useState(0);
-  // גודל האולם לפי השטח שבאמת פנוי על המסך, ומספיק גדול כדי להכיל את כל השולחנות
-  const hallSize=(list=tables)=>{
+  // גודל האולם: בזום הנוכחי הוא ממלא בדיוק את השטח הפנוי על המסך (בלי פסי גלילה),
+  // ותמיד מספיק גדול כדי להכיל את כל השולחנות והבמה/בר/כניסה שהוזזו
+  const hallSize=(list=tables,z=zoom)=>{
     const el=mapBoxRef.current;
     const cw=el?el.clientWidth:window.innerWidth-560, ch=el?el.clientHeight:window.innerHeight-170;
-    const maxR=list.reduce((m,t)=>Math.max(m,t.x+(t.type==="knight"?220:190)),0);
-    const maxB=list.reduce((m,t)=>Math.max(m,t.y+190),0);
-    return {cw,ch,maxR,maxB,W:Math.max(cw-24,maxR+40,640),H:Math.max(ch-24,maxB+60,520)};
+    const fx=hallRef.current||{};
+    const fixR=[["stage",300],["bar",130],["entrance",150]].reduce((m,[k,w])=>typeof fx[k]?.x==="number"?Math.max(m,fx[k].x+w):m,0);
+    const fixB=[["stage",70],["bar",56]].reduce((m,[k,h])=>typeof fx[k]?.y==="number"?Math.max(m,fx[k].y+h):m,0);
+    const maxR=Math.max(fixR,list.reduce((m,t)=>Math.max(m,t.x+(t.type==="knight"?230:170)),0));
+    const maxB=Math.max(fixB,list.reduce((m,t)=>Math.max(m,t.y+170),0));
+    return {cw,ch,maxR,maxB,W:Math.max((cw-18)/z,maxR+40),H:Math.max((ch-18)/z,maxB+60)};
   };
-  // זום שממלא את המסך באזור שבו נמצאים השולחנות (כך שהם נפתחים גדולים)
+  // התאמה למסך: הזום הגדול ביותר שבו כל האולם נראה בלי גלילה
+  const manualZoomRef=useRef(false);
   const fitZoom=(list=tables)=>{
     if(!mapBoxRef.current)return;
-    const {cw,ch,maxR,maxB}=hallSize(list);
-    if(!list.length){setZoom(1);return;}
-    const z=Math.min((cw-24)/Math.max(maxR+40,560),(ch-24)/Math.max(maxB+50,420));
-    setZoom(+Math.min(1.5,Math.max(.6,z)).toFixed(2));
+    manualZoomRef.current=false;
+    const {cw,ch,maxR,maxB}=hallSize(list,1);
+    const z=Math.min((cw-16)/Math.max(maxR+40,720),(ch-16)/Math.max(maxB+60,460));
+    setZoom(+Math.min(1.4,Math.max(.35,z)).toFixed(2));
   };
+  const zoomBy=d=>{manualZoomRef.current=true;setZoom(z=>+Math.min(1.6,Math.max(.35,z+d)).toFixed(2));};
   useEffect(()=>{
     if(screen!=="seating"||view!=="map"||!mapBoxRef.current)return;
     fitZoom();
-    const ro=new ResizeObserver(()=>setBoxTick(t=>t+1));
+    // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש בחר זום בעצמו)
+    const ro=new ResizeObserver(()=>{setBoxTick(t=>t+1);if(!manualZoomRef.current)fitZoom();});
     ro.observe(mapBoxRef.current);
     return()=>ro.disconnect();
   },[screen,view,sidebarOpen,tables.length,loading]);
@@ -2704,7 +2723,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
       {screen==="seating"&&<>{view!=="map"&&undoBtn({padding:"5px 12px",border:"1px solid rgba(255,255,255,.3)"})}<button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
       <button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
       <button onClick={()=>setModal("receipt")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🖨️ חפש</button></>}
-      <button onClick={()=>setShowLanding(true)} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>🏠 דף הבית</button>
+      <button onClick={()=>onHome?.()} style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>🏠 דף הבית</button>
     </header>
 
     <div style={{display:"flex",flex:1,overflow:"hidden"}}>
@@ -3102,9 +3121,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
                 </button>
                 {undoBtn()}
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
-                  <button style={zBtn} onClick={()=>setZoom(z=>Math.max(.5,+(z-.1).toFixed(2)))} aria-label="הקטן">−</button>
+                  <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
-                  <button style={zBtn} onClick={()=>setZoom(z=>Math.min(1.6,+(z+.1).toFixed(2)))} aria-label="הגדל">+</button>
+                  <button style={zBtn} onClick={()=>zoomBy(.1)} aria-label="הגדל">+</button>
+                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom()} title="כל האולם על המסך">⤢ התאם</button>
                 </div>
                 {mapFull&&<button onClick={addTable} className="sx-btn"
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
@@ -3122,7 +3142,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout }) {
             onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
             onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
             ref={mapBoxRef} dir="ltr"
-            style={{flex:1,overflow:"auto",background:"#F6F0F8",position:"relative",paddingBottom:40}}>
+            style={{flex:1,minHeight:0,overflow:"auto",background:"#F6F0F8",position:"relative"}}>
             {(()=>{
               // מפה ממלאת את כל השטח הזמין
               const {W:MAP_W,H:MAP_H}=hallSize();
@@ -5875,11 +5895,15 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
 }
 function AddTableModal({ onConfirm, onClose }) {
   const [name,setName]=useState(""),[type,setType]=useState("round");
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
   return(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
-        <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
-        <div style={{fontWeight:800,fontSize:18,color:"#2B1D3F",marginBottom:4}}>➕ הוסף שולחן</div>
+        <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 14px"}}/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+          <div style={{fontWeight:800,fontSize:18,color:"#2B1D3F"}}>➕ הוסף שולחן</div>
+          <button onClick={onClose} aria-label="סגירה" style={{background:"#F6F0FF",border:"1.5px solid #D6E0FF",color:"#2B1D3F",borderRadius:10,width:34,height:34,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>✕</button>
+        </div>
         <div style={{fontSize:13,color:"#6E6585",marginBottom:18}}>בחר סוג שולחן ושם</div>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
@@ -7106,5 +7130,5 @@ export default function App() {
   </>);
 
   return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout}/></>);
+  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout} onHome={()=>setShowLanding(true)}/></>);
 }
