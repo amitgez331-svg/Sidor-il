@@ -2229,7 +2229,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const bs=tables.map(tableBox);
     const [x0,y0,x1,y1]=bs.length?[Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))]:[0,120,800,420];
     const cx=(x0+x1)/2;
-    const d={stage:{x:Math.round(cx-150),y:Math.round(y0-110)},bar:{x:Math.round(cx+190),y:Math.round(y0-104)},entrance:{x:Math.round(cx-75),y:Math.round(y1+50)}};
+    const d={stage:{x:Math.round(cx-150),y:Math.round(y0-92)},bar:{x:Math.round(cx+190),y:Math.round(y0-86)},entrance:{x:Math.round(cx-75),y:Math.round(y1+22)}};
     if(!loading)fixDefRef.current=d;
     return d;
   };
@@ -2245,15 +2245,19 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const el=mapBoxRef.current;if(el){el.style.backgroundPosition=`${p.x}px ${p.y}px,0 0`;el.style.backgroundSize=`${22*z}px ${22*z}px,100% 100%`;}
   };
   const setCam=(p,z=zoomRef.current)=>{panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
-  // התאמה למסך: כל השולחנות גדולים ככל האפשר ובמרכז. יותר שולחנות = זום קטן יותר
+  // התאמה למסך: כל השולחנות גדולים ככל האפשר ובמרכז. יותר שולחנות = זום קטן יותר.
+  // בהתאמה האוטומטית הזום לא יורד מתחת ל-FIT_MIN כדי שהשולחנות יישארו קריאים (מה שבחוץ — מזיזים בחיצים/גרירה);
+  // "⤢ הכל" (all=true) מראה את כל האולם בכל גודל
+  const FIT_MIN=.78;
   const manualZoomRef=useRef(false);
-  const fitZoom=(list=tables)=>{
+  const fitZoom=(list=tables,all=false)=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
     const cw=el.clientWidth,ch=el.clientHeight;
     const [x0,y0,x1,y1]=contentBox(list);
     const bw=Math.max(x1-x0,320),bh=Math.max(y1-y0,240);
-    const z=+Math.min(1.6,Math.max(ZMIN,Math.min((cw-56)/bw,(ch-56)/bh))).toFixed(3);
+    const zFit=Math.min((cw-28)/bw,(ch-28)/bh);
+    const z=+Math.min(1.6,Math.max(all?ZMIN:Math.min(FIT_MIN,1.6),zFit)).toFixed(3);
     setCam({x:Math.round((cw-(x1-x0)*z)/2-x0*z),y:Math.round((ch-(y1-y0)*z)/2-y0*z)},z);
   };
   // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
@@ -2311,6 +2315,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // מסך מלא למפה: Esc יוצא; ביציאה מההושבה או מתצוגת המפה  -  חוזרים לתצוגה רגילה
   const [mapFull,setMapFull]=useState(false);
   const [fullListOpen,setFullListOpen]=useState(true);
+  // רשימת האורחים שליד המפה: אפשר לקפל כדי לתת למפה את כל הרוחב (הבחירה נשמרת)
+  const [asideOpen,setAsideOpen]=useState(()=>{try{return localStorage.getItem("sidor_aside")!=="0";}catch{return true;}});
+  useEffect(()=>{try{localStorage.setItem("sidor_aside",asideOpen?"1":"0");}catch{}},[asideOpen]);
+  // בחירת שולחן פותחת את הרשימה (שם עורכים את היושבים בו)
+  useEffect(()=>{if(selected&&!mapFull)setAsideOpen(true);},[selected]);
   useEffect(()=>{if(screen!=="seating"||view!=="map")setMapFull(false);},[screen,view]);
   useEffect(()=>{
     if(!mapFull)return;
@@ -3074,7 +3083,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
     {/* מסכי תוכן */}
     {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 54px)"}}>
-      <aside style={{width:320,background:C.surface,borderLeft:`1px solid ${C.border}`,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
+      {!asideOpen&&(
+        <button onClick={()=>setAsideOpen(true)} title="פתיחת רשימת האורחים" className="sx-btn"
+          style={{flexShrink:0,width:38,background:C.surface,border:"none",borderLeft:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",color:C.blue,fontWeight:900,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
+          <span>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({guests.length})</span><span>‹</span>
+        </button>
+      )}
+      <aside style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",background:C.surface,borderLeft:`1px solid ${C.border}`,flexDirection:"column",overflow:"hidden",flexShrink:0}}>
         {selTable?(
           <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
             {/* כפתור חזרה  -  בולט */}
@@ -3133,7 +3148,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,background:C.blueXL,flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <span style={{fontWeight:800,fontSize:14,color:C.text}}>ממתינים להושבה</span>
-                <span style={{background:C.gold+"22",color:C.gold,borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px"}}>{guests.length}</span>
+                <span style={{background:C.gold+"22",color:C.gold,borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px",marginRight:"auto",marginLeft:8}}>{guests.length}</span>
+                <button onClick={()=>setAsideOpen(false)} title="קיפול הרשימה — המפה תקבל את כל הרוחב" aria-label="קיפול רשימת האורחים"
+                  style={{width:28,height:28,borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,cursor:"pointer",fontSize:15,fontWeight:900,lineHeight:1,flexShrink:0}}>›</button>
               </div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
             </div>
@@ -3217,7 +3234,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
                   <button style={zBtn} onClick={()=>zoomBy(.1)} aria-label="הגדל">+</button>
-                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom()} title="כל האולם על המסך">⤢ התאם</button>
+                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom()} title="השולחנות בגודל נוח, במרכז המסך">⤢ התאם</button>
+                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom(tables,true)} title="כל האולם על המסך, גם אם השולחנות קטנים">🗺 הכל</button>
                 </div>
                 {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
                 <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
