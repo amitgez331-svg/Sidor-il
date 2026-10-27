@@ -19,10 +19,11 @@ const GRAD=`linear-gradient(120deg,${C.coral},${C.blueM},${C.blueL})`;
 // ─── שיתוף ההזמנה בוואטסאפ ────────────────────────────────────────────────────
 const WA_GREEN="#25D366";
 const inviteShareText=(event,url)=>{
+  const ew=eventWords(event);
   const title=event.event_type==="wedding"&&event.groom_name&&event.bride_name
-    ?`💍 ${event.groom_name} ו${event.bride_name} מתחתנים!`:`🎉 ${event.name}`;
+    ?`💍 ${event.groom_name} ו${event.bride_name} מתחתנים!`:`${ew.emoji} ${ew.name}`;
   const date=event.date?new Date(event.date).toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"}):"";
-  return [title,date&&`📅 ${date}${event.event_time?" · "+event.event_time:""}`,event.venue&&`📍 ${event.venue}`,"","נשמח לראותכם! לפרטים ולאישור הגעה 👇",url].filter(x=>x!==false&&x!==undefined&&x!==null).join("\n");
+  return [title,date&&`📅 ${date}${event.event_time?" · "+event.event_time:""}`,event.venue&&`📍 ${event.venue}`,"","נשמח לראותכם! לפרטים ולאישור הגעה 👇",url,giftLine(event)&&"",giftLine(event)].filter(x=>x!==false&&x!==undefined&&x!==null).join("\n");
 };
 // שדה תאריך מימין לשמאל: מציג את התאריך בעברית ("יום ב׳, 14 ביוני 2027") ופותח את בורר התאריכים של הדפדפן.
 // שדה ה-date המקורי מציג 14/06/2027 משמאל לימין עם האייקון בצד הלא נכון.
@@ -73,6 +74,34 @@ const fmtDateHe=(d,opts={day:"numeric",month:"long",year:"numeric"})=>{
   const x=typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)?new Date(d+"T00:00:00"):new Date(d);
   return isNaN(x)?String(d):x.toLocaleDateString("he-IL",opts);
 };
+// ─── סוגי אירועים: שמות השדות ונוסח ההודעות לפי הסוג ───
+// groom_name = השם הראשי (חתן / חתן-כלת המצווה / התינוק / המארח), bride_name = רק בחתונה (הכלה)
+const EVENT_KINDS={
+  wedding:    {emoji:"💍",people:"👫 פרטי בני הזוג",a:"שם החתן",b:"שם הכלה",pa:"הורי החתן",pb:"הורי הכלה",roles:[["groom","החתן"],["bride","הכלה"]]},
+  bar_mitzvah:{emoji:"✡️",people:"✡️ פרטי חתן/כלת המצווה",a:"שם חתן/כלת המצווה",pa:"שמות ההורים"},
+  brit:       {emoji:"👶",people:"👶 פרטי הברית",a:"שם התינוק",pa:"שמות ההורים"},
+  business:   {emoji:"💼",people:"💼 פרטי המארחים",a:"שם החברה / המארח",pa:"איש קשר"},
+  other:      {emoji:"🎉",people:"🎉 פרטי בעלי השמחה",a:"שם בעל/ת השמחה",pa:"המארחים"},
+};
+const eventKind=e=>EVENT_KINDS[e?.event_type]||EVENT_KINDS.wedding;
+// שם האירוע בתוך משפט ("מוזמנים ל…", "מחכים לך ב…") וחתימה ("באהבה, …"). כמו buildTemplates ב-sms-scheduler
+const eventWords=e=>{
+  const t=EVENT_KINDS[e?.event_type]?e.event_type:"wedding";
+  const g=String(e?.groom_name||"").trim(),b=String(e?.bride_name||"").trim(),n=String(e?.name||"").trim();
+  const name=t==="wedding"?(g&&b?`חתונת ${g} ו${b}`:g||b?`חתונת ${g||b}`:"חתונתנו")
+    :t==="bar_mitzvah"?(g?`שמחת המצווה של ${g}`:n||"שמחת המצווה")
+    :t==="brit"?(g?`ברית המילה של ${g}`:n||"ברית המילה")
+    :(n||"האירוע שלנו");
+  const hosts=t==="wedding"?(g&&b?`${g} ו${b}`:g||b||n):(t==="bar_mitzvah"||t==="brit")?(String(e?.groom_father||"").trim()||g||n):(g||n);
+  return {type:t,name,hosts,emoji:EVENT_KINDS[t].emoji,greeting:t==="wedding"?"ליום המאושר בחיינו":"לאירוע המיוחד שלנו"};
+};
+// קישור למתנה (Bit / PayBox מפרטי האירוע). Bit יכול להיות גם מספר טלפון
+const giftLink=e=>{
+  const bit=String(e?.bit_link||"").trim(),pb=String(e?.paybox_link||"").trim();
+  if(bit)return /^https?:\/\//i.test(bit)?bit:`Bit ${bit}`;
+  return pb;
+};
+const giftLine=e=>{const l=giftLink(e);return l?`💝 למתנה: ${l}`:"";};
 // תווית שולחן לאורחים: "3 (משפחת הכלה)" — המספר מ-settings_json.table_nums; בלי מספר — השם בלבד.
 // אותה פונקציה ב-send-sms וב-sms-scheduler (tableLabel) — לשנות בכל המקומות
 const tableLabel=(num,name)=>{
@@ -1689,6 +1718,10 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
             <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="רחל" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
         </div>}
+        {form.event_type!=="wedding"&&<div style={{marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>{eventKind(form).a}</div>
+          <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value,bride_name:""}))} placeholder="השם שיופיע בהודעות" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+        </div>}
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
@@ -1995,12 +2028,13 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
             {user.email?.[0]?.toUpperCase()}
           </div>
           <div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name}</div>
+            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{event.event_type==="wedding"&&event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name}</div>
             <div style={{fontSize:12,color:"rgba(255,255,255,.7)"}}>{user.email}</div>
           </div>
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-          {[["שם פרטי",event.groom_name||""],["שם משפחה",event.bride_name||""],["מס' נייד",user.phone||" - "]].map(([l,v])=>(
+          {/* השדות לפי סוג האירוע (חתונה: חתן וכלה; בר מצווה: חתן/כלת המצווה; ברית: התינוק...) */}
+          {[[eventKind(event).a,event.groom_name||" - "],eventKind(event).b&&[eventKind(event).b,event.bride_name||" - "],["מס' נייד",user.phone||" - "]].filter(Boolean).map(([l,v])=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:8,borderBottom:"1px solid #f5f5f5"}}>
               <span style={{fontSize:13,color:"#555"}}>{l}</span>
               <span style={{fontSize:13,fontWeight:700,direction:l==="מס' נייד"?"ltr":"rtl"}}>{v}</span>
@@ -3823,6 +3857,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
   const [myRole,setMyRole]=useState(event.my_role||"groom");
+  const kind=eventKind(event);
   const [settings,setSettings]=useState({
     confetti: event.settings_json?.confetti??true,
     popupRsvp: event.settings_json?.popupRsvp??false,
@@ -3872,13 +3907,13 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
       {/* מי אני + שמות */}
       <div style={{background:"#fff",borderRadius:14,padding:"24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
-        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:16,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>👫 פרטי בני הזוג</div>
+        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:16,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>{kind.people}</div>
 
-        {/* מי אני */}
-        <div style={{marginBottom:16}}>
+        {/* מי אני  -  רק בחתונה */}
+        {kind.roles&&<div style={{marginBottom:16}}>
           <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>מי אני: *</div>
           <div style={{display:"flex",gap:8}}>
-            {[["groom","החתן"],["bride","הכלה"]].map(([v,l])=>(
+            {kind.roles.map(([v,l])=>(
               <button key={v} onClick={()=>setMyRole(v)}
                 style={{flex:1,padding:"9px",borderRadius:8,border:`1.5px solid ${myRole===v?"#E53E3E":"#E2E8F0"}`,
                   background:myRole===v?"#E53E3E":"#fff",color:myRole===v?"#fff":"#718096",
@@ -3887,34 +3922,35 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
               </button>
             ))}
           </div>
-        </div>
+        </div>}
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns:kind.b?"1fr 1fr":"1fr",gap:16}}>
           <div>
-            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>שם החתן: * <span style={{color:"#aaa",fontWeight:400}}>({(form.groom_name||"").length}/25)</span></div>
-            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="עמית" maxLength={25}
+            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.a}: {kind.b&&"* "}<span style={{color:"#aaa",fontWeight:400}}>({(form.groom_name||"").length}/25)</span></div>
+            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder={kind.b?"עמית":"השם שיופיע בהזמנה ובהודעות"} maxLength={25}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
-          <div>
-            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>שם הכלה: * <span style={{color:"#aaa",fontWeight:400}}>({(form.bride_name||"").length}/25)</span></div>
+          {kind.b&&<div>
+            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.b}: * <span style={{color:"#aaa",fontWeight:400}}>({(form.bride_name||"").length}/25)</span></div>
             <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="אורנה" maxLength={25}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
+          </div>}
         </div>
 
-        {/* הורים */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginTop:16}}>
+        {/* הורים / מארחים */}
+        <div style={{display:"grid",gridTemplateColumns:kind.pb?"1fr 1fr":"1fr",gap:16,marginTop:16}}>
           <div>
-            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>הורי החתן: <span style={{color:"#aaa",fontWeight:400}}>({(form.groom_father||"").length}/75)</span></div>
-            <input value={form.groom_father} onChange={e=>setForm(f=>({...f,groom_father:e.target.value}))} placeholder="שמות הורי החתן" maxLength={75}
+            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.pa}: <span style={{color:"#aaa",fontWeight:400}}>({(form.groom_father||"").length}/75)</span></div>
+            <input value={form.groom_father} onChange={e=>setForm(f=>({...f,groom_father:e.target.value}))} placeholder={kind.pa} maxLength={75}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
-          <div>
-            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>הורי הכלה: <span style={{color:"#aaa",fontWeight:400}}>({(form.bride_father||"").length}/75)</span></div>
-            <input value={form.bride_father} onChange={e=>setForm(f=>({...f,bride_father:e.target.value}))} placeholder="שמות הורי הכלה" maxLength={75}
+          {kind.pb&&<div>
+            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.pb}: <span style={{color:"#aaa",fontWeight:400}}>({(form.bride_father||"").length}/75)</span></div>
+            <input value={form.bride_father} onChange={e=>setForm(f=>({...f,bride_father:e.target.value}))} placeholder={kind.pb} maxLength={75}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-          </div>
+          </div>}
         </div>
+        {!kind.b&&<div style={{fontSize:11,color:"#718096",marginTop:10}}>{kind.emoji} ההודעות ייכתבו כך: "מוזמנים ל{eventWords({...event,...form}).name}"</div>}
       </div>
 
       {/* תאריך ושעה */}
@@ -4042,7 +4078,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
       {/* קישורי תשלום  -  Bit / Paybox */}
       <div style={{background:"#fff",borderRadius:14,padding:"24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>💝 קישורי מתנה דיגיטלית</div>
-        <div style={{fontSize:12,color:"#718096",marginBottom:16}}>הוסף קישור לBit או Paybox  -  יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית.</div>
+        <div style={{fontSize:12,color:"#718096",marginBottom:16}}>הוסף קישור לBit או Paybox  -  יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית, וגם שורת "💝 למתנה" בהודעות (הזמנה ומספר שולחן ב-SMS ובוואטסאפ).</div>
 
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {/* Bit */}
@@ -4070,7 +4106,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
         {(form.bit_link||form.paybox_link)&&(
           <div style={{marginTop:14,background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#276749"}}>
-            ✅ כפתור "תן מתנה" יופיע בהזמנה הדיגיטלית
+            ✅ כפתור "תן מתנה" יופיע בהזמנה הדיגיטלית, ובהודעות תתווסף השורה: <b>{giftLine(form)}</b>
           </div>
         )}
       </div>
@@ -5232,8 +5268,9 @@ function RecipientPicker({ withPhone, value, onChange }) {
 }
 
 function SMSScreen({ event, guests, tables=[] }) {
-  const groomName = event.groom_name || "החתן";
-  const brideName = event.bride_name || "הכלה";
+  const ew=eventWords(event);
+  const groomName = String(event.groom_name||"").trim();
+  const brideName = String(event.bride_name||"").trim();
 
   const eventDateObj = event.date ? new Date(event.date) : null;
   const days = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
@@ -5243,14 +5280,12 @@ function SMSScreen({ event, guests, tables=[] }) {
 
   const inviteUrl = `${window.location.origin}/#/invite/${event.invite_code||""}`;
 
-  // טקסט לפי סוג האירוע
-  const eventType=event.event_type||"wedding";
-  const eventEmoji=eventType==="wedding"?"💍":eventType==="bar_mitzvah"?"✡️":eventType==="brit"?"👶":"💼";
-  const eventName=eventType==="wedding"?`חתונת ${groomName} ו${brideName}`:eventType==="bar_mitzvah"?`בר-מצווה של ${groomName||event.name}`:eventType==="brit"?`ברית של ${event.name}`:event.name;
-  const coupleRef=eventType==="wedding"?`${groomName} ו${brideName}`:(groomName||event.name);
+  // טקסט לפי סוג האירוע (eventWords) + קישור מתנה אם הוגדר Bit/PayBox
+  const eventEmoji=ew.emoji, eventName=ew.name, coupleRef=ew.hosts;
+  const gift=giftLine(event), giftAdd=t=>gift&&!t.includes(giftLink(event))?`${t}\n${gift}`:t;
 
   const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
-  const smsInviteText=event.welcome_text?.trim()||defaultSmsInviteText;
+  const smsInviteText=giftAdd(event.welcome_text?.trim()||defaultSmsInviteText);
 
   const TEMPLATES = [
     {
@@ -5266,7 +5301,7 @@ function SMSScreen({ event, guests, tables=[] }) {
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`,
+      text:giftAdd(`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`),
     },
     {
       id:"thanks",
@@ -5396,7 +5431,7 @@ function SMSScreen({ event, guests, tables=[] }) {
           <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>📱 שליחת SMS</div>
           <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
           <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
-            {groomName} ו{brideName} 💍
+            {ew.hosts} {ew.emoji}
           </div>
         </div>
         <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
@@ -5623,9 +5658,10 @@ function SMSScreen({ event, guests, tables=[] }) {
 // ─── WHATSAPP SCREEN ──────────────────────────────────────────────────────────
 function WhatsAppScreen({ event, guests }) {
   const [waPkg,setWaPkg]=useState(null); // null=בחירה, "auto"=חבילה5, "vip"=חבילה6
-  const groomName = event.groom_name || "החתן";
-  const brideName = event.bride_name || "הכלה";
-  const coupleStr = `${groomName} ו${brideName}`;
+  const ew=eventWords(event);
+  const groomName = String(event.groom_name||"").trim();
+  const brideName = String(event.bride_name||"").trim();
+  const coupleStr = ew.hosts;
 
   // תאריך בפורמט עברי נכון: יום ב׳, 30 באפריל 2026
   const eventDateObj = event.date ? new Date(event.date) : null;
@@ -5636,15 +5672,12 @@ function WhatsAppScreen({ event, guests }) {
 
   const inviteUrl = `${window.location.origin}/#/invite/${event.invite_code||""}`;
 
-  // טקסט לפי סוג האירוע
-  const eventType=event.event_type||"wedding";
-  const eventEmoji=eventType==="wedding"?"💍":eventType==="bar_mitzvah"?"✡️":eventType==="brit"?"👶":"💼";
-  const eventName=eventType==="wedding"?`חתונת ${groomName} ו${brideName}`:eventType==="bar_mitzvah"?`בר-מצווה של ${groomName||event.name}`:eventType==="brit"?`ברית של ${event.name}`:event.name;
-  const coupleRef=eventType==="wedding"?`${groomName} ו${brideName}`:(groomName||event.name);
-  const greeting=eventType==="wedding"?"ליום המאושר בחיינו":"לאירוע המיוחד שלנו";
+  // טקסט לפי סוג האירוע (eventWords) + קישור מתנה אם הוגדר Bit/PayBox
+  const eventEmoji=ew.emoji, eventName=ew.name, coupleRef=ew.hosts, greeting=ew.greeting;
+  const gift=giftLine(event), giftAdd=t=>gift&&!t.includes(giftLink(event))?`${t}\n\n${gift}`:t;
 
   const defaultInviteText=`שלום {שם}! 💌\n\nמוזמנים ל${eventName}! ${eventEmoji}\n\nנרגשים להזמין אותך ${greeting} ונשמח מאוד לראותך!\n\n📅 תאריך: ${eventDate}\n📍 מקום: ${event.venue||"יפורסם בקרוב"}\n\n👇 לאישור הגעה לחץ כאן:\n{קישור}\n\nבאהבה,\n${coupleRef} ${eventEmoji}`;
-  const inviteText=event.welcome_text?.trim()||defaultInviteText;
+  const inviteText=giftAdd(event.welcome_text?.trim()||defaultInviteText);
 
   const TEMPLATES = [
     {
@@ -5660,7 +5693,7 @@ function WhatsAppScreen({ event, guests }) {
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:`שלום {שם}! 🎊\n\nמחכים לך היום ב${eventName}!\n\n🪑 השולחן שלך: מספר {שולחן}\n\n📅 ${eventDate}\n📍 ${event.venue||""}\n\n👇 לפרטים נוספים:\n{קישור}\n\nנתראה בקרוב! 🥂`,
+      text:giftAdd(`שלום {שם}! 🎊\n\nמחכים לך היום ב${eventName}!\n\n🪑 השולחן שלך: מספר {שולחן}\n\n📅 ${eventDate}\n📍 ${event.venue||""}\n\n👇 לפרטים נוספים:\n{קישור}\n\nנתראה בקרוב! 🥂`),
     },
     {
       id:"thanks",
@@ -6749,7 +6782,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
               <div style={{marginBottom:20}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:10}}>סוג האירוע</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[["wedding","💍","חתונה"],["bar_mitzvah","✡️","בר/ת מצווה"],["brit","👶","ברית"],["business","💼","עסקי"]].map(([v,ic,l])=>(
+                  {[["wedding","💍","חתונה"],["bar_mitzvah","✡️","בר/ת מצווה"],["brit","👶","ברית"],["business","💼","עסקי"],["other","🎉","אחר"]].map(([v,ic,l])=>(
                     <button key={v} onClick={()=>setForm(f=>({...f,event_type:v}))}
                       style={{background:form.event_type===v?"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)":"#FBF8FD",color:form.event_type===v?"#fff":"#2B1D3F",border:`2px solid ${form.event_type===v?"transparent":"#E2E8F0"}`,borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
                       {ic} {l}
@@ -6773,6 +6806,14 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
                       style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                       onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                   </div>
+                </div>
+              )}
+              {form.event_type!=="wedding"&&(
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>{eventKind(form).a}</div>
+                  <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value,bride_name:""}))} placeholder="השם שיופיע בהזמנה ובהודעות"
+                    style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                    onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                 </div>
               )}
 

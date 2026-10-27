@@ -10,24 +10,41 @@ export const normPhone = (p: string) => {
   return /^05\d{8}$/.test(d) ? d : "";
 };
 
+// שם האירוע במשפט + חתימה, לפי סוג האירוע — כמו eventWords ב-App.jsx
+const EMOJI: Record<string, string> = { wedding: "💍", bar_mitzvah: "✡️", brit: "👶", business: "💼", other: "🎉" };
+export function eventWords(e: any) {
+  const t = EMOJI[e?.event_type] ? e.event_type : "wedding";
+  const g = String(e?.groom_name || "").trim(), b = String(e?.bride_name || "").trim(), n = String(e?.name || "").trim();
+  const name = t === "wedding" ? (g && b ? `חתונת ${g} ו${b}` : g || b ? `חתונת ${g || b}` : "חתונתנו")
+    : t === "bar_mitzvah" ? (g ? `שמחת המצווה של ${g}` : n || "שמחת המצווה")
+    : t === "brit" ? (g ? `ברית המילה של ${g}` : n || "ברית המילה")
+    : (n || "האירוע שלנו");
+  const hosts = t === "wedding" ? (g && b ? `${g} ו${b}` : g || b || n) : (t === "bar_mitzvah" || t === "brit") ? (String(e?.groom_father || "").trim() || g || n) : (g || n);
+  return { name, hosts, emoji: EMOJI[t] };
+}
+// קישור Bit / PayBox לשורת "💝 למתנה" — כמו giftLink ב-App.jsx
+export function giftLink(e: any) {
+  const bit = String(e?.bit_link || "").trim(), pb = String(e?.paybox_link || "").trim();
+  if (bit) return /^https?:\/\//i.test(bit) ? bit : `Bit ${bit}`;
+  return pb;
+}
+
 // אותם נוסחים כמו במסך ה-SMS (SMSScreen ב-App.jsx) — לשנות בשני המקומות
 export function buildTemplates(event: any): Record<string, string> {
-  const groomName = event.groom_name || "החתן";
-  const brideName = event.bride_name || "הכלה";
   const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   const d = event.date ? new Date(event.date) : null;
   const eventDate = d
     ? `יום ${days[d.getUTCDay()]}, ${d.toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}`
     : "בקרוב";
-  const eventType = event.event_type || "wedding";
-  const eventEmoji = eventType === "wedding" ? "💍" : eventType === "bar_mitzvah" ? "✡️" : eventType === "brit" ? "👶" : "💼";
-  const eventName = eventType === "wedding" ? `חתונת ${groomName} ו${brideName}` : eventType === "bar_mitzvah" ? `בר-מצווה של ${groomName || event.name}` : eventType === "brit" ? `ברית של ${event.name}` : event.name;
-  const coupleRef = eventType === "wedding" ? `${groomName} ו${brideName}` : (groomName || event.name);
+  const ew = eventWords(event);
+  const eventEmoji = ew.emoji, eventName = ew.name, coupleRef = ew.hosts;
+  const link = giftLink(event);
+  const giftAdd = (t: string) => link && !t.includes(link) ? `${t}\n💝 למתנה: ${link}` : t;
   const defaultInvite = `שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue || "יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
   return {
-    invite: String(event.welcome_text || "").trim() || defaultInvite,
+    invite: giftAdd(String(event.welcome_text || "").trim() || defaultInvite),
     reminder: `שלום {שם}! עוד לא אישרת הגעה ל${eventName}.\nנשמח לדעת אם תגיע 🙏\nלאישור הגעה: {קישור}`,
-    table: `שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue || ""}`,
+    table: giftAdd(`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue || ""}`),
     thanks: `שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
   };
 }
