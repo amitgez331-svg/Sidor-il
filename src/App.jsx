@@ -2186,35 +2186,93 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
   const [,setBoxTick]=useState(0);
-  // גודל האולם: בזום הנוכחי הוא ממלא בדיוק את השטח הפנוי על המסך (בלי פסי גלילה),
-  // ותמיד מספיק גדול כדי להכיל את כל השולחנות והבמה/בר/כניסה שהוזזו
-  const hallSize=(list=tables,z=zoom)=>{
-    const el=mapBoxRef.current;
-    const cw=el?el.clientWidth:window.innerWidth-560, ch=el?el.clientHeight:window.innerHeight-170;
-    const fx=hallRef.current||{};
-    const fixR=[["stage",300],["bar",130],["entrance",150]].reduce((m,[k,w])=>typeof fx[k]?.x==="number"?Math.max(m,fx[k].x+w):m,0);
-    const fixB=[["stage",70],["bar",56]].reduce((m,[k,h])=>typeof fx[k]?.y==="number"?Math.max(m,fx[k].y+h):m,0);
-    const maxR=Math.max(fixR,list.reduce((m,t)=>Math.max(m,t.x+(t.type==="knight"?230:170)),0));
-    const maxB=Math.max(fixB,list.reduce((m,t)=>Math.max(m,t.y+170),0));
-    return {cw,ch,maxR,maxB,W:Math.max((cw-18)/z,maxR+40),H:Math.max((ch-18)/z,maxB+60)};
+  // ─── מצלמת המפה: זום + הזזה (pan). האולם הוא משטח פתוח; המצלמה מחליטה מה רואים ───
+  const [pan,setPan]=useState({x:0,y:0});
+  const panRef=useRef(pan);panRef.current=pan;
+  const zoomRef=useRef(zoom);zoomRef.current=zoom;
+  const hallLayerRef=useRef(null);
+  const ZMIN=.3,ZMAX=1.8;
+  // גבולות כל שולחן ביחס לנקודת המיקום שלו (כמו שהוא מצויר ב-TableNode)
+  const tableBox=t=>t.type==="knight"?[t.x-16,t.y-16,t.x+196,t.y+76]:t.type==="rect"?[t.x-18,t.y-18,t.x+128,t.y+98]:[t.x,t.y,t.x+158,t.y+158];
+  const FIX_SIZE={stage:[300,70],bar:[130,56],entrance:[150,34]};
+  // מיקום ברירת מחדל לבמה/בר/כניסה (כשלא הוזזו ידנית) נקבע לפי השולחנות — ומתעדכן רק כשמוסיפים/מוחקים שולחן,
+  // לא כשגוררים שולחן (כדי שהבמה לא תקפוץ בזמן הזזה)
+  const fixDefRef=useRef(null);
+  useEffect(()=>{fixDefRef.current=null;},[event.id,tables.length]);
+  const fixDefaults=()=>{
+    if(fixDefRef.current)return fixDefRef.current;
+    const bs=tables.map(tableBox);
+    const [x0,y0,x1,y1]=bs.length?[Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))]:[0,120,800,420];
+    const cx=(x0+x1)/2;
+    const d={stage:{x:Math.round(cx-150),y:Math.round(y0-110)},bar:{x:Math.round(cx+190),y:Math.round(y0-104)},entrance:{x:Math.round(cx-75),y:Math.round(y1+50)}};
+    if(!loading)fixDefRef.current=d;
+    return d;
   };
-  // התאמה למסך: הזום הגדול ביותר שבו כל האולם נראה בלי גלילה
+  const fixPos=k=>{const p=(hallRef.current||{})[k];return p&&typeof p.x==="number"?{x:p.x,y:p.y}:fixDefaults()[k];};
+  // המלבן שמכיל את כל השולחנות + במה/בר/כניסה
+  const contentBox=(list=tables)=>{
+    const bs=[...list.map(tableBox),...Object.keys(FIX_SIZE).map(k=>{const p=fixPos(k);return [p.x,p.y,p.x+FIX_SIZE[k][0],p.y+FIX_SIZE[k][1]];})];
+    return [Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))];
+  };
+  // מצייר את המצלמה ישר על ה-DOM (חלק בזמן גרירה), ושומר ל-state בסוף
+  const paintCam=(p=panRef.current,z=zoomRef.current)=>{
+    if(hallLayerRef.current)hallLayerRef.current.style.transform=`translate(${p.x}px,${p.y}px) scale(${z})`;
+    const el=mapBoxRef.current;if(el){el.style.backgroundPosition=`${p.x}px ${p.y}px,0 0`;el.style.backgroundSize=`${22*z}px ${22*z}px,100% 100%`;}
+  };
+  const setCam=(p,z=zoomRef.current)=>{panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
+  // התאמה למסך: כל השולחנות גדולים ככל האפשר ובמרכז. יותר שולחנות = זום קטן יותר
   const manualZoomRef=useRef(false);
   const fitZoom=(list=tables)=>{
-    if(!mapBoxRef.current)return;
+    const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
-    const {cw,ch,maxR,maxB}=hallSize(list,1);
-    const z=Math.min((cw-16)/Math.max(maxR+40,720),(ch-16)/Math.max(maxB+60,460));
-    setZoom(+Math.min(1.4,Math.max(.35,z)).toFixed(2));
+    const cw=el.clientWidth,ch=el.clientHeight;
+    const [x0,y0,x1,y1]=contentBox(list);
+    const bw=Math.max(x1-x0,320),bh=Math.max(y1-y0,240);
+    const z=+Math.min(1.6,Math.max(ZMIN,Math.min((cw-56)/bw,(ch-56)/bh))).toFixed(3);
+    setCam({x:Math.round((cw-(x1-x0)*z)/2-x0*z),y:Math.round((ch-(y1-y0)*z)/2-y0*z)},z);
   };
-  const zoomBy=d=>{manualZoomRef.current=true;setZoom(z=>+Math.min(1.6,Math.max(.35,z+d)).toFixed(2));};
+  // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
+  const zoomAt=(factor,cx,cy)=>{
+    const el=mapBoxRef.current;if(!el)return;
+    manualZoomRef.current=true;
+    if(cx==null){cx=el.clientWidth/2;cy=el.clientHeight/2;}
+    const z0=zoomRef.current,z=Math.min(ZMAX,Math.max(ZMIN,z0*factor)),p=panRef.current;
+    setCam({x:cx-(cx-p.x)*z/z0,y:cy-(cy-p.y)*z/z0},z);
+  };
+  const zoomBy=d=>zoomAt(d>0?1.15:1/1.15);
+  const panBy=(dx,dy)=>{manualZoomRef.current=true;const p=panRef.current;setCam({x:p.x+dx,y:p.y+dy});};
+  // גרירת הרקע מזיזה את המפה; לחיצה בלי תזוזה מבטלת בחירת שולחן
+  const startPan=e=>{
+    if(e.button!==0)return;
+    const el=mapBoxRef.current,sx=e.clientX,sy=e.clientY,p0=panRef.current;let moved=false,raf=0,p=p0;
+    el.style.cursor="grabbing";
+    const mv=me=>{const dx=me.clientX-sx,dy=me.clientY-sy;if(!moved&&Math.abs(dx)+Math.abs(dy)<4)return;moved=true;p={x:p0.x+dx,y:p0.y+dy};panRef.current=p;if(!raf)raf=requestAnimationFrame(()=>{raf=0;paintCam(p);});};
+    const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);el.style.cursor="";
+      if(moved){manualZoomRef.current=true;setPan(p);}else setSelected(null);};
+    window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
+  };
   useEffect(()=>{
     if(screen!=="seating"||view!=="map"||!mapBoxRef.current)return;
+    const el=mapBoxRef.current;
     fitZoom();
-    // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש בחר זום בעצמו)
+    // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש הזיז/הגדיל בעצמו)
     const ro=new ResizeObserver(()=>{setBoxTick(t=>t+1);if(!manualZoomRef.current)fitZoom();});
-    ro.observe(mapBoxRef.current);
-    return()=>ro.disconnect();
+    ro.observe(el);
+    // גלגלת/משטח מגע: הזזה; Ctrl+גלגלת (או צביטה): זום סביב הסמן
+    const wheel=e=>{
+      e.preventDefault();
+      if(e.ctrlKey||e.metaKey){const r=el.getBoundingClientRect();zoomAt(Math.exp(-e.deltaY*.0025),e.clientX-r.left,e.clientY-r.top);}
+      else panBy(-e.deltaX,-e.deltaY);
+    };
+    el.addEventListener("wheel",wheel,{passive:false});
+    // חיצים במקלדת מזיזים את המפה (לא בתוך שדה טקסט)
+    const key=e=>{
+      if(/input|textarea|select/i.test(e.target.tagName)||e.ctrlKey||e.metaKey)return;
+      const d={ArrowLeft:[120,0],ArrowRight:[-120,0],ArrowUp:[0,120],ArrowDown:[0,-120]}[e.key];
+      if(d){e.preventDefault();panBy(d[0],d[1]);}
+    };
+    window.addEventListener("keydown",key);
+    return()=>{ro.disconnect();el.removeEventListener("wheel",wheel);window.removeEventListener("keydown",key);};
   },[screen,view,sidebarOpen,tables.length,loading]);
   // חגיגה כשכל האורחים הושבו: קונפטי והודעה (רק במעבר ל-100%, לא בכל טעינה)
   const [celebrate,setCelebrate]=useState(false);
@@ -2377,7 +2435,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     setSaving(false);
   };
   const addTable=async()=>{setModal("addTable");};
-  const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:100+tables.length*30,y:100+tables.length*20,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
+  // שולחן חדש נכנס למקום הפנוי הראשון ברשת שליד השולחנות הקיימים (לא על שולחן אחר)
+  const freeSpot=type=>{
+    const bs=tables.map(tableBox);
+    const x0=bs.length?Math.min(...bs.map(b=>b[0])):80,y0=bs.length?Math.min(...bs.map(b=>b[1])):140;
+    const cols=Math.max(4,Math.ceil(Math.sqrt(tables.length+1))+1),w=type==="knight"?240:200;
+    for(let r=0;r<60;r++)for(let c=0;c<cols;c++){
+      const x=x0+c*200,y=y0+r*190,nb=tableBox({x,y,type});
+      if(!bs.some(b=>nb[0]<b[2]+20&&nb[2]+20>b[0]&&nb[1]<b[3]+20&&nb[3]+20>b[1]))return {x,y};
+    }
+    return {x:x0,y:y0+bs.length*40};
+  };
+  const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:spot.x,y:spot.y,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
   const selTable=tables.find(t=>t.id===selected);
   const seated=tables.reduce((s,t)=>s+(t.guests||[]).length,0);
   const total=seated+guests.length;
@@ -3126,6 +3195,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <button style={zBtn} onClick={()=>zoomBy(.1)} aria-label="הגדל">+</button>
                   <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom()} title="כל האולם על המסך">⤢ התאם</button>
                 </div>
+                {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
+                <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
+                  {[["→",-140,0,"ימינה"],["↑",0,140,"למעלה"],["↓",0,-140,"למטה"],["←",140,0,"שמאלה"]].map(([ic,dx,dy,l])=>(
+                    <button key={l} style={zBtn} onClick={()=>panBy(dx,dy)} aria-label={`הזז את המפה ${l}`}>{ic}</button>
+                  ))}
+                </div>
                 {mapFull&&<button onClick={addTable} className="sx-btn"
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                   + שולחן
@@ -3140,28 +3215,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           })()}
           <div onDragOver={e=>e.preventDefault()}
             onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
-            onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}
+            onMouseDown={startPan}
             ref={mapBoxRef} dir="ltr"
-            style={{flex:1,minHeight:0,overflow:"auto",background:"#F6F0F8",position:"relative"}}>
+            style={{flex:1,minHeight:0,overflow:"hidden",position:"relative",cursor:"grab",
+              backgroundColor:"#FFFDFB",backgroundImage:"radial-gradient(circle,#E9DEF2 1.2px,transparent 1.4px),linear-gradient(180deg,rgba(255,230,240,.55),rgba(255,253,251,0) 45%)",
+              backgroundSize:`${22*zoom}px ${22*zoom}px,100% 100%`,backgroundPosition:`${pan.x}px ${pan.y}px,0 0`}}>
             {(()=>{
-              // מפה ממלאת את כל השטח הזמין
-              const {W:MAP_W,H:MAP_H}=hallSize();
+              // שכבת האולם: מיקומים בקואורדינטות של האולם; המצלמה (הזזה+זום) מוחלת עליה
+              const [cx0,cy0,cx1,cy1]=contentBox();
+              const MAP_W=Math.max(cx1+200,1000),MAP_H=Math.max(cy1+200,700);
               const q=mapFind.trim().toLowerCase();
               return(
-                <div style={{width:MAP_W*zoom+16,height:MAP_H*zoom+16,position:"relative"}}>
-                <div dir="rtl" style={{position:"absolute",top:8,left:8,width:MAP_W,height:MAP_H,transform:`scale(${zoom})`,transformOrigin:"top left",
-                  background:"#FFFDFB",borderRadius:22,boxShadow:"0 0 0 1px #EADFF3,0 18px 50px -24px rgba(91,60,140,.35)",overflow:"hidden"}}
-                  onClick={e=>{if(e.target===e.currentTarget)setSelected(null);}}>
-
-                  {/* רצפה: נקודות עדינות */}
-                  <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}} xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="hallDots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#EDE3F4"/></pattern>
-                      <radialGradient id="hallGlow" cx="50%" cy="0%" r="70%"><stop offset="0%" stopColor="#FFE6F0" stopOpacity=".9"/><stop offset="100%" stopColor="#FFFDFB" stopOpacity="0"/></radialGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#hallDots)"/>
-                    <rect width="100%" height="100%" fill="url(#hallGlow)"/>
-                  </svg>
+                <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
                   <div className="sx-anim" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
@@ -3177,25 +3242,22 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
                   {/* ─── במה, בר וכניסה  -  ניתנים לגרירה (אלא אם המפה נעולה); המיקום נשמר באירוע ─── */}
                   {(()=>{
-                    const FIX={
-                      stage:{w:300,h:70,def:{x:MAP_W/2-150,y:0}},
-                      bar:{w:130,h:56,def:{x:MAP_W/2+190,y:0}},
-                      entrance:{w:150,h:34,def:{x:MAP_W/2-75,y:MAP_H-34}},
-                    };
-                    const posOf=k=>{const p=hall[k];return p&&typeof p.x==="number"?{x:Math.min(Math.max(0,p.x),MAP_W-FIX[k].w),y:Math.min(Math.max(0,p.y),MAP_H-FIX[k].h)}:FIX[k].def;};
-                    // פינות מעוגלות לפי המיקום: צמוד לקיר העליון/התחתון או באמצע האולם
-                    const radius=(k,p,r)=>p.y<=2?`0 0 ${r}px ${r}px`:p.y>=MAP_H-FIX[k].h-2?`${r}px ${r}px 0 0`:`${r}px`;
+                    const FIX={stage:{w:300,h:70},bar:{w:130,h:56},entrance:{w:150,h:34}};
+                    // מיקום קבוע: נשמר באירוע, או ברירת מחדל שנקבעה פעם אחת (לא זז כשמזיזים שולחנות)
+                    const posOf=fixPos;
+                    const radius=(k,p,r)=>`${r}px`;
+                    // גרירה חלקה: מזיזים את האלמנט ישירות ושומרים רק בסוף
                     const startDrag=(k,e)=>{
                       if(mapLocked||e.button!==0)return;
                       e.stopPropagation();e.preventDefault();
-                      const s=posOf(k),sx=e.clientX,sy=e.clientY;let nx=s.x,ny=s.y;
+                      const node=e.currentTarget,s=posOf(k),sx=e.clientX,sy=e.clientY,z=zoomRef.current;let nx=s.x,ny=s.y,raf=0;
                       const mv=me=>{
-                        nx=Math.round(Math.min(Math.max(0,s.x+(me.clientX-sx)/zoom),MAP_W-FIX[k].w));
-                        ny=Math.round(Math.min(Math.max(0,s.y+(me.clientY-sy)/zoom),MAP_H-FIX[k].h));
-                        setHall(h=>({...h,[k]:{x:nx,y:ny}}));
+                        nx=Math.round(s.x+(me.clientX-sx)/z);ny=Math.round(s.y+(me.clientY-sy)/z);
+                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;node.style.left=nx+"px";node.style.top=ny+"px";});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
-                        if(nx!==s.x||ny!==s.y)saveHall({...hallRef.current,[k]:{x:nx,y:ny}});};
+                        if(nx!==s.x||ny!==s.y){const prev=hallRef.current[k];saveHall({...hallRef.current,[k]:{x:nx,y:ny}});
+                          pushUndo(`הזזת ${k==="stage"?"הבמה":k==="bar"?"הבר":"הכניסה"}`,()=>saveHall({...hallRef.current,[k]:prev??s}));}};
                       window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
                     };
                     const common=k=>{const p=posOf(k);return {
@@ -3244,19 +3306,21 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       e.stopPropagation();
                       setSelected(t.id);
                       if(mapLocked)return; // מפה נעולה: אפשר לבחור שולחן, לא להזיז
-                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y;let posX=bx,posY=by;
+                      // גרירה חלקה: מזיזים את העוטף ישירות (בלי לרנדר את כל המסך בכל תזוזה) ושומרים בסוף
+                      const node=e.currentTarget.closest("[data-tid]");
+                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current;let posX=bx,posY=by,raf=0;
                       const mv=me=>{
-                        posX=Math.min(Math.max(0,bx+(me.clientX-sx)/zoom),MAP_W-60);
-                        posY=Math.min(Math.max(0,by+(me.clientY-sy)/zoom),MAP_H-60);
-                        moveTablePos(t.id,posX,posY);
+                        posX=Math.round(bx+(me.clientX-sx)/z);posY=Math.round(by+(me.clientY-sy)/z);
+                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}});
                       };
-                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);if(posX!==bx||posY!==by){saveTablePos(t.id,Math.round(posX),Math.round(posY));pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}};
+                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                        if(posX!==bx||posY!==by){moveTablePos(t.id,posX,posY);saveTablePos(t.id,posX,posY);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}};
                       window.addEventListener("mousemove",mv);
                       window.addEventListener("mouseup",up);
                     };
                     const hit=!!q&&(t.guests||[]).some(g=>g.name.toLowerCase().includes(q));
                     return(
-                      <div key={t.id} style={{position:"absolute",left:t.x,top:t.y,zIndex:selected===t.id?10:3,opacity:q&&!hit?.35:1,transition:"opacity .2s"}}>
+                      <div key={t.id} data-tid={t.id} onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:t.x,top:t.y,zIndex:selected===t.id?10:3,opacity:q&&!hit?.35:1,transition:"opacity .2s"}}>
                         {/* כניסה מדורגת של השולחנות כשהמפה נפתחת */}
                         <div className="sx-anim" style={{position:"absolute",left:0,top:0,animation:`sxPopIn .55s cubic-bezier(.3,1.4,.5,1) ${Math.min(ti,12)*.07}s both`}}>
                         {/* המיקום נקבע ע"י העוטף  -  השולחן עצמו מצויר ביחס אליו */}
@@ -3274,7 +3338,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       </div>
                     );
                   })}
-                </div>
                 </div>
               );
             })()}
