@@ -4717,8 +4717,34 @@ const SCHEDULE_DEFAULTS=[
   {id:"d2",offset:0,label:"ביום האירוע",desc:"מספר שולחן",time:"09:00",icon:"🎉",templateId:"table"},
   {id:"d3",offset:2,label:"יומיים אחרי",desc:"הודעת תודה",time:"10:00",icon:"💙",templateId:"thanks"},
 ];
-function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) {
+// SMS בלבד: שליחה אוטומטית ע"י sms-scheduler בשרת (כל 5 דקות). הנמענים לפי הנוסח — כמו recipientsFor בשרת
+const SCHEDULE_TO={invite:"כל האורחים",reminder:"ממתינים לאישור",table:"מגיעים ששובצו לשולחן",thanks:"מגיעים"};
+const SCHEDULE_LATE_HOURS=12;
+function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false }) {
   const eventD=event.date?new Date(event.date):null;
+  // סטטוס שליחה אוטומטית לכל תזמון
+  const [runs,setRuns]=useState({});
+  const loadRuns=async()=>{
+    if(!auto)return;
+    const{data}=await sb.from("sms_schedule_runs").select("schedule_id,status,recipients,units,error,finished_at,created_at").eq("event_id",event.id);
+    setRuns(Object.fromEntries((data||[]).map(r=>[r.schedule_id,r])));
+  };
+  useEffect(()=>{loadRuns().catch(()=>{});const iv=auto?setInterval(()=>loadRuns().catch(()=>{}),60000):null;return()=>iv&&clearInterval(iv);},[event.id,auto]);
+  const autoStatus=s=>{
+    const r=runs[s.id];
+    const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+    if(r?.status==="sent")return{c:C.success,bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} SMS)`};
+    if(r?.status==="failed")return{c:C.danger,bg:"#FFF2F4",t:`✗ לא נשלח: ${r.error||"שגיאה"}. אפשר לשלוח ידנית למטה.`};
+    if(r?.status==="skipped")return{c:"#8A5A00",bg:"#FFF8E8",t:`⏭ דולג: ${r.error||""}`};
+    if(r?.status==="sending")return{c:C.blue,bg:"#F4EEFC",t:"⏳ שולח עכשיו…"};
+    if(!s.enabled)return null;
+    const to=SCHEDULE_TO[s.templateId]||SCHEDULE_TO.invite;
+    if(!s.date||!s.time)return{c:"#8A5A00",bg:"#FFF8E8",t:"⚠️ חסר תאריך או שעה — לא יישלח"};
+    const due=new Date(`${s.date}T${s.time}:00`);
+    if(due>new Date())return{c:C.blue,bg:"#F4EEFC",t:`🤖 יישלח אוטומטית אל: ${to}`};
+    if(Date.now()-due<SCHEDULE_LATE_HOURS*3600e3)return{c:C.blue,bg:"#F4EEFC",t:`⏳ יישלח בדקות הקרובות אל: ${to}`};
+    return{c:"#8A5A00",bg:"#FFF8E8",t:"⚠️ המועד עבר — לא יישלח אוטומטית. שנה מועד או שלח ידנית."};
+  };
   const calcDate=off=>{if(!eventD)return "";const d=new Date(eventD);d.setDate(d.getDate()+off);return d.toISOString().split("T")[0];};
   // מיזוג: ברירות מחדל + מה שנשמר (שינויי זמן/הפעלה) + תזמונים נוספים
   const build=()=>{
@@ -4737,7 +4763,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) 
     setStatus("saving");
     // שומרים רק את מה שצריך: מזהה, זמן, הפעלה, ולתזמונים נוספים גם תווית ותבנית
     const payload=next.map(s=>s.custom?{id:s.id,custom:true,label:s.label,icon:s.icon,desc:s.desc,templateId:s.templateId,date:s.date,time:s.time,enabled:s.enabled}
-      :{id:s.id,date:s.date,time:s.time,enabled:s.enabled});
+      :{id:s.id,templateId:s.templateId,date:s.date,time:s.time,enabled:s.enabled});
     const settings={...(event.settings_json||{}),[storeKey]:payload};
     const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
     if(error){setStatus("error");alert("❌ התזמונים לא נשמרו: "+error.message);return false;}
@@ -4769,6 +4795,9 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) 
           </button>
         </div>
       </div>
+      <div style={{fontSize:11,color:C.muted,marginTop:-4,marginBottom:10,lineHeight:1.6}}>
+        {auto?"🤖 תזמון פעיל נשלח אוטומטית במועד (שעון ישראל), פעם אחת, וכל אורח = 1 מהיתרה. ודאו שיש מספיק יתרה.":"🔔 תזכורת בלבד: הודעות וואטסאפ לא נשלחות אוטומטית, צריך לשלוח אותן מכאן במועד."}
+      </div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {items.map(s=>{
           const d=s.date?new Date(s.date+"T00:00:00"):null;
@@ -4797,6 +4826,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate }) 
                   📝 {preview}
                   {onPickTemplate&&<button onClick={()=>onPickTemplate(s.templateId)} style={{display:"inline-block",marginRight:6,background:accent,color:"#fff",border:"none",borderRadius:5,padding:"2px 6px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ערוך נוסח</button>}
                 </div>
+                {auto&&!editing&&(()=>{const st=autoStatus(s);return st&&<div style={{marginTop:6,background:st.bg,color:st.c,borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:700,lineHeight:1.5}}>{st.t}</div>;})()}
                 {editing&&<div style={{display:"grid",gridTemplateColumns:s.custom?"1fr 1fr 1fr":"1fr 1fr",gap:8,marginTop:4}}>
                   {s.custom&&<div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>הודעה</div>
                     <select value={s.templateId} onChange={e=>update(s.id,{templateId:e.target.value})} style={inp}>
@@ -5133,7 +5163,7 @@ function SMSScreen({ event, guests, tables=[] }) {
             </div>
 
           {/* תזמון שליחה SMS  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM}
+          <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM} auto
             onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");}}/>
 
           </div>
