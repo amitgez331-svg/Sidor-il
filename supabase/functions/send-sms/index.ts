@@ -41,14 +41,22 @@ Deno.serve(async (req) => {
     if (guest_ids.length > MAX_RECIPIENTS) return json({ error: `אפשר לשלוח עד ${MAX_RECIPIENTS} נמענים בפעם אחת` }, 400);
 
     // האירוע שייך למשתמש?
-    const { data: ev } = await admin.from("events").select("id,user_id").eq("id", event_id).maybeSingle();
+    const { data: ev } = await admin.from("events").select("id,user_id,settings_json").eq("id", event_id).maybeSingle();
     const isAdmin = (user.email || "").toLowerCase() === ADMIN_EMAIL;
     if (!ev || (ev.user_id !== user.id && !isAdmin)) return json({ error: "אין הרשאה לאירוע הזה" }, 403);
 
     // האורחים — רק מהאירוע הזה, רק עם נייד תקין
     const { data: guests } = await admin.from("guests").select("id,name,phone,table_id,short_code").eq("event_id", event_id).in("id", guest_ids);
     const { data: tables } = await admin.from("tables").select("id,name").eq("event_id", event_id);
-    const tableName = (id: string | null) => tables?.find((t) => t.id === id)?.name || "—";
+    // "3 (משפחת הכלה)" — מספר השולחן מ-settings_json.table_nums (כמו tableLabel ב-App.jsx)
+    const nums = ev.settings_json?.table_nums || {};
+    const tableName = (id: string | null) => {
+      const t = tables?.find((t) => t.id === id);
+      if (!t) return "—";
+      const num = nums[t.id], n = String(t.name || "").replace(/^\s*\d+\s*/, "").trim();
+      if (!num) return t.name || "—";
+      return n && n !== `שולחן ${num}` ? `${num} (${n})` : String(num);
+    };
 
     const items = (guests || []).map((g) => {
       const phone = normPhone(g.phone || "");

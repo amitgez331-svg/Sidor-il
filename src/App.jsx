@@ -73,6 +73,13 @@ const fmtDateHe=(d,opts={day:"numeric",month:"long",year:"numeric"})=>{
   const x=typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)?new Date(d+"T00:00:00"):new Date(d);
   return isNaN(x)?String(d):x.toLocaleDateString("he-IL",opts);
 };
+// תווית שולחן לאורחים: "3 (משפחת הכלה)" — המספר מ-settings_json.table_nums; בלי מספר — השם בלבד.
+// אותה פונקציה ב-send-sms וב-sms-scheduler (tableLabel) — לשנות בכל המקומות
+const tableLabel=(num,name)=>{
+  const n=String(name||"").replace(/^\s*\d+\s*/,"").trim();
+  if(!num)return name||"—";
+  return n&&n!==`שולחן ${num}`?`${num} (${n})`:String(num);
+};
 const pct    = t => t.seats ? Math.round((t.guests||[]).length/t.seats*100) : 0;
 const sColor = t => { const g=(t.guests||[]).length; return g>=t.seats?C.danger:g>=t.seats*.8?C.gold:C.success; };
 const isMobile = () => window.innerWidth < 1024;
@@ -5264,7 +5271,7 @@ function SMSScreen({ event, guests, tables=[] }) {
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=pickRecipients(withPhone,sendTo);
-  const tableOf=id=>tables.find(t=>t.id===id)?.name||"—";
+  const tableOf=id=>{const t=tables.find(t=>t.id===id);return t?tableLabel(event.settings_json?.table_nums?.[id],t.name):"—";};
 
   // אותה החלפה כמו בשרת השליחה (קישור קצר אישי)
   const buildPreview=(g)=>{
@@ -6387,7 +6394,9 @@ function InvitePage({ code, guestId }) {
           {(event.settings_json?.tableNum??true)&&knownGuest?.table_id&&knownGuest?.rsvp==="confirmed"&&(
             <div style={{marginTop:12,background:"linear-gradient(135deg,#1B3A8C,#2952C8)",color:"#fff",borderRadius:12,padding:"10px 16px",display:"inline-block"}}>
               <span style={{fontSize:13,fontWeight:700}}>🪑 השולחן שלך: </span>
-              <span style={{fontSize:16,fontWeight:900}}>{knownGuest.table_name||knownGuest.table_id}</span>
+              {(()=>{const num=event.settings_json?.table_nums?.[knownGuest.table_id];const nm=String(knownGuest.table_name||"").replace(/^\s*\d+\s*/,"").trim();
+                return num?<><span style={{fontSize:20,fontWeight:900}}>מספר {num}</span>{nm&&nm!==`שולחן ${num}`&&<span style={{fontSize:13,fontWeight:700,opacity:.9}}> · {nm}</span>}</>
+                  :<span style={{fontSize:16,fontWeight:900}}>{knownGuest.table_name||"—"}</span>;})()}
             </div>
           )}
         </div>

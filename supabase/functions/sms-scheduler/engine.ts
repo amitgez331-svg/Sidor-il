@@ -40,6 +40,13 @@ export function recipientsFor(templateId: string, guests: any[]) {
   return guests; // invite / אחר: כולם
 }
 
+// "3 (משפחת הכלה)" — כמו tableLabel ב-App.jsx
+export function tableLabel(num: number | undefined, name: string) {
+  const n = String(name || "").replace(/^\s*\d+\s*/, "").trim();
+  if (!num) return name || "—";
+  return n && n !== `שולחן ${num}` ? `${num} (${n})` : String(num);
+}
+
 export function renderFor(text: string, g: any, tableName: (id: string | null) => string, inviteUrl: string) {
   return text
     .replace(/{שם}/g, String(g.name || "").split(" ")[0])
@@ -67,7 +74,8 @@ export async function runOne(c: Claim, deps: Deps) {
     if (!ev) return await deps.finish(c.run_id, { status: "skipped", error: "האירוע לא נמצא" });
     const text = buildTemplates(ev)[c.template_id] ?? buildTemplates(ev).invite;
     const [guests, tables] = await Promise.all([deps.loadGuests(c.event_id), deps.loadTables(c.event_id)]);
-    const tableName = (id: string | null) => tables.find((t) => t.id === id)?.name || "—";
+    const nums = ev.settings_json?.table_nums || {};
+    const tableName = (id: string | null) => { const t = tables.find((t) => t.id === id); return t ? tableLabel(nums[t.id], t.name) : "—"; };
     const inviteUrl = ev.invite_code ? `https://www.sidoril.com/#/invite/${ev.invite_code}` : "";
     const valid = recipientsFor(c.template_id, guests)
       .map((g) => ({ name: g.name, phone: normPhone(g.phone || ""), text: renderFor(text, g, tableName, inviteUrl) }))
