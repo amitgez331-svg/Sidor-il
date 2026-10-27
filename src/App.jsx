@@ -4952,7 +4952,13 @@ function SMSScreen({ event, guests, tables=[] }) {
     ]);
     setSmsBalance(data?.balance??0);setPendingReq(reqs||[]);
   };
-  useEffect(()=>{loadBalance().catch(()=>setSmsBalance(0));},[event.id]);
+  useEffect(()=>{
+    loadBalance().catch(()=>setSmsBalance(0));
+    // שליחה אוטומטית מתזמון מורידה מהיתרה בשרת — מרעננים כשחוזרים לחלון
+    const refresh=()=>{if(document.visibilityState==="visible")loadBalance().catch(()=>{});};
+    window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",refresh);
+    return()=>{window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",refresh);};
+  },[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=pickRecipients(withPhone,sendTo);
@@ -6512,8 +6518,10 @@ function AdminDashboard({ user, onLogout }) {
   };
   useEffect(()=>{loadProvider();},[]);
 
-  const loadData=async()=>{
-    setLoading(true);
+  const [updatedAt,setUpdatedAt]=useState(null);
+  // silent: רענון ברקע בלי ספינר (כשחוזרים לחלון / כל 30 שניות)
+  const loadData=async(silent=false)=>{
+    if(!silent)setLoading(true);
     const [ev,g,pk,bal,req,tx,us]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id"),
@@ -6532,9 +6540,17 @@ function AdminDashboard({ user, onLogout }) {
     const uList=base.map(u=>{const evs=evList.filter(e=>e.user_id===u.user_id);return {...u,events:evs,guests:evs.reduce((s,e)=>s+(gc[e.id]||0),0)};});
     setEvents(evList);setGuestCount(gc);setPackages(pkgMap);setBalances(balMap);
     setRequests(req.data||[]);setTxs(tx.data||[]);setUsers(uList);
-    setLoading(false);
+    setLoading(false);setUpdatedAt(new Date());
   };
-  useEffect(()=>{loadData();},[]);
+  // היתרות משתנות כשלקוחות שולחים — מרעננים אוטומטית
+  useEffect(()=>{
+    loadData();
+    const refresh=()=>{if(document.visibilityState==="visible")loadData(true).catch(()=>{});};
+    const iv=setInterval(refresh,30000);
+    window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",refresh);
+    return()=>{clearInterval(iv);window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",refresh);};
+  },[]);
+  const refreshAll=()=>{loadData();loadProvider();};
 
   const emailOf=uid=>users.find(u=>u.user_id===uid)?.email||(uid?uid.slice(0,8)+"…":"");
   const eventOf=id=>events.find(e=>e.id===id);
@@ -6592,10 +6608,10 @@ function AdminDashboard({ user, onLogout }) {
           <div style={{width:44,height:44,borderRadius:14,background:"rgba(255,255,255,.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🛡️</div>
           <div style={{flex:1,minWidth:180}}>
             <div style={{fontWeight:900,fontSize:22}}>ניהול Sidor-IL</div>
-            <div style={{fontSize:12,opacity:.9}}>{user.email}</div>
+            <div style={{fontSize:12,opacity:.9}}>{user.email}{updatedAt&&` · עודכן ${updatedAt.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`}</div>
           </div>
           <button onClick={()=>{window.location.hash="";}} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>→ לאתר</button>
-          <button onClick={loadData} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 רענן</button>
+          <button onClick={refreshAll} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 רענן</button>
           <button onClick={onLogout} className="sx-btn" style={{background:"#fff",color:C.danger,border:"none",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
         </div>
       </div>
