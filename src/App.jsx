@@ -4119,8 +4119,11 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp}:x)})));
   };
 
+  // הוספת מוזמנת: אותו חלון בדיוק כמו עריכה (שם פרטי/משפחה, נייד, כמות, קרבה, מצב הגעה, מתנה, הערה)
+  const openAdd=()=>setEditG({_new:true,name:"",phone:"",guest_count:1,relation:"ללא שיוך",rsvp:"pending",gift:0,note:""});
   const saveEdit=async()=>{
     if(!editG)return;
+    if(editG._new&&!String(editG.name||"").trim()){alert("נא למלא שם");return;}
     // טלפון שנכתב בתוך השם  -  מעבירים לשדה הטלפון
     {const sp=splitNamePhone(editG.name,editG.phone);if(sp.name!==String(editG.name||"").trim()){editG.name=sp.name;editG.phone=sp.phone;setEditG({...editG});}}
     // טלפון שכבר שייך לאורח אחר  -  לא שומרים כפול, רק מציעים לעדכן את מספר המוזמנים שלו
@@ -4135,12 +4138,21 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     setSaving(true);
     const oldGift=allGuests.find(g=>g.id===editG.id)?.gift||0;
     const newGift=Number(editG.gift||0);
+    if(editG._new){
+      const row={event_id:event.id,name:String(editG.name).replace(/\s+/g," ").trim(),phone:editG.phone||null,rsvp:editG.rsvp||"pending",
+        guest_count:Number(editG.guest_count)||1,relation:editG.relation||"ללא שיוך",note:editG.note||"",gift:newGift,table_id:null};
+      let{error}=await sb.from("guests").insert(row);
+      // בסיס נתונים ישן בלי עמודת relation  -  שומרים בלעדיה
+      if(error&&/relation/.test(error.message||"")){const{relation,...r}=row;({error}=await sb.from("guests").insert(r));}
+      if(error){alert("❌ המוזמנת לא נשמרה: "+error.message);setSaving(false);return;}
+    }else{
     const res=await saveGuestRow(editG.id,{
       name:editG.name,phone:editG.phone,rsvp:editG.rsvp,
       guest_count:editG.guest_count,relation:editG.relation,
       note:editG.note||"",gift:newGift
     });
     if(!res.ok){setSaving(false);return;}
+    }
     // סנכרון מתנה לניהול תקציב
     if(newGift!==oldGift){
       const budgetName=`מתנה  -  ${editG.name}`;
@@ -4197,7 +4209,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             📊 ייבוא אורחים
           </button>}
-          <button onClick={onAddGuest}
+          <button onClick={openAdd}
             style={{background:"#2B6CB0",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             ➕ הוסף מוזמנת
           </button>
@@ -4403,7 +4415,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setEditG(null)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:32,width:500,maxWidth:"95vw",direction:"rtl",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <div style={{border:"1.5px solid #E2E8F0",borderRadius:20,padding:"5px 16px",fontSize:13,fontWeight:700,color:"#1A202C"}}>עריכת מוזמנת</div>
+              <div style={{border:"1.5px solid #E2E8F0",borderRadius:20,padding:"5px 16px",fontSize:13,fontWeight:700,color:"#1A202C"}}>{editG._new?"➕ הוספת מוזמנת":"עריכת מוזמנת"}</div>
               <button onClick={()=>setEditG(null)} style={{background:"#F7FAFC",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#718096",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
 
@@ -4483,7 +4495,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             <div style={{display:"flex",gap:10}}>
               <button onClick={saveEdit} disabled={saving}
                 style={{flex:2,background:"#2B6CB0",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                {saving?"שומר...":"עדכון פרטים"}
+                {saving?"שומר...":editG._new?"➕ הוספת מוזמנת":"עדכון פרטים"}
               </button>
               <button onClick={()=>setEditG(null)}
                 style={{flex:1,background:"#F7FAFC",color:"#718096",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
