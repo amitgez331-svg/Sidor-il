@@ -57,8 +57,8 @@ const isMobile = () => window.innerWidth < 1024;
 
 // השוואת טלפונים: רק ספרות, ו-972 בהתחלה נחשב כמו 0 (‎+972 52… = 052…)
 const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith("972"))d="0"+d.slice(3); return d.length>=9?d:""; };
-// הודעת SMS אחת בעברית = עד 70 תווים (אימוג'י = 2). הקישור האישי ב-SMS הוא קצר: sidoril.com/i/<קוד>
-const SMS_MAX=70;
+// אורך מרבי להודעת SMS (אימוג'י = 2 תווים). הקישור האישי ב-SMS הוא קצר: sidoril.com/i/<קוד>
+const SMS_MAX=200;
 const SHORT_LINK_HOST="sidoril.com/i/";
 const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
@@ -4866,27 +4866,29 @@ function SMSScreen({ event, guests, tables=[] }) {
   const eventName=eventType==="wedding"?`חתונת ${groomName} ו${brideName}`:eventType==="bar_mitzvah"?`בר-מצווה של ${groomName||event.name}`:eventType==="brit"?`ברית של ${event.name}`:event.name;
   const coupleRef=eventType==="wedding"?`${groomName} ו${brideName}`:(groomName||event.name);
 
-  // נוסחים קצרים: כל הודעה עד 70 תווים (הודעת SMS אחת)
+  const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
+  const smsInviteText=event.welcome_text?.trim()||defaultSmsInviteText;
+
   const TEMPLATES = [
     {
       id:"invite",
       label:"💌 הזמנה לאירוע",
-      text:`{שם}, מוזמנים ל${eventName}! אישור הגעה: {קישור}`,
+      text:smsInviteText,
     },
     {
       id:"reminder",
       label:"🔔 תזכורת לממתינים",
-      text:`{שם}, נשמח לאישור הגעה ל${eventName}: {קישור}`,
+      text:`שלום {שם}! עוד לא אישרת הגעה ל${eventName}.\nנשמח לדעת אם תגיע 🙏\nלאישור הגעה: {קישור}`,
     },
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:`{שם}, השולחן שלך ב${eventName}: {שולחן}. מחכים לך!`,
+      text:`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`,
     },
     {
       id:"thanks",
       label:"💙 תודה אחרי האירוע",
-      text:`{שם}, תודה שחגגת איתנו! באהבה, ${coupleRef}`,
+      text:`שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
     },
   ];
 
@@ -4902,6 +4904,13 @@ function SMSScreen({ event, guests, tables=[] }) {
   useEffect(()=>{
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
   },[guests]);
+
+  // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
+  useEffect(()=>{
+    if(selectedTemplate==="invite"){
+      setMsgText(smsInviteText);
+    }
+  },[event.welcome_text]);
 
   // טעינת יתרת SMS ובקשות רכישה ממתינות
   const [pendingReq,setPendingReq]=useState([]);
@@ -5110,7 +5119,7 @@ function SMSScreen({ event, guests, tables=[] }) {
             {/* ספירת תווים */}
             <div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:6,fontSize:11,color:tooLong?C.danger:C.muted,fontWeight:tooLong?800:400}}>
               <span>{longest.len}/{SMS_MAX} תווים{longest.name?` (הכי ארוכה: ${longest.name})`:""}</span>
-              <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ הודעה אחת"}</span>
+              <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ בתוך המגבלה"}</span>
             </div>
             <div style={{fontSize:10,color:C.muted,marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
           </div>

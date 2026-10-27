@@ -14,7 +14,7 @@ const json = (body: unknown, status = 200) =>
 
 const ADMIN_EMAIL = "amitgez331@gmail.com";
 const MAX_RECIPIENTS = 2500; // מגבלת bulk של 019
-const SMS_MAX = 70; // הודעת SMS אחת בעברית (UCS-2); אורך לפי יחידות UTF-16, כך שאימוג'י = 2
+const SMS_MAX = 200; // אורך מרבי להודעה; לפי יחידות UTF-16, כך שאימוג'י = 2
 const SHORT_LINK_HOST = "sidoril.com/i/";
 
 const normPhone = (p: string) => {
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       return { id: g.id, name: g.name, phone, text, units: phone ? 1 : 0 };
     });
     const valid = items.filter((i) => i.phone);
-    // כל הודעה חייבת להיכנס ב-SMS אחד
+    // כל הודעה עד SMS_MAX תווים
     const long = valid.find((i) => i.text.length > SMS_MAX);
     if (long) return json({ error: `ההודעה ל-${long.name} ארוכה מ-${SMS_MAX} תווים (${long.text.length}). קצר את הנוסח.` }, 400);
     const skipped = items.filter((i) => !i.phone).map((i) => ({ name: i.name, phone: "", status: "דולג ✗ (אין נייד תקין)" }));
