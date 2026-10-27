@@ -2178,10 +2178,29 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   );
 }
 
+// מסך שדורש חבילה (כמו בתפריט הצד)
+const screenLocked=(id,userPackages)=>{
+  const has=list=>userPackages.some(p=>list.includes(p.package_id??p));
+  if(id==="rsvp")return !has(["basic","seating","sms","auto","vip","staff"]);
+  if(id==="seating")return !has(["seating","sms","auto","vip","staff"]);
+  if(id==="sms")return !has(["sms","auto","vip"]);
+  if(id==="whatsapp")return !has(["auto","vip"]);
+  if(id==="ai"||id==="budget"||id==="import")return userPackages.length===0;
+  return false;
+};
+// המסך האחרון (ותצוגת ההושבה) נשמר בדפדפן כדי שרענון יחזיר לאותו מקום באותו אירוע
+const LAST_SCREEN_KEY="sidor_last_screen";
+const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts"];
+const readLastScreen=eventId=>{
+  try{const s=JSON.parse(localStorage.getItem(LAST_SCREEN_KEY)||"null");
+    if(s&&s.eventId===eventId&&RESTORABLE_SCREENS.includes(s.screen))return s;}catch{}
+  return null;
+};
+
 function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(data)=>{await sb.from("events").update(data).eq("id",event.id);onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
-  const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState("map"),[screen,setScreen]=useState("home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
+  const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
@@ -2316,12 +2335,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const hasPkg=(id)=>userPackages.includes(id)||userPackages.includes("vip");
 
   useEffect(()=>{
-    setScreen("home");
+    const last=readLastScreen(event.id);
+    setScreen(last?.screen||"home");if(last?.view)setView(last.view);
     loadAll();
     const fn=()=>setMobile(isMobile());
     window.addEventListener("resize",fn);
     return()=>window.removeEventListener("resize",fn);
   },[event.id]);
+  // שמירת המסך הנוכחי לרענון הבא
+  useEffect(()=>{try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));}catch{}},[event.id,screen,view]);
+  // מסך שנשמר אבל נעול (למשל החבילה הסתיימה) — חוזרים לראשי
+  useEffect(()=>{if(!loading&&screenLocked(screen,userPackages))setScreen("home");},[loading,userPackages]);
   const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
@@ -2839,13 +2863,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           <nav style={{flex:"1 0 auto",padding:"6px 0 8px"}} aria-label="תפריט ניהול">
             {navItems.map(item=>{
               const isLocked=(()=>{
-                if(["home","packages","settings","settings_event","user_settings","invite"].includes(item.id)) return false;
-                if(item.id==="rsvp") return !userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id??p));
-                if(item.id==="seating") return !userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id??p));
-                if(item.id==="sms") return !userPackages.some(p=>["sms","auto","vip"].includes(p.package_id??p));
-                if(item.id==="whatsapp") return !userPackages.some(p=>["auto","vip"].includes(p.package_id??p));
-                if(item.id==="ai"||item.id==="budget"||item.id==="import") return userPackages.length===0;
-                return false;
+                return screenLocked(item.id,userPackages);
               })();
               const on=screen===item.id;
               return(
