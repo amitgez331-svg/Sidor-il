@@ -67,6 +67,12 @@ const RELATION_COLORS = {
   "ללא שיוך":      "#B8AECB",
 };
 
+// תאריך בעברית ("יום חמישי, 30 באפריל 2026") במקום 2026-04-30 — נקרא נכון מימין לשמאל
+const fmtDateHe=(d,opts={day:"numeric",month:"long",year:"numeric"})=>{
+  if(!d)return "";
+  const x=typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)?new Date(d+"T00:00:00"):new Date(d);
+  return isNaN(x)?String(d):x.toLocaleDateString("he-IL",opts);
+};
 const pct    = t => t.seats ? Math.round((t.guests||[]).length/t.seats*100) : 0;
 const sColor = t => { const g=(t.guests||[]).length; return g>=t.seats?C.danger:g>=t.seats*.8?C.gold:C.success; };
 const isMobile = () => window.innerWidth < 1024;
@@ -2944,8 +2950,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       </div>
                     ):(
                       <div style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>
-                        {event.date||"תאריך לא הוגדר"}
-                        {event.venue&&` · ${event.venue}`}
+                        {event.date?`📅 ${fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}${event.event_time?` · ${event.event_time}`:""}`:"תאריך לא הוגדר"}
+                        {event.venue&&` · 📍 ${event.venue}`}
                       </div>
                     )}
                     <div style={{display:"flex",gap:10,marginTop:20}}>
@@ -4181,8 +4187,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
               const rowBg=relColor?relColor+"18":"#fff";
               const updatedAt=g.updated_at||g.created_at;
               const dateStr=updatedAt?
-                new Date(updatedAt).toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit",year:"numeric"})
-                +" | "+new Date(updatedAt).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})
+                new Date(updatedAt).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})
+                +" · "+new Date(updatedAt).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})
                 :" - ";
               return(
               <tr key={g.id} style={{borderBottom:"2px solid #E2E8F0",background:rowBg,transition:"filter .1s"}}
@@ -4913,7 +4919,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   useEffect(()=>{loadRuns().catch(()=>{});const iv=auto?setInterval(()=>loadRuns().catch(()=>{}),60000):null;return()=>iv&&clearInterval(iv);},[event.id,auto]);
   const autoStatus=s=>{
     const r=runs[s.id];
-    const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+    const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
     if(r?.status==="sent")return{c:C.success,bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} SMS)`};
     if(r?.status==="failed")return{c:C.danger,bg:"#FFF2F4",t:`✗ לא נשלח: ${r.error||"שגיאה"}. אפשר לשלוח ידנית למטה.`};
     if(r?.status==="skipped")return{c:"#8A5A00",bg:"#FFF8E8",t:`⏭ דולג: ${r.error||""}`};
