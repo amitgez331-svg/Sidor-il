@@ -150,15 +150,22 @@ const splitNamePhone = (name,phone) => {
   return p.phone&&p.name?{name:p.name,phone:p.phone}:{name:n,phone:String(phone||"").trim()};
 };
 // שורה מגיליון אקסל ← שם + טלפון, לפי שמות עמודות נפוצים (ואם אין  -  מנחשים מהתוכן)
+// גם קובץ "Google CSV" מ-Google Contacts: First/Middle/Last Name (או Given/Family Name)
+// ו-"Phone 1 - Value" ליד "Phone 1 - Label" (שבו כתוב Mobile — לא מספר). כמה מספרים בתא מופרדים ב-" ::: "
 const parseSheetRow = r => {
   const keys=Object.keys(r);
   const k=re=>keys.find(x=>re.test(String(x).trim()));
-  const phoneKey=k(/טלפון|פלאפון|נייד|סלולרי|phone|mobile|tel|cell/i);
+  const phoneKey=keys.find(x=>/טלפון|פלאפון|נייד|סלולרי|phone|mobile|tel|cell/i.test(String(x).trim())&&!/label|type|סוג/i.test(String(x)));
   const fullKey=k(/^(שם מלא|שם|name|full ?name|guest)$/i)||k(/שם מלא|full ?name/i);
-  const firstKey=k(/שם פרטי|first/i), lastKey=k(/שם משפחה|משפחה|last|surname/i);
+  const firstKey=k(/^(שם פרטי|first ?name|given ?name)$/i)||k(/שם פרטי|first|given/i);
+  const middleKey=k(/^(middle ?name|additional ?name)$/i);
+  const lastKey=k(/^(שם משפחה|last ?name|family ?name|surname)$/i)||k(/שם משפחה|משפחה|last|surname|family/i);
   const countKey=k(/כמות|מוזמנים|אורחים|מספר אורחים|count|guests|qty/i);
-  let name=fullKey?String(r[fullKey]??""):[firstKey&&r[firstKey],lastKey&&r[lastKey]].filter(Boolean).join(" ");
-  let phone=phoneKey?formatPhone(r[phoneKey]):"";
+  let name=fullKey&&String(r[fullKey]??"").trim()?String(r[fullKey]):[firstKey&&r[firstKey],middleKey&&r[middleKey],lastKey&&r[lastKey]].filter(Boolean).join(" ");
+  // כל המספרים מעמודות "Phone N - Value" (Google) — מעדיפים נייד ישראלי
+  const valueKeys=keys.filter(x=>/phone.*value/i.test(x));
+  const phones=(valueKeys.length?valueKeys:phoneKey?[phoneKey]:[]).flatMap(x=>String(r[x]??"").split(/:::|\n/)).map(s=>formatPhone(s.trim())).filter(Boolean);
+  let phone=phones.find(p=>/^05/.test(p))||phones[0]||"";
   let count=countKey?Math.min(30,Math.max(1,parseInt(r[countKey])||1)):1;
   if(name&&!phone){
     // הטלפון נכתב בתוך עמודת השם  -  מפרידים
@@ -171,6 +178,38 @@ const parseSheetRow = r => {
   }
   return {name:String(name).trim(),phone,count};
 };
+// קריאת קובץ אקסל/CSV לשורות. CSV נקרא כטקסט UTF-8 (קובץ Google Contacts בלי BOM — אחרת העברית משתבשת)
+const readSheetRows = async file => {
+  const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
+  const wb=/\.csv$/i.test(file.name)?read((await file.text()).replace(/^﻿/,""),{type:"string"}):read(await file.arrayBuffer());
+  return utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+};
+// כרטיס ייבוא מ-Google Contacts: הוראות ייצוא + בחירת הקובץ
+function GoogleContactsImport({ onFile }) {
+  return(
+    <div style={{background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:16,padding:"18px 20px",marginBottom:20,textAlign:"right"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+        <span style={{width:38,height:38,borderRadius:11,background:"#EAF2FF",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#34A853" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#EA4335" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
+        </span>
+        <div>
+          <div style={{fontSize:15,fontWeight:900,color:C.text}}>ייבוא מאנשי הקשר של Google</div>
+          <div style={{fontSize:12,color:C.muted}}>שם + נייד לכל איש קשר, בלי כפילויות</div>
+        </div>
+      </div>
+      <ol style={{margin:"0 0 14px",paddingInlineStart:20,fontSize:13,color:"#4A3D66",lineHeight:1.8}}>
+        <li>פתחו את <a href="https://contacts.google.com" target="_blank" rel="noopener noreferrer" style={{color:C.blue,fontWeight:800}}>Google Contacts</a> (אפשר לסמן רק את מי שרוצים להזמין)</li>
+        <li>לחצו על ⋮ ← <b>ייצוא</b> (Export) ← בחרו <b>Google CSV</b> ← ייצוא</li>
+        <li>העלו כאן את הקובץ שירד (contacts.csv)</li>
+      </ol>
+      <label style={{background:"#4285F4",color:"#fff",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:800,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
+        📂 העלאת קובץ מ-Google
+        <input type="file" accept=".csv" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";if(f)onFile(f);}}/>
+      </label>
+      <div style={{fontSize:11,color:C.muted,marginTop:8}}>עובד גם עם ייצוא CSV מ-Outlook ומ-iCloud</div>
+    </div>
+  );
+}
 // מכינים רשימה לשמירה: מדלגים על טלפונים שכבר קיימים (באירוע או פעמיים באותו קובץ)
 const prepareImport = (parsed,existing,eventId) => {
   const seen=new Set((existing||[]).map(g=>normPhone(g.phone)).filter(Boolean));
@@ -2582,6 +2621,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const selTable=tables.find(t=>t.id===selected);
   const seated=tables.reduce((s,t)=>s+(t.guests||[]).length,0);
   const total=seated+guests.length;
+  // ייבוא קובץ אורחים (אקסל / CSV / Google Contacts)
+  const importSheetFile=async file=>{
+    if(/\.vcf$/i.test(file.name)){alert("קובץ vCard לא נתמך. בייצוא מ-Google Contacts בחרו Google CSV.");return;}
+    setSaving(true);
+    try{
+      const rows=await readSheetRows(file);
+      const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
+      if(res.toInsert.length>0){const{error}=await sb.from("guests").insert(res.toInsert);if(error)throw error;await loadAll(true);}
+      alert(res.toInsert.length||res.dupes.length?importSummary(res):"לא נמצאו אנשי קשר עם שם בקובץ");
+    }catch(err){alert("שגיאה בקריאת הקובץ. ודאו שזה קובץ אקסל או CSV עם עמודת שם");}
+    setSaving(false);
+  };
   // הושבה אוטומטית (מתוך סידורי הושבה): עדכון אחד לכל שולחן במקום אחד לכל אורח
   const applyAutoSeating=async assignments=>{
     setSaving(true);
@@ -2825,23 +2876,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
               <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
                 📂 בחר קובץ Excel
-                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
-                  const file=e.target.files[0];if(!file)return;
-                  setSaving(true);
-                  try{
-                    const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
-                    const buf=await file.arrayBuffer();
-                    const wb=read(buf);
-                    const ws=wb.Sheets[wb.SheetNames[0]];
-                    const rows=utils.sheet_to_json(ws);
-                    const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
-                    if(res.toInsert.length>0){await sb.from("guests").insert(res.toInsert);await loadAll();}
-                    alert(importSummary(res));
-                  }catch(err){alert("שגיאה בקריאת הקובץ");}
-                  setSaving(false);
-                }}/>
+                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";if(f)importSheetFile(f);}}/>
               </label>
             </div>
+            <GoogleContactsImport onFile={importSheetFile}/>
             <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
             <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
             <textarea placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543\n..."} id="importText"
@@ -3722,23 +3760,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
             <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
               📂 בחר קובץ Excel
-              <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={async e=>{
-                const file=e.target.files[0];if(!file)return;
-                setSaving(true);
-                try{
-                  const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
-                  const buf=await file.arrayBuffer();
-                  const wb=read(buf);
-                  const ws=wb.Sheets[wb.SheetNames[0]];
-                  const rows=utils.sheet_to_json(ws);
-                  const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
-                  if(res.toInsert.length>0){await sb.from("guests").insert(res.toInsert);await loadAll();}
-                  alert(importSummary(res));
-                }catch(err){alert("שגיאה בקריאת הקובץ. וודא שיש עמודת 'שם'");}
-                setSaving(false);
-              }}/>
+              <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";if(f)importSheetFile(f);}}/>
             </label>
           </div>
+          <GoogleContactsImport onFile={importSheetFile}/>
           {/* ייבוא ידני */}
           <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
           <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
