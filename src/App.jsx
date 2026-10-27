@@ -3174,26 +3174,40 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
 
     {/* מסכי תוכן */}
-    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 54px)"}}>
+    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 54px)",gap:8,padding:8,boxSizing:"border-box",
+      background:"radial-gradient(circle at 85% 0%,rgba(240,96,158,.10),transparent 40%),radial-gradient(circle at 10% 100%,rgba(155,107,255,.10),transparent 45%),#FBF7FE"}}>
+      {/* עיצוב בסגנון המסך הראשי: כרטיסים לבנים מעוגלים, צל רך, אריחי אייקון צבעוניים */}
+      <style>{`
+        .sx-card{background:#fff;border:1px solid #EFE8F7;border-radius:20px;box-shadow:0 14px 34px -22px rgba(91,60,140,.45)}
+        .sx-guest{transition:transform .15s,box-shadow .15s,border-color .15s}
+        .sx-guest:hover{transform:translateY(-1px);border-color:${C.blueL}!important;box-shadow:0 8px 18px -12px rgba(91,60,140,.5)}
+        .sx-ictile{width:34px;height:34px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+        .sx-stat{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #EFE8F7;border-radius:12px;padding:3px 9px 3px 10px;white-space:nowrap}
+        .sx-stat .sx-ictile{width:26px;height:26px;border-radius:9px;font-size:13px}
+        .sx-stat b{font-size:14px;font-weight:900;line-height:1}
+        .sx-stat small{display:block;font-size:10px;color:${C.muted};font-weight:700}
+        @media (prefers-reduced-motion:reduce){.sx-guest{transition:none}.sx-guest:hover{transform:none}}
+      `}</style>
       {!asideOpen&&(
-        <button onClick={()=>setAsideOpen(true)} title="פתיחת רשימת האורחים" className="sx-btn"
-          style={{flexShrink:0,width:38,background:C.surface,border:"none",borderLeft:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",color:C.blue,fontWeight:900,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
-          <span>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({guests.length})</span><span>‹</span>
+        <button onClick={()=>setAsideOpen(true)} title="פתיחת רשימת האורחים" className="sx-btn sx-card"
+          style={{flexShrink:0,width:44,cursor:"pointer",fontFamily:"inherit",color:C.blue,fontWeight:900,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
+          <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({guests.length})</span><span>‹</span>
         </button>
       )}
-      <aside style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",background:C.surface,borderLeft:`1px solid ${C.border}`,flexDirection:"column",overflow:"hidden",flexShrink:0}}>
+      <aside className="sx-card" style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
         {selTable?(
           <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
             {/* כפתור חזרה  -  בולט */}
-            <div style={{padding:"10px 14px",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,flexShrink:0}}>
+            <div style={{padding:"10px 14px",background:GRAD,flexShrink:0}}>
               <button onClick={()=>setSelected(null)}
                 style={{width:"100%",background:"rgba(255,255,255,.2)",border:"2px solid rgba(255,255,255,.6)",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit",borderRadius:10,padding:"9px",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                 ← חזרה לרשימת אורחים
               </button>
             </div>
-            <div style={{padding:"12px 14px",borderBottom:`1px solid ${C.border}`,background:C.blueXL,flexShrink:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                <span style={{fontWeight:800,fontSize:15,color:C.text}}>{selTable.name}</span>
+            <div style={{padding:"12px 14px",borderBottom:`1px solid ${C.border}`,background:"linear-gradient(135deg,#FFF4F8,#F4EEFF)",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8}}>
+                <span className="sx-ictile" style={{background:GRAD,color:"#fff",fontWeight:900,fontSize:15}}>{numOf(selTable)}</span>
+                <span style={{fontWeight:800,fontSize:15,color:C.text,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{String(selTable.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${numOf(selTable)}`}</span>
                 <span style={{background:sColor(selTable)+"22",color:sColor(selTable),borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px"}}>{(selTable.guests||[]).length}/{selTable.seats}</span>
               </div>
               <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
@@ -3203,11 +3217,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
               {(selTable.guests||[]).length===0&&<p style={{color:C.muted,fontSize:13,textAlign:"center",marginTop:20}}>גרור אורחים לכאן</p>}
               {(selTable.guests||[]).map(g=>(
-                <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(selTable.id));}}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"9px 11px",marginBottom:6,cursor:"grab"}}
-                  onMouseEnter={e=>e.currentTarget.style.borderColor=C.blueL}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                  <div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{g.name[0]}</div>
+                <div key={g.id} draggable className="sx-guest" onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));e.dataTransfer.setData("fromTable",String(selTable.id));}}
+                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"9px 11px",marginBottom:7,cursor:"grab"}}>
+                  <div style={{width:32,height:32,borderRadius:11,background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>{g.name[0]}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{g.name}</div>
                     <div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap"}}>
@@ -3237,9 +3249,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
         ):(
           <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
-            <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,background:C.blueXL,flexShrink:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <span style={{fontWeight:800,fontSize:14,color:C.text}}>ממתינים להושבה</span>
+            <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,background:"linear-gradient(135deg,#FFF4F8,#F4EEFF)",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,gap:8}}>
+                <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span>
+                <span style={{fontWeight:900,fontSize:15,color:C.text}}>ממתינים להושבה</span>
                 <span style={{background:C.gold+"22",color:C.gold,borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px",marginRight:"auto",marginLeft:8}}>{guests.length}</span>
                 <button onClick={()=>setAsideOpen(false)} title="קיפול הרשימה — המפה תקבל את כל הרוחב" aria-label="קיפול רשימת האורחים"
                   style={{width:28,height:28,borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,cursor:"pointer",fontSize:15,fontWeight:900,lineHeight:1,flexShrink:0}}>›</button>
@@ -3249,13 +3262,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
               {guests.length===0&&<div style={{textAlign:"center",marginTop:30}}><div style={{fontSize:40}}>🎉</div><p style={{color:C.success,fontWeight:700,fontSize:14,marginTop:8}}>כולם מוסבים!</p></div>}
               {guests.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
-                <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"8px 11px",cursor:"grab",marginBottom:6}}
-                  onMouseEnter={e=>e.currentTarget.style.borderColor=C.blueL}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0,position:"relative"}}>
+                <div key={g.id} draggable className="sx-guest" onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
+                  style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"8px 11px",cursor:"grab",marginBottom:7}}>
+                  <div style={{width:32,height:32,borderRadius:11,background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>
                     {g.name[0]}
-                    <div style={{position:"absolute",bottom:-1,right:-1,width:10,height:10,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#CBD5E0",border:"2px solid #fff"}}/>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:C.text}}>{g.name}</div>
@@ -3273,7 +3283,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <input value={newGuest} onChange={e=>setNewGuest(e.target.value)} placeholder="שם אורח חדש..."
                   style={{flex:1,background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"9px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}
                   onKeyDown={e=>e.key==="Enter"&&addGuest()}/>
-                <button onClick={addGuest} style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:12,padding:"9px 16px",cursor:"pointer",fontSize:16,fontWeight:700}}>+</button>
+                <button onClick={addGuest} style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 16px",cursor:"pointer",fontSize:16,fontWeight:700}}>+</button>
               </div>
               <button onClick={()=>setModal("addGuest")} style={{width:"100%",background:C.blueXL,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                 ➕ הוסף עם פרטים מלאים
@@ -3282,7 +3292,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
         )}
       </aside>
-      <main style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+      <main className="sx-card" style={{flex:1,minWidth:0,overflow:"hidden",display:"flex",flexDirection:"column"}}>
         {/* zIndex 250: מעל הכותרת והתפריטים, אבל מתחת לחלונות העריכה (300) כדי שייפתחו מעל המסך המלא */}
         {view==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:250,background:"#F6F0F8",display:"flex",flexDirection:"column",direction:"rtl",fontFamily:"'Heebo',sans-serif"}:{display:"contents"}}>
           {/* ─── סרגל כלים של המפה ─── */}
@@ -3294,18 +3304,20 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             const found=q?tables.filter(t=>(t.guests||[]).some(g=>g.name.toLowerCase().includes(q))).length:0;
             const zBtn={width:30,height:30,borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"};
             return(
-              <div style={{display:"flex",alignItems:"center",gap:14,padding:"10px 16px",background:"#fff",borderBottom:`1px solid ${C.border}`,flexShrink:0,flexWrap:"wrap"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,minWidth:220}}>
-                  <div style={{fontSize:13,fontWeight:900,color:C.text,whiteSpace:"nowrap"}}>{seated}/{total} הושבו</div>
-                  <div style={{flex:1,height:8,background:"#F1EAF8",borderRadius:100,overflow:"hidden",minWidth:90}}>
-                    <div style={{position:"relative",overflow:"hidden",height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}><span className="sx-shine"/></div>
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"linear-gradient(135deg,#FFF7FA,#F7F2FF)",borderBottom:`1px solid ${C.border}`,flexShrink:0,flexWrap:"wrap"}}>
+                {/* אריחי נתונים בסגנון המסך הראשי */}
+                <div className="sx-stat" style={{minWidth:200}}>
+                  <span className="sx-ictile" style={{background:"#F1E8FF"}}>🪑</span>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{color:C.text}}>{seated}/{total}</b><small style={{display:"inline"}}>הושבו</small><span style={{marginRight:"auto",fontSize:12,fontWeight:900,color:C.blueM}}>{p}%</span></div>
+                    <div style={{height:6,background:"#F1EAF8",borderRadius:100,overflow:"hidden",marginTop:4}}>
+                      <div style={{position:"relative",overflow:"hidden",height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}><span className="sx-shine"/></div>
+                    </div>
                   </div>
-                  <span style={{fontSize:12,fontWeight:900,color:C.blueM}}>{p}%</span>
                 </div>
-                <div style={{display:"flex",gap:6,fontSize:12,fontWeight:700}}>
-                  <span style={{background:"#E9FBF4",color:C.success,borderRadius:100,padding:"4px 10px"}}>🪑 {Math.max(allSeats-seated,0)} מקומות פנויים</span>
-                  <span style={{background:"#FDECEE",color:C.danger,borderRadius:100,padding:"4px 10px"}}>{fullTables} שולחנות מלאים</span>
-                </div>
+                <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:C.success}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
+                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FDECEE"}}>🔴</span><div><b style={{color:C.danger}}>{fullTables}</b><small>שולחנות מלאים</small></div></div>
+                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{guests.length}</b><small>ממתינים</small></div></div>
                 <div style={{position:"relative",marginRight:"auto"}}>
                   <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת...?"
                     style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
