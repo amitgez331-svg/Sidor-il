@@ -1224,7 +1224,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
             <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:40}}>
               <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"18px 36px",fontSize:17}}>
-                סדרו את האולם בחינם ←
+                התחילו לסדר את האולם ←
               </button>
               <a href="#how" className="lp-btn lp-ghost" style={{padding:"18px 28px",fontSize:16}}>
                 <span style={{width:26,height:26,borderRadius:"50%",background:"#FFEFF5",color:LP.rose,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10}}>▶</span>
@@ -1342,12 +1342,12 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── PRICING ─────────────────────────────────────────────── */}
       <section id="pricing" style={{padding:"100px 6vw",background:"linear-gradient(180deg,#FFFBF7,#FFF3F7 50%,#FFFBF7)"}}>
         <div style={{maxWidth:1020,margin:"0 auto"}}>
-          {sectionTitle("מחירים","מחירים","שקופים","מתחילים בחינם, משדרגים כשהאירוע מתקרב.")}
+          {sectionTitle("מחירים","מחירים","שקופים","מחיר אחד לאירוע, ומוסיפים אוטומציה כשצריך.")}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
-              {name:"חינם",price:"₪0",desc:"תמיד",features:["הזמנה דיגיטלית","שיתוף ידני של הקישור"],cta:"התחילו בחינם",highlight:false,c:LP.sky},
-              {name:"מתקדמת",price:"₪150",desc:"לאירוע",features:["כל מה שבבסיסית","מפת סידורי הושבה מלאה","סידור הושבה ב-AI","ייבוא מוזמנים מאקסל"],cta:"אני רוצה הושבה מושלמת",highlight:true,c:LP.rose},
-              {name:"בסיסית",price:"₪50",desc:"לאירוע",features:["כל מה שבחינם","אישורי הגעה","WhatsApp אישי"],cta:"בחירה בבסיסית",highlight:false,c:LP.mint},
+              {name:"אוטומציה",price:"₪80+",desc:"לפי כמות אורחים",features:["כל מה שבבסיסית","2 סבבי WhatsApp אוטומטי","תזכורת ותודה ב-SMS"],cta:"לפרטים",highlight:false,c:LP.mint},
+              {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
+              {name:"VIP + מוקד",price:"₪250+",desc:"לפי כמות אורחים",features:["כל מה שבאוטומציה","3 סבבי שיחות ע\"י מוקד אנושי","דוח שיחות ותמיכה ייעודית"],cta:"לפרטים",highlight:false,c:LP.gold},
             ].map((pkg,i)=>(
               <div key={pkg.name} className="lp-card fu"
                 style={{transitionDelay:`${i*.1}s`,borderRadius:28,padding:"38px 30px",display:"flex",flexDirection:"column",overflow:"visible",
@@ -1394,7 +1394,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               הגיע הזמן להושיב את כולם 🪑
             </h2>
             <p style={{fontSize:18,color:"rgba(255,255,255,.95)",marginBottom:36,lineHeight:1.7,maxWidth:560,marginInline:"auto"}}>
-              פותחים אירוע בחינם, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה שכולם יאהבו.
+              פותחים אירוע, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה שכולם יאהבו.
             </p>
             <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
               <button onClick={()=>onOpenAuth("register")} className="lp-btn" style={{background:"#fff",color:"#C2397A",padding:"18px 40px",fontSize:18,boxShadow:"0 16px 40px rgba(90,20,70,.3)"}}>
@@ -1737,7 +1737,7 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
-  const hasSeating=userPackages.some(p=>["seating","sms","auto","vip","staff"].includes(p.package_id??p));
+  const hasSeating=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id??p));
   const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id??p));
   const isFreePlan=userPackages.length===0;
   const items=[
@@ -1752,8 +1752,8 @@ function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpi
       {items.map(item=>(
         <button key={item.id} onClick={()=>{
           if(item.locked){
-            if(item.id==="seating") alert("🔒 סידורי הושבה זמינים בחבילה המתקדמת ומעלה (₪150)");
-            else if(item.id==="add") alert("🔒 הגעת למגבלת 50 אורחים בחבילה החינמית. שדרג כדי להוסיף עוד.");
+            if(item.id==="seating") alert("🔒 סידורי הושבה זמינים בחבילה הבסיסית (₪100)");
+            else if(item.id==="add") alert("🔒 בלי חבילה אפשר להוסיף עד 50 אורחים. החבילה הבסיסית (₪100) פותחת הוספה ללא הגבלה.");
             return;
           }
           onChange(item.id);
@@ -2212,7 +2212,7 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
 const screenLocked=(id,userPackages)=>{
   const has=list=>userPackages.some(p=>list.includes(p.package_id??p));
   if(id==="rsvp")return !has(["basic","seating","sms","auto","vip","staff"]);
-  if(id==="seating")return !has(["seating","sms","auto","vip","staff"]);
+  if(id==="seating")return !has(["basic","seating","sms","auto","vip","staff"]); // הבסיסית (₪100) כוללת סידורי הושבה
   if(id==="sms")return !has(["sms","auto","vip"]);
   if(id==="whatsapp")return !has(["auto","vip"]);
   if(id==="ai"||id==="budget"||id==="import")return userPackages.length===0;
@@ -2808,7 +2808,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{background:"#fff",borderRadius:20,padding:24,maxWidth:360,width:"100%",direction:"rtl",textAlign:"center"}}>
               <div style={{fontSize:48,marginBottom:12}}>🔒</div>
               <div style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>הגעת למגבלת 50 אורחים</div>
-              <div style={{fontSize:13,color:"#666",marginBottom:20,lineHeight:1.6}}>בחבילה החינמית ניתן להוסיף עד 50 אורחים. שדרג לחבילה הבסיסית (₪50) כדי להוסיף ללא הגבלה.</div>
+              <div style={{fontSize:13,color:"#666",marginBottom:20,lineHeight:1.6}}>בלי חבילה ניתן להוסיף עד 50 אורחים. החבילה הבסיסית (₪100) פותחת הוספה ללא הגבלה, סידורי הושבה ואישורי הגעה.</div>
               <button onClick={()=>{setModal(null);setScreen("packages");}} style={{width:"100%",background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📦 שדרג חבילה</button>
             </div>
           </div>
@@ -4842,38 +4842,26 @@ function PackagesScreen({ event, onBack }) {
 
   const packages=[
     {
-      id:"free", name:"חינם", price:0, priceLabel:"₪0", color:"#64748B", icon:"🎁",
-      badge:null, featured:false,
-      desc:"התחל בחינם, שתף ידנית",
-      features:["✅ הזמנה דיגיטלית יפה","✅ שיתוף ידני בוואטסאפ","❌ אישורי הגעה אוטומטיים","❌ שליחת SMS","❌ WhatsApp אוטומטי","❌ סידורי הושבה"],
-    },
-    {
-      id:"basic", name:"בסיסית", price:50, priceLabel:"₪50", color:"#3182CE", icon:"💌",
-      badge:null, featured:false,
-      desc:"הזמנה + אישורי הגעה",
-      features:["✅ הזמנה דיגיטלית יפה","✅ שיתוף ידני + קישור אישי","✅ אישורי הגעה דרך WhatsApp האישי","✅ עדכון בזמן אמת","❌ שליחה אוטומטית","❌ סידורי הושבה"],
-    },
-    {
-      id:"seating", name:"מתקדמת", price:150, priceLabel:"₪150", color:C.blue, icon:"🪑",
+      id:"basic", name:"בסיסית", price:100, priceLabel:"₪100", color:C.blue, icon:"🪑",
       badge:"פופולרי", featured:true,
-      desc:"הכל + סידורי הושבה",
-      features:["✅ כל מה שבבסיסית","✅ סידורי הושבה מלאים","✅ מפה אינטראקטיבית של האולם","✅ גרירת אורחים לשולחנות","✅ פתק הושבה להדפסה","✅ AI סידור חכם"],
+      desc:"סידורי הושבה + אישורי הגעה",
+      features:["✅ סידורי הושבה מלאים: מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ אישורי הגעה עם קישור אישי לכל אורח","✅ עדכון בזמן אמת","✅ הזמנה דיגיטלית יפה"],
     },
     {
       id:"sms", name:"SMS", price:null, priceLabel:"לפי כמות", color:"#059669", icon:"📱",
       badge:"תוספת", featured:false,
-      desc:"דורש חבילה מתקדמת + ₪100",
-      note:"דורש חבילת מתקדמת (₪150). תוספת ₪100 לסידורי הושבה.",
+      desc:"תוספת לחבילה הבסיסית",
+      note:"דורש את החבילה הבסיסית (₪100).",
       smsPacks:[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]],
-      features:["✅ כל מה שבמתקדמת","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
+      features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
     },
     {
       id:"auto", name:"אוטומציה", price:null, priceLabel:"לפי כמות", color:"#25D366", icon:"💬",
       badge:"חדש", featured:false,
       desc:"WhatsApp אוטומטי + SMS",
-      note:"דורש חבילת מתקדמת (₪150). תוספת ₪100 לסידורי הושבה.",
+      note:"דורש את החבילה הבסיסית (₪100).",
       tiers:TIER5,
-      features:["✅ כל מה שבמתקדמת","✅ 2 סבבי שליחה בוואטסאפ אוטומטי","✅ תזכורת SMS לקראת האירוע","✅ הודעת תודה אחרי האירוע","✅ שליחה אוטומטית לאורחים שלא ענו"],
+      features:["✅ כל מה שבבסיסית","✅ 2 סבבי שליחה בוואטסאפ אוטומטי","✅ תזכורת SMS לקראת האירוע","✅ הודעת תודה אחרי האירוע","✅ שליחה אוטומטית לאורחים שלא ענו"],
     },
     {
       id:"staff", name:"צוות הושבה", price:1300, priceLabel:"החל מ ₪1,300", color:"#7C3AED", icon:"👥",
