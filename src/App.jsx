@@ -2049,7 +2049,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
 }
 
 // ─── MOBILE RSVP SCREEN ──────────────────────────────────────────────────────
-function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal }) {
+function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport }) {
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
   const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -2176,9 +2176,10 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
         </div>
       </div>
 
-      {/* חיפוש */}
-      <div style={{padding:"10px 16px"}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..." style={{width:"100%",border:"1px solid #e5e5e5",borderRadius:50,padding:"9px 16px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#f9f9f9"}}/>
+      {/* חיפוש + ייבוא אורחים */}
+      <div style={{padding:"10px 16px",display:"flex",gap:8}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..." style={{flex:1,minWidth:0,border:"1px solid #e5e5e5",borderRadius:50,padding:"9px 16px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#f9f9f9"}}/>
+        {onImport&&<button onClick={onImport} style={{flexShrink:0,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>📊 ייבוא</button>}
       </div>
 
       {/* טבלה */}
@@ -2814,9 +2815,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
           :<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
         )}
-        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal}/>}
+        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")}/>}
         {screen==="import"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
+            <button onClick={()=>setScreen("rsvp")} style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>→ חזרה לאישורי הגעה</button>
             <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
               <div style={{fontSize:36,marginBottom:8}}>📊</div>
               <div style={{fontSize:15,fontWeight:700,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
@@ -2896,7 +2898,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {id:"settings",icon:"📋",label:"פרטי האירוע"},
     {id:"seating",icon:"🪑",label:"סידורי הושבה"},
     {id:"rsvp",icon:"✅",label:"אישורי הגעה"},
-    {id:"import",icon:"📊",label:"ייבוא אורחים"},
     {id:"budget",icon:"💰",label:"ניהול תקציב"},
     {id:"packages",icon:"📦",label:"חבילות"},
     {id:"sms",icon:"📱",label:"הודעות SMS"},
@@ -3710,8 +3711,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
-        {screen==="rsvp"&&<DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={setGuests} setTables={setTables} onAddGuest={()=>setModal("addGuest")}/>}
+        {screen==="rsvp"&&<DesktopRsvpTable guests={guests} tables={tables} event={event} sb={sb} loadAll={loadAll} setGuests={setGuests} setTables={setTables} onAddGuest={()=>setModal("addGuest")} onImport={()=>setScreen("import")}/>}
         {screen==="import"&&<div style={{direction:"rtl"}}>
+          {/* ייבוא אורחים נפתח מתוך אישורי הגעה */}
+          <button onClick={()=>setScreen("rsvp")} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>→ חזרה לאישורי הגעה</button>
           {/* ייבוא מ-Excel */}
           <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
             <div style={{fontSize:36,marginBottom:8}}>📊</div>
@@ -4083,7 +4086,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     </div>
   );
 }
-function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTables, onAddGuest }) {
+function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTables, onAddGuest, onImport }) {
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const [search,setSearch]=useState("");
   const [editG,setEditG]=useState(null);
@@ -4190,6 +4193,10 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             style={{background:showCats?"#EBF8FF":"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             🏷️ קטגוריות
           </button>
+          {onImport&&<button onClick={onImport}
+            style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+            📊 ייבוא אורחים
+          </button>}
           <button onClick={onAddGuest}
             style={{background:"#2B6CB0",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             ➕ הוסף מוזמנת
