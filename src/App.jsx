@@ -1614,18 +1614,42 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               </div>
               <p style={{fontSize:14,color:LP.muted,lineHeight:1.8}}>פלטפורמה ישראלית לסידורי הושבה חכמים, אישורי הגעה והזמנות דיגיטליות. בנויה עבור זוגות, משפחות ומפיקי אירועים.</p>
             </div>
-            <div>
-              <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
-              <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
-                <div>📍 השושנים 30, נוף הגליל</div>
-                <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}>💬 WhatsApp</a>
-                <a href="tel:0526817102" style={{textDecoration:"none"}}>📞 052-681-7102</a>
+            {/* מפת אתר */}
+            <nav aria-label="מפת אתר" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
+              {[
+                ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["#contact","צור קשר"]]],
+                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
+                ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"]]],
+              ].map(([head,links])=>(
+                <div key={head}>
+                  <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>{head}</div>
+                  <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:9,fontSize:14}}>
+                    {links.map(([href,label,onClick])=>(
+                      <li key={label}>{href
+                        ?<a href={href} style={{color:LP.muted,textDecoration:"none"}}>{label}</a>
+                        :<button onClick={onClick} style={{background:"none",border:"none",padding:0,color:LP.muted,fontSize:14,fontFamily:"inherit",cursor:"pointer",textAlign:"right"}}>{label}</button>}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <div>
+                <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
+                <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
+                  <div>📍 השושנים 30, נוף הגליל</div>
+                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}>💬 WhatsApp</a>
+                  <a href="tel:0526817102" style={{textDecoration:"none"}}>📞 052-681-7102</a>
+                  <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}>📧 sidoril2026@gmail.com</a>
+                </div>
               </div>
-            </div>
+            </nav>
           </div>
           <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
             <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
-            <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
+            <span style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+              <a href="#/terms" style={{textDecoration:"none"}}>תנאי שימוש</a>
+              <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
+              <a href="#/accessibility" style={{textDecoration:"none"}}>הצהרת נגישות</a>
+            </span>
             <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
           </div>
         </div>
@@ -1770,6 +1794,9 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
           <p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:16}}>
             {mode==="login"?"אין חשבון? ":"יש חשבון? "}
             <span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span>
+          </p>
+          <p style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10,lineHeight:1.6}}>
+            בהרשמה או בכניסה (גם עם Google) אתם מסכימים ל<a href="#/terms" onClick={onClose} style={{color:C.blue}}>תנאי השימוש</a> ול<a href="#/privacy" onClick={onClose} style={{color:C.blue}}>מדיניות הפרטיות</a>
           </p>
         </div>
       )}
@@ -7921,41 +7948,74 @@ function AdminDashboard({ user, onLogout }) {
 }
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
-function PrivacyPage() {
+// ─── דפים משפטיים: תנאי שימוש, מדיניות פרטיות, הצהרת נגישות (#/terms, #/privacy, #/accessibility) ───
+const CONTACT_TXT=`Sidor-IL\nהשושנים 30, נוף הגליל\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102`;
+const LEGAL_PAGES={
+  terms:{title:"תנאי שימוש",updated:"אוקטובר 2026",sections:[
+    {title:"1. כללי",text:`ברוכים הבאים ל-Sidor-IL ("השירות", "אנחנו"), פלטפורמה לניהול אירועים בכתובת sidoril.com: סידורי הושבה, אישורי הגעה, הזמנות דיגיטליות, שליחת הודעות לאורחים וכלים נלווים.\n\nהשימוש בשירות, כולל הרשמה, יצירת אירוע או רכישת חבילה, מהווה הסכמה לתנאים אלה ולמדיניות הפרטיות. אם אינכם מסכימים, אנא אל תשתמשו בשירות. התנאים מנוסחים בלשון זכר מטעמי נוחות בלבד ופונים לכל המגדרים.`},
+    {title:"2. ההרשמה והחשבון",text:`• השימוש בשירות מיועד לבני 18 ומעלה.\n• יש למסור פרטים נכונים ולשמור על סודיות פרטי ההתחברות. אתם אחראים לכל פעולה שנעשית בחשבונכם.\n• בעל אירוע רשאי לשתף את האירוע עם אנשים נוספים (למשל בן/בת זוג או הורים). מי ששותף יכול לצפות ולערוך את פרטי האירוע, והאחריות על מתן הגישה היא של בעל האירוע.\n• אנו רשאים להשעות או לסגור חשבון שנעשה בו שימוש בניגוד לתנאים או לחוק.`},
+    {title:"3. השירותים והחבילות",text:`• חלק מהשירות ניתן ללא תשלום, וחלקו בחבילות בתשלום (כגון החבילה הבסיסית, הודעות SMS, הודעות WhatsApp וצוות הושבה), כמפורט בדף החבילות.\n• המחיר המחייב הוא המחיר שמוצג באתר ומאושר מולנו בעת הרכישה.\n• החבילה מופעלת לאחר אישור התשלום.\n• יתרת הודעות SMS שנרכשה משמשת לאירוע שעבורו נרכשה. הודעה נחשבת לנוצלה כשנשלחה לספק ההודעות.`},
+    {title:"4. ביטול עסקה והחזרים",text:`ביטול עסקה ייעשה בהתאם לחוק הגנת הצרכן, התשמ"א-1981 ולתקנות הגנת הצרכן (ביטול עסקה), התשע"א-2010:\n\n• ניתן לבטל רכישה בתוך 14 ימים ממועד העסקה, בהודעה בכתב (וואטסאפ או אימייל).\n• בביטול יוחזר הסכום ששולם, בניכוי דמי ביטול בשיעור 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יינתן החזר עבור חלק שכבר נוצל (למשל הודעות SMS שכבר נשלחו).`},
+    {title:"5. אחריות המשתמש לתוכן ולפרטי האורחים",text:`• אתם אחראים לכל המידע שאתם מזינים לשירות, ובכלל זה שמות וטלפונים של אורחים.\n• אתם מצהירים כי יש לכם זכות להשתמש בפרטי האורחים לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו.\n• השירות מיועד לשליחת הזמנות, תזכורות ועדכונים הנוגעים לאירוע בלבד. אין להשתמש בו לשליחת דבר פרסומת או הודעות שאינן קשורות לאירוע, ובכלל זה בניגוד לסעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982.\n• אין להעלות תוכן פוגעני, מטעה או מפר זכויות של אחרים.`},
+    {title:"6. זמינות השירות",text:`אנו עושים מאמץ שהשירות יפעל באופן רציף ותקין, אך ייתכנו תקלות, הפסקות לצורך תחזוקה או עיכובים אצל ספקים חיצוניים (כגון ספקי SMS ו-WhatsApp). מומלץ לשמור עותק של רשימת האורחים וסידור ההושבה (למשל באמצעות כפתורי ההדפסה והייצוא) לקראת יום האירוע.`},
+    {title:"7. הגבלת אחריות",text:`השירות ניתן כפי שהוא (AS IS). ככל שהדין מתיר, לא נהיה אחראים לנזק עקיף או תוצאתי הנובע מהשימוש בשירות או מחוסר היכולת להשתמש בו, ובכלל זה הודעה שלא נמסרה או עוכבה אצל ספק חיצוני. בכל מקרה, אחריותנו הכוללת לא תעלה על הסכום ששילמתם עבור השירות הרלוונטי. אין באמור כדי לגרוע מזכויות שאינן ניתנות להתניה על פי דין.`},
+    {title:"8. קניין רוחני",text:`כל הזכויות באתר, בעיצובו, בקוד ובתכנים שלנו שמורות ל-Sidor-IL. התוכן שאתם מזינים (פרטי האירוע, האורחים, תמונות ונוסחים) נשאר שלכם, ואתם מעניקים לנו רשות להשתמש בו לצורך מתן השירות בלבד.`},
+    {title:"9. שינויים בתנאים",text:`אנו רשאים לעדכן תנאים אלה מעת לעת. שינוי מהותי יפורסם באתר. המשך השימוש לאחר העדכון מהווה הסכמה לתנאים המעודכנים. עסקה שכבר בוצעה תמשיך להיות כפופה לתנאים שהיו בתוקף בעת ביצועה.`},
+    {title:"10. דין וסמכות שיפוט",text:`על תנאים אלה חלים דיני מדינת ישראל בלבד. סמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים במחוז צפון (נצרת).`},
+    {title:"11. יצירת קשר",text:CONTACT_TXT},
+  ]},
+  privacy:{title:"מדיניות פרטיות",updated:"אוקטובר 2026",sections:[
+    {title:"1. כללי",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 ולתקנות מכוחו.`},
+    {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
+    {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו.`},
+    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google, למי שבוחר בה.\n• ספק הודעות WhatsApp, כשהשירות פעיל.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל, בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
+    {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת.`},
+    {title:"6. שמירת מידע ומחיקתו",text:`המידע נשמר כל עוד החשבון פעיל או כנדרש לצורך מתן השירות ועמידה בדין. מחיקת אירוע מוחקת את פרטי האורחים והשולחנות שלו. ניתן למחוק את החשבון ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה.`},
+    {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
+    {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com. נשיב בתוך 30 ימים.`},
+    {title:"9. עוגיות ואחסון מקומי",text:`אנו משתמשים באחסון מקומי בדפדפן ובעוגיות חיוניות בלבד (שמירת ההתחברות, המסך האחרון והגדרות תצוגה ונגישות). איננו משתמשים בעוגיות פרסום או מעקב של צד שלישי.`},
+    {title:"10. קטינים",text:`פתיחת חשבון מיועדת לבני 18 ומעלה. פרטי אורחים קטינים מוזנים על ידי בעל האירוע ובאחריותו.`},
+    {title:"11. שינויים במדיניות",text:`נעדכן מדיניות זו לפי הצורך. שינוי מהותי יפורסם באתר, ותאריך העדכון האחרון מופיע בראש הדף.`},
+    {title:"12. יצירת קשר",text:CONTACT_TXT},
+  ]},
+  accessibility:{title:"הצהרת נגישות",updated:"אוקטובר 2026",sections:[
+    {title:"מחויבות לנגישות",text:`אנו ב-Sidor-IL רואים חשיבות רבה במתן שירות שוויוני לכל המשתמשים, ובכלל זה אנשים עם מוגבלות. אנו פועלים להנגיש את האתר בהתאם לחוק שוויון זכויות לאנשים עם מוגבלות, התשנ"ח-1998, לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568 המבוסס על הנחיות WCAG 2.0 ברמה AA.`},
+    {title:"מה עשינו באתר",text:`• תפריט נגישות (כפתור ♿ בפינת המסך): הגדלה והקטנה של הטקסט, ניגודיות גבוהה, גווני אפור, סמן גדול, עצירת אנימציות, גופן קריא, הדגשת קישורים וקו תחתי לקישורים.\n• מבנה דף בעברית מימין לשמאל, עם הגדרת שפה וכיוון.\n• תמיכה בניווט במקלדת וסימון פוקוס ברכיבים עיקריים.\n• תיאורים טקסטואליים לכפתורים ולתמונות עיקריים.\n• כיבוד הגדרת "הפחתת תנועה" של מערכת ההפעלה.\n• התאמה לצפייה בטלפון, בטאבלט ובמחשב.`},
+    {title:"מגבלות ידועות",text:`למרות מאמצינו, ייתכן שחלקים מהאתר עדיין אינם נגישים במלואם:\n\n• מפת האולם וגרירת אורחים לשולחנות מבוססות על גרירה בעכבר או במגע. כחלופה, ניתן לשבץ אורחים מתצוגת הרשימה ולהשתמש בהושבה האוטומטית.\n• סריקת QR בכניסה לאולם דורשת מצלמה. כחלופה, ניתן לחפש אורח לפי שם.\n• תכנים שמעלים המשתמשים עצמם (כגון תמונת הזמנה) אינם בשליטתנו.\n\nאנו ממשיכים לשפר את הנגישות באופן שוטף.`},
+    {title:"נתקלתם בבעיה?",text:`אם נתקלתם בקושי בשימוש באתר, או שיש לכם הצעה לשיפור, נשמח לשמוע ולסייע. אנא ציינו את הדף, תיאור הבעיה וסוג הדפדפן או הטכנולוגיה המסייעת.\n\nרכז/ת הנגישות של Sidor-IL:\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102\n\nנשתדל להשיב בתוך 7 ימי עבודה.`},
+    {title:"הסדרי נגישות בשירות",text:`השירות ניתן באופן מקוון בלבד, ואין קבלת קהל פיזית. ניתן לקבל סיוע טלפוני או בוואטסאפ בשימוש באתר, בהקמת האירוע ובהזנת אורחים, לרבות עבור אנשים עם מוגבלות.`},
+  ]},
+};
+const LEGAL_ROUTES={"#/terms":"terms","#/privacy":"privacy","#/accessibility":"accessibility"};
+function LegalPage({ kind }) {
+  const page=LEGAL_PAGES[kind]||LEGAL_PAGES.privacy;
+  useEffect(()=>{window.scrollTo(0,0);document.title=`${page.title} · Sidor-IL`;return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";};},[kind]);
+  const linkify=t=>t.split(/(https?:\/\/\S+|[\w.+-]+@[\w-]+\.[\w.]+)/g).map((p,i)=>/^https?:\/\//.test(p)?<a key={i} href={p} target="_blank" rel="noopener noreferrer" style={{color:C.blue}}>{p}</a>:/@/.test(p)&&/^[\w.+-]+@/.test(p)?<a key={i} href={"mailto:"+p} style={{color:C.blue}}>{p}</a>:p);
   return(
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
-      <div style={{background:"#fff",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16}}>
-        <a href="#" onClick={e=>{e.preventDefault();window.location.hash="";}} style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700,cursor:"pointer"}}>← חזור לדף הבית</a>
-        <span style={{color:"#ccc"}}>|</span>
+    <div dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
+      <header style={{background:"#fff",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+        <a href="#" onClick={e=>{e.preventDefault();window.location.hash="";}} style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700}}>→ חזרה לדף הבית</a>
+        <span style={{color:"#ccc"}} aria-hidden="true">|</span>
         <span style={{fontWeight:800,color:"#1a1a1a",fontSize:15}}>Sidor-IL</span>
-      </div>
-      <div style={{maxWidth:800,margin:"0 auto",padding:"48px 24px 80px"}}>
-        <h1 style={{fontSize:28,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>מדיניות פרטיות</h1>
-        <p style={{fontSize:13,color:"#888",marginBottom:40}}>עדכון אחרון: ינואר 2025</p>
-
-        {[
-          {title:"1. כללי",text:`Sidor-IL ("החברה", "אנחנו") מפעילה את הפלטפורמה בכתובת sidoril.com ("השירות"). מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים ומגנים על המידע שלך בעת השימוש בשירות. בשימושך בשירות, אתה מסכים לאיסוף ושימוש במידע בהתאם למדיניות זו.`},
-          {title:"2. מידע שאנו אוספים",text:`אנו אוספים את סוגי המידע הבאים:\n\n• מידע אישי: שם, כתובת אימייל, מספר טלפון בעת ההרשמה.\n• מידע על האירוע: פרטי האירוע, רשימות אורחים, פרטי אורחים שמוזנים על ידך.\n• מידע טכני: כתובת IP, סוג דפדפן, דפים שנצפו, זמני גישה.\n• מידע שימוש: אופן השימוש בתכונות השירות.`},
-          {title:"3. שימוש במידע",text:`אנו משתמשים במידע לצורך:\n\n• מתן השירות וניהול חשבונך.\n• שליחת הודעות SMS ו-WhatsApp לאורחים בשמך, בהתאם להוראותיך.\n• שיפור השירות וחווית המשתמש.\n• משלוח עדכונים חשובים על השירות.\n• עמידה בדרישות חוקיות.`},
-          {title:"4. אחסון ואבטחת מידע",text:`המידע שלך מאוחסן בשרתים מאובטחים של Supabase (AWS). אנו נוקטים באמצעי אבטחה סבירים להגנה על המידע. עם זאת, אין אנו יכולים להבטיח אבטחה מוחלטת של מידע המועבר דרך האינטרנט.`},
-          {title:"5. מידע על אורחים",text:`בעת שימוש בשירות, אתה מעלה פרטי אורחים (שמות, טלפונים). אתה מצהיר כי קיבלת את ההסכמה הנדרשת לשמירת פרטים אלה. אנו לא נשתמש בפרטי האורחים לכל מטרה מלבד מתן השירות לך. פרטי האורחים נמחקים עם מחיקת האירוע.`},
-          {title:"6. שיתוף מידע עם צדדים שלישיים",text:`אנו לא מוכרים או משכירים מידע אישי. אנו עשויים לשתף מידע עם:\n\n• ספקי שירות: Supabase (אחסון), Twilio (WhatsApp), 019 SMS - לצורך מתן השירות בלבד.\n• רשויות: אם מחויבים על פי חוק.\n\nכל הספקים כפופים להסכמי סודיות.`},
-          {title:"7. זכויותיך",text:`בהתאם לחוק הגנת הפרטיות, יש לך זכות:\n\n• לעיין במידע האישי שנשמר עליך.\n• לתקן מידע שגוי.\n• למחוק את חשבונך ואת המידע הקשור אליו.\n• לבטל הסכמה לקבלת הודעות שיווקיות.\n\nלמימוש זכויותיך, צור קשר: sidoril2026@gmail.com`},
-          {title:"8. עוגיות (Cookies)",text:`אנו משתמשים בעוגיות חיוניות לפעולת השירות. אין אנו משתמשים בעוגיות מעקב פרסומי. ניתן לחסום עוגיות בהגדרות הדפדפן, אך הדבר עלול לפגוע בפעולת השירות.`},
-          {title:"9. פרטיות קטינים",text:`השירות אינו מיועד לילדים מתחת לגיל 18. אנו לא אוספים ביודעין מידע מקטינים. אם נודע לנו שנאסף מידע מקטין, נמחק אותו מיידית.`},
-          {title:"10. שינויים במדיניות",text:`אנו עשויים לעדכן מדיניות זו מעת לעת. שינויים מהותיים יועברו בהודעה לאימייל הרשום. המשך השימוש בשירות לאחר פרסום השינויים מהווה הסכמה למדיניות המעודכנת.`},
-          {title:"11. יצירת קשר",text:`לכל שאלה בנושא פרטיות:\n\nSidor-IL\nהשושנים 30, נוף הגליל\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102`},
-        ].map(({title,text})=>(
-          <div key={title} style={{marginBottom:32}}>
+        <nav aria-label="מידע משפטי" style={{display:"flex",gap:14,marginInlineStart:"auto",fontSize:13,flexWrap:"wrap"}}>
+          {Object.entries(LEGAL_ROUTES).map(([h,k])=>(
+            <a key={k} href={h} aria-current={k===kind?"page":undefined} style={{color:k===kind?"#1a1a1a":C.muted,fontWeight:k===kind?800:600,textDecoration:"none"}}>{LEGAL_PAGES[k].title}</a>
+          ))}
+        </nav>
+      </header>
+      <main style={{maxWidth:800,margin:"0 auto",padding:"48px 24px 80px"}}>
+        <h1 style={{fontSize:28,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>{page.title}</h1>
+        <p style={{fontSize:13,color:"#888",marginBottom:40}}>עדכון אחרון: {page.updated}</p>
+        {page.sections.map(({title,text})=>(
+          <section key={title} style={{marginBottom:32}}>
             <h2 style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:10,borderRight:"3px solid "+C.blue,paddingRight:12}}>{title}</h2>
-            <p style={{fontSize:14,color:"#444",lineHeight:1.9,whiteSpace:"pre-line"}}>{text}</p>
-          </div>
+            <p style={{fontSize:14,color:"#444",lineHeight:1.9,whiteSpace:"pre-line"}}>{linkify(text)}</p>
+          </section>
         ))}
-
         <div style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 20px",marginTop:40,fontSize:13,color:C.blue,fontWeight:700}}>
-          📧 לשאלות: sidoril2026@gmail.com | 📞 052-681-7102
+          📧 לשאלות: <a href="mailto:sidoril2026@gmail.com" style={{color:C.blue}}>sidoril2026@gmail.com</a> | 📞 <a href="tel:0526817102" style={{color:C.blue}}>052-681-7102</a>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -7980,12 +8040,12 @@ function ShortLinkRedirect({ short }) {
 
 export default function App() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
-  const [showPrivacy,setShowPrivacy]=useState(window.location.hash==="#/privacy");
+  const [legal,setLegal]=useState(LEGAL_ROUTES[window.location.hash]||null);
   const [showResetPw,setShowResetPw]=useState(false);
   const [resetPw,setResetPw]=useState({newP:"",confirm:"",msg:null,loading:false});
 
   useEffect(()=>{
-    const onHash=()=>setShowPrivacy(window.location.hash==="#/privacy");
+    const onHash=()=>setLegal(LEGAL_ROUTES[window.location.hash]||null);
     window.addEventListener("hashchange",onHash);
     // זיהוי קישור שחזור סיסמה בלבד (לא כניסה עם גוגל)
     const hash=window.location.hash;
@@ -8075,7 +8135,7 @@ export default function App() {
     </>);
   }
 
-  if(showPrivacy) return <PrivacyPage/>;
+  if(legal) return <><LegalPage kind={legal}/><AccessibilityWidget/></>;
 
   // דף איפוס סיסמה
   if(showResetPw) return(
