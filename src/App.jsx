@@ -1414,7 +1414,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
               {name:"אוטומציה",price:"₪80+",desc:"לפי כמות אורחים",features:["כל מה שבבסיסית","2 סבבי WhatsApp אוטומטי","תזכורת ותודה ב-SMS"],cta:"לפרטים",highlight:false,c:LP.mint},
-              {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
+              {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","שליחה ידנית דרך קישור","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
               {name:"VIP + מוקד",price:"₪250+",desc:"לפי כמות אורחים",features:["כל מה שבאוטומציה","3 סבבי שיחות ע\"י מוקד אנושי","דוח שיחות ותמיכה ייעודית"],cta:"לפרטים",highlight:false,c:LP.gold},
             ].map((pkg,i)=>(
               <div key={pkg.name} className="lp-card fu"
@@ -2970,10 +2970,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {id:"settings",icon:"📋",label:"פרטי האירוע"},
     {id:"seating",icon:"🪑",label:"סידורי הושבה"},
     {id:"rsvp",icon:"✅",label:"אישורי הגעה"},
-    {id:"budget",icon:"💰",label:"ניהול תקציב"},
     {id:"packages",icon:"📦",label:"חבילות"},
     {id:"sms",icon:"📱",label:"הודעות SMS"},
     {id:"whatsapp",icon:"💬",label:"WhatsApp"},
+    {id:"budget",icon:"💰",label:"ניהול תקציב"},
     {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
 
@@ -4924,8 +4924,8 @@ function PackagesScreen({ event, onBack }) {
     {
       id:"basic", name:"בסיסית", price:100, priceLabel:"₪100", color:C.blue, icon:"🪑",
       badge:"פופולרי", featured:true,
-      desc:"סידורי הושבה + אישורי הגעה",
-      features:["✅ סידורי הושבה מלאים: מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ אישורי הגעה עם קישור אישי לכל אורח","✅ עדכון בזמן אמת","✅ הזמנה דיגיטלית יפה"],
+      desc:"סידורי הושבה + אישורי הגעה · שליחה ידנית דרך קישור",
+      features:["✅ סידורי הושבה מלאים: מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ אישורי הגעה עם קישור אישי לכל אורח","✅ שליחה ידנית של ההזמנה דרך קישור (בוואטסאפ האישי או בהעתקה)","✅ עדכון בזמן אמת","✅ הזמנה דיגיטלית יפה"],
     },
     {
       id:"sms", name:"SMS", price:null, priceLabel:"לפי כמות", color:"#059669", icon:"📱",
