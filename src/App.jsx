@@ -5055,7 +5055,6 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
               {/* ראש כרטיס */}
               <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}
                 style={{padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-                {pkg.badge&&<div style={{position:"absolute",fontSize:10,fontWeight:800,background:pkg.color,color:"#fff",padding:"2px 8px",borderRadius:100}}/>}
                 <div style={{width:46,height:46,borderRadius:13,background:pkg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
                   {pkg.icon}
                 </div>
