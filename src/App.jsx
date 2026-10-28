@@ -6193,12 +6193,26 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
 // byCategory: כל קטגוריה ביחד — קודם לשולחן שכבר יושבים בו אנשים מאותה קטגוריה, אחר כך לשולחן חדש.
 // cats: רק הקטגוריות האלה יושבות ביחד (null = כולן); השאר משובצים אחריהן במקומות שנשארו.
 // fillEmpty: שולחנות ריקים קודם (העדפה לשולחן ריק שהקבוצה נכנסת אליו בשלמותה), ואז הכי פחות מלאים.
-// rules: כללי הושבה [{a,b,type:"together"|"apart"}] (מזהי אורחים) — "ביחד" יושבים באותו שולחן, "בנפרד" לעולם לא
+// rules: כללי הושבה [{a,b,type:"together"|"apart"}]. כל צד הוא מזהה אורח, או "c:<קטגוריה>".
+// "בנפרד": אף אורח מצד אחד לא יושב עם אורח מהצד השני. "ביחד": אורח-אורח באותו שולחן;
+// אורח-קטגוריה = האורח מושב עם הקטגוריה; קטגוריה-קטגוריה = שתי הקטגוריות מושבות כקבוצה אחת
 function planAutoSeating(guests,tables,{byCategory=true,fillEmpty=true,cats=null,rules=[]}={}){
-  const relOf=g=>g.relation||"ללא שיוך";
+  const baseRel=g=>g.relation||"ללא שיוך";
+  const everyone=[...guests,...tables.flatMap(t=>t.guests||[])];
+  const catOf=s=>String(s).startsWith("c:")?String(s).slice(2):null;
+  const idsOf=s=>{const c=catOf(s);return c!=null?everyone.filter(g=>baseRel(g)===c).map(g=>String(g.id)):[String(s)];};
+  const over={};
+  const relOf=g=>over[String(g.id)]||baseRel(g);
   const apart={},link={};
   const pair=(m,a,b)=>{(m[a]||=new Set()).add(b);(m[b]||=new Set()).add(a);};
-  rules.forEach(r=>{const a=String(r.a),b=String(r.b);if(r.a&&r.b&&a!==b)pair(r.type==="apart"?apart:link,a,b);});
+  rules.forEach(r=>{
+    const a=String(r.a||""),b=String(r.b||"");if(!a||!b||a===b)return;
+    if(r.type==="apart"){idsOf(a).forEach(x=>idsOf(b).forEach(y=>{if(x!==y)pair(apart,x,y);}));return;}
+    const ca=catOf(a),cb=catOf(b);
+    if(ca==null&&cb==null)pair(link,a,b);
+    else if(ca!=null&&cb!=null)idsOf(b).forEach(id=>{over[id]=ca;});
+    else{const cat=ca??cb,g=ca!=null?b:a;over[g]=cat;}
+  });
   const slots=tables.map((t,i)=>{
     const rels={};(t.guests||[]).forEach(g=>{rels[relOf(g)]=(rels[relOf(g)]||0)+1;});
     return {id:t.id,name:t.name,idx:i,used:(t.guests||[]).length,free:Math.max(0,(t.seats||10)-(t.guests||[]).length),rels,members:new Set((t.guests||[]).map(g=>String(g.id)))};
@@ -6443,7 +6457,9 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
   const [rules,setRules]=useState(()=>event.settings_json?.seat_rules||[]);
   const [ruleA,setRuleA]=useState(""),[ruleB,setRuleB]=useState(""),[ruleType,setRuleType]=useState("apart");
   const byName=[...allGuests].sort((a,b)=>a.name.localeCompare(b.name,"he"));
-  const nameOf=id=>allGuests.find(g=>String(g.id)===String(id))?.name;
+  // צד בכלל: מזהה אורח או "c:<קטגוריה>"
+  const allCats=[...new Set(allGuests.map(g=>g.relation||"ללא שיוך"))].sort((a,b)=>a.localeCompare(b,"he"));
+  const nameOf=id=>{const s=String(id);if(s.startsWith("c:"))return allCats.includes(s.slice(2))?`קטגוריה "${s.slice(2)}"`:undefined;return allGuests.find(g=>String(g.id)===s)?.name;};
   const saveRules=async next=>{
     setRules(next);
     const settings={...(event.settings_json||{}),seat_rules:next};
@@ -6529,7 +6545,7 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
       {/* כללי הושבה */}
       <div style={{background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:14,padding:20,marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:800,color:"#1A202C",marginBottom:4}}>🤝 כללי הושבה</div>
-        <div style={{fontSize:12,color:"#718096",marginBottom:12}}>מי חייב לשבת ביחד ומי לא ליד מי. ההושבה האוטומטית תשמור עליהם.</div>
+        <div style={{fontSize:12,color:"#718096",marginBottom:12}}>מי חייב לשבת ביחד ומי לא ליד מי, לפי שם או לפי קטגוריה שלמה. ההושבה האוטומטית תשמור עליהם.</div>
         {rules.filter(r=>nameOf(r.a)&&nameOf(r.b)).map((r,i)=>(
           <div key={r.a+r.b} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",marginBottom:6,borderRadius:10,background:r.type==="apart"?"#FFF5F5":"#F0FFF4",border:`1px solid ${r.type==="apart"?"#FED7D7":"#C6F6D5"}`,fontSize:13}}>
             <span style={{flex:1}}><b>{nameOf(r.a)}</b> {r.type==="apart"?"🚫 לא ליד":"🤝 ביחד עם"} <b>{nameOf(r.b)}</b></span>
@@ -6537,10 +6553,11 @@ function AISeatingScreen({ event, tables, guests, onApply, onClose, saving=false
           </div>
         ))}
         <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginTop:6}}>
-          {[[ruleA,setRuleA,"אורח ראשון"],null,[ruleB,setRuleB,"אורח שני"]].map((x,i)=>x?(
+          {[[ruleA,setRuleA,"אורח / קטגוריה"],null,[ruleB,setRuleB,"אורח / קטגוריה"]].map((x,i)=>x?(
             <select key={i} value={x[0]} onChange={e=>x[1](e.target.value)} style={{flex:"1 1 140px",minWidth:0,padding:"8px 10px",borderRadius:10,border:"1.5px solid #E2E8F0",fontFamily:"inherit",fontSize:13,background:"#fff"}}>
               <option value="">{x[2]}</option>
-              {byName.map(g=><option key={g.id} value={String(g.id)}>{g.name}</option>)}
+              <optgroup label="קטגוריות">{allCats.map(c=><option key={c} value={"c:"+c}>📂 {c}</option>)}</optgroup>
+              <optgroup label="אורחים">{byName.map(g=><option key={g.id} value={String(g.id)}>{g.name}</option>)}</optgroup>
             </select>
           ):(
             <select key={i} value={ruleType} onChange={e=>setRuleType(e.target.value)} style={{flex:"0 0 auto",padding:"8px 10px",borderRadius:10,border:"1.5px solid #E2E8F0",fontFamily:"inherit",fontSize:13,fontWeight:700,background:"#fff"}}>
