@@ -76,6 +76,46 @@ const fmtDateHe=(d,opts={day:"numeric",month:"long",year:"numeric"})=>{
 };
 // שורת אירוע לשמירה: עמודת date היא מסוג date, ולכן תאריך ריק נשלח כ-null (אחרת כל השמירה נדחית)
 const eventRow=d=>("date" in d&&!d.date)?{...d,date:null}:d;
+// שדה "שם האולם" עם הצעות מהרשימה הפנימית (venue_suggestions). אפשר תמיד להקליד חופשי;
+// בחירת הצעה ממלאת גם את הכתובת (onPick)
+function VenueInput({ value, onChange, onPick, style, inputStyle, ...rest }) {
+  const [list,setList]=useState([]),[open,setOpen]=useState(false),[hi,setHi]=useState(-1);
+  const q=String(value||"").trim();
+  useEffect(()=>{
+    if(!open||q.length<2){setList([]);return;}
+    let live=true;
+    const t=setTimeout(async()=>{const{data}=await sb.rpc("venue_suggestions",{p_q:q});if(live){setList((data||[]).filter(v=>v.name!==q||v.address));setHi(-1);}},200);
+    return()=>{live=false;clearTimeout(t);};
+  },[q,open]);
+  const pick=v=>{onPick?.({name:v.name,address:v.address||""});setOpen(false);setList([]);};
+  const show=open&&list.length>0;
+  return(
+    <div style={{position:"relative",...style}}>
+      <input {...rest} value={value} autoComplete="off" role="combobox" aria-expanded={show} aria-autocomplete="list"
+        onChange={e=>{onChange(e.target.value);setOpen(true);}}
+        onFocus={e=>{setOpen(true);rest.onFocus?.(e);}}
+        onBlur={e=>{setTimeout(()=>setOpen(false),150);rest.onBlur?.(e);}}
+        onKeyDown={e=>{
+          if(!show)return;
+          if(e.key==="ArrowDown"){e.preventDefault();setHi(h=>Math.min(list.length-1,h+1));}
+          else if(e.key==="ArrowUp"){e.preventDefault();setHi(h=>Math.max(-1,h-1));}
+          else if(e.key==="Enter"&&hi>=0){e.preventDefault();pick(list[hi]);}
+          else if(e.key==="Escape")setOpen(false);
+        }}
+        style={inputStyle}/>
+      {show&&<div role="listbox" style={{position:"absolute",top:"calc(100% + 4px)",insetInlineStart:0,insetInlineEnd:0,zIndex:50,background:"#fff",border:"1.5px solid #E2E8F0",borderRadius:12,boxShadow:"0 12px 28px -12px rgba(43,29,63,.35)",overflow:"hidden",maxHeight:260,overflowY:"auto"}}>
+        {list.map((v,i)=>(
+          <div key={v.name} role="option" aria-selected={i===hi} onMouseDown={e=>{e.preventDefault();pick(v);}} onMouseEnter={()=>setHi(i)}
+            style={{padding:"9px 12px",cursor:"pointer",background:i===hi?"#F6F0FF":"#fff",borderBottom:"1px solid #F4EEFC",textAlign:"right"}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#2B1D3F"}}>📍 {v.name}</div>
+            {v.address&&<div style={{fontSize:12,color:"#8A7FA0",marginTop:1}}>{v.address}</div>}
+          </div>
+        ))}
+        <div style={{padding:"6px 12px",fontSize:11,color:"#A0AEC0",background:"#FBF9FD"}}>לא ברשימה? פשוט המשיכו להקליד</div>
+      </div>}
+    </div>
+  );
+}
 // האירועים שלי + אירועים ששיתפו איתי (event_members לפי המייל המאומת). אירוע משותף מסומן _shared
 const loadMyEvents=async(user,orderBy,asc)=>{
   const [{data:own},{data:mem}]=await Promise.all([
@@ -1824,8 +1864,8 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         </div>
 
         <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם האולם</div>
-        <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אולם הגן, תל אביב"
-          style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
+        <VenueInput value={form.venue} onChange={v=>setForm(f=>({...f,venue:v}))} onPick={v=>setForm(f=>({...f,venue:v.name,venue_address:v.address||f.venue_address}))} placeholder="אולם הגן, תל אביב"
+          style={{marginBottom:10}} inputStyle={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
 
         <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>כתובת מלאה (לניווט)</div>
         <input value={form.venue_address} onChange={e=>setForm(f=>({...f,venue_address:e.target.value}))} placeholder="רחוב הרצל 1, תל אביב"
@@ -1878,8 +1918,11 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
           ].map(([label,field,type,ph])=>(
             <div key={field} style={{marginBottom:12}}>
               <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>{label}</div>
-              <input type={type} value={editEvent[field]||""} onChange={e=>setEditEvent(ev=>({...ev,[field]:e.target.value}))} placeholder={ph}
-                style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+              {field==="venue"
+                ?<VenueInput value={editEvent.venue||""} onChange={v=>setEditEvent(ev=>({...ev,venue:v}))} onPick={v=>setEditEvent(ev=>({...ev,venue:v.name,venue_address:v.address||ev.venue_address}))} placeholder={ph}
+                  inputStyle={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                :<input type={type} value={editEvent[field]||""} onChange={e=>setEditEvent(ev=>({...ev,[field]:e.target.value}))} placeholder={ph}
+                style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>}
             </div>
           ))}
           <div style={{marginBottom:20}}>
@@ -4179,8 +4222,8 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:12}}>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>שם מקום האירוע: * <span style={{color:"#aaa",fontWeight:400}}>({(form.venue||"").length}/55)</span></div>
-            <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אלכסנדר" maxLength={55}
-              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <VenueInput value={form.venue} onChange={v=>setForm(f=>({...f,venue:v}))} onPick={v=>setForm(f=>({...f,venue:v.name.slice(0,55),venue_address:v.address||f.venue_address}))} placeholder="אלכסנדר" maxLength={55}
+              inputStyle={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>כתובת האירוע: *</div>
@@ -7292,9 +7335,11 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
               {/* אולם */}
               <div style={{marginBottom:28}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם האולם / מקום</div>
-                <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} placeholder="אולמי הגן, תל אביב"
-                  style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                {/* כאן אין שדה כתובת — הכתובת מגיעה רק מבחירת הצעה, ומתאפסת כשמשנים את השם */}
+                <VenueInput value={form.venue} onChange={v=>setForm(f=>({...f,venue:v,venue_address:""}))} onPick={v=>setForm(f=>({...f,venue:v.name,venue_address:v.address||""}))} placeholder="אולמי הגן, תל אביב"
+                  inputStyle={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                   onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
+                {form.venue_address&&<div style={{fontSize:12,color:"#888",marginTop:6}}>📍 {form.venue_address}</div>}
               </div>
 
               <button onClick={create} disabled={creating||!form.name.trim()}
@@ -7367,6 +7412,71 @@ const ALL_PACKAGES=[
 // חבילות ישנות שעוד רשומות אצל משתמשים — מוצגות רק אצל מי שיש לו, כדי שאפשר יהיה להסיר
 const LEGACY_PACKAGES={whatsapp:"WhatsApp (ישן)",vip:"VIP (ישן)",reception:"עמדת קבלת פנים (ישן)",production:"הפקת אירוע (ישן)",seating:"הושבה (ישן)"};
 
+// ניהול רשימת האולמות שמוצעים ללקוחות: הוספה ידנית, אישור מקומות מהאירועים, עריכה ומחיקה
+function AdminVenues({ card }) {
+  const [list,setList]=useState(null),[cands,setCands]=useState([]),[busy,setBusy]=useState(false),[err,setErr]=useState("");
+  const [name,setName]=useState(""),[address,setAddress]=useState(""),[q,setQ]=useState("");
+  const load=async()=>{
+    const [v,c]=await Promise.all([sb.from("venues").select("*").order("name"),sb.rpc("admin_venue_candidates")]);
+    setList(v.data||[]);setCands(c.data||[]);setErr(v.error?.message||c.error?.message||"");
+  };
+  useEffect(()=>{load();},[]);
+  const add=async(n,a)=>{
+    n=String(n||"").trim();if(!n)return;
+    setBusy(true);
+    const{error}=await sb.from("venues").insert({name:n,address:String(a||"").trim()||null});
+    setBusy(false);
+    if(error){setErr(/duplicate|unique/i.test(error.message)?`"${n}" כבר ברשימה`:error.message);return;}
+    setErr("");setName("");setAddress("");load();
+  };
+  const update=async(v,patch)=>{const{error}=await sb.from("venues").update(patch).eq("id",v.id);if(error)setErr(error.message);else load();};
+  const remove=async v=>{if(!confirm(`להסיר את "${v.name}" מהרשימה?`))return;const{error}=await sb.from("venues").delete().eq("id",v.id);if(error)setErr(error.message);else load();};
+  const inp={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 12px",fontSize:14,fontFamily:"inherit",outline:"none",minWidth:0};
+  const shown=(list||[]).filter(v=>!q.trim()||v.name.includes(q.trim())||(v.address||"").includes(q.trim()));
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:4}}>🏛️ הוספת אולם לרשימה</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>האולמות ברשימה מוצעים ללקוחות כשהם מקלידים את שם המקום, והכתובת מתמלאת לבד. לקוח תמיד יכול גם להקליד מקום שלא ברשימה.</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="שם המקום" aria-label="שם המקום" style={{...inp,flex:"1 1 180px"}}/>
+          <input value={address} onChange={e=>setAddress(e.target.value)} placeholder="כתובת מלאה (לניווט)" aria-label="כתובת" style={{...inp,flex:"2 1 240px"}}/>
+          <button onClick={()=>add(name,address)} disabled={!name.trim()||busy} className="sx-btn" style={{background:name.trim()?GRAD:"#E2E8F0",color:name.trim()?"#fff":"#999",border:"none",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:900,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>הוסף</button>
+        </div>
+        {err&&<div role="alert" style={{color:C.danger,fontSize:13,fontWeight:700,marginTop:8}}>❌ {err}</div>}
+      </div>
+
+      {cands.length>0&&<div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:4}}>💡 מקומות מהאירועים של הלקוחות ({cands.length})</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>עוד לא ברשימה. מקום שלקוח אחד בלבד הקליד מוצג רק לו, כדי לא לחשוף כתובת פרטית. הוסיפו את מה שהוא אולם אמיתי.</div>
+        {cands.map(c=>(
+          <div key={c.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderTop:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:180}}>
+              <div style={{fontWeight:800,fontSize:14}}>{c.name}</div>
+              <div style={{fontSize:12,color:C.muted}}>{c.address||"בלי כתובת"} · {c.users} לקוחות</div>
+            </div>
+            <button onClick={()=>add(c.name,c.address)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.blueL}`,color:C.blue,borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>➕ הוסף לרשימה</button>
+          </div>
+        ))}
+      </div>}
+
+      <div style={{...card,padding:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,flexWrap:"wrap"}}>
+          <div style={{flex:1,fontWeight:900,fontSize:15}}>📋 הרשימה ({(list||[]).length})</div>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש" style={{...inp,width:180}}/>
+        </div>
+        {list===null?<Spinner size={20}/>:!shown.length?<div style={{color:C.muted,fontSize:13,padding:10,textAlign:"center"}}>{list.length?"לא נמצא":"הרשימה ריקה. הוסיפו את האולמות שאתם עובדים איתם."}</div>
+          :shown.map(v=>(
+          <div key={v.id} style={{display:"flex",gap:8,padding:"7px 0",borderTop:`1px solid ${C.border}`,flexWrap:"wrap",alignItems:"center"}}>
+            <input key={"n"+v.id+v.name} defaultValue={v.name} aria-label="שם" onBlur={e=>{const n=e.target.value.trim();if(n&&n!==v.name)update(v,{name:n});}} style={{...inp,flex:"1 1 160px",fontWeight:800}}/>
+            <input key={"a"+v.id+(v.address||"")} defaultValue={v.address||""} placeholder="כתובת" aria-label="כתובת" onBlur={e=>{const a=e.target.value.trim()||null;if(a!==(v.address||null))update(v,{address:a});}} style={{...inp,flex:"2 1 220px"}}/>
+            <button onClick={()=>remove(v)} aria-label={`הסרת ${v.name}`} style={{background:"none",border:"none",color:"#A0AEC0",fontSize:15,cursor:"pointer"}}>🗑️</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 // סיסמה אקראית קריאה (בלי תווים שמתבלבלים כמו 0/O, 1/l)
 const randomPassword=()=>{const s="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";const a=crypto.getRandomValues(new Uint32Array(10));return [...a].map(n=>s[n%s.length]).join("");};
 // הודעה ללקוח עם פרטי ההתחברות (נפתחת בוואטסאפ; בוחרים למי לשלוח)
@@ -7566,7 +7676,7 @@ function AdminDashboard({ user, onLogout }) {
   const fmtDate=d=>d?new Date(d).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—";
   const card={background:"#fff",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"};
   const chip=(bg,fg)=>({background:bg,color:fg,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"});
-  const TABS=[["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["log","🧾 יומן SMS",null]];
+  const TABS=[["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -7721,6 +7831,8 @@ function AdminDashboard({ user, onLogout }) {
             ))}
             {fUsers.length===0&&<div style={{...card,padding:30,textAlign:"center",color:C.muted}}>לא נמצאו משתמשים</div>}
           </div>
+        ):tab==="venues"?(
+          <AdminVenues card={card}/>
         ):(
           <div style={{...card,padding:"8px 16px"}}>
             {txs.length===0&&<div style={{padding:30,textAlign:"center",color:C.muted}}>אין עדיין תנועות SMS</div>}
