@@ -118,7 +118,35 @@ const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith(
 // אורך מרבי להודעת SMS (אימוג'י = 2 תווים). הקישור האישי ב-SMS הוא קצר: sidoril.com/i/<קוד>
 const SMS_MAX=200;
 const SHORT_LINK_HOST="sidoril.com/i/";
-const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]];
+const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; // כמויות מהירות באדמין
+// רכישת SMS לפי כמות חופשית: מחיר להודעה × כמות
+const SMS_UNIT_PRICE=0.8, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000;
+const smsTotal=q=>Math.round(q*SMS_UNIT_PRICE*100)/100;
+const fmtShekel=n=>`₪${n.toLocaleString("he-IL",{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2})}`;
+// בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ
+function SmsQuantityPicker({ value, onChange, color=C.blue }) {
+  const clamp=v=>Math.min(SMS_BUY_MAX,Math.max(SMS_BUY_MIN,Math.round(Number(v)||SMS_BUY_MIN)));
+  const [txt,setTxt]=useState(String(value));
+  useEffect(()=>{setTxt(String(value));},[value]);
+  return(
+    <div style={{background:"#FBF8FF",border:`1.5px solid ${C.border}`,borderRadius:14,padding:"14px 16px"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+        <span style={{fontSize:13,fontWeight:800,color:C.text,flex:1}}>כמה הודעות?</span>
+        <input type="number" inputMode="numeric" min={SMS_BUY_MIN} max={SMS_BUY_MAX} value={txt} aria-label="כמות הודעות SMS"
+          onChange={e=>{setTxt(e.target.value);const n=Number(e.target.value);if(n>=SMS_BUY_MIN&&n<=SMS_BUY_MAX)onChange(Math.round(n));}}
+          onBlur={()=>{const v=clamp(txt);setTxt(String(v));onChange(v);}}
+          style={{width:110,textAlign:"center",border:`1.5px solid ${color}`,borderRadius:10,padding:"8px 6px",fontSize:17,fontWeight:900,color,outline:"none",fontFamily:"inherit",background:"#fff"}}/>
+      </div>
+      <input type="range" min={SMS_BUY_MIN} max={SMS_BUY_SLIDER_MAX} step={50} value={Math.min(value,SMS_BUY_SLIDER_MAX)} aria-label="מד כמות הודעות"
+        onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:color,cursor:"pointer",direction:"ltr"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>{value.toLocaleString()} הודעות × {fmtShekel(SMS_UNIT_PRICE)}</span>
+        <span style={{fontSize:18,fontWeight:900,color}}>סה״כ {fmtShekel(smsTotal(value))}</span>
+      </div>
+    </div>
+  );
+}
 const findByPhone = (list,phone,exceptId) => { const n=normPhone(phone); return n?(list||[]).find(g=>g.id!==exceptId&&normPhone(g.phone)===n):null; };
 
 // ─── שמירת אורח ───────────────────────────────────────────────────────────────
@@ -4928,11 +4956,11 @@ function PackagesScreen({ event, onBack }) {
       features:["✅ סידורי הושבה מלאים: מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ אישורי הגעה עם קישור אישי לכל אורח","✅ שליחה ידנית של ההזמנה דרך קישור (בוואטסאפ האישי או בהעתקה)","✅ עדכון בזמן אמת","✅ הזמנה דיגיטלית יפה"],
     },
     {
-      id:"sms", name:"SMS", price:null, priceLabel:"לפי כמות", color:"#059669", icon:"📱",
+      id:"sms", name:"SMS", price:null, priceLabel:`${fmtShekel(SMS_UNIT_PRICE)} להודעה`, color:"#059669", icon:"📱",
       badge:"תוספת", featured:false,
-      desc:"תוספת לחבילה הבסיסית",
+      desc:"תוספת לחבילה הבסיסית · בוחרים כמות",
       note:"דורש את החבילה הבסיסית (₪100).",
-      smsPacks:[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]],
+      smsPicker:true,
       features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
     },
     {
@@ -4961,7 +4989,8 @@ function PackagesScreen({ event, onBack }) {
   const handleBuy=(pkg)=>{
     if(pkg.id==="free") return;
     let msg=`לרכישת חבילת "${pkg.name}"`;
-    if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
+    if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)} - סה"כ ${fmtShekel(smsTotal(q))}`;}
+    else if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
     else if(pkg.price) msg+=` - ₪${pkg.price}`;
     window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
   };
@@ -5046,20 +5075,10 @@ function PackagesScreen({ event, onBack }) {
                     </div>
                   )}
 
-                  {/* בחירת כמות SMS */}
-                  {pkg.smsPacks&&(
+                  {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
+                  {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>בחר כמות SMS:</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-                        {pkg.smsPacks.map(([sms,price])=>(
-                          <div key={sms} onClick={e=>{e.stopPropagation();setSelectedTier(selectedTier?.[0]===sms?null:[sms,price]);}}
-                            style={{border:`1.5px solid ${selectedTier?.[0]===sms?pkg.color:"#E2E8F0"}`,borderRadius:10,padding:"8px 4px",textAlign:"center",cursor:"pointer",background:selectedTier?.[0]===sms?pkg.color+"11":"#fff"}}>
-                            <div style={{fontSize:14,fontWeight:800,color:pkg.color}}>{sms.toLocaleString()}</div>
-                            <div style={{fontSize:9,color:"#888",marginBottom:2}}>SMS</div>
-                            <div style={{fontSize:12,fontWeight:700,color:"#333"}}>₪{price}</div>
-                          </div>
-                        ))}
-                      </div>
+                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} onChange={q=>setSelectedTier([q,smsTotal(q)])}/>
                     </div>
                   )}
 
@@ -5070,14 +5089,14 @@ function PackagesScreen({ event, onBack }) {
                     </div>
                   ):(
                     <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}}
-                      disabled={!!(pkg.tiers||pkg.smsPacks)&&!selectedTier}
-                      style={{width:"100%",background:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"#E2E8F0":`linear-gradient(135deg,${pkg.color},${pkg.color}CC)`,
-                        color:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"#999":"#fff",
+                      disabled={!!pkg.tiers&&!selectedTier}
+                      style={{width:"100%",background:pkg.tiers&&!selectedTier?"#E2E8F0":`linear-gradient(135deg,${pkg.color},${pkg.color}CC)`,
+                        color:pkg.tiers&&!selectedTier?"#999":"#fff",
                         border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,
-                        cursor:(pkg.tiers||pkg.smsPacks)&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
+                        cursor:pkg.tiers&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      {(pkg.tiers||pkg.smsPacks)&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
-                      {selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                      {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
+                      {pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
                     </button>
                   )}
                 </div>
@@ -5371,6 +5390,7 @@ function SMSScreen({ event, guests, tables=[] }) {
   const hasBalance=smsBalance===null||smsBalance>=totalSmsNeeded;
 
   // רכישה: נוצרת בקשה; היתרה נטענת אחרי שהתשלום מאושר באדמין
+  const [buyQty,setBuyQty]=useState(300);
   const buyPackage=(amount,price)=>setBuyPack({amount,price});
   const confirmPurchase=async()=>{
     const{amount,price}=buyPack;
@@ -5475,7 +5495,7 @@ function SMSScreen({ event, guests, tables=[] }) {
             <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"24px 22px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
               <div style={{fontSize:40,marginBottom:6}}>📱</div>
               <div style={{fontSize:19,fontWeight:900,color:C.text}}>{buyPack.amount} הודעות SMS</div>
-              <div style={{fontSize:28,fontWeight:900,background:GRAD,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",margin:"4px 0 12px"}}>₪{buyPack.price}</div>
+              <div style={{fontSize:28,fontWeight:900,background:GRAD,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",margin:"4px 0 12px"}}>{fmtShekel(Number(buyPack.price))}</div>
               <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:16,textAlign:"right",background:C.blueXL,borderRadius:12,padding:"10px 12px"}}>
                 1. לחיצה על "שלח בקשה" פותחת וואטסאפ עם הפרטים<br/>
                 2. נשלח לך פרטי תשלום (Bit / העברה)<br/>
@@ -5488,18 +5508,11 @@ function SMSScreen({ event, guests, tables=[] }) {
             </div>
           </div>
         )}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-          {SMS_PACKS.map(([amt,price])=>(
-            <div key={amt} onClick={()=>buyPackage(amt,price)}
-              style={{border:`1.5px solid ${C.border}`,borderRadius:12,padding:"12px 8px",textAlign:"center",cursor:"pointer",background:C.bg,transition:"all .15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.blueM;e.currentTarget.style.background=C.blueXL;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.bg;}}>
-              <div style={{fontSize:18,fontWeight:900,color:C.blue}}>{amt}</div>
-              <div style={{fontSize:9,color:C.muted,marginBottom:4}}>הודעות</div>
-              <div style={{fontSize:13,fontWeight:800,color:C.text}}>₪{price}</div>
-            </div>
-          ))}
-        </div>
+        <SmsQuantityPicker value={buyQty} onChange={setBuyQty}/>
+        <button onClick={()=>buyPackage(buyQty,smsTotal(buyQty))} className="sx-btn sx-btn-primary"
+          style={{width:"100%",marginTop:10,background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
+          🛒 רכישת {buyQty.toLocaleString()} הודעות · {fmtShekel(smsTotal(buyQty))}
+        </button>
         <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
           💳 תשלום ב-Bit או בהעברה · ההודעות נטענות אחרי אישור התשלום
         </div>
