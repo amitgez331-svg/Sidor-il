@@ -4155,12 +4155,12 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
   return(
     <div style={{direction:"rtl",padding:"20px 16px",width:"100%",boxSizing:"border-box"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:24,position:"sticky",top:0,zIndex:5,background:C.bg,padding:"8px 0"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:24}}>
         <div>
           <div style={{fontSize:22,fontWeight:900,color:"#1A202C"}}>פרטי האירוע שלכם</div>
           <div style={{fontSize:13,color:"#718096"}}>כל שינוי נשמר אוטומטית</div>
         </div>
-        {/* מצב השמירה (הכותרת דביקה, אז הוא נשאר גלוי גם בגלילה) */}
+        {/* מצב השמירה */}
         <div role="status" aria-live="polite" style={{flexShrink:0}}>
           {saveErr
             ?<button onClick={save} title={saveErr} style={{background:"#FFF5F5",color:"#C53030",border:"1.5px solid #FEB2B2",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>⚠️ לא נשמר · נסו שוב</button>
