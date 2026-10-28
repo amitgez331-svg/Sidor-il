@@ -154,12 +154,13 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
       {/* החבילה הבסיסית: ✓ מסומן אוטומטית ומוסיף ₪100 (אלא אם כבר נרכשה) */}
       {onBaseOn&&<div style={{marginTop:10,background:baseOwned?"#F0FFF4":baseOn?"#F4EEFC":"#fff",border:`1.5px solid ${baseOwned?"#9AE6B4":baseOn?C.blueL:C.border}`,borderRadius:12,padding:"10px 12px"}}>
-        <label style={{display:"flex",alignItems:"center",gap:8,cursor:baseOwned?"default":"pointer",fontSize:13,fontWeight:800,color:C.text}}>
-          <input type="checkbox" checked={baseOwned||!!baseOn} disabled={baseOwned} onChange={e=>onBaseOn(e.target.checked)} style={{width:18,height:18,accentColor:C.blueM}}/>
+        {/* חובה: אם הבסיסית עוד לא נרכשה היא נוספת (₪100) ואי אפשר לבטל; אם כבר נרכשה — לא מחויבים */}
+        <label style={{display:"flex",alignItems:"center",gap:8,cursor:"default",fontSize:13,fontWeight:800,color:C.text}}>
+          <input type="checkbox" checked disabled readOnly style={{width:18,height:18,accentColor:baseOwned?C.success:C.blueM}}/>
           🪑 חבילה בסיסית <span style={{fontWeight:600,color:C.muted,fontSize:12}}>(סידורי הושבה + אישורי הגעה)</span>
           <span style={{marginRight:"auto",fontWeight:900,color:baseOwned?C.success:C.blue}}>{baseOwned?"✓ כבר ברשותך":`+${fmtShekel(BASIC_PRICE)}`}</span>
         </label>
-        {!baseOwned&&!baseOn&&<div style={{fontSize:11,color:"#B45309",marginTop:6,fontWeight:700}}>⚠️ שליחת הודעות דורשת את החבילה הבסיסית</div>}
+        {!baseOwned&&<div style={{fontSize:11,color:C.muted,marginTop:6,fontWeight:700}}>נוספת אוטומטית כי עוד לא נרכשה · חד-פעמי</div>}
       </div>}
       {/* תוספת מוקד מתקשר */}
       {onCallOn&&<div style={{marginTop:10,background:callOn?"#FFFBEB":"#fff",border:`1.5px solid ${callOn?"#F6C26B":C.border}`,borderRadius:12,padding:"10px 12px"}}>
@@ -4986,11 +4987,10 @@ function ContactsScreen({ event, onAdd }) {
 
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
 function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
-  // החבילה הבסיסית: ✓ מסומן אוטומטית אם עוד לא נרכשה (₪100), אפשר לבטל את הסימון
+  // החבילה הבסיסית: נוספת אוטומטית (₪100) רק אם עוד לא נרכשה
   const baseOwned=hasBasicPkg(userPackages);
-  const [baseOn,setBaseOn]=useState(!baseOwned);
-  useEffect(()=>{setBaseOn(!baseOwned);},[baseOwned]);
-  const smsBase=!baseOwned&&baseOn?BASIC_PRICE:0;
+  const baseOn=!baseOwned, setBaseOn=()=>{}; // תמיד: ₪100 רק אם הבסיסית עוד לא נרכשה
+  const smsBase=baseOwned?0:BASIC_PRICE;
   const waDefault=Math.max(50,Math.ceil((recordCount||100)/10)*10); // ברירת מחדל: מספר הרשומות באירוע
   // תוספת מוקד מתקשר לכל חבילה (sms / auto) + מספר הרשומות למוקד ב-SMS
   const [callOn,setCallOn]=useState({}), [callRecs,setCallRecs]=useState(waDefault);
@@ -5343,11 +5343,10 @@ function RecipientPicker({ withPhone, value, onChange }) {
 }
 
 function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
-  // החבילה הבסיסית: ✓ מסומן אוטומטית אם עוד לא נרכשה (₪100), אפשר לבטל את הסימון
+  // החבילה הבסיסית: נוספת אוטומטית (₪100) רק אם עוד לא נרכשה
   const baseOwned=hasBasicPkg(userPackages);
-  const [baseOn,setBaseOn]=useState(!baseOwned);
-  useEffect(()=>{setBaseOn(!baseOwned);},[baseOwned]);
-  const smsBase=!baseOwned&&baseOn?BASIC_PRICE:0;
+  const baseOn=!baseOwned, setBaseOn=()=>{}; // תמיד: ₪100 רק אם הבסיסית עוד לא נרכשה
+  const smsBase=baseOwned?0:BASIC_PRICE;
   const ew=eventWords(event);
   const groomName = String(event.groom_name||"").trim();
   const brideName = String(event.bride_name||"").trim();
