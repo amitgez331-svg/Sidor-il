@@ -6730,31 +6730,28 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)",position:"relative",overflowX:"hidden"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(155,107,255,.18)!important;transform:translateY(-3px)!important;}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(155,107,255,.18)!important;transform:translateY(-3px)!important;} @media(max-width:600px){.ev-top{padding:0 14px!important}.ev-wrap{padding:20px 14px!important}.ev-hero{flex-direction:column;align-items:stretch!important;gap:18px;padding:24px 20px!important}.ev-hero button{width:100%;justify-content:center}}`}</style>
 
       {/* TOP NAV */}
-      <header style={{background:"rgba(255,255,255,.7)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
+      <header className="ev-top" style={{background:"rgba(255,255,255,.7)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {onBackToLanding&&<button onClick={onBackToLanding} className="sx-btn"
             style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
             → דף הבית
           </button>}
           <div style={{width:32,height:32,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
-          <span style={{fontWeight:900,fontSize:18,color:"#2B1D3F"}}>Sidor-IL</span>
+          <span style={{fontWeight:900,fontSize:18,color:"#2B1D3F",whiteSpace:"nowrap"}}>Sidor-IL</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:13,color:"#888"}}>{user.email}</div>
-          <button onClick={onLogout}
-            style={{background:"#FFF0F0",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
-            התנתק ←
-          </button>
-        </div>
+        <button onClick={onLogout} title={user.email}
+          style={{background:"#FFF0F0",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
+          התנתק ←
+        </button>
       </header>
 
-      <div style={{maxWidth:1100,margin:"0 auto",padding:"40px 24px"}}>
+      <div className="ev-wrap" style={{maxWidth:1100,margin:"0 auto",padding:"40px 24px"}}>
 
         {/* כותרת */}
-        <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:24,padding:"32px 40px",marginBottom:36,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 32px rgba(155,107,255,.25)",animation:"fadeUp .5s ease both"}}>
+        <div className="ev-hero" style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:24,padding:"32px 40px",marginBottom:36,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 32px rgba(155,107,255,.25)",animation:"fadeUp .5s ease both"}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
               <span style={{background:"rgba(255,255,255,.15)",borderRadius:100,padding:"4px 12px",fontSize:12,color:"rgba(255,255,255,.9)",fontWeight:600}}>⚙️ ניהול האירועים</span>
