@@ -123,18 +123,21 @@ const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; /
 // רכישה ראשונה (אין עדיין חבילה בסיסית ומעלה) מוסיפה את מחיר החבילה הבסיסית — SMS דורש אותה
 const SMS_UNIT_PRICE=0.5, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000, BASIC_PRICE=100;
 const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff"].includes(p?.package_id??p));
-const smsTotal=(q,base=0)=>Math.round(q*SMS_UNIT_PRICE*100)/100+base;
+const smsTotal=(q,base=0,unit=SMS_UNIT_PRICE)=>Math.round(q*unit*100)/100+base;
+// חבילת הודעות WhatsApp: 4 סבבים אוטומטיים, מחיר לפי רשומה (אורח / משפחה עם טלפון אחד)
+const WA_RECORD_PRICE=1.8;
+const WA_ROUNDS=["סבב 1 · הזמנה ובקשה לאישור הגעה","סבב 2 · תזכורת למי שעוד לא אישר","סבב 3 · ביום האירוע (עם מספר השולחן)","סבב 4 · תודה אחרי האירוע"];
 const fmtShekel=n=>`₪${n.toLocaleString("he-IL",{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2})}`;
 // בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ (כולל החבילה הבסיסית ברכישה ראשונה)
-function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0 }) {
+function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice=SMS_UNIT_PRICE, unitWord="הודעות", question="כמה הודעות?" }) {
   const clamp=v=>Math.min(SMS_BUY_MAX,Math.max(SMS_BUY_MIN,Math.round(Number(v)||SMS_BUY_MIN)));
   const [txt,setTxt]=useState(String(value));
   useEffect(()=>{setTxt(String(value));},[value]);
   return(
     <div style={{background:"#FBF8FF",border:`1.5px solid ${C.border}`,borderRadius:14,padding:"14px 16px"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-        <span style={{fontSize:13,fontWeight:800,color:C.text,flex:1}}>כמה הודעות?</span>
-        <input type="number" inputMode="numeric" min={SMS_BUY_MIN} max={SMS_BUY_MAX} value={txt} aria-label="כמות הודעות SMS"
+        <span style={{fontSize:13,fontWeight:800,color:C.text,flex:1}}>{question}</span>
+        <input type="number" inputMode="numeric" min={SMS_BUY_MIN} max={SMS_BUY_MAX} value={txt} aria-label={`כמות ${unitWord}`}
           onChange={e=>{setTxt(e.target.value);const n=Number(e.target.value);if(n>=SMS_BUY_MIN&&n<=SMS_BUY_MAX)onChange(Math.round(n));}}
           onBlur={()=>{const v=clamp(txt);setTxt(String(v));onChange(v);}}
           style={{width:110,textAlign:"center",border:`1.5px solid ${color}`,borderRadius:10,padding:"8px 6px",fontSize:17,fontWeight:900,color,outline:"none",fontFamily:"inherit",background:"#fff"}}/>
@@ -144,14 +147,14 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0 }) {
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
       <div style={{marginTop:10,background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:5}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
-          <span>{value.toLocaleString()} הודעות × {fmtShekel(SMS_UNIT_PRICE)}</span><span>{fmtShekel(smsTotal(value))}</span>
+          <span>{value.toLocaleString()} {unitWord} × {fmtShekel(unitPrice)}</span><span>{fmtShekel(smsTotal(value,0,unitPrice))}</span>
         </div>
         {baseFee>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
           <span>➕ חבילה בסיסית (רכישה ראשונה, חד-פעמי)</span><span>{fmtShekel(baseFee)}</span>
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:baseFee>0?`1px dashed ${C.border}`:"none",paddingTop:baseFee>0?6:0}}>
           <span style={{fontSize:13,fontWeight:800,color:C.text}}>סה״כ לתשלום</span>
-          <span style={{fontSize:18,fontWeight:900,color}}>{fmtShekel(smsTotal(value,baseFee))}</span>
+          <span style={{fontSize:18,fontWeight:900,color}}>{fmtShekel(smsTotal(value,baseFee,unitPrice))}</span>
         </div>
       </div>
     </div>
@@ -1451,7 +1454,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           {sectionTitle("מחירים","מחירים","שקופים","מחיר אחד לאירוע, ומוסיפים הודעות WhatsApp כשצריך.")}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
-              {name:"הודעות WhatsApp",price:"₪80+",desc:"לפי כמות אורחים",features:["כל מה שבבסיסית","2 סבבי WhatsApp אוטומטי","תזכורת ותודה ב-SMS"],cta:"לפרטים",highlight:false,c:LP.mint},
+              {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","תודה אחרי האירוע"],cta:"לפרטים",highlight:false,c:LP.mint},
               {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","שליחה ידנית דרך קישור","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
               {name:"VIP + מוקד",price:"₪250+",desc:"לפי כמות אורחים",features:["כל מה שבהודעות WhatsApp","3 סבבי שיחות ע\"י מוקד אנושי","דוח שיחות ותמיכה ייעודית"],cta:"לפרטים",highlight:false,c:LP.gold},
             ].map((pkg,i)=>(
@@ -2966,7 +2969,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             </button>
           </div>
         )}
-        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} onBack={()=>setScreen("home")}/>}
+        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} recordCount={guests.length+tables.reduce((n,t)=>n+(t.guests||[]).length,0)} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {modal==="locked"&&(
@@ -3813,7 +3816,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {/* שאר המסכים בדסקטופ */}
     {screen!=="home"&&screen!=="seating"&&(
       <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 24px",boxSizing:"border-box"}}>
-        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} onBack={()=>setScreen("home")}/>}
+        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} recordCount={guests.length+tables.reduce((n,t)=>n+(t.guests||[]).length,0)} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
@@ -4951,12 +4954,12 @@ function ContactsScreen({ event, onAdd }) {
 }
 
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
-function PackagesScreen({ event, onBack, userPackages=[] }) {
+function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
   const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
+  const waDefault=Math.max(50,Math.ceil((recordCount||100)/10)*10); // ברירת מחדל: מספר הרשומות באירוע
   const [selectedPkg,setSelectedPkg]=useState(null);
   const [selectedTier,setSelectedTier]=useState(null); // לחבילות עם מחיר לפי כמות
 
-  const TIER5=[["עד 50",80],["עד 100",120],["עד 150",180],["עד 200",240],["עד 250",280],["עד 300",340],["עד 350",390],["עד 400",430],["עד 450",480],["עד 500",520],["עד 550",560],["עד 600",600],["עד 650",630],["עד 700",660],["עד 750",690],["עד 800",720]];
   const TIER6=[["עד 100",250],["עד 150",370],["עד 200",480],["עד 250",590],["עד 300",690],["עד 350",790],["עד 400",880],["עד 450",970],["עד 500",1050],["עד 550",1130],["עד 600",1200],["עד 650",1300],["עד 700",1400],["עד 750",1500],["עד 800",1600]];
 
   const packages=[
@@ -4975,12 +4978,12 @@ function PackagesScreen({ event, onBack, userPackages=[] }) {
       features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
     },
     {
-      id:"auto", name:"הודעות WhatsApp", price:null, priceLabel:"לפי כמות", color:"#25D366", icon:"💬",
-      badge:"חדש", featured:false,
-      desc:"WhatsApp אוטומטי + SMS",
-      note:"דורש את החבילה הבסיסית (₪100).",
-      tiers:TIER5,
-      features:["✅ כל מה שבבסיסית","✅ 2 סבבי שליחה בוואטסאפ אוטומטי","✅ תזכורת SMS לקראת האירוע","✅ הודעת תודה אחרי האירוע","✅ שליחה אוטומטית לאורחים שלא ענו"],
+      id:"auto", name:"הודעות WhatsApp", price:null, priceLabel:`${fmtShekel(WA_RECORD_PRICE)} לרשומה`, color:"#25D366", icon:"💬",
+      badge:"4 סבבים", featured:false,
+      desc:"4 הודעות WhatsApp אוטומטיות לכל רשומה",
+      note:"דורש את החבילה הבסיסית (₪100). רשומה = אורח או משפחה עם מספר טלפון אחד.",
+      waPicker:true,
+      features:["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r)],
     },
     {
       id:"staff", name:"צוות הושבה", price:1300, priceLabel:"החל מ ₪1,300", color:"#7C3AED", icon:"👥",
@@ -5000,7 +5003,8 @@ function PackagesScreen({ event, onBack, userPackages=[] }) {
   const handleBuy=(pkg)=>{
     if(pkg.id==="free") return;
     let msg=`לרכישת חבילת "${pkg.name}"`;
-    if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase))}`;}
+    if(pkg.waPicker){const q=selectedTier?.[0]||waDefault;msg+=` - ${q.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (4 סבבים)${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase,WA_RECORD_PRICE))}`;}
+    else if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase))}`;}
     else if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
     else if(pkg.price) msg+=` - ₪${pkg.price}`;
     window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
@@ -5086,6 +5090,13 @@ function PackagesScreen({ event, onBack, userPackages=[] }) {
                     </div>
                   )}
 
+                  {/* הודעות WhatsApp: מד + כמות רשומות × 1.8, 4 סבבים */}
+                  {pkg.waPicker&&(
+                    <div style={{marginBottom:14}}>
+                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
+                        onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
+                    </div>
+                  )}
                   {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
                   {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
@@ -5107,7 +5118,7 @@ function PackagesScreen({ event, onBack, userPackages=[] }) {
                         cursor:pkg.tiers&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                       {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
-                      {pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300,smsBase))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                      {pkg.waPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||waDefault,smsBase,WA_RECORD_PRICE))}`:pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300,smsBase))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
                     </button>
                   )}
                 </div>
@@ -5799,7 +5810,7 @@ function WhatsAppScreen({ event, guests }) {
 
       <div style={{background:"#FFF8E1",border:"1px solid #FDE68A",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#B45309",display:"flex",gap:8,alignItems:"flex-start"}}>
         <span style={{fontSize:16,flexShrink:0}}>ℹ️</span>
-        <span>מחיר החבילה נקבע לפי <strong>מספר האורחים באירוע</strong> ולא לפי כמות הודעות. בחר את הטווח המתאים לגודל האירוע שלך.</span>
+        <span>מחיר החבילה נקבע לפי <strong>מספר הרשומות באירוע</strong> (אורח או משפחה עם טלפון אחד) ולא לפי כמות הודעות: {fmtShekel(WA_RECORD_PRICE)} לרשומה כולל 4 סבבים.</span>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
@@ -5807,8 +5818,8 @@ function WhatsAppScreen({ event, guests }) {
           style={{background:"#fff",border:"2px solid #25D366",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(37,211,102,.15)"}}>
           <div style={{fontSize:36,marginBottom:10}}>💬</div>
           <div style={{fontSize:15,fontWeight:900,color:"#075E54",marginBottom:6}}>הודעות WhatsApp</div>
-          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>2 סבבי שליחה אוטומטית<br/>SMS תזכורת + תודה</div>
-          <div style={{fontSize:12,fontWeight:700,color:"#25D366",background:"#F0FFF4",borderRadius:8,padding:"4px 0"}}>החל מ ₪80</div>
+          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>4 סבבי שליחה אוטומטית<br/>הזמנה · תזכורת · יום האירוע · תודה</div>
+          <div style={{fontSize:12,fontWeight:700,color:"#25D366",background:"#F0FFF4",borderRadius:8,padding:"4px 0"}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה</div>
         </div>
         <div onClick={()=>setWaPkg("vip")}
           style={{background:"#fff",border:"2px solid #B45309",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(180,83,9,.15)"}}>
@@ -5823,7 +5834,7 @@ function WhatsAppScreen({ event, guests }) {
       <div style={{background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
         <div style={{fontSize:12,color:"#555",fontWeight:700,marginBottom:8}}>ההבדל בין החבילות:</div>
         <div style={{fontSize:12,color:"#666",lineHeight:1.9}}>
-          💬 <strong>הודעות WhatsApp</strong> - שליחה אוטומטית לכל האורחים, SMS תזכורת ותודה<br/>
+          💬 <strong>הודעות WhatsApp</strong> - 4 סבבים אוטומטיים: הזמנה לאישור הגעה, תזכורת למי שלא אישר, ביום האירוע ותודה אחרי<br/>
           👑 <strong>VIP + מוקד</strong> - כנ"ל + נציגים אנושיים מתקשרים לכל אורח שלא ענה
         </div>
       </div>
@@ -5832,12 +5843,12 @@ function WhatsAppScreen({ event, guests }) {
       <div style={{background:"#fff",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
         <div style={{fontSize:13,fontWeight:800,color:"#1a1a1a",marginBottom:12}}>לא רכשת עדיין?</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת הודעות WhatsApp")}`}
+          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת הודעות WhatsApp (4 סבבים, ₪1.8 לרשומה)")}`}
             target="_blank" rel="noopener"
             style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
             <div>
               <div style={{fontSize:13,fontWeight:800,color:"#075E54"}}>💬 הודעות WhatsApp</div>
-              <div style={{fontSize:11,color:"#555"}}>החל מ ₪80</div>
+              <div style={{fontSize:11,color:"#555"}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה · 4 סבבים</div>
             </div>
             <div style={{fontSize:12,fontWeight:700,color:"#25D366"}}>לרכישה ←</div>
           </a>
