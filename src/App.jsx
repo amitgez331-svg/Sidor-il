@@ -134,7 +134,8 @@ const fmtShekel=n=>`₪${n.toLocaleString("he-IL",{minimumFractionDigits:Number.
 // בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ (כולל החבילה הבסיסית ברכישה ראשונה)
 // callOn/onCallOn: תוספת מוקד מתקשר. callRecords: כמה רשומות למוקד (ב-WhatsApp = הכמות עצמה, ב-SMS נבחר בנפרד)
 const pickerTotal=({value,baseFee=0,unitPrice=SMS_UNIT_PRICE,callOn=false,callRecords})=>smsTotal(value,baseFee,unitPrice)+(callOn?callTotal(callRecords??value):0);
-function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice=SMS_UNIT_PRICE, unitWord="הודעות", question="כמה הודעות?", callOn=false, onCallOn, callRecords, onCallRecords }) {
+// baseOn/onBaseOn: סימון ✓ לחבילה הבסיסית (₪100, מסומן אוטומטית ברכישה ראשונה). baseOwned: כבר ברשות הלקוח
+function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice=SMS_UNIT_PRICE, unitWord="הודעות", question="כמה הודעות?", callOn=false, onCallOn, callRecords, onCallRecords, baseOn, onBaseOn, baseOwned=false }) {
   const clamp=v=>Math.min(SMS_BUY_MAX,Math.max(SMS_BUY_MIN,Math.round(Number(v)||SMS_BUY_MIN)));
   const [txt,setTxt]=useState(String(value));
   useEffect(()=>{setTxt(String(value));},[value]);
@@ -151,6 +152,15 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice
       <input type="range" min={SMS_BUY_MIN} max={SMS_BUY_SLIDER_MAX} step={50} value={Math.min(value,SMS_BUY_SLIDER_MAX)} aria-label="מד כמות הודעות"
         onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:color,cursor:"pointer",direction:"ltr"}}/>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
+      {/* החבילה הבסיסית: ✓ מסומן אוטומטית ומוסיף ₪100 (אלא אם כבר נרכשה) */}
+      {onBaseOn&&<div style={{marginTop:10,background:baseOwned?"#F0FFF4":baseOn?"#F4EEFC":"#fff",border:`1.5px solid ${baseOwned?"#9AE6B4":baseOn?C.blueL:C.border}`,borderRadius:12,padding:"10px 12px"}}>
+        <label style={{display:"flex",alignItems:"center",gap:8,cursor:baseOwned?"default":"pointer",fontSize:13,fontWeight:800,color:C.text}}>
+          <input type="checkbox" checked={baseOwned||!!baseOn} disabled={baseOwned} onChange={e=>onBaseOn(e.target.checked)} style={{width:18,height:18,accentColor:C.blueM}}/>
+          🪑 חבילה בסיסית <span style={{fontWeight:600,color:C.muted,fontSize:12}}>(סידורי הושבה + אישורי הגעה)</span>
+          <span style={{marginRight:"auto",fontWeight:900,color:baseOwned?C.success:C.blue}}>{baseOwned?"✓ כבר ברשותך":`+${fmtShekel(BASIC_PRICE)}`}</span>
+        </label>
+        {!baseOwned&&!baseOn&&<div style={{fontSize:11,color:"#B45309",marginTop:6,fontWeight:700}}>⚠️ שליחת הודעות דורשת את החבילה הבסיסית</div>}
+      </div>}
       {/* תוספת מוקד מתקשר */}
       {onCallOn&&<div style={{marginTop:10,background:callOn?"#FFFBEB":"#fff",border:`1.5px solid ${callOn?"#F6C26B":C.border}`,borderRadius:12,padding:"10px 12px"}}>
         <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:800,color:C.text}}>
@@ -171,7 +181,7 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice
           <span>📞 מוקד מתקשר: {recs.toLocaleString()} רשומות × {fmtShekel(CALL_RECORD_PRICE)}</span><span>{fmtShekel(callTotal(recs))}</span>
         </div>}
         {baseFee>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
-          <span>➕ חבילה בסיסית (רכישה ראשונה, חד-פעמי)</span><span>{fmtShekel(baseFee)}</span>
+          <span>✓ חבילה בסיסית (חד-פעמי)</span><span>{fmtShekel(baseFee)}</span>
         </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:baseFee>0||callOn?`1px dashed ${C.border}`:"none",paddingTop:baseFee>0||callOn?6:0}}>
           <span style={{fontSize:13,fontWeight:800,color:C.text}}>סה״כ לתשלום</span>
@@ -4976,7 +4986,11 @@ function ContactsScreen({ event, onAdd }) {
 
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
 function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
-  const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
+  // החבילה הבסיסית: ✓ מסומן אוטומטית אם עוד לא נרכשה (₪100), אפשר לבטל את הסימון
+  const baseOwned=hasBasicPkg(userPackages);
+  const [baseOn,setBaseOn]=useState(!baseOwned);
+  useEffect(()=>{setBaseOn(!baseOwned);},[baseOwned]);
+  const smsBase=!baseOwned&&baseOn?BASIC_PRICE:0;
   const waDefault=Math.max(50,Math.ceil((recordCount||100)/10)*10); // ברירת מחדל: מספר הרשומות באירוע
   // תוספת מוקד מתקשר לכל חבילה (sms / auto) + מספר הרשומות למוקד ב-SMS
   const [callOn,setCallOn]=useState({}), [callRecs,setCallRecs]=useState(waDefault);
@@ -5053,7 +5067,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                 transition:"all .2s"}}>
 
               {/* ראש כרטיס */}
-              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}
+              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);setBaseOn(!baseOwned);}}
                 style={{padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:46,height:46,borderRadius:13,background:pkg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
                   {pkg.icon}
@@ -5111,7 +5125,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   {/* הודעות WhatsApp: מד + כמות רשומות × 1.8, 4 סבבים */}
                   {pkg.waPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
+                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
                         callOn={!!callOn.auto} onCallOn={v=>setCallOn(c=>({...c,auto:v}))}
                         onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
                     </div>
@@ -5119,7 +5133,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
                   {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
+                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
                         callOn={!!callOn.sms} onCallOn={v=>setCallOn(c=>({...c,sms:v}))} callRecords={callRecs} onCallRecords={setCallRecs}/>
                     </div>
                   )}
@@ -5329,7 +5343,11 @@ function RecipientPicker({ withPhone, value, onChange }) {
 }
 
 function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
-  const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
+  // החבילה הבסיסית: ✓ מסומן אוטומטית אם עוד לא נרכשה (₪100), אפשר לבטל את הסימון
+  const baseOwned=hasBasicPkg(userPackages);
+  const [baseOn,setBaseOn]=useState(!baseOwned);
+  useEffect(()=>{setBaseOn(!baseOwned);},[baseOwned]);
+  const smsBase=!baseOwned&&baseOn?BASIC_PRICE:0;
   const ew=eventWords(event);
   const groomName = String(event.groom_name||"").trim();
   const brideName = String(event.bride_name||"").trim();
@@ -5554,7 +5572,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
             </div>
           </div>
         )}
-        <SmsQuantityPicker value={buyQty} onChange={setBuyQty} baseFee={smsBase}
+        <SmsQuantityPicker value={buyQty} onChange={setBuyQty} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned}
           callOn={buyCall} onCallOn={setBuyCall} callRecords={buyCallRecs} onCallRecords={setBuyCallRecs}/>
         <button onClick={()=>buyPackage(buyQty,buySum)} className="sx-btn sx-btn-primary"
           style={{width:"100%",marginTop:10,background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
