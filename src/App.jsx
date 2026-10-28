@@ -74,6 +74,8 @@ const fmtDateHe=(d,opts={day:"numeric",month:"long",year:"numeric"})=>{
   const x=typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)?new Date(d+"T00:00:00"):new Date(d);
   return isNaN(x)?String(d):x.toLocaleDateString("he-IL",opts);
 };
+// שורת אירוע לשמירה: עמודת date היא מסוג date, ולכן תאריך ריק נשלח כ-null (אחרת כל השמירה נדחית)
+const eventRow=d=>("date" in d&&!d.date)?{...d,date:null}:d;
 // ─── סוגי אירועים: שמות השדות ונוסח ההודעות לפי הסוג ───
 // groom_name = השם הראשי (חתן / חתן-כלת המצווה / התינוק / המארח), bride_name = רק בחתונה (הכלה)
 const EVENT_KINDS={
@@ -1730,8 +1732,10 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
   const [form,setForm]=useState({name:"",date:"",event_type:"wedding",bride_name:"",groom_name:"",venue:"",venue_address:"",event_time:"",welcome_text:""});
   const [editEvent,setEditEvent]=useState(null);
 
-  const updateEvent=async(data)=>{
-    await sb.from("events").update(data).eq("id",editEvent.id);
+  const updateEvent=async(raw)=>{
+    const data=eventRow(raw);
+    const{error}=await sb.from("events").update(data).eq("id",editEvent.id);
+    if(error){alert("השמירה נכשלה: "+error.message);return;}
     setEvents(evs=>evs.map(e=>e.id===editEvent.id?{...e,...data}:e));
     setEditEvent(null);
   };
@@ -1740,9 +1744,10 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
     if(!form.name.trim())return;
     setCreating(true);
     const invite_code=Math.random().toString(36).slice(2,10);
-    const{data,error}=await sb.from("events").insert({...form,name:form.name.trim(),user_id:user.id,invite_code,invite_active:true}).select().single();
-    if(!error)onSelect(data);
+    const{data,error}=await sb.from("events").insert(eventRow({...form,name:form.name.trim(),user_id:user.id,invite_code,invite_active:true})).select().single();
     setCreating(false);
+    if(error){alert("יצירת האירוע נכשלה: "+error.message);return;}
+    onSelect(data);
   };
   const eventTypes=[["wedding","💍 חתונה"],["bar_mitzvah","✡️ בר/ת מצווה"],["brit","👶 ברית"],["business","💼 עסקי"],["other","🎉 אחר"]];
 
@@ -2375,7 +2380,7 @@ const readLastScreen=eventId=>{
 };
 
 function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
-  const updateEvent=async(data)=>{await sb.from("events").update(data).eq("id",event.id);onUpdate?.(data);};
+  const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   const [sidebarOpen,setSidebarOpen]=useState(true);
@@ -3943,9 +3948,13 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
   const save=async()=>{
     setSaving(true);
-    await sb.from("events").update({...form,my_role:myRole,settings_json:settings}).eq("id",event.id);
-    Object.assign(event,{...form,my_role:myRole,settings_json:settings});
-    setSaving(false);setSaved(true);
+    // ממזגים עם settings_json הקיים: שם שמורים גם האולם, התזמונים ומספרי השולחנות
+    const data=eventRow({...form,my_role:myRole,settings_json:{...(event.settings_json||{}),...settings}});
+    const{error}=await sb.from("events").update(data).eq("id",event.id);
+    setSaving(false);
+    if(error){alert("השמירה נכשלה: "+error.message);return;}
+    Object.assign(event,data);
+    setSaved(true);
     setTimeout(()=>setSaved(false),2500);
   };
 
@@ -6708,9 +6717,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
     if(!form.name.trim())return;
     setCreating(true);
     const invite_code=Math.random().toString(36).slice(2,10);
-    const{data,error}=await sb.from("events").insert({...form,name:form.name.trim(),user_id:user.id,invite_code,invite_active:true}).select().single();
-    if(!error&&data)onSelect(data);
+    const{data,error}=await sb.from("events").insert(eventRow({...form,name:form.name.trim(),user_id:user.id,invite_code,invite_active:true})).select().single();
     setCreating(false);
+    if(error||!data){alert("יצירת האירוע נכשלה: "+(error?.message||"נסו שוב"));return;}
+    onSelect(data);
   };
 
   const eventTypeEmoji=(t)=>t==="wedding"?"💍":t==="bar_mitzvah"?"✡️":t==="brit"?"👶":t==="business"?"💼":"🎉";
