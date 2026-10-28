@@ -2385,7 +2385,7 @@ const screenLocked=(id,userPackages)=>{
   if(id==="rsvp"||id==="checkin"||id==="gifts")return !has(["basic","seating","sms","auto","vip","staff"]);
   if(id==="seating")return !has(["basic","seating","sms","auto","vip","staff"]); // הבסיסית (₪100) כוללת סידורי הושבה
   if(id==="sms")return !has(["sms","auto","vip"]);
-  if(id==="whatsapp")return !has(["auto","vip"]);
+  if(id==="whatsapp")return !has(["auto","vip","whatsapp"]); // whatsapp = מזהה ישן מהאדמין
   if(id==="ai"||id==="budget"||id==="import")return userPackages.length===0;
   return false;
 };
@@ -7357,14 +7357,15 @@ const ADMIN_EMAIL="amitgez331@gmail.com";
 // Supabase שומר מיילים באותיות קטנות  -  השוואה בלי תלות ברישיות
 const isAdminUser=u=>!!u?.email&&u.email.toLowerCase()===ADMIN_EMAIL;
 
+// החבילות שנמכרות היום (כמו בדף החבילות). המזהים הם מה שהמסכים בודקים (auto = WhatsApp)
 const ALL_PACKAGES=[
-  {id:"basic",name:"בסיס + הושבה",color:"#3A2464",icon:"🪑"},
-  {id:"sms",name:"הודעות SMS",color:"#059669",icon:"📱"},
-  {id:"whatsapp",name:"WhatsApp אוטומטי",color:"#25D366",icon:"💬"},
-  {id:"vip",name:"VIP הכל כלול",color:"#B45309",icon:"👑"},
-  {id:"reception",name:"עמדת קבלת פנים",color:"#7C3AED",icon:"💎"},
-  {id:"production",name:"הפקת אירוע",color:"#DB2777",icon:"✨"},
+  {id:"basic",name:"בסיסית",color:"#3A2464",icon:"🪑"},
+  {id:"sms",name:"SMS",color:"#059669",icon:"📱"},
+  {id:"auto",name:"הודעות WhatsApp",color:"#25D366",icon:"💬"},
+  {id:"staff",name:"צוות הושבה",color:"#7C3AED",icon:"👥"},
 ];
+// חבילות ישנות שעוד רשומות אצל משתמשים — מוצגות רק אצל מי שיש לו, כדי שאפשר יהיה להסיר
+const LEGACY_PACKAGES={whatsapp:"WhatsApp (ישן)",vip:"VIP (ישן)",reception:"עמדת קבלת פנים (ישן)",production:"הפקת אירוע (ישן)",seating:"הושבה (ישן)"};
 
 // סיסמה אקראית קריאה (בלי תווים שמתבלבלים כמו 0/O, 1/l)
 const randomPassword=()=>{const s="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";const a=crypto.getRandomValues(new Uint32Array(10));return [...a].map(n=>s[n%s.length]).join("");};
@@ -7703,7 +7704,7 @@ function AdminDashboard({ user, onLogout }) {
                   <button onClick={()=>setPwFor(u)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔑 סיסמה חדשה</button>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
-                  {ALL_PACKAGES.map(pkg=>{
+                  {[...ALL_PACKAGES,...(packages[u.user_id]||[]).filter(id=>!ALL_PACKAGES.some(p=>p.id===id)).map(id=>({id,name:LEGACY_PACKAGES[id]||id+" (ישן)",color:"#A0AEC0",icon:"🗄️"}))].map(pkg=>{
                     const hasIt=(packages[u.user_id]||[]).includes(pkg.id);
                     const isSaving=saving===`${u.user_id}-${pkg.id}`;
                     return(
