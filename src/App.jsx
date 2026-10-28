@@ -119,12 +119,14 @@ const normPhone = p => { let d=String(p||"").replace(/\D/g,""); if(d.startsWith(
 const SMS_MAX=200;
 const SHORT_LINK_HOST="sidoril.com/i/";
 const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; // כמויות מהירות באדמין
-// רכישת SMS לפי כמות חופשית: מחיר להודעה × כמות
-const SMS_UNIT_PRICE=0.8, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000;
-const smsTotal=q=>Math.round(q*SMS_UNIT_PRICE*100)/100;
+// רכישת SMS לפי כמות חופשית: מחיר להודעה × כמות.
+// רכישה ראשונה (אין עדיין חבילה בסיסית ומעלה) מוסיפה את מחיר החבילה הבסיסית — SMS דורש אותה
+const SMS_UNIT_PRICE=0.5, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000, BASIC_PRICE=100;
+const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff"].includes(p?.package_id??p));
+const smsTotal=(q,base=0)=>Math.round(q*SMS_UNIT_PRICE*100)/100+base;
 const fmtShekel=n=>`₪${n.toLocaleString("he-IL",{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2})}`;
-// בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ
-function SmsQuantityPicker({ value, onChange, color=C.blue }) {
+// בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ (כולל החבילה הבסיסית ברכישה ראשונה)
+function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0 }) {
   const clamp=v=>Math.min(SMS_BUY_MAX,Math.max(SMS_BUY_MIN,Math.round(Number(v)||SMS_BUY_MIN)));
   const [txt,setTxt]=useState(String(value));
   useEffect(()=>{setTxt(String(value));},[value]);
@@ -140,9 +142,17 @@ function SmsQuantityPicker({ value, onChange, color=C.blue }) {
       <input type="range" min={SMS_BUY_MIN} max={SMS_BUY_SLIDER_MAX} step={50} value={Math.min(value,SMS_BUY_SLIDER_MAX)} aria-label="מד כמות הודעות"
         onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:color,cursor:"pointer",direction:"ltr"}}/>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`}}>
-        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>{value.toLocaleString()} הודעות × {fmtShekel(SMS_UNIT_PRICE)}</span>
-        <span style={{fontSize:18,fontWeight:900,color}}>סה״כ {fmtShekel(smsTotal(value))}</span>
+      <div style={{marginTop:10,background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:5}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
+          <span>{value.toLocaleString()} הודעות × {fmtShekel(SMS_UNIT_PRICE)}</span><span>{fmtShekel(smsTotal(value))}</span>
+        </div>
+        {baseFee>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
+          <span>➕ חבילה בסיסית (רכישה ראשונה, חד-פעמי)</span><span>{fmtShekel(baseFee)}</span>
+        </div>}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:baseFee>0?`1px dashed ${C.border}`:"none",paddingTop:baseFee>0?6:0}}>
+          <span style={{fontSize:13,fontWeight:800,color:C.text}}>סה״כ לתשלום</span>
+          <span style={{fontSize:18,fontWeight:900,color}}>{fmtShekel(smsTotal(value,baseFee))}</span>
+        </div>
       </div>
     </div>
   );
@@ -2956,8 +2966,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             </button>
           </div>
         )}
-        {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
-        {screen==="sms"&&<SMSScreen event={event} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} onBack={()=>setScreen("home")}/>}
+        {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {modal==="locked"&&(
           <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setModal(null)}>
@@ -3803,8 +3813,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {/* שאר המסכים בדסקטופ */}
     {screen!=="home"&&screen!=="seating"&&(
       <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 24px",boxSizing:"border-box"}}>
-        {screen==="packages"&&<PackagesScreen event={event} onBack={()=>setScreen("home")}/>}
-        {screen==="sms"&&<SMSScreen event={event} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} onBack={()=>setScreen("home")}/>}
+        {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
@@ -4941,7 +4951,8 @@ function ContactsScreen({ event, onAdd }) {
 }
 
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
-function PackagesScreen({ event, onBack }) {
+function PackagesScreen({ event, onBack, userPackages=[] }) {
+  const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
   const [selectedPkg,setSelectedPkg]=useState(null);
   const [selectedTier,setSelectedTier]=useState(null); // לחבילות עם מחיר לפי כמות
 
@@ -4989,7 +5000,7 @@ function PackagesScreen({ event, onBack }) {
   const handleBuy=(pkg)=>{
     if(pkg.id==="free") return;
     let msg=`לרכישת חבילת "${pkg.name}"`;
-    if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)} - סה"כ ${fmtShekel(smsTotal(q))}`;}
+    if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase))}`;}
     else if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
     else if(pkg.price) msg+=` - ₪${pkg.price}`;
     window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
@@ -5078,7 +5089,7 @@ function PackagesScreen({ event, onBack }) {
                   {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
                   {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} onChange={q=>setSelectedTier([q,smsTotal(q)])}/>
+                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}/>
                     </div>
                   )}
 
@@ -5096,7 +5107,7 @@ function PackagesScreen({ event, onBack }) {
                         cursor:pkg.tiers&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                       {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
-                      {pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                      {pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300,smsBase))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
                     </button>
                   )}
                 </div>
@@ -5286,7 +5297,8 @@ function RecipientPicker({ withPhone, value, onChange }) {
   );
 }
 
-function SMSScreen({ event, guests, tables=[] }) {
+function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
+  const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
   const ew=eventWords(event);
   const groomName = String(event.groom_name||"").trim();
   const brideName = String(event.bride_name||"").trim();
@@ -5396,7 +5408,7 @@ function SMSScreen({ event, guests, tables=[] }) {
     const{amount,price}=buyPack;
     const{error}=await sb.rpc("request_sms",{p_event:event.id,p_amount:amount,p_price:price});
     if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
-    const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS ב-₪${price} לאירוע "${event.name}".`;
+    const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS${smsBase?` + החבילה הבסיסית`:""} ב-${fmtShekel(Number(price))} לאירוע "${event.name}".`;
     window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
     setBuyPack(null);await loadBalance();
   };
@@ -5508,10 +5520,10 @@ function SMSScreen({ event, guests, tables=[] }) {
             </div>
           </div>
         )}
-        <SmsQuantityPicker value={buyQty} onChange={setBuyQty}/>
-        <button onClick={()=>buyPackage(buyQty,smsTotal(buyQty))} className="sx-btn sx-btn-primary"
+        <SmsQuantityPicker value={buyQty} onChange={setBuyQty} baseFee={smsBase}/>
+        <button onClick={()=>buyPackage(buyQty,smsTotal(buyQty,smsBase))} className="sx-btn sx-btn-primary"
           style={{width:"100%",marginTop:10,background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
-          🛒 רכישת {buyQty.toLocaleString()} הודעות · {fmtShekel(smsTotal(buyQty))}
+          🛒 רכישת {buyQty.toLocaleString()} הודעות{smsBase?" + בסיסית":""} · {fmtShekel(smsTotal(buyQty,smsBase))}
         </button>
         <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
           💳 תשלום ב-Bit או בהעברה · ההודעות נטענות אחרי אישור התשלום
