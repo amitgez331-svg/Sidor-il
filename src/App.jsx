@@ -126,13 +126,19 @@ const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip"
 const smsTotal=(q,base=0,unit=SMS_UNIT_PRICE)=>Math.round(q*unit*100)/100+base;
 // חבילת הודעות WhatsApp: 4 סבבים אוטומטיים, מחיר לפי רשומה (אורח / משפחה עם טלפון אחד)
 const WA_RECORD_PRICE=1.8;
+// תוספת מוקד מתקשר (נציגים מתקשרים לאורחים שלא אישרו) — אפשר להוסיף ל-SMS או ל-WhatsApp
+const CALL_RECORD_PRICE=0.8;
+const callTotal=r=>Math.round(r*CALL_RECORD_PRICE*100)/100;
 const WA_ROUNDS=["סבב 1 · הזמנה ובקשה לאישור הגעה","סבב 2 · תזכורת למי שעוד לא אישר","סבב 3 · ביום האירוע (עם מספר השולחן)","סבב 4 · תודה אחרי האירוע"];
 const fmtShekel=n=>`₪${n.toLocaleString("he-IL",{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2})}`;
 // בחירת כמות SMS: מד + שדה כמות, וחישוב סה״כ (כולל החבילה הבסיסית ברכישה ראשונה)
-function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice=SMS_UNIT_PRICE, unitWord="הודעות", question="כמה הודעות?" }) {
+// callOn/onCallOn: תוספת מוקד מתקשר. callRecords: כמה רשומות למוקד (ב-WhatsApp = הכמות עצמה, ב-SMS נבחר בנפרד)
+const pickerTotal=({value,baseFee=0,unitPrice=SMS_UNIT_PRICE,callOn=false,callRecords})=>smsTotal(value,baseFee,unitPrice)+(callOn?callTotal(callRecords??value):0);
+function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice=SMS_UNIT_PRICE, unitWord="הודעות", question="כמה הודעות?", callOn=false, onCallOn, callRecords, onCallRecords }) {
   const clamp=v=>Math.min(SMS_BUY_MAX,Math.max(SMS_BUY_MIN,Math.round(Number(v)||SMS_BUY_MIN)));
   const [txt,setTxt]=useState(String(value));
   useEffect(()=>{setTxt(String(value));},[value]);
+  const recs=callRecords??value;
   return(
     <div style={{background:"#FBF8FF",border:`1.5px solid ${C.border}`,borderRadius:14,padding:"14px 16px"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
@@ -145,16 +151,31 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice
       <input type="range" min={SMS_BUY_MIN} max={SMS_BUY_SLIDER_MAX} step={50} value={Math.min(value,SMS_BUY_SLIDER_MAX)} aria-label="מד כמות הודעות"
         onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:color,cursor:"pointer",direction:"ltr"}}/>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
+      {/* תוספת מוקד מתקשר */}
+      {onCallOn&&<div style={{marginTop:10,background:callOn?"#FFFBEB":"#fff",border:`1.5px solid ${callOn?"#F6C26B":C.border}`,borderRadius:12,padding:"10px 12px"}}>
+        <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:800,color:C.text}}>
+          <input type="checkbox" checked={callOn} onChange={e=>onCallOn(e.target.checked)} style={{width:18,height:18,accentColor:"#B45309"}}/>
+          📞 להוסיף מוקד מתקשר <span style={{fontWeight:600,color:C.muted,fontSize:12}}>(נציגים מתקשרים לאורחים שלא אישרו · +{fmtShekel(CALL_RECORD_PRICE)} לרשומה)</span>
+        </label>
+        {callOn&&onCallRecords&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,fontSize:12.5,color:C.muted,fontWeight:700}}>
+          כמה רשומות (אורחים) באירוע?
+          <input type="number" min={1} value={recs} aria-label="כמות רשומות למוקד" onChange={e=>onCallRecords(Math.max(1,Math.round(Number(e.target.value)||1)))}
+            style={{width:90,textAlign:"center",border:"1.5px solid #F6C26B",borderRadius:9,padding:"6px",fontSize:15,fontWeight:900,color:"#B45309",outline:"none",fontFamily:"inherit"}}/>
+        </div>}
+      </div>}
       <div style={{marginTop:10,background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`,display:"flex",flexDirection:"column",gap:5}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
           <span>{value.toLocaleString()} {unitWord} × {fmtShekel(unitPrice)}</span><span>{fmtShekel(smsTotal(value,0,unitPrice))}</span>
         </div>
+        {callOn&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
+          <span>📞 מוקד מתקשר: {recs.toLocaleString()} רשומות × {fmtShekel(CALL_RECORD_PRICE)}</span><span>{fmtShekel(callTotal(recs))}</span>
+        </div>}
         {baseFee>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:C.muted,fontWeight:700}}>
           <span>➕ חבילה בסיסית (רכישה ראשונה, חד-פעמי)</span><span>{fmtShekel(baseFee)}</span>
         </div>}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:baseFee>0?`1px dashed ${C.border}`:"none",paddingTop:baseFee>0?6:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:baseFee>0||callOn?`1px dashed ${C.border}`:"none",paddingTop:baseFee>0||callOn?6:0}}>
           <span style={{fontSize:13,fontWeight:800,color:C.text}}>סה״כ לתשלום</span>
-          <span style={{fontSize:18,fontWeight:900,color}}>{fmtShekel(smsTotal(value,baseFee,unitPrice))}</span>
+          <span style={{fontSize:18,fontWeight:900,color}}>{fmtShekel(pickerTotal({value,baseFee,unitPrice,callOn,callRecords:recs}))}</span>
         </div>
       </div>
     </div>
@@ -1456,7 +1477,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             {[
               {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","תודה אחרי האירוע"],cta:"לפרטים",highlight:false,c:LP.mint},
               {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","שליחה ידנית דרך קישור","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
-              {name:"VIP + מוקד",price:"₪250+",desc:"לפי כמות אורחים",features:["כל מה שבהודעות WhatsApp","3 סבבי שיחות ע\"י מוקד אנושי","דוח שיחות ותמיכה ייעודית"],cta:"לפרטים",highlight:false,c:LP.gold},
+              {name:"SMS",price:"₪0.5",desc:"להודעה",features:["בוחרים כמות בדיוק לפי הצורך","הזמנה, תזכורת, מספר שולחן ותודה","📞 תוספת מוקד מתקשר: ₪0.8 לרשומה"],cta:"לפרטים",highlight:false,c:LP.gold},
             ].map((pkg,i)=>(
               <div key={pkg.name} className="lp-card fu"
                 style={{transitionDelay:`${i*.1}s`,borderRadius:28,padding:"38px 30px",display:"flex",flexDirection:"column",overflow:"visible",
@@ -4957,10 +4978,15 @@ function ContactsScreen({ event, onAdd }) {
 function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
   const smsBase=hasBasicPkg(userPackages)?0:BASIC_PRICE; // רכישה ראשונה כוללת את הבסיסית
   const waDefault=Math.max(50,Math.ceil((recordCount||100)/10)*10); // ברירת מחדל: מספר הרשומות באירוע
+  // תוספת מוקד מתקשר לכל חבילה (sms / auto) + מספר הרשומות למוקד ב-SMS
+  const [callOn,setCallOn]=useState({}), [callRecs,setCallRecs]=useState(waDefault);
+  const waQty=()=>selectedTier?.[0]||waDefault, smsQty=()=>selectedTier?.[0]||300;
+  const waSum=()=>pickerTotal({value:waQty(),baseFee:smsBase,unitPrice:WA_RECORD_PRICE,callOn:!!callOn.auto});
+  const smsSum=()=>pickerTotal({value:smsQty(),baseFee:smsBase,callOn:!!callOn.sms,callRecords:callRecs});
+  const callTxt=r=>` + מוקד מתקשר ל-${r.toLocaleString()} רשומות × ${fmtShekel(CALL_RECORD_PRICE)}`;
   const [selectedPkg,setSelectedPkg]=useState(null);
   const [selectedTier,setSelectedTier]=useState(null); // לחבילות עם מחיר לפי כמות
 
-  const TIER6=[["עד 100",250],["עד 150",370],["עד 200",480],["עד 250",590],["עד 300",690],["עד 350",790],["עד 400",880],["עד 450",970],["עד 500",1050],["עד 550",1130],["עד 600",1200],["עד 650",1300],["עד 700",1400],["עד 750",1500],["עד 800",1600]];
 
   const packages=[
     {
@@ -4975,7 +5001,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
       desc:"תוספת לחבילה הבסיסית · בוחרים כמות",
       note:"דורש את החבילה הבסיסית (₪100).",
       smsPicker:true,
-      features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע"],
+      features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע",`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
     },
     {
       id:"auto", name:"הודעות WhatsApp", price:null, priceLabel:`${fmtShekel(WA_RECORD_PRICE)} לרשומה`, color:"#25D366", icon:"💬",
@@ -4983,7 +5009,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
       desc:"4 הודעות WhatsApp אוטומטיות לכל רשומה",
       note:"דורש את החבילה הבסיסית (₪100). רשומה = אורח או משפחה עם מספר טלפון אחד.",
       waPicker:true,
-      features:["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r)],
+      features:["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r),`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
     },
     {
       id:"staff", name:"צוות הושבה", price:1300, priceLabel:"החל מ ₪1,300", color:"#7C3AED", icon:"👥",
@@ -4991,20 +5017,13 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
       desc:"2 אנשי צוות ביום האירוע",
       features:["✅ 2 אנשי צוות מקצועיים ביום האירוע","✅ חלוקת פתקי הושבה לאורחים","✅ ניהול תורים בכניסה","✅ תיאום מול צוות האולם","✅ צמצום עומס ברזרבות","⚠️ תיתכן תוספת מרחק"],
     },
-    {
-      id:"vip", name:"VIP + מוקד", price:null, priceLabel:"לפי כמות", color:"#B45309", icon:"👑",
-      badge:"VIP", featured:false,
-      desc:"הכל + שיחות טלפוניות",
-      tiers:TIER6,
-      features:["✅ כל מה שבהודעות WhatsApp","✅ 3 סבבי שיחות טלפוניות ע\"י מוקד אנושי","✅ סבב שיחות חוזרות לאורחים שטרם אישרו","✅ דוח מפורט של כל השיחות","✅ תמיכה ייעודית"],
-    },
   ];
 
   const handleBuy=(pkg)=>{
     if(pkg.id==="free") return;
     let msg=`לרכישת חבילת "${pkg.name}"`;
-    if(pkg.waPicker){const q=selectedTier?.[0]||waDefault;msg+=` - ${q.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (4 סבבים)${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase,WA_RECORD_PRICE))}`;}
-    else if(pkg.smsPicker){const q=selectedTier?.[0]||300;msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsTotal(q,smsBase))}`;}
+    if(pkg.waPicker){const q=waQty();msg+=` - ${q.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (4 סבבים)${callOn.auto?callTxt(q):""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(waSum())}`;}
+    else if(pkg.smsPicker){const q=smsQty();msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${callOn.sms?callTxt(callRecs):""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsSum())}`;}
     else if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
     else if(pkg.price) msg+=` - ₪${pkg.price}`;
     window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
@@ -5094,13 +5113,15 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   {pkg.waPicker&&(
                     <div style={{marginBottom:14}}>
                       <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
+                        callOn={!!callOn.auto} onCallOn={v=>setCallOn(c=>({...c,auto:v}))}
                         onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
                     </div>
                   )}
                   {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
                   {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}/>
+                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
+                        callOn={!!callOn.sms} onCallOn={v=>setCallOn(c=>({...c,sms:v}))} callRecords={callRecs} onCallRecords={setCallRecs}/>
                     </div>
                   )}
 
@@ -5118,7 +5139,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                         cursor:pkg.tiers&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                       {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
-                      {pkg.waPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||waDefault,smsBase,WA_RECORD_PRICE))}`:pkg.smsPicker?` - ${fmtShekel(smsTotal(selectedTier?.[0]||300,smsBase))}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                      {pkg.waPicker?` - ${fmtShekel(waSum())}`:pkg.smsPicker?` - ${fmtShekel(smsSum())}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
                     </button>
                   )}
                 </div>
@@ -5414,12 +5435,15 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
   // רכישה: נוצרת בקשה; היתרה נטענת אחרי שהתשלום מאושר באדמין
   const [buyQty,setBuyQty]=useState(300);
+  // תוספת מוקד מתקשר לרכישת SMS
+  const [buyCall,setBuyCall]=useState(false), [buyCallRecs,setBuyCallRecs]=useState(Math.max(1,guests.length||100));
+  const buySum=pickerTotal({value:buyQty,baseFee:smsBase,callOn:buyCall,callRecords:buyCallRecs});
   const buyPackage=(amount,price)=>setBuyPack({amount,price});
   const confirmPurchase=async()=>{
     const{amount,price}=buyPack;
     const{error}=await sb.rpc("request_sms",{p_event:event.id,p_amount:amount,p_price:price});
     if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
-    const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS${smsBase?` + החבילה הבסיסית`:""} ב-${fmtShekel(Number(price))} לאירוע "${event.name}".`;
+    const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS${buyCall?` + מוקד מתקשר ל-${buyCallRecs} רשומות`:""}${smsBase?` + החבילה הבסיסית`:""} ב-${fmtShekel(Number(price))} לאירוע "${event.name}".`;
     window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
     setBuyPack(null);await loadBalance();
   };
@@ -5531,10 +5555,11 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
             </div>
           </div>
         )}
-        <SmsQuantityPicker value={buyQty} onChange={setBuyQty} baseFee={smsBase}/>
-        <button onClick={()=>buyPackage(buyQty,smsTotal(buyQty,smsBase))} className="sx-btn sx-btn-primary"
+        <SmsQuantityPicker value={buyQty} onChange={setBuyQty} baseFee={smsBase}
+          callOn={buyCall} onCallOn={setBuyCall} callRecords={buyCallRecs} onCallRecords={setBuyCallRecs}/>
+        <button onClick={()=>buyPackage(buyQty,buySum)} className="sx-btn sx-btn-primary"
           style={{width:"100%",marginTop:10,background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
-          🛒 רכישת {buyQty.toLocaleString()} הודעות{smsBase?" + בסיסית":""} · {fmtShekel(smsTotal(buyQty,smsBase))}
+          🛒 רכישת {buyQty.toLocaleString()} הודעות{buyCall?" + מוקד":""}{smsBase?" + בסיסית":""} · {fmtShekel(buySum)}
         </button>
         <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
           💳 תשלום ב-Bit או בהעברה · ההודעות נטענות אחרי אישור התשלום
@@ -5821,21 +5846,20 @@ function WhatsAppScreen({ event, guests }) {
           <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>4 סבבי שליחה אוטומטית<br/>הזמנה · תזכורת · יום האירוע · תודה</div>
           <div style={{fontSize:12,fontWeight:700,color:"#25D366",background:"#F0FFF4",borderRadius:8,padding:"4px 0"}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה</div>
         </div>
-        <div onClick={()=>setWaPkg("vip")}
-          style={{background:"#fff",border:"2px solid #B45309",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(180,83,9,.15)"}}>
-          <div style={{fontSize:36,marginBottom:10}}>👑</div>
-          <div style={{fontSize:15,fontWeight:900,color:"#B45309",marginBottom:6}}>VIP + מוקד</div>
-          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>הכל בהודעות WhatsApp<br/>+ 3 סבבי שיחות טלפוניות</div>
-          <div style={{fontSize:12,fontWeight:700,color:"#B45309",background:"#FFFBEB",borderRadius:8,padding:"4px 0"}}>החל מ ₪250</div>
+        {/* תוספת מוקד מתקשר  -  לא חבילה נפרדת, אפשר להוסיף לוואטסאפ או ל-SMS */}
+        <div style={{background:"#fff",border:"2px dashed #B45309",borderRadius:20,padding:"20px 16px",textAlign:"center"}}>
+          <div style={{fontSize:36,marginBottom:10}}>📞</div>
+          <div style={{fontSize:15,fontWeight:900,color:"#B45309",marginBottom:6}}>תוספת מוקד מתקשר</div>
+          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>נציגים מתקשרים לאורחים שלא אישרו<br/>אפשר להוסיף לוואטסאפ או ל-SMS</div>
+          <div style={{fontSize:12,fontWeight:700,color:"#B45309",background:"#FFFBEB",borderRadius:8,padding:"4px 0"}}>+{fmtShekel(CALL_RECORD_PRICE)} לרשומה</div>
         </div>
       </div>
 
-      {/* הבדל */}
+      {/* הסבר */}
       <div style={{background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-        <div style={{fontSize:12,color:"#555",fontWeight:700,marginBottom:8}}>ההבדל בין החבילות:</div>
         <div style={{fontSize:12,color:"#666",lineHeight:1.9}}>
           💬 <strong>הודעות WhatsApp</strong> - 4 סבבים אוטומטיים: הזמנה לאישור הגעה, תזכורת למי שלא אישר, ביום האירוע ותודה אחרי<br/>
-          👑 <strong>VIP + מוקד</strong> - כנ"ל + נציגים אנושיים מתקשרים לכל אורח שלא ענה
+          📞 <strong>תוספת מוקד</strong> - נציגים אנושיים מתקשרים לכל אורח שלא ענה (+{fmtShekel(CALL_RECORD_PRICE)} לרשומה, בוחרים בדף החבילות)
         </div>
       </div>
 
@@ -5852,12 +5876,12 @@ function WhatsAppScreen({ event, guests }) {
             </div>
             <div style={{fontSize:12,fontWeight:700,color:"#25D366"}}>לרכישה ←</div>
           </a>
-          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת VIP + מוקד WhatsApp")}`}
+          <a href={`https://wa.me/972526817102?text=${encodeURIComponent(`שלום, אני מעוניין בחבילת הודעות WhatsApp + תוספת מוקד מתקשר (${fmtShekel(WA_RECORD_PRICE+CALL_RECORD_PRICE)} לרשומה)`)}`}
             target="_blank" rel="noopener"
             style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
             <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#B45309"}}>👑 VIP + מוקד</div>
-              <div style={{fontSize:11,color:"#555"}}>החל מ ₪250</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#B45309"}}>💬 WhatsApp + 📞 מוקד מתקשר</div>
+              <div style={{fontSize:11,color:"#555"}}>{fmtShekel(WA_RECORD_PRICE+CALL_RECORD_PRICE)} לרשומה</div>
             </div>
             <div style={{fontSize:12,fontWeight:700,color:"#B45309"}}>לרכישה ←</div>
           </a>
