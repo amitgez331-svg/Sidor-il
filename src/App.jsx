@@ -1783,17 +1783,17 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
         </div>
 
         <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם האירוע *</div>
-        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="חתונת עמית ואורנה"
+        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
           style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"11px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:10}}/>
 
         {form.event_type==="wedding"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם החתן</div>
-            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="יוסי" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:5}}>שם הכלה</div>
-            <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="רחל" style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} style={{width:"100%",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"8px 6px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
         </div>}
         {form.event_type!=="wedding"&&<div style={{marginBottom:10}}>
@@ -1857,9 +1857,9 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
           </div>
 
           {[
-            ["שם האירוע","name","text","חתונת עמית ואורנה"],
-            ["שם החתן","groom_name","text","יוסי"],
-            ["שם הכלה","bride_name","text","רחל"],
+            ["שם האירוע","name","text",""],
+            ["שם החתן","groom_name","text",""],
+            ["שם הכלה","bride_name","text",""],
             ["תאריך","date","date",""],
             ["שעה","event_time","time",""],
             ["שם האולם","venue","text","אולם הגן"],
@@ -4009,12 +4009,12 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{display:"grid",gridTemplateColumns:kind.b?"1fr 1fr":"1fr",gap:16}}>
           <div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.a}: {kind.b&&"* "}<span style={{color:"#aaa",fontWeight:400}}>({(form.groom_name||"").length}/25)</span></div>
-            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder={kind.b?"עמית":"השם שיופיע בהזמנה ובהודעות"} maxLength={25}
+            <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder={kind.b?"":"השם שיופיע בהזמנה ובהודעות"} maxLength={25}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
           {kind.b&&<div>
             <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>{kind.b}: * <span style={{color:"#aaa",fontWeight:400}}>({(form.bride_name||"").length}/25)</span></div>
-            <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="אורנה" maxLength={25}
+            <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} maxLength={25}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>}
         </div>
@@ -6867,13 +6867,13 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
                   <div>
                     <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם החתן</div>
-                    <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))} placeholder="עמית"
+                    <input value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))}
                       style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                       onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                   </div>
                   <div>
                     <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם הכלה</div>
-                    <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))} placeholder="אורנה"
+                    <input value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))}
                       style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                       onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                   </div>
@@ -6891,7 +6891,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
               {/* שם האירוע */}
               <div style={{marginBottom:16}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:6}}>שם האירוע *</div>
-                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="חתונת עמית ואורנה"
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
                   style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                   onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
               </div>
