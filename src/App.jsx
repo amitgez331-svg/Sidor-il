@@ -7366,6 +7366,102 @@ const ALL_PACKAGES=[
   {id:"production",name:"הפקת אירוע",color:"#DB2777",icon:"✨"},
 ];
 
+// סיסמה אקראית קריאה (בלי תווים שמתבלבלים כמו 0/O, 1/l)
+const randomPassword=()=>{const s="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";const a=crypto.getRandomValues(new Uint32Array(10));return [...a].map(n=>s[n%s.length]).join("");};
+// הודעה ללקוח עם פרטי ההתחברות (נפתחת בוואטסאפ; בוחרים למי לשלוח)
+const loginShareText=(email,password)=>`שלום! נפתח לך חשבון ב-Sidor-IL 🎉\nכניסה: https://www.sidoril.com\nמייל: ${email}\nסיסמה: ${password}\nמומלץ להחליף סיסמה אחרי הכניסה הראשונה.`;
+function CredentialsBox({ email, password, onClose }) {
+  const text=loginShareText(email,password);
+  const [copied,setCopied]=useState(false);
+  return(
+    <div style={{background:"#F0FFF4",border:"1.5px solid #9AE6B4",borderRadius:14,padding:14,marginTop:12}}>
+      <div style={{fontWeight:900,color:"#276749",marginBottom:8}}>✅ מוכן. פרטי ההתחברות (מוצגים רק עכשיו):</div>
+      <div style={{direction:"ltr",textAlign:"left",fontFamily:"monospace",fontSize:14,background:"#fff",borderRadius:10,padding:"8px 12px",marginBottom:10}}>{email}<br/>{password}</div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button onClick={()=>{navigator.clipboard?.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} className="sx-btn" style={{background:"#fff",border:"1.5px solid #9AE6B4",color:"#276749",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{copied?"✓ הועתק":"📋 העתק הודעה"}</button>
+        <a href={"https://wa.me/?text="+encodeURIComponent(text)} target="_blank" rel="noopener noreferrer" style={{background:"#25D366",color:"#fff",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,textDecoration:"none"}}>💬 שלח בוואטסאפ</a>
+        {onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>סגור</button>}
+      </div>
+    </div>
+  );
+}
+// פתיחת משתמש חדש מהאדמין: מייל + סיסמה, מאומת מראש (בלי מייל אישור), אפשר לסמן חבילות כבר עכשיו
+function AdminCreateUser({ card, onDone }) {
+  const [open,setOpen]=useState(false);
+  const [email,setEmail]=useState(""),[password,setPassword]=useState(()=>randomPassword()),[pkgs,setPkgs]=useState([]);
+  const [busy,setBusy]=useState(false),[err,setErr]=useState(""),[done,setDone]=useState(null);
+  const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())&&password.length>=8;
+  const create=async()=>{
+    setBusy(true);setErr("");
+    const{data,error}=await sb.functions.invoke("admin-users",{body:{action:"create",email:email.trim(),password,packages:pkgs}});
+    setBusy(false);
+    const msg=data?.error||(error&&(await error.context?.json?.().catch(()=>null))?.error)||error?.message;
+    if(msg||!data?.ok){setErr(msg||"הפתיחה נכשלה");return;}
+    if(data.package_error)setErr("המשתמש נפתח, אבל החבילות לא נשמרו: "+data.package_error);
+    setDone({email:data.email,password});setEmail("");setPassword(randomPassword());setPkgs([]);onDone?.();
+  };
+  if(!open)return(
+    <button onClick={()=>setOpen(true)} className="sx-btn" style={{...card,padding:14,fontSize:15,fontWeight:900,color:C.blue,cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>➕ פתיחת משתמש חדש</button>
+  );
+  const inp={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",direction:"ltr",minWidth:0};
+  return(
+    <div style={{...card,padding:16}}>
+      <div style={{display:"flex",alignItems:"center",marginBottom:10}}>
+        <div style={{flex:1,fontWeight:900,fontSize:15}}>➕ פתיחת משתמש חדש</div>
+        <button onClick={()=>{setOpen(false);setDone(null);setErr("");}} aria-label="סגירה" style={{background:"none",border:"none",fontSize:16,cursor:"pointer",color:C.muted}}>✕</button>
+      </div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:10}}>הלקוח יוכל להיכנס מיד עם המייל והסיסמה, בלי מייל אישור. אם הוא יתחבר עם גוגל באותו מייל, זה אותו חשבון.</div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+        <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="email@example.com" aria-label="מייל" style={{...inp,flex:"2 1 220px"}}/>
+        <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="סיסמה (8+ תווים)" aria-label="סיסמה" style={{...inp,flex:"1 1 150px",fontFamily:"monospace"}}/>
+        <button onClick={()=>setPassword(randomPassword())} title="סיסמה אקראית" className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"0 12px",fontSize:16,cursor:"pointer"}}>🎲</button>
+      </div>
+      <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:6}}>חבילות שיהיו פתוחות מההתחלה (לא חובה):</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+        {ALL_PACKAGES.map(p=>{const on=pkgs.includes(p.id);return(
+          <button key={p.id} onClick={()=>setPkgs(s=>on?s.filter(x=>x!==p.id):[...s,p.id])} aria-pressed={on} className="sx-btn"
+            style={{background:on?p.color+"18":"#fff",border:`1.5px solid ${on?p.color:C.border}`,color:on?p.color:C.muted,borderRadius:100,padding:"5px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{on?"✓":"+"} {p.icon} {p.name}</button>
+        );})}
+      </div>
+      {err&&<div role="alert" style={{background:"#FFF2F4",color:C.danger,borderRadius:10,padding:"8px 12px",fontSize:13,fontWeight:700,marginBottom:10}}>❌ {err}</div>}
+      <button onClick={create} disabled={!valid||busy} className="sx-btn sx-btn-primary"
+        style={{background:valid?GRAD:"#E2E8F0",color:valid?"#fff":"#999",border:"none",borderRadius:12,padding:"11px 20px",fontSize:14,fontWeight:900,cursor:valid?"pointer":"default",fontFamily:"inherit"}}>{busy?"פותח...":"פתח משתמש"}</button>
+      {done&&<CredentialsBox email={done.email} password={done.password} onClose={()=>setDone(null)}/>}
+    </div>
+  );
+}
+// החלפת סיסמה למשתמש קיים (למשל לקוח ששכח)
+function AdminPasswordModal({ user, onClose }) {
+  const [password,setPassword]=useState(()=>randomPassword()),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[done,setDone]=useState(false);
+  const save=async()=>{
+    setBusy(true);setErr("");
+    const{data,error}=await sb.functions.invoke("admin-users",{body:{action:"set_password",user_id:user.user_id,password}});
+    setBusy(false);
+    const msg=data?.error||(error&&(await error.context?.json?.().catch(()=>null))?.error)||error?.message;
+    if(msg||!data?.ok){setErr(msg||"ההחלפה נכשלה");return;}
+    setDone(true);
+  };
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(43,29,63,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} dir="rtl" style={{background:"#fff",borderRadius:18,padding:20,width:"100%",maxWidth:440}}>
+        <div style={{fontWeight:900,fontSize:16,marginBottom:4}}>🔑 סיסמה חדשה</div>
+        <div style={{fontSize:13,color:C.muted,marginBottom:12,direction:"ltr",textAlign:"right"}}>{user.email}</div>
+        {!done?<>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            <input value={password} onChange={e=>setPassword(e.target.value)} aria-label="סיסמה חדשה" style={{flex:1,minWidth:0,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"monospace",direction:"ltr",outline:"none"}}/>
+            <button onClick={()=>setPassword(randomPassword())} title="סיסמה אקראית" style={{background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"0 12px",fontSize:16,cursor:"pointer"}}>🎲</button>
+          </div>
+          {err&&<div role="alert" style={{color:C.danger,fontSize:13,fontWeight:700,marginBottom:10}}>❌ {err}</div>}
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={save} disabled={busy||password.length<8} style={{flex:1,background:password.length>=8?GRAD:"#E2E8F0",color:"#fff",border:"none",borderRadius:12,padding:11,fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>{busy?"שומר...":"החלף סיסמה"}</button>
+            <button onClick={onClose} style={{background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
+          </div>
+        </>:<CredentialsBox email={user.email} password={password} onClose={onClose}/>}
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard({ user, onLogout }) {
   const [users,setUsers]=useState([]);       // [{user_id,email,created_at,last_sign_in_at,events:[],guests:0}]
   const [events,setEvents]=useState([]);
@@ -7383,6 +7479,7 @@ function AdminDashboard({ user, onLogout }) {
   const [addNote,setAddNote]=useState("");
   const [toast,setToast]=useState("");
   const [provider,setProvider]=useState(null); // יתרה בחשבון 019 מול מה שכבר נמכר ללקוחות
+  const [pwFor,setPwFor]=useState(null);       // משתמש שמחליפים לו סיסמה
 
   const flash=m=>{setToast(m);setTimeout(()=>setToast(""),2600);};
   const loadProvider=async()=>{
@@ -7592,6 +7689,7 @@ function AdminDashboard({ user, onLogout }) {
           </div>
         ):tab==="users"?(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <AdminCreateUser card={card} onDone={()=>loadData(true)}/>
             {fUsers.map(u=>(
               <div key={u.user_id} className="adm-row" style={{...card,padding:16}}>
                 <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:12}}>
@@ -7602,6 +7700,7 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
                   <span style={chip(C.blueXL,C.text)}>{u.events.length} אירועים</span>
                   <span style={chip(C.blueXL,C.text)}>{u.guests} אורחים</span>
+                  <button onClick={()=>setPwFor(u)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔑 סיסמה חדשה</button>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
                   {ALL_PACKAGES.map(pkg=>{
@@ -7666,6 +7765,7 @@ function AdminDashboard({ user, onLogout }) {
         </div>
       )}
 
+      {pwFor&&<AdminPasswordModal user={pwFor} onClose={()=>setPwFor(null)}/>}
       {toast&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:C.text,color:"#fff",borderRadius:14,padding:"12px 18px",fontSize:14,fontWeight:800,zIndex:400,boxShadow:"0 14px 30px -10px rgba(0,0,0,.4)"}}>{toast}</div>}
     </div>
   );
