@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /i/
+Disallow: /invite/
+
+Sitemap: https://www.sidoril.com/sitemap.xml
