@@ -3003,7 +3003,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         )}
         {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} recordCount={guests.length+tables.reduce((n,t)=>n+(t.guests||[]).length,0)} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
-        {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="whatsapp"&&<WhatsAppScreen event={event} userPackages={userPackages} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {modal==="locked"&&(
           <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setModal(null)}>
             <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"28px 24px 44px",width:"100%",maxWidth:480,direction:"rtl"}}>
@@ -3850,7 +3850,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <div style={{flex:1,overflowY:"auto",width:"100%",padding:"24px 24px",boxSizing:"border-box"}}>
         {screen==="packages"&&<PackagesScreen event={event} userPackages={userPackages} recordCount={guests.length+tables.reduce((n,t)=>n+(t.guests||[]).length,0)} onBack={()=>setScreen("home")}/>}
         {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
-        {screen==="whatsapp"&&<WhatsAppScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
+        {screen==="whatsapp"&&<WhatsAppScreen event={event} userPackages={userPackages} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
@@ -5734,8 +5734,12 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 }
 
 // ─── WHATSAPP SCREEN ──────────────────────────────────────────────────────────
-function WhatsAppScreen({ event, guests }) {
-  const [waPkg,setWaPkg]=useState(null); // null=בחירה, "auto"=חבילה5, "vip"=חבילה6
+function WhatsAppScreen({ event, guests, userPackages=[] }) {
+  const [waPkg,setWaPkg]=useState(null); // null=מסך החבילה, "auto"=נוסחים ושליחה
+  // חבילה: כמות רשומות × ₪1.8 + מוקד אופציונלי + ₪100 בסיסית רק אם עוד לא נרכשה (כמו בדף החבילות)
+  const baseOwned=hasBasicPkg(userPackages), baseOn=!baseOwned, setBaseOn=()=>{}, smsBase=baseOwned?0:BASIC_PRICE;
+  const [waQty,setWaQty]=useState(Math.max(50,Math.ceil((guests.length||100)/10)*10)), [waCall,setWaCall]=useState(false);
+  const waSum=pickerTotal({value:waQty,baseFee:smsBase,unitPrice:WA_RECORD_PRICE,callOn:waCall});
   const ew=eventWords(event);
   const groomName = String(event.groom_name||"").trim();
   const brideName = String(event.bride_name||"").trim();
@@ -5841,72 +5845,54 @@ function WhatsAppScreen({ event, guests }) {
   const sentOk=results?.filter(r=>r.status?.includes("✓")).length||0;
   const sentFail=results?.filter(r=>r.status?.includes("✗")).length||0;
 
-  // מסך בחירת חבילה
+  // מסך החבילה: כמו כרטיס "הודעות WhatsApp" בדף החבילות (4 סבבים × ₪1.8 לרשומה + מוקד + בסיסית)
   if(!waPkg) return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16,paddingBottom:80}}>
-      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"20px",marginBottom:24,color:"#fff",textAlign:"center"}}>
+      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"20px",marginBottom:16,color:"#fff",textAlign:"center"}}>
         <div style={{fontSize:22,marginBottom:6}}>💬</div>
-        <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>שליחת WhatsApp</div>
-        <div style={{fontSize:13,opacity:.85}}>בחר את סוג השירות שרכשת</div>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>הודעות WhatsApp</div>
+        <div style={{fontSize:13,opacity:.85}}>4 הודעות WhatsApp אוטומטיות לכל רשומה</div>
       </div>
 
-      <div style={{background:"#FFF8E1",border:"1px solid #FDE68A",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#B45309",display:"flex",gap:8,alignItems:"flex-start"}}>
-        <span style={{fontSize:16,flexShrink:0}}>ℹ️</span>
-        <span>מחיר החבילה נקבע לפי <strong>מספר הרשומות באירוע</strong> (אורח או משפחה עם טלפון אחד) ולא לפי כמות הודעות: {fmtShekel(WA_RECORD_PRICE)} לרשומה כולל 4 סבבים.</span>
-      </div>
-
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-        <div onClick={()=>setWaPkg("auto")}
-          style={{background:"#fff",border:"2px solid #25D366",borderRadius:20,padding:"20px 16px",cursor:"pointer",textAlign:"center",boxShadow:"0 4px 16px rgba(37,211,102,.15)"}}>
-          <div style={{fontSize:36,marginBottom:10}}>💬</div>
-          <div style={{fontSize:15,fontWeight:900,color:"#075E54",marginBottom:6}}>הודעות WhatsApp</div>
-          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>4 סבבי שליחה אוטומטית<br/>הזמנה · תזכורת · יום האירוע · תודה</div>
-          <div style={{fontSize:12,fontWeight:700,color:"#25D366",background:"#F0FFF4",borderRadius:8,padding:"4px 0"}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה</div>
-        </div>
-        {/* תוספת מוקד מתקשר  -  לא חבילה נפרדת, אפשר להוסיף לוואטסאפ או ל-SMS */}
-        <div style={{background:"#fff",border:"2px dashed #B45309",borderRadius:20,padding:"20px 16px",textAlign:"center"}}>
-          <div style={{fontSize:36,marginBottom:10}}>📞</div>
-          <div style={{fontSize:15,fontWeight:900,color:"#B45309",marginBottom:6}}>תוספת מוקד מתקשר</div>
-          <div style={{fontSize:11,color:"#555",lineHeight:1.6,marginBottom:12}}>נציגים מתקשרים לאורחים שלא אישרו<br/>אפשר להוסיף לוואטסאפ או ל-SMS</div>
-          <div style={{fontSize:12,fontWeight:700,color:"#B45309",background:"#FFFBEB",borderRadius:8,padding:"4px 0"}}>+{fmtShekel(CALL_RECORD_PRICE)} לרשומה</div>
-        </div>
-      </div>
-
-      {/* הסבר */}
-      <div style={{background:"#F8FAFF",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-        <div style={{fontSize:12,color:"#666",lineHeight:1.9}}>
-          💬 <strong>הודעות WhatsApp</strong> - 4 סבבים אוטומטיים: הזמנה לאישור הגעה, תזכורת למי שלא אישר, ביום האירוע ותודה אחרי<br/>
-          📞 <strong>תוספת מוקד</strong> - נציגים אנושיים מתקשרים לכל אורח שלא ענה (+{fmtShekel(CALL_RECORD_PRICE)} לרשומה, בוחרים בדף החבילות)
-        </div>
-      </div>
-
-      {/* רכישה */}
-      <div style={{background:"#fff",border:"1px solid #E2E8F0",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:800,color:"#1a1a1a",marginBottom:12}}>לא רכשת עדיין?</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין בחבילת הודעות WhatsApp (4 סבבים, ₪1.8 לרשומה)")}`}
-            target="_blank" rel="noopener"
-            style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#075E54"}}>💬 הודעות WhatsApp</div>
-              <div style={{fontSize:11,color:"#555"}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה · 4 סבבים</div>
+      <div style={{background:"#fff",border:`2px solid ${WA_GREEN}`,borderRadius:18,overflow:"hidden",boxShadow:`0 4px 20px ${WA_GREEN}33`,marginBottom:16}}>
+        <div style={{padding:16,display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:46,height:46,borderRadius:13,background:WA_GREEN+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>💬</div>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontWeight:900,fontSize:15,color:"#1a1a1a"}}>הודעות WhatsApp</div>
+              <span style={{fontSize:10,fontWeight:800,background:WA_GREEN,color:"#fff",padding:"2px 8px",borderRadius:100}}>4 סבבים</span>
             </div>
-            <div style={{fontSize:12,fontWeight:700,color:"#25D366"}}>לרכישה ←</div>
-          </a>
-          <a href={`https://wa.me/972526817102?text=${encodeURIComponent(`שלום, אני מעוניין בחבילת הודעות WhatsApp + תוספת מוקד מתקשר (${fmtShekel(WA_RECORD_PRICE+CALL_RECORD_PRICE)} לרשומה)`)}`}
+            <div style={{fontSize:12,color:"#888",marginTop:2}}>4 הודעות WhatsApp אוטומטיות לכל רשומה</div>
+          </div>
+          <div style={{fontSize:18,fontWeight:900,color:WA_GREEN,flexShrink:0}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה</div>
+        </div>
+        <div style={{padding:"0 16px 16px",borderTop:"1px solid #f0f0f0"}}>
+          <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"10px 12px",margin:"14px 0",fontSize:12,color:"#B45309",fontWeight:700}}>
+            ⚠️ דורש את החבילה הבסיסית ({fmtShekel(BASIC_PRICE)}). רשומה = אורח או משפחה עם מספר טלפון אחד.
+          </div>
+          <div style={{marginBottom:16}}>
+            {["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r),`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`].map(f=>(
+              <div key={f} style={{fontSize:13,color:"#1a1a1a",marginBottom:7}}>{f}</div>
+            ))}
+          </div>
+          <div style={{marginBottom:14}}>
+            <SmsQuantityPicker value={waQty} onChange={setWaQty} color={WA_GREEN} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned}
+              unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?" callOn={waCall} onCallOn={setWaCall}/>
+          </div>
+          <a href={`https://wa.me/972526817102?text=${encodeURIComponent(`שלום, אני מעוניין בחבילת "הודעות WhatsApp" - ${waQty.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (4 סבבים)${waCall?` + מוקד מתקשר ל-${waQty.toLocaleString()} רשומות × ${fmtShekel(CALL_RECORD_PRICE)}`:""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(waSum)} לאירוע "${event.name}"`)}`}
             target="_blank" rel="noopener"
-            style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"12px 14px",textDecoration:"none"}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#B45309"}}>💬 WhatsApp + 📞 מוקד מתקשר</div>
-              <div style={{fontSize:11,color:"#555"}}>{fmtShekel(WA_RECORD_PRICE+CALL_RECORD_PRICE)} לרשומה</div>
-            </div>
-            <div style={{fontSize:12,fontWeight:700,color:"#B45309"}}>לרכישה ←</div>
+            style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",background:`linear-gradient(135deg,${WA_GREEN},${WA_GREEN}CC)`,color:"#fff",borderRadius:12,padding:13,fontSize:15,fontWeight:700,textDecoration:"none"}}>
+            💬 פנה לרכישה בוואטסאפ - {fmtShekel(waSum)}
           </a>
         </div>
       </div>
+
+      <button onClick={()=>setWaPkg("auto")}
+        style={{width:"100%",background:"#fff",border:`1.5px solid ${WA_GREEN}`,color:"#075E54",borderRadius:12,padding:12,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+        ✓ כבר רכשתי · לנוסחים ולשליחה ←
+      </button>
     </div>
   );
-
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
@@ -5916,7 +5902,7 @@ function WhatsAppScreen({ event, guests }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
           <div>
             <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>
-              {waPkg==="vip"?"👑 VIP + מוקד":"💬 הודעות WhatsApp"}
+              💬 הודעות WhatsApp
             </div>
             <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
             <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
@@ -5930,7 +5916,7 @@ function WhatsAppScreen({ event, guests }) {
         </div>
         <button onClick={()=>setWaPkg(null)}
           style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-          ← חזור לבחירת חבילה
+          ← חזור לחבילה
         </button>
       </div>
 
