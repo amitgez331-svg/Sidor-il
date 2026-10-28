@@ -5665,8 +5665,9 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
         </div>
 
         {/* עמודה ימין  -  תצוגה מקדימה */}
+        {/* תצוגה מקדימה במקומה (לא "נדבקת" וגולשת עם הגלילה) */}
         <div className="msg-preview">
-          <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",position:"sticky",top:20}}>
+          <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
 
             {guests.length>0&&(
