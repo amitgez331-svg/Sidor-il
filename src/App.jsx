@@ -4102,17 +4102,40 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     shareBtn: event.settings_json?.shareBtn??true,
   });
 
-  const save=async()=>{
-    setSaving(true);
-    // ממזגים עם settings_json הקיים: שם שמורים גם האולם, התזמונים ומספרי השולחנות
-    const data=eventRow({...form,my_role:myRole,settings_json:{...(event.settings_json||{}),...settings}});
-    const{error}=await sb.from("events").update(data).eq("id",event.id);
-    setSaving(false);
-    if(error){alert("השמירה נכשלה: "+error.message);return;}
-    Object.assign(event,data);
-    setSaved(true);
-    setTimeout(()=>setSaved(false),2500);
+  // שמירה אוטומטית: כל שינוי נשמר כשנייה אחרי שמפסיקים להקליד, וגם ביציאה מהמסך.
+  // השמירות רצות אחת אחרי השנייה ותמיד עם הנתונים העדכניים (latestRef)
+  const [saveErr,setSaveErr]=useState("");
+  const latestRef=useRef(null),dirtyRef=useRef(false),chainRef=useRef(Promise.resolve()),timerRef=useRef(null);
+  latestRef.current={form,myRole,settings};
+  const save=()=>{
+    clearTimeout(timerRef.current);
+    dirtyRef.current=false;
+    chainRef.current=chainRef.current.then(async()=>{
+      const{form,myRole,settings}=latestRef.current;
+      setSaving(true);
+      // ממזגים עם settings_json הקיים: שם שמורים גם האולם, התזמונים ומספרי השולחנות
+      const data=eventRow({...form,my_role:myRole,settings_json:{...(event.settings_json||{}),...settings}});
+      const{error}=await sb.from("events").update(data).eq("id",event.id);
+      setSaving(false);
+      if(error){dirtyRef.current=true;setSaveErr(error.message);setSaved(false);return;}
+      Object.assign(event,data);
+      setSaveErr("");setSaved(true);
+    });
+    return chainRef.current;
   };
+  const firstRef=useRef(true);
+  useEffect(()=>{
+    if(firstRef.current){firstRef.current=false;return;}
+    dirtyRef.current=true;setSaved(false);
+    clearTimeout(timerRef.current);
+    timerRef.current=setTimeout(save,900);
+  },[form,myRole,settings]);
+  // יציאה מהמסך / סגירת הדף לפני שהשמירה רצה — שומרים מיד
+  useEffect(()=>{
+    const flush=()=>{if(dirtyRef.current)save();};
+    window.addEventListener("pagehide",flush);
+    return()=>{window.removeEventListener("pagehide",flush);flush();};
+  },[]);
 
   const hebrewDate=(dateStr)=>{
     if(!dateStr)return "";
@@ -4132,15 +4155,19 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
   return(
     <div style={{direction:"rtl",padding:"20px 16px",width:"100%",boxSizing:"border-box"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:24,position:"sticky",top:0,zIndex:5,background:C.bg,padding:"8px 0"}}>
         <div>
           <div style={{fontSize:22,fontWeight:900,color:"#1A202C"}}>פרטי האירוע שלכם</div>
-          <div style={{fontSize:13,color:"#718096"}}>ניתן לערוך ולתקן את פרטי האירוע שלכם</div>
+          <div style={{fontSize:13,color:"#718096"}}>כל שינוי נשמר אוטומטית</div>
         </div>
-        <button onClick={save} disabled={saving}
-          style={{background:saved?"#276749":"#2B6CB0",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-          {saving?"שומר...":saved?"✓ נשמר!":"עדכון פרטים"}
-        </button>
+        {/* מצב השמירה (הכותרת דביקה, אז הוא נשאר גלוי גם בגלילה) */}
+        <div role="status" aria-live="polite" style={{flexShrink:0}}>
+          {saveErr
+            ?<button onClick={save} title={saveErr} style={{background:"#FFF5F5",color:"#C53030",border:"1.5px solid #FEB2B2",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>⚠️ לא נשמר · נסו שוב</button>
+            :<span style={{display:"inline-block",background:saving?"#EBF8FF":saved?"#F0FFF4":"#F7FAFC",color:saving?"#2B6CB0":saved?"#276749":"#718096",border:`1.5px solid ${saving?"#BEE3F8":saved?"#9AE6B4":"#E2E8F0"}`,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800}}>
+              {saving?"⏳ שומר...":saved?"✓ נשמר":"💾 שמירה אוטומטית"}
+            </span>}
+        </div>
       </div>
 
       <ShareEventCard event={event} user={user}/>
@@ -7059,7 +7086,15 @@ function InviteSettings({ event, onUpdate }) {
 
   const [inviteCode,setInviteCode]=useState(event.invite_code||"");
   useEffect(()=>{if(!event.invite_code){const code=Math.random().toString(36).slice(2,10);sb.from("events").update({invite_code:code}).eq("id",event.id).then(()=>setInviteCode(code));}},[]);
-  const save=async()=>{setSaving(true);await sb.from("events").update({template_id:templateId}).eq("id",event.id);onUpdate({...event,template_id:templateId,invite_code:inviteCode});setSaved(true);setTimeout(()=>setSaved(false),2500);setSaving(false);};
+  // בחירת עיצוב נשמרת מיד (בלי כפתור שמירה ובלי לצאת מהמסך)
+  const [saveErr,setSaveErr]=useState("");
+  const pickTemplate=async id=>{
+    setTemplateId(id);setSaving(true);setSaved(false);
+    const{error}=await sb.from("events").update({template_id:id}).eq("id",event.id);
+    setSaving(false);
+    if(error){setSaveErr(error.message);return;}
+    event.template_id=id;setSaveErr("");setSaved(true);
+  };
   const inviteUrl=`${window.location.origin}/#/invite/${inviteCode}`;
   const copy=()=>{navigator.clipboard.writeText(inviteUrl).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});};
   const shareWA=()=>shareInviteWA(event,inviteUrl);
@@ -7089,13 +7124,13 @@ function InviteSettings({ event, onUpdate }) {
         {[["📛",event.name],["📅",event.date?new Date(event.date).toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"}):"לא הוגדר"],["🕐",event.event_time||"לא הוגדר"],["📍",event.venue||"לא הוגדר"],["🏠",event.venue_address||"לא הוגדר"]].map(([icon,val])=>(
           <div key={icon} style={{display:"flex",gap:8,marginBottom:6,fontSize:13,color:C.text}}><span>{icon}</span><span>{val}</span></div>
         ))}
-        <div style={{fontSize:11,color:C.muted,marginTop:8}}>לשינוי הפרטים  -  חזור לרשימת האירועים ולחץ ✏️</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:8}}>לשינוי הפרטים: מסך "פרטי האירוע" (השינויים נשמרים אוטומטית)</div>
       </Card>
 
       <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:12}}>🎨 בחר עיצוב הזמנה</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
         {templates.map(tmpl=>(
-          <div key={tmpl.id} onClick={()=>setTemplateId(tmpl.id)} style={{cursor:"pointer",borderRadius:14,overflow:"hidden",border:`3px solid ${templateId===tmpl.id?C.blueL:"transparent"}`,boxShadow:templateId===tmpl.id?`0 4px 16px ${C.blueL}44`:"none",transition:"all .2s"}}>
+          <div key={tmpl.id} onClick={()=>pickTemplate(tmpl.id)} style={{cursor:"pointer",borderRadius:14,overflow:"hidden",border:`3px solid ${templateId===tmpl.id?C.blueL:"transparent"}`,boxShadow:templateId===tmpl.id?`0 4px 16px ${C.blueL}44`:"none",transition:"all .2s"}}>
             <div style={{height:80,background:tmpl.bg,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
               <div style={{position:"absolute",inset:0,background:tmpl.overlay}}/>
               <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",padding:4}}>
@@ -7107,9 +7142,10 @@ function InviteSettings({ event, onUpdate }) {
         ))}
       </div>
 
-      <button onClick={save} disabled={saving} style={{width:"100%",background:saved?C.success:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"background .3s"}}>
-        {saving?"שומר...":(saved?"✓ נשמר!":"💾 שמור עיצוב")}
-      </button>
+      <div role="status" aria-live="polite" style={{textAlign:"center",fontSize:13,fontWeight:800,color:saveErr?C.danger:saved?C.success:C.muted}}>
+        {saveErr?<button onClick={()=>pickTemplate(templateId)} title={saveErr} style={{background:"#FFF5F5",color:"#C53030",border:"1.5px solid #FEB2B2",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>⚠️ העיצוב לא נשמר · נסו שוב</button>
+          :saving?"⏳ שומר...":saved?"✓ העיצוב נשמר":"העיצוב שתבחרו נשמר אוטומטית"}
+      </div>
     </div>
   );
 }
