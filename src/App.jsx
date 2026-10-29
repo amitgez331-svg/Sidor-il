@@ -2289,6 +2289,39 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
 }
 
 // ─── MOBILE RSVP SCREEN ──────────────────────────────────────────────────────
+// הדפסת אישורי הגעה: סיכום + רשימה לפי סטטוס (מגיעים / ממתינים / לא מגיעים). only = סטטוס אחד בלבד (או "all")
+function printRsvpList(event,allGuests,tables,only="all"){
+  const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const ppl=g=>g.guest_count||1;
+  const statusOf=g=>g.rsvp==="confirmed"||g.rsvp==="declined"?g.rsvp:"pending";
+  const tableOf=g=>{const t=tables.find(t=>t.id===g.table_id);return t?tableLabel(event.settings_json?.table_nums?.[t.id],t.name):"";};
+  const groups=[["confirmed","✓ מגיעים"],["pending","⏳ ממתינים לתשובה"],["declined","✗ לא מגיעים"]].filter(([k])=>only==="all"||only===k);
+  const sum=k=>allGuests.filter(g=>statusOf(g)===k).reduce((n,g)=>n+ppl(g),0);
+  const sections=groups.map(([k,label])=>{
+    const list=allGuests.filter(g=>statusOf(g)===k).sort((a,b)=>a.name.localeCompare(b.name,"he"));
+    if(!list.length)return `<h2>${label} (0)</h2><p class="empty">אין</p>`;
+    return `<h2>${label} · ${list.length} רשומות · ${sum(k)} אנשים</h2><table><thead><tr><th>#</th><th>שם</th><th>טלפון</th><th>קטגוריה</th><th class="c">אנשים</th>${k==="declined"?"":"<th>שולחן</th>"}</tr></thead><tbody>${
+      list.map((g,i)=>`<tr><td class="c">${i+1}</td><td>${esc(g.name)}</td><td dir="ltr">${esc(g.phone||"")}</td><td>${esc(g.relation&&g.relation!=="ללא שיוך"?g.relation:"")}</td><td class="c">${ppl(g)}</td>${k==="declined"?"":`<td>${esc(tableOf(g))}</td>`}</tr>`).join("")
+    }</tbody></table>`;
+  }).join("");
+  const title=esc(event.name||"אישורי הגעה"),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
+  const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
+  w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>אישורי הגעה · ${title}</title><style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+    *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}
+    h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 14px;font-size:13px}
+    .sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}.sum div{border:1.5px solid #CFC3E0;border-radius:10px;padding:8px 14px;font-size:13px}.sum b{font-size:18px;display:block}
+    h2{font-size:16px;margin:24px 0 8px;border-bottom:2px solid #2B1D3F;padding-bottom:4px;break-after:avoid}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #EEE6F7;padding:5px 8px;text-align:right}th{background:#F4EEFC}td.c,th.c{text-align:center}tr{break-inside:avoid}
+    .empty{color:#8A7FA0;font-size:12px}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}
+    @media print{.bar{display:none}body{margin:10mm}}
+  </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+  <h1>אישורי הגעה · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · הודפס ${new Date().toLocaleDateString("he-IL")}</div>
+  <div class="sum"><div><b>${sum("confirmed")}</b>מגיעים</div><div><b>${sum("pending")}</b>ממתינים</div><div><b>${sum("declined")}</b>לא מגיעים</div><div><b>${allGuests.reduce((n,g)=>n+ppl(g),0)}</b>סה״כ מוזמנים</div></div>
+  ${sections}</body></html>`);
+  w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+}
+
 function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport }) {
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -2420,6 +2453,7 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
       <div style={{padding:"10px 16px",display:"flex",gap:8}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..." style={{flex:1,minWidth:0,border:"1px solid #e5e5e5",borderRadius:50,padding:"9px 16px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#f9f9f9"}}/>
         {onImport&&<button onClick={onImport} style={{flexShrink:0,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>📊 ייבוא</button>}
+        <button onClick={()=>printRsvpList(event,allGuests,tables)} aria-label="הדפסת אישורי הגעה" style={{flexShrink:0,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🖨️ הדפס</button>
       </div>
 
       {/* טבלה */}
@@ -4564,6 +4598,10 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             📊 ייבוא אורחים
           </button>}
+          <button onClick={()=>printRsvpList(event,allGuests,tables,filterRsvp)} title={filterRsvp==="all"?"הדפסת כל אישורי ההגעה":"הדפסת הסינון הנוכחי"}
+            style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+            🖨️ הדפסה
+          </button>
           <button onClick={openAdd}
             style={{background:"#2B6CB0",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             ➕ הוסף מוזמנת
