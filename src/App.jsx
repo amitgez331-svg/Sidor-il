@@ -2457,7 +2457,8 @@ const saveTasks=async(event,next)=>{
 function TasksScreen({ event }) {
   const [list,setList]=useState(()=>taskList(event));
   useEffect(()=>{setList(taskList(event));},[event.id]);
-  const [filter,setFilter]=useState("open"),[title,setTitle]=useState(""),[due,setDue]=useState(""),[editId,setEditId]=useState(null);
+  // ברירת מחדל: הכל — משימה שהושלמה נשארת במקומה עם קו עליה (נותן מוטיבציה לראות התקדמות)
+  const [filter,setFilter]=useState("all"),[title,setTitle]=useState(""),[due,setDue]=useState(""),[editId,setEditId]=useState(null);
   const update=next=>{setList(next);saveTasks(event,next);};
   const toggle=id=>update(list.map(t=>t.id===id?{...t,done:!t.done}:t));
   const remove=id=>update(list.filter(t=>t.id!==id));
@@ -2488,7 +2489,7 @@ function TasksScreen({ event }) {
       </div>
       {!ev&&<div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#B45309",marginBottom:12}}>⚠️ הגדירו תאריך אירוע ב"פרטי האירוע" כדי שלכל משימה יופיע תאריך יעד.</div>}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-        {[["open","פתוחות"],["late",`באיחור${late?` (${late})`:""}`],["done","הושלמו"],["all","הכל"]].map(([k,l])=>(
+        {[["all","הכל"],["open","פתוחות"],["late",`באיחור${late?` (${late})`:""}`],["done","הושלמו"]].map(([k,l])=>(
           <button key={k} onClick={()=>setFilter(k)} aria-pressed={filter===k} style={{background:filter===k?C.blue:"#fff",color:filter===k?"#fff":C.blue,border:`1.5px solid ${filter===k?C.blue:C.border}`,borderRadius:100,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
         ))}
       </div>
@@ -2501,14 +2502,14 @@ function TasksScreen({ event }) {
         <div key={g.b} style={{marginBottom:16}}>
           <div style={{fontSize:13,fontWeight:900,color:C.muted,margin:"0 4px 8px"}}>{g.b}</div>
           {g.items.map(t=>{const d=taskDue(t,event),lt=taskLate(t,event),cat=TASK_CATS[t.c]||TASK_CATS.plan;return(
-            <Card key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,opacity:t.done?.6:1,border:`1.5px solid ${lt?"#FEB2B2":C.border}`}}>
+            <Card key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,background:t.done?"#F6FFF9":undefined,border:`1.5px solid ${lt?"#FEB2B2":t.done?"#C6F6D5":C.border}`,transition:"background .2s"}}>
               <button role="checkbox" aria-checked={t.done} aria-label={t.t} onClick={()=>toggle(t.id)}
                 style={{width:26,height:26,borderRadius:8,border:`2px solid ${t.done?"#25D366":"#CBD5E0"}`,background:t.done?"#25D366":"#fff",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{t.done?"✓":""}</button>
               <span title={cat[1]} style={{fontSize:16,flexShrink:0}}>{cat[0]}</span>
               <div style={{flex:1,minWidth:0}}>
                 {editId===t.id
                   ?<input autoFocus defaultValue={t.t} onBlur={e=>rename(t.id,e.target.value)} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();if(e.key==="Escape")setEditId(null);}} style={{...inp,width:"100%",padding:"6px 10px"}}/>
-                  :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.t}</div>}
+                  :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:t.done?"#8A9A90":C.text,textDecoration:t.done?"line-through":"none",textDecorationThickness:2,textDecorationColor:"#25D366"}}>{t.t}</div>}
                 {d&&<div style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":C.muted,fontWeight:lt||taskCatchUp(t,event)?800:500}}>{lt?"⚠️ באיחור · ":taskCatchUp(t,event)?"⏩ להשלים בהקדם · ":""}{fmtDue(d)}</div>}
               </div>
               <button onClick={()=>setEditId(t.id)} aria-label={`עריכת ${t.t}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",padding:4}}>✏️</button>
