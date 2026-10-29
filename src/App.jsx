@@ -5405,7 +5405,8 @@ const SCHEDULE_DEFAULTS=[
 // SMS בלבד: שליחה אוטומטית ע"י sms-scheduler בשרת (כל 5 דקות). הנמענים לפי הנוסח — כמו recipientsFor בשרת
 const SCHEDULE_TO={invite:"כל האורחים",reminder:"ממתינים לאישור",table:"מגיעים ששובצו לשולחן",thanks:"מגיעים"};
 const SCHEDULE_LATE_HOURS=12;
-function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false }) {
+// defaultOn: תזמוני ברירת המחדל מופעלים כל עוד המשתמש לא שינה אותם (בוואטסאפ: 4 הסבבים שבחבילה)
+function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false }) {
   const eventD=event.date?new Date(event.date):null;
   // סטטוס שליחה אוטומטית לכל תזמון
   const [runs,setRuns]=useState({});
@@ -5435,7 +5436,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   const build=()=>{
     const saved=event.settings_json?.[storeKey]||[];
     const byId=Object.fromEntries(saved.map(s=>[s.id,s]));
-    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:false,...(byId[d.id]||{})}));
+    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:defaultOn,...(byId[d.id]||{})}));
     const extra=saved.filter(s=>s.custom);
     return [...base,...extra];
   };
@@ -5956,7 +5957,6 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
 // ─── WHATSAPP SCREEN ──────────────────────────────────────────────────────────
 function WhatsAppScreen({ event, guests, userPackages=[] }) {
-  const [waPkg,setWaPkg]=useState(null); // null=מסך החבילה, "auto"=נוסחים ושליחה
   // חבילה: כמות רשומות × ₪1.8 + מוקד אופציונלי + ₪100 בסיסית רק אם עוד לא נרכשה (כמו בדף החבילות)
   const baseOwned=hasBasicPkg(userPackages), baseOn=!baseOwned, setBaseOn=()=>{}, smsBase=baseOwned?0:BASIC_PRICE;
   const [waQty,setWaQty]=useState(Math.max(50,Math.ceil((guests.length||100)/10)*10)), [waCall,setWaCall]=useState(false);
@@ -6066,15 +6066,16 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const sentOk=results?.filter(r=>r.status?.includes("✓")).length||0;
   const sentFail=results?.filter(r=>r.status?.includes("✗")).length||0;
 
-  // מסך החבילה: כמו כרטיס "הודעות WhatsApp" בדף החבילות (4 סבבים × ₪1.8 לרשומה + מוקד + בסיסית)
-  if(!waPkg) return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:16,paddingBottom:80}}>
-      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"20px",marginBottom:16,color:"#fff",textAlign:"center"}}>
-        <div style={{fontSize:22,marginBottom:6}}>💬</div>
-        <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>הודעות WhatsApp</div>
-        <div style={{fontSize:13,opacity:.85}}>4 הודעות WhatsApp אוטומטיות לכל רשומה</div>
+  // רכישת החבילה (כמו כרטיס "הודעות WhatsApp" בדף החבילות): באותו דף עם הנוסחים, כמו ב-SMS.
+  // מי שכבר יש לו את החבילה רואה שורה מקוצרת, ויכול לפתוח את הכרטיס כדי להוסיף רשומות
+  const waOwned=userPackages.some(p=>["auto","vip","whatsapp"].includes(p?.package_id??p));
+  const [showBuy,setShowBuy]=useState(false);
+  const waPurchase=(waOwned&&!showBuy)
+    ?<div style={{background:"#F0FFF4",border:"1.5px solid #9AE6B4",borderRadius:14,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <span style={{flex:1,fontSize:13,fontWeight:800,color:"#276749"}}>✅ חבילת WhatsApp פעילה · 4 סבבים לכל רשומה</span>
+        <button onClick={()=>setShowBuy(true)} style={{background:"#fff",border:`1.5px solid ${WA_GREEN}`,color:"#075E54",borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🛒 הוספת רשומות</button>
       </div>
-
+    :(
       <div style={{background:"#fff",border:`2px solid ${WA_GREEN}`,borderRadius:18,overflow:"hidden",boxShadow:`0 4px 20px ${WA_GREEN}33`,marginBottom:16}}>
         <div style={{padding:16,display:"flex",alignItems:"center",gap:12}}>
           <div style={{width:46,height:46,borderRadius:13,background:WA_GREEN+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>💬</div>
@@ -6105,15 +6106,10 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",background:`linear-gradient(135deg,${WA_GREEN},${WA_GREEN}CC)`,color:"#fff",borderRadius:12,padding:13,fontSize:15,fontWeight:700,textDecoration:"none"}}>
             💬 פנה לרכישה בוואטסאפ - {fmtShekel(waSum)}
           </a>
+          {waOwned&&<button onClick={()=>setShowBuy(false)} style={{display:"block",margin:"10px auto 0",background:"none",border:"none",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>סגור</button>}
         </div>
       </div>
-
-      <button onClick={()=>setWaPkg("auto")}
-        style={{width:"100%",background:"#fff",border:`1.5px solid ${WA_GREEN}`,color:"#075E54",borderRadius:12,padding:12,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-        ✓ כבר רכשתי · לנוסחים ולשליחה ←
-      </button>
-    </div>
-  );
+    );
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
@@ -6135,11 +6131,9 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
           </div>
         </div>
-        <button onClick={()=>setWaPkg(null)}
-          style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-          ← חזור לחבילה
-        </button>
       </div>
+
+      {waPurchase}
 
       <div className="wa-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
 
@@ -6188,7 +6182,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
           </div>
 
           {/* תזמון שליחה וואטסאפ  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN}
+          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn
             onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");}}/>
 
           {/* כפתור שליחה */}
@@ -6275,7 +6269,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             {/* אזהרה */}
             <div style={{marginTop:14,background:"#FFFBEB",border:"1.5px solid #F6E05E",borderRadius:10,padding:"10px 14px"}}>
               <div style={{fontSize:12,color:"#744210",lineHeight:1.7}}>
-                ⚠️ <strong>לפני שליחה:</strong> ודא שהגדרת את Twilio Secrets ב-Supabase. ללא הגדרה  -  ההודעות לא יישלחו.
+                💡 התזמון מראה מתי לשלוח כל אחד מ-4 הסבבים. אם משהו לא נשלח, דברו איתנו בוואטסאפ ונטפל.
               </div>
             </div>
           </div>
