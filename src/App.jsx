@@ -175,7 +175,7 @@ const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; /
 // רכישת SMS לפי כמות חופשית: מחיר להודעה × כמות.
 // רכישה ראשונה (אין עדיין חבילה בסיסית ומעלה) מוסיפה את מחיר החבילה הבסיסית — SMS דורש אותה
 const SMS_UNIT_PRICE=0.5, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000, BASIC_PRICE=100;
-const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff"].includes(p?.package_id??p));
+const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p?.package_id??p));
 const smsTotal=(q,base=0,unit=SMS_UNIT_PRICE)=>Math.round(q*unit*100)/100+base;
 // חבילת הודעות WhatsApp: 4 סבבים אוטומטיים, מחיר לפי רשומה (אורח / משפחה עם טלפון אחד)
 const WA_RECORD_PRICE=1.8;
@@ -1968,8 +1968,8 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
-  const hasSeating=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id??p));
-  const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff"].includes(p.package_id??p));
+  const hasSeating=userPackages.some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p.package_id??p));
+  const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p.package_id??p));
   const isFreePlan=userPackages.length===0;
   const items=[
     {id:"home",icon:"🏠",label:"ראשי"},
@@ -2055,7 +2055,7 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 }
 
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
-function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards }) {
+function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
   const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null);
   const assign=async tableId=>{if(!picked)return;await dropOnTable(tableId,picked.id,picked.table_id||null);setPicked(null);setTab("guests");};
   return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
@@ -2106,6 +2106,7 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
             <button key={k} onClick={()=>onPrintCards(k)} style={{flex:1,background:C.surface,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
           ))}
         </div>}
+        {onTemplates&&<button onClick={onTemplates} style={{width:"100%",background:C.surface,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>🏛️ תבניות אולם (שמירה וטעינה)</button>}
 
         {tables.length===0&&<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48}}>🪑</div><p style={{color:C.muted,fontSize:14,marginTop:8}}>אין עדיין שולחנות</p></div>}
 
@@ -2222,6 +2223,60 @@ function PushDevice() {
   );
 }
 
+// ─── פרופיל מפיק: השם, הנייד והלוגו שמוצגים בתחתית ההזמנה לאורחים (רק לחשבון מפיק) ───
+function ProducerProfileCard({ user }) {
+  const [isProducer,setIsProducer]=useState(false),[p,setP]=useState(null),[busy,setBusy]=useState(false),[msg,setMsg]=useState("");
+  useEffect(()=>{(async()=>{
+    const [{data:pk},{data:pp}]=await Promise.all([
+      sb.from("user_packages").select("package_id").eq("user_id",user.id),
+      sb.from("producer_profiles").select("*").eq("user_id",user.id).maybeSingle(),
+    ]);
+    setIsProducer((pk||[]).some(x=>x.package_id==="producer"));
+    setP(pp||{brand_name:"",phone:"",logo_url:"",show_on_invite:true});
+  })();},[user.id]);
+  if(!isProducer||!p)return null;
+  const save=async next=>{
+    setP(next);setMsg("");
+    const{error}=await sb.from("producer_profiles").upsert({user_id:user.id,brand_name:next.brand_name||null,phone:next.phone||null,logo_url:next.logo_url||null,show_on_invite:!!next.show_on_invite,updated_at:new Date().toISOString()});
+    setMsg(error?"❌ "+error.message:"✓ נשמר");
+  };
+  const upload=async file=>{
+    if(!file)return;
+    if(file.size>2*1024*1024){setMsg("❌ הלוגו גדול מדי (עד 2MB)");return;}
+    setBusy(true);
+    const path=`producer_logos/${user.id}_${Date.now()}.${(file.name.split(".").pop()||"png").toLowerCase()}`;
+    const{error}=await sb.storage.from("event-images").upload(path,file,{upsert:true});
+    setBusy(false);
+    if(error){setMsg("❌ ההעלאה נכשלה: "+error.message);return;}
+    save({...p,logo_url:sb.storage.from("event-images").getPublicUrl(path).data.publicUrl});
+  };
+  const inp={border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:13,fontFamily:"inherit",outline:"none",width:"100%",boxSizing:"border-box"};
+  return(
+    <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)",border:"1.5px solid #BAE6FD"}}>
+      <div style={{display:"flex",alignItems:"center",marginBottom:4}}>
+        <div style={{flex:1,fontSize:14,fontWeight:900,color:"#1a1a1a"}}>🎬 פרופיל מפיק</div>
+        {msg&&<span style={{fontSize:12,fontWeight:800,color:msg.startsWith("❌")?"#C53030":"#276749"}}>{msg}</span>}
+      </div>
+      <div style={{fontSize:12,color:"#666",marginBottom:12}}>השם והלוגו שלכם יופיעו בתחתית ההזמנה לאורחים בכל האירועים שלכם ("בהפקת ...").</div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        <input defaultValue={p.brand_name||""} onBlur={e=>{if(e.target.value.trim()!==(p.brand_name||""))save({...p,brand_name:e.target.value.trim()});}} placeholder="שם העסק (למשל: הפקות שמחה)" aria-label="שם העסק" maxLength={60} style={inp}/>
+        <input defaultValue={p.phone||""} onBlur={e=>{if(e.target.value.trim()!==(p.phone||""))save({...p,phone:e.target.value.trim()});}} placeholder="טלפון להצגה (לא חובה)" aria-label="טלפון" type="tel" dir="ltr" maxLength={20} style={{...inp,textAlign:"right"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          {p.logo_url&&<img src={p.logo_url} alt="הלוגו שלכם" style={{height:44,maxWidth:120,objectFit:"contain",borderRadius:8,border:"1px solid #eee",background:"#fff"}}/>}
+          <label style={{background:"#F0F9FF",color:"#0E7490",border:"1.5px solid #BAE6FD",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+            {busy?"מעלה...":p.logo_url?"🔄 החלפת לוגו":"📁 העלאת לוגו"}
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";upload(f);}}/>
+          </label>
+          {p.logo_url&&<button onClick={()=>save({...p,logo_url:""})} style={{background:"none",border:"none",color:"#A0AEC0",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>הסר לוגו</button>}
+        </div>
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+          <input type="checkbox" checked={!!p.show_on_invite} onChange={e=>save({...p,show_on_invite:e.target.checked})}/> להציג בהזמנה לאורחים
+        </label>
+      </div>
+    </div>
+  );
+}
+
 // ─── MOBILE SETTINGS SCREEN ──────────────────────────────────────────────────
 function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
   const [pwForm,setPwForm]=useState({newP:"",confirm:""});
@@ -2277,6 +2332,8 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
           </button>
         </div>
       </div>
+
+      <ProducerProfileCard user={user}/>
 
       {/* שינוי סיסמה */}
       <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
@@ -2682,11 +2739,13 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   );
 }
 
+// מסכים שזוג עם גישה מוגבלת לא רואה (הודעות וחבילות נשארות אצל בעל האירוע / המפיק)
+const COUPLE_HIDDEN=["sms","whatsapp","packages"];
 // מסך שדורש חבילה (כמו בתפריט הצד)
 const screenLocked=(id,userPackages)=>{
   const has=list=>userPackages.some(p=>list.includes(p.package_id??p));
-  if(id==="rsvp"||id==="checkin"||id==="gifts")return !has(["basic","seating","sms","auto","vip","staff"]);
-  if(id==="seating")return !has(["basic","seating","sms","auto","vip","staff"]); // הבסיסית (₪100) כוללת סידורי הושבה
+  if(id==="rsvp"||id==="checkin"||id==="gifts")return !has(["basic","seating","sms","auto","vip","staff","producer"]);
+  if(id==="seating")return !has(["basic","seating","sms","auto","vip","staff","producer"]); // הבסיסית (₪100) כוללת סידורי הושבה
   if(id==="sms")return !has(["sms","auto","vip"]);
   if(id==="whatsapp")return !has(["auto","vip","whatsapp"]); // whatsapp = מזהה ישן מהאדמין
   if(id==="ai"||id==="budget"||id==="import")return userPackages.length===0;
@@ -2946,6 +3005,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [trialHours] = useState(0);
   const [editTableData,setEditTableData]=useState(null);
   const hasPkg=(id)=>userPackages.includes(id)||userPackages.includes("vip");
+  // אירוע ששותף איתי בגישה מוגבלת (זוג של מפיק): בלי הודעות וחבילות
+  const [memberRole,setMemberRole]=useState(null);
+  useEffect(()=>{
+    if(!event.user_id||event.user_id===user.id){setMemberRole(null);return;}
+    sb.from("event_members").select("role").eq("event_id",event.id).eq("email",String(user.email||"").toLowerCase()).maybeSingle().then(({data})=>setMemberRole(data?.role||"editor"));
+  },[event.id]);
+  const couple=memberRole==="couple";
+  const lockedFor=id=>screenLocked(id,userPackages)||(couple&&COUPLE_HIDDEN.includes(id));
 
   useEffect(()=>{
     const last=readLastScreen(event.id);
@@ -2958,7 +3025,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // שמירת המסך הנוכחי לרענון הבא
   useEffect(()=>{try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));}catch{}},[event.id,screen,view]);
   // מסך שנשמר אבל נעול (למשל החבילה הסתיימה) — חוזרים לראשי
-  useEffect(()=>{if(!loading&&screenLocked(screen,userPackages))setScreen("home");},[loading,userPackages]);
+  useEffect(()=>{if(!loading&&lockedFor(screen))setScreen("home");},[loading,userPackages,memberRole]);
   const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),event.user_id&&event.user_id!==user.id
     // אירוע ששותף איתי: החבילות של בעל האירוע
     ?sb.rpc("event_packages",{p_event:event.id}).then(r=>({data:(r.data||[]).map(p=>({package_id:p}))}))
@@ -3087,6 +3154,67 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     return {x:x0,y:y0+bs.length*40};
   };
   const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:spot.x,y:spot.y,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
+  // ─── תבניות אולם: שמירת מפת השולחנות (וגם במה/בר/כניסה) וטעינה לאירוע אחר באותו אולם ───
+  const [tplOpen,setTplOpen]=useState(false),[tpls,setTpls]=useState(null);
+  const saveTemplate=async()=>{
+    if(!tables.length){alert("אין עדיין שולחנות לשמירה");return;}
+    const name=window.prompt("שם התבנית (למשל: אולמי הגן · אולם A)",event.venue||"");
+    if(!name?.trim())return;
+    const data={tables:tablesNum.map(t=>({name:t.name,type:t.type,seats:t.seats,x:t.x,y:t.y,num:t.num})),hall:hallRef.current||{}};
+    const{error}=await sb.from("hall_templates").insert({name:name.trim(),data});
+    alert(error?"❌ התבנית לא נשמרה: "+error.message:`✅ התבנית "${name.trim()}" נשמרה (${data.tables.length} שולחנות)`);
+  };
+  const openTemplates=async()=>{
+    setTplOpen(true);setTpls(null);
+    const{data,error}=await sb.from("hall_templates").select("id,name,data,created_at").order("created_at",{ascending:false});
+    setTpls(error?[]:data||[]);
+  };
+  const applyTemplate=async tpl=>{
+    const seatedN=tables.reduce((n,t)=>n+(t.guests||[]).length,0);
+    if(tables.length&&!window.confirm(`התבנית תחליף את ${tables.length} השולחנות הקיימים${seatedN?`, ו-${seatedN} אורחים יחזרו לממתינים להושבה`:""}. להמשיך?`))return;
+    setSaving(true);
+    if(tables.length){
+      await sb.from("guests").update({table_id:null}).eq("event_id",event.id);
+      const{error}=await sb.from("tables").delete().eq("event_id",event.id);
+      if(error){setSaving(false);alert("❌ לא ניתן להחליף את השולחנות: "+error.message);await loadAll(true);return;}
+    }
+    const src=tpl.data?.tables||[];
+    const{data:rows,error}=await sb.from("tables").insert(src.map(t=>({name:t.name,type:t.type,seats:t.seats,x:t.x,y:t.y,event_id:event.id}))).select();
+    if(error){setSaving(false);alert("❌ טעינת התבנית נכשלה: "+error.message);await loadAll(true);return;}
+    const nums={};(rows||[]).forEach((r,i)=>{nums[r.id]=src[i]?.num||i+1;});
+    await saveTableNums(nums);
+    await saveHall(tpl.data?.hall||{});
+    await loadAll(true);setSaving(false);setTplOpen(false);
+  };
+  const deleteTemplate=async tpl=>{
+    if(!window.confirm(`למחוק את התבנית "${tpl.name}"?`))return;
+    const{error}=await sb.from("hall_templates").delete().eq("id",tpl.id);
+    if(error)alert("❌ "+error.message);else setTpls(l=>(l||[]).filter(x=>x.id!==tpl.id));
+  };
+  const templatesModal=tplOpen&&(
+    <div style={{position:"fixed",inset:0,zIndex:330,background:"rgba(43,29,63,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setTplOpen(false)}>
+      <div onClick={e=>e.stopPropagation()} dir="rtl" role="dialog" aria-label="תבניות אולם" style={{background:"#fff",borderRadius:20,padding:20,width:"100%",maxWidth:460,maxHeight:"85vh",overflowY:"auto"}}>
+        <div style={{display:"flex",alignItems:"center",marginBottom:6}}>
+          <div style={{flex:1,fontWeight:900,fontSize:17,color:C.text}}>🏛️ תבניות אולם</div>
+          <button onClick={()=>setTplOpen(false)} aria-label="סגירה" style={{background:C.blueXL,border:"none",borderRadius:10,width:32,height:32,cursor:"pointer"}}>✕</button>
+        </div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:14}}>טוענים מפת שולחנות שמורה (כולל מספרים, במה, בר וכניסה). האורחים לא נמחקים, רק חוזרים לממתינים להושבה.</div>
+        <button onClick={saveTemplate} disabled={!tables.length} className="sx-btn" style={{width:"100%",background:tables.length?GRAD:"#E2E8F0",color:tables.length?"#fff":"#999",border:"none",borderRadius:12,padding:11,fontSize:14,fontWeight:900,cursor:tables.length?"pointer":"default",fontFamily:"inherit",marginBottom:14}}>💾 שמור את האולם הנוכחי כתבנית</button>
+        {tpls===null?<div style={{textAlign:"center",padding:20}}><Spinner size={22}/></div>
+          :!tpls.length?<div style={{textAlign:"center",color:C.muted,fontSize:13,padding:16}}>עוד אין תבניות שמורות</div>
+          :tpls.map(t=>(
+            <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:14,color:C.text}}>{t.name}</div>
+                <div style={{fontSize:11,color:C.muted}}>{(t.data?.tables||[]).length} שולחנות · {(t.data?.tables||[]).reduce((n,x)=>n+(x.seats||0),0)} מקומות · {new Date(t.created_at).toLocaleDateString("he-IL")}</div>
+              </div>
+              <button onClick={()=>applyTemplate(t)} disabled={saving} style={{background:C.blue,color:"#fff",border:"none",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📥 טען</button>
+              <button onClick={()=>deleteTemplate(t)} aria-label={`מחיקת ${t.name}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#A0AEC0"}}>🗑️</button>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
   const selTable=tables.find(t=>t.id===selected);
   const seated=tables.reduce((s,t)=>s+(t.guests||[]).length,0);
   const total=seated+guests.length;
@@ -3270,8 +3398,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
               {icon:"✅",label:"משימות",nav:"tasks",bg:"#F0FFF4",color:"#276749"},
               {icon:"⚙️",label:"הגדרות",nav:"settings",bg:"#F5F5F5",color:"#555"},
-            ].map(item=>(
-              <div key={item.nav} onClick={()=>screenLocked(item.nav,userPackages)?setModal("locked"):setScreen(item.nav)}
+            ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
+              <div key={item.nav} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}
                 style={{background:"#fff",borderRadius:16,padding:"16px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 2px 8px rgba(155,107,255,.07)",border:"1px solid rgba(155,107,255,.06)",transition:"all .2s"}}
                 onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"}
                 onTouchEnd={e=>e.currentTarget.style.transform="none"}>
@@ -3303,7 +3431,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
       <div style={{flex:1,overflow:"auto"}}>
         {screen==="home"&&<HomeScreen/>}
-        {screen==="seating"&&<MobileSeating tables={tablesNum} onPrint={printSeating} onPrintCards={printCards} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
+        {screen==="seating"&&<MobileSeating tables={tablesNum} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
         {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
@@ -3404,7 +3532,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
       {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
-      {autoSeatModal}
+      {autoSeatModal}{templatesModal}
     </div>);
   }
 
@@ -3487,9 +3615,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
 
           <nav style={{flex:"1 0 auto",padding:"6px 0 8px"}} aria-label="תפריט ניהול">
-            {navItems.map(item=>{
+            {navItems.filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.id))).map(item=>{
               const isLocked=(()=>{
-                return screenLocked(item.id,userPackages);
+                return lockedFor(item.id);
               })();
               const on=screen===item.id;
               return(
@@ -3675,7 +3803,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       {icon:"📱",label:"הודעות SMS",nav:"sms"},
                       {icon:"💬",label:"WhatsApp",nav:"whatsapp"},
                       {icon:"➕",label:"הוסף אורח",nav:"add"},
-                    ].map(item=>(
+                    ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
                       <button key={item.nav} onClick={()=>setScreen(item.nav)}
                         style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,background:"#FBF8FD",border:"1px solid #E2E8F0",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,color:"#2B1D3F",transition:"all .15s",textAlign:"right"}}
                         onMouseEnter={e=>{e.currentTarget.style.background="#FFF1F6";e.currentTarget.style.borderColor="#9147D6";}}
@@ -4131,6 +4259,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               style={{background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
               🏷️ כרטיסי שם
             </button>
+            <button onClick={openTemplates} className="sx-btn"
+              style={{background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+              🏛️ תבניות אולם
+            </button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
             {tablesNum.map(t=>(
@@ -4277,7 +4409,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {modal==="addGuest"&&<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}} desktop={true}/>}
     {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
-    {autoSeatModal}
+    {autoSeatModal}{templatesModal}
     {/* WhatsApp צף */}
     <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
       style={{position:"fixed",bottom:90,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none"}}>
@@ -4294,8 +4426,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 // ─── שיתוף האירוע: בעל האירוע מוסיף מיילים (בן/בת זוג, הורים) שיכולים לנהל אותו מהחשבון שלהם ───
 function ShareEventCard({ event, user }) {
   const owner=!event.user_id||event.user_id===user?.id;
-  const [list,setList]=useState(null),[email,setEmail]=useState(""),[busy,setBusy]=useState(false);
-  const load=async()=>{const{data,error}=await sb.from("event_members").select("email,created_at").eq("event_id",event.id).order("created_at");setList(error?[]:data||[]);};
+  const [list,setList]=useState(null),[email,setEmail]=useState(""),[busy,setBusy]=useState(false),[role,setRole]=useState("editor");
+  const load=async()=>{const{data,error}=await sb.from("event_members").select("email,role,created_at").eq("event_id",event.id).order("created_at");setList(error?[]:data||[]);};
+  const setMemberRole=async(e,r)=>{const{error}=await sb.from("event_members").update({role:r}).eq("event_id",event.id).eq("email",e);if(error)alert("❌ "+error.message);else load();};
   useEffect(()=>{if(owner)load();},[event.id]);
   if(!owner)return(
     <div style={{background:"#EEF7FF",border:"1.5px solid #BEE3F8",borderRadius:14,padding:"12px 16px",marginBottom:16,fontSize:13,color:"#2B6CB0",fontWeight:700}}>🤝 האירוע הזה שותף איתך. אפשר לערוך הכול חוץ ממחיקת האירוע.</div>
@@ -4305,7 +4438,7 @@ function ShareEventCard({ event, user }) {
     const e=email.trim().toLowerCase();
     if(!valid||e===String(user.email||"").toLowerCase())return;
     setBusy(true);
-    const{error}=await sb.from("event_members").insert({event_id:event.id,email:e});
+    const{error}=await sb.from("event_members").insert({event_id:event.id,email:e,role});
     setBusy(false);
     if(error&&!/duplicate/i.test(error.message)){alert("❌ השיתוף נכשל: "+error.message);return;}
     setEmail("");load();
@@ -4318,16 +4451,22 @@ function ShareEventCard({ event, user }) {
   return(
     <div style={{background:"#fff",borderRadius:14,padding:"20px 24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
       <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4}}>🤝 שיתוף האירוע</div>
-      <div style={{fontSize:12,color:"#718096",marginBottom:12}}>הוסיפו את המייל של בן/בת הזוג או ההורים. אחרי שיתחברו עם המייל הזה, האירוע יופיע אצלם ויוכלו לנהל אותו יחד איתכם.</div>
+      <div style={{fontSize:12,color:"#718096",marginBottom:12}}>הוסיפו את המייל של בן/בת הזוג או ההורים. אחרי שיתחברו עם המייל הזה, האירוע יופיע אצלם ויוכלו לנהל אותו יחד איתכם.<br/><b>גישה מוגבלת</b>: מנהלים אורחים, אישורי הגעה והושבה, אבל בלי למחוק אורחים ושולחנות ובלי הודעות וחבילות. מתאים למפיק שמשתף את הזוג.</div>
       {(list||[]).map(m=>(
-        <div key={m.email} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",marginBottom:6,borderRadius:10,background:"#F7FAFC",fontSize:13}}>
-          <span style={{flex:1,direction:"ltr",textAlign:"right"}}>{m.email}</span>
+        <div key={m.email} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",marginBottom:6,borderRadius:10,background:"#F7FAFC",fontSize:13,flexWrap:"wrap"}}>
+          <span style={{flex:1,direction:"ltr",textAlign:"right",minWidth:140}}>{m.email}</span>
+          <select value={m.role||"editor"} onChange={e=>setMemberRole(m.email,e.target.value)} aria-label={`הרשאה של ${m.email}`} style={{border:"1px solid #E2E8F0",borderRadius:8,padding:"4px 6px",fontSize:12,fontFamily:"inherit",background:"#fff"}}>
+            <option value="editor">שותף מלא</option><option value="couple">גישה מוגבלת</option>
+          </select>
           <button onClick={()=>remove(m.email)} aria-label={`הסרת ${m.email}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",fontFamily:"inherit"}}>✕ הסר</button>
         </div>
       ))}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} type="email" dir="ltr" placeholder="name@gmail.com"
           style={{flex:"1 1 200px",minWidth:0,border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit"}}/>
+        <select value={role} onChange={e=>setRole(e.target.value)} aria-label="הרשאה" style={{border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px",fontSize:13,fontFamily:"inherit",background:"#fff"}}>
+          <option value="editor">שותף מלא</option><option value="couple">גישה מוגבלת (לזוג)</option>
+        </select>
         <button onClick={add} disabled={!valid||busy}
           style={{background:valid?"#2B6CB0":"#E2E8F0",color:valid?"#fff":"#aaa",border:"none",borderRadius:10,padding:"10px 18px",fontSize:14,fontWeight:700,cursor:valid?"pointer":"default",fontFamily:"inherit"}}>{busy?"...":"שתף"}</button>
       </div>
@@ -7347,6 +7486,14 @@ function InvitePage({ code, guestId }) {
           </button>
         </div>
 
+        {/* מיתוג המפיק (אם בעל האירוע הוא מפיק שבחר להציג) */}
+        {event.brand?.name&&(
+          <div style={{textAlign:"center",padding:"6px 0 14px"}}>
+            {event.brand.logo&&<img src={event.brand.logo} alt={event.brand.name} style={{height:48,maxWidth:160,objectFit:"contain",display:"block",margin:"0 auto 6px"}} onError={e=>{e.target.style.display="none";}}/>}
+            <div style={{fontSize:13,color:"#666",fontWeight:700}}>בהפקת {event.brand.name}</div>
+            {event.brand.phone&&<a href={`tel:${String(event.brand.phone).replace(/[^\d+]/g,"")}`} style={{fontSize:12,color:"#888",textDecoration:"none",direction:"ltr",display:"inline-block"}}>📞 {event.brand.phone}</a>}
+          </div>
+        )}
         <div style={{textAlign:"center",fontSize:12,color:"#aaa",paddingBottom:20}}>
           מופעל על ידי ◈ Sidor-IL
         </div>
@@ -7436,6 +7583,11 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
   const [showForm,setShowForm]=useState(false);
   const [form,setForm]=useState({name:"",date:"",event_type:"wedding",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:""});
 
+  // נתונים לכל אירוע (אישרו / הושבו / יתרת SMS) + האם המשתמש מפיק
+  const [stats,setStats]=useState({}),[balances,setBalances]=useState({}),[isProducer,setIsProducer]=useState(false);
+  const [view,setView]=useState(()=>{try{return localStorage.getItem("sidor_events_view")||"";}catch{return "";}});
+  const [range,setRange]=useState("upcoming"),[q,setQ]=useState("");
+  useEffect(()=>{try{if(view)localStorage.setItem("sidor_events_view",view);}catch{}},[view]);
   useEffect(()=>{
     loadMyEvents(user,"created_at",false)
       .then(async data=>{
@@ -7443,6 +7595,15 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
         setEvents(evs);
         if(evs.length===0)setShowForm(true);
         setLoading(false);
+        const ids=evs.map(e=>e.id);
+        const [{data:g},{data:b},{data:p}]=await Promise.all([
+          ids.length?sb.from("guests").select("event_id,rsvp,guest_count,table_id").in("event_id",ids):{data:[]},
+          ids.length?sb.from("sms_balance").select("event_id,balance").in("event_id",ids):{data:[]},
+          sb.from("user_packages").select("package_id").eq("user_id",user.id),
+        ]);
+        const st={};(g||[]).forEach(x=>{const s=st[x.event_id]||={rows:0,people:0,confirmed:0,pending:0,seated:0};const n=x.guest_count||1;s.rows++;s.people+=n;if(x.rsvp==="confirmed")s.confirmed+=n;else if(x.rsvp!=="declined")s.pending+=n;if(x.table_id)s.seated++;});
+        setStats(st);setBalances(Object.fromEntries((b||[]).map(x=>[x.event_id,x.balance])));
+        setIsProducer((p||[]).some(x=>x.package_id==="producer"));
       });
   },[]);
 
@@ -7511,9 +7672,53 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
           </div>
         )}
 
+        {/* מפיק: לוח בקרה בטבלה (אפשר לעבור לכרטיסים) */}
+        {isProducer&&events.length>0&&(
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
+            <span style={{background:"#E0F2FE",color:"#0E7490",borderRadius:100,padding:"5px 12px",fontSize:12,fontWeight:900}}>🎬 חשבון מפיק</span>
+            {[["table","📋 טבלה"],["cards","🗂️ כרטיסים"]].map(([k,l])=>(
+              <button key={k} onClick={()=>setView(k)} aria-pressed={(view||"table")===k} style={{background:(view||"table")===k?"#2B1D3F":"#fff",color:(view||"table")===k?"#fff":"#2B1D3F",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"7px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+            ))}
+          </div>
+        )}
+        {isProducer&&(view||"table")==="table"&&events.length>0?(()=>{
+          const t0=new Date();t0.setHours(0,0,0,0);
+          const dl=e=>e.date?Math.round((new Date(e.date+"T00:00:00")-t0)/864e5):null;
+          const list=events.filter(e=>{const d=dl(e);return range==="all"||(range==="upcoming"?(d===null||d>=0):(d!==null&&d<0));})
+            .filter(e=>!q.trim()||[e.name,e.venue,e.groom_name,e.bride_name].some(x=>String(x||"").includes(q.trim())))
+            .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999")*(range==="past"?-1:1));
+          const pctCell=(v,col)=><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{flex:1,minWidth:40,height:6,background:"#EEE",borderRadius:3,overflow:"hidden"}}><div style={{width:v+"%",height:"100%",background:col}}/></div><span style={{fontSize:12,fontWeight:800,minWidth:32}}>{v}%</span></div>;
+          return(
+            <div style={{background:"#fff",borderRadius:20,padding:16,boxShadow:"0 2px 16px rgba(155,107,255,.08)",marginBottom:32}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                {[["upcoming","קרובים"],["past","עברו"],["all","הכל"]].map(([k,l])=>(
+                  <button key={k} onClick={()=>setRange(k)} aria-pressed={range===k} style={{background:range===k?"#9147D6":"#fff",color:range===k?"#fff":"#9147D6",border:"1.5px solid #E9D8FD",borderRadius:100,padding:"5px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+                ))}
+                <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש אירוע, אולם או שם" style={{flex:"1 1 200px",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"7px 12px",fontSize:13,fontFamily:"inherit",outline:"none"}}/>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:720}}>
+                  <thead><tr style={{background:"#F7F3FB",textAlign:"right"}}>{["אירוע","תאריך","עוד","מוזמנים","אישרו","ממתינים","הושבו","SMS"].map(h=><th key={h} style={{padding:"9px 10px",fontWeight:900,color:"#4A3D66",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+                  <tbody>{list.map(e=>{const s=stats[e.id]||{},d=dl(e),conf=s.people?Math.round(s.confirmed/s.people*100):0,seat=s.rows?Math.round(s.seated/s.rows*100):0;return(
+                    <tr key={e.id} onClick={()=>onSelect(e)} style={{borderTop:"1px solid #F0EAF7",cursor:"pointer"}} onMouseEnter={x=>x.currentTarget.style.background="#FBF8FE"} onMouseLeave={x=>x.currentTarget.style.background=""}>
+                      <td style={{padding:"10px",fontWeight:800,color:"#2B1D3F"}}>{eventTypeEmoji(e.event_type)} {e.name}{e._shared&&<span style={{fontSize:10,color:"#0E7490",marginRight:6}}>משותף</span>}<div style={{fontSize:11,color:"#999",fontWeight:500}}>{e.venue||""}</div></td>
+                      <td style={{padding:"10px",whiteSpace:"nowrap"}}>{e.date?new Date(e.date+"T00:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—"}</td>
+                      <td style={{padding:"10px",whiteSpace:"nowrap",fontWeight:800,color:d!==null&&d>=0&&d<=14?"#C53030":"#666"}}>{d===null?"—":d<0?"עבר":d===0?"היום":`${d} ימים`}</td>
+                      <td style={{padding:"10px"}}>{s.people||0}</td>
+                      <td style={{padding:"10px",minWidth:110}}>{pctCell(conf,"#25D366")}</td>
+                      <td style={{padding:"10px",color:s.pending?"#B45309":"#999",fontWeight:700}}>{s.pending||0}</td>
+                      <td style={{padding:"10px",minWidth:110}}>{pctCell(seat,"#9147D6")}</td>
+                      <td style={{padding:"10px",fontWeight:800,color:(balances[e.id]??0)===0?"#C53030":"#276749"}}>{balances[e.id]??0}</td>
+                    </tr>
+                  );})}</tbody>
+                </table>
+                {!list.length&&<div style={{textAlign:"center",color:"#999",padding:24,fontSize:13}}>אין אירועים להצגה</div>}
+              </div>
+            </div>
+          );
+        })():
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:20,marginBottom:32}}>
           {events.map((ev,i)=>{
-            const confirmedCount=0; // נטען בנפרד אם צריך
             const typeEmoji=eventTypeEmoji(ev.event_type);
             const eventDate=ev.date?new Date(ev.date):null;
             const monthNames=["ינו","פבר","מרץ","אפר","מאי","יוני","יולי","אוג","ספט","אוק","נוב","דצמ"];
@@ -7549,19 +7754,20 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
                   )}
                 </div>
 
-                {/* פס התקדמות */}
+                {/* פס התקדמות: אחוז שאישרו הגעה */}
+                {(()=>{const s=stats[ev.id]||{},pct=s.people?Math.round(s.confirmed/s.people*100):0;return(
                 <div style={{borderTop:"1px solid #f0f0f0",paddingTop:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:32,height:32,borderRadius:"50%",border:"2.5px solid #9147D6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#9147D6"}}>0%</div>
-                      <span style={{fontSize:13,color:"#555",fontWeight:600}}>0%</span>
+                      <div style={{width:32,height:32,borderRadius:"50%",border:"2.5px solid #9147D6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#9147D6"}}>{pct}%</div>
+                      <span style={{fontSize:13,color:"#555",fontWeight:600}}>{s.people||0} מוזמנים</span>
                     </div>
-                    <span style={{fontSize:13,color:"#888"}}>0 מגיעים</span>
+                    <span style={{fontSize:13,color:"#888"}}>{s.confirmed||0} מגיעים</span>
                   </div>
                   <div style={{height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:"0%",background:"linear-gradient(90deg,#9147D6,#9B6BFF)",borderRadius:2}}/>
+                    <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#9147D6,#9B6BFF)",borderRadius:2}}/>
                   </div>
-                </div>
+                </div>);})()}
 
                 {daysLeft!==null&&daysLeft>0&&(
                   <div style={{marginTop:12,fontSize:11,color:"#9147D6",fontWeight:700,background:"rgba(155,107,255,.06)",borderRadius:8,padding:"5px 10px",display:"inline-block"}}>
@@ -7571,7 +7777,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
               </div>
             );
           })}
-        </div>
+        </div>}
 
         {/* טופס יצירת אירוע */}
         {showForm&&(
@@ -7720,6 +7926,7 @@ const ALL_PACKAGES=[
   {id:"sms",name:"SMS",color:"#059669",icon:"📱"},
   {id:"auto",name:"הודעות WhatsApp",color:"#25D366",icon:"💬"},
   {id:"staff",name:"צוות הושבה",color:"#7C3AED",icon:"👥"},
+  {id:"producer",name:"חשבון מפיק",color:"#0E7490",icon:"🎬"},
 ];
 // חבילות ישנות שעוד רשומות אצל משתמשים — מוצגות רק אצל מי שיש לו, כדי שאפשר יהיה להסיר
 const LEGACY_PACKAGES={whatsapp:"WhatsApp (ישן)",vip:"VIP (ישן)",reception:"עמדת קבלת פנים (ישן)",production:"הפקת אירוע (ישן)",seating:"הושבה (ישן)"};
