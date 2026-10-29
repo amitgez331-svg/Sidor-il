@@ -2155,6 +2155,73 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
 }
 
 // ─── SEATING APP ──────────────────────────────────────────────────────────────
+// ─── התראות Push במכשיר הנוכחי (public/sw.js + push_subscriptions + push-notify) ───
+const b64ToBytes=s=>{const p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0));};
+const bytesToB64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone=()=>window.matchMedia?.("(display-mode: standalone)").matches||navigator.standalone===true;
+function PushDevice() {
+  const supported="serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+  const [state,setState]=useState("checking"); // checking | unsupported | ios | denied | off | on
+  const [busy,setBusy]=useState(false),[msg,setMsg]=useState("");
+  useEffect(()=>{(async()=>{
+    if(!supported){setState(isIOS()&&!isStandalone()?"ios":"unsupported");return;}
+    if(Notification.permission==="denied"){setState("denied");return;}
+    const reg=await navigator.serviceWorker.getRegistration("/sw.js").catch(()=>null);
+    const sub=await reg?.pushManager.getSubscription().catch(()=>null);
+    setState(sub?"on":"off");
+  })();},[]);
+  const enable=async()=>{
+    setBusy(true);setMsg("");
+    try{
+      const perm=await Notification.requestPermission();
+      if(perm!=="granted"){setState(perm==="denied"?"denied":"off");setBusy(false);return;}
+      const reg=await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const{data,error}=await sb.functions.invoke("push-notify",{body:{action:"key"}});
+      if(error||!data?.publicKey)throw new Error("לא הצלחנו להתחבר לשרת ההתראות");
+      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(data.publicKey)});
+      const{error:e2}=await sb.from("push_subscriptions").upsert({endpoint:sub.endpoint,p256dh:bytesToB64(sub.getKey("p256dh")),auth:bytesToB64(sub.getKey("auth")),user_agent:navigator.userAgent.slice(0,200)});
+      if(e2)throw e2;
+      setState("on");setMsg("✅ ההתראות הופעלו במכשיר הזה");
+    }catch(e){setMsg("❌ "+(e.message||"ההפעלה נכשלה"));}
+    setBusy(false);
+  };
+  const disable=async()=>{
+    setBusy(true);setMsg("");
+    try{
+      const reg=await navigator.serviceWorker.getRegistration("/sw.js");
+      const sub=await reg?.pushManager.getSubscription();
+      if(sub){await sb.from("push_subscriptions").delete().eq("endpoint",sub.endpoint);await sub.unsubscribe();}
+      setState("off");
+    }catch(e){setMsg("❌ "+(e.message||"הכיבוי נכשל"));}
+    setBusy(false);
+  };
+  const test=async()=>{
+    setBusy(true);setMsg("");
+    const{data,error}=await sb.functions.invoke("push-notify",{body:{action:"test"}});
+    setMsg(error||!data?.sent?"❌ התראת הבדיקה לא נשלחה":"📨 נשלחה התראת בדיקה");
+    setBusy(false);
+  };
+  const btn=(primary)=>({background:primary?"#3A2464":"#fff",color:primary?"#fff":"#3A2464",border:primary?"none":"1.5px solid #D6CCE6",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:800,cursor:busy?"default":"pointer",fontFamily:"inherit",opacity:busy?.6:1});
+  return(
+    <div style={{background:state==="on"?"#F0FFF4":"#F7F3FB",border:`1px solid ${state==="on"?"#9AE6B4":"#E9DFF3"}`,borderRadius:12,padding:"12px 14px",marginBottom:6}}>
+      <div style={{fontSize:13,fontWeight:800,color:"#1a1a1a",marginBottom:4}}>📲 התראות במכשיר הזה {state==="on"&&<span style={{color:"#276749"}}>· פעילות</span>}</div>
+      <div style={{fontSize:12,color:"#666",lineHeight:1.6,marginBottom:8}}>
+        {state==="ios"?"באייפון: פתחו את האתר בספארי ← שיתוף ← \"הוספה למסך הבית\", ואז הפעילו כאן התראות מתוך האייקון."
+          :state==="unsupported"?"הדפדפן הזה לא תומך בהתראות. נסו בכרום או באדג׳."
+          :state==="denied"?"ההתראות נחסמו לאתר. אפשרו אותן בהגדרות הדפדפן (סמל המנעול ליד הכתובת) ונסו שוב."
+          :"קבלו התראה לטלפון או למחשב כשאורח מאשר או מבטל הגעה, גם כשהאתר סגור."}
+      </div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {state==="off"&&<button onClick={enable} disabled={busy} style={btn(true)}>{busy?"מפעיל...":"🔔 הפעל התראות במכשיר הזה"}</button>}
+        {state==="on"&&<><button onClick={test} disabled={busy} style={btn(true)}>📨 שלח התראת בדיקה</button><button onClick={disable} disabled={busy} style={btn(false)}>כבה במכשיר הזה</button></>}
+      </div>
+      {msg&&<div role="status" style={{fontSize:12,fontWeight:700,marginTop:8,color:msg.startsWith("❌")?"#C53030":"#276749"}}>{msg}</div>}
+    </div>
+  );
+}
+
 // ─── MOBILE SETTINGS SCREEN ──────────────────────────────────────────────────
 function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
   const [pwForm,setPwForm]=useState({newP:"",confirm:""});
@@ -2172,7 +2239,8 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
 
   const saveNotify=async(key,val)=>{
     const settings={...event.settings_json,[key]:val};
-    await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    if(error){alert("❌ ההגדרה לא נשמרה: "+error.message);return;}
     Object.assign(event,{settings_json:settings});
   };
 
@@ -2228,9 +2296,10 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
       {/* התראות */}
       <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
         <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:14}}>🔔 הגדרת התראות</div>
+        <PushDevice/>
         {[
-          {label:"התראות אפליקציה",desc:"התראות מערכת ועדכונים שוטפים",val:notifyApp,onChange:v=>{setNotifyApp(v);saveNotify("notifyApp",v);}},
-          {label:"אישורי הגעה",desc:"התראה על כל אישור, ביטול או עדכון מהאורחים",val:notifyRsvp,onChange:v=>{setNotifyRsvp(v);saveNotify("notifyRsvp",v);}},
+          {label:"אישורי הגעה",desc:"התראה כשאורח מאשר או מבטל הגעה בדף ההזמנה",val:notifyRsvp,onChange:v=>{setNotifyRsvp(v);saveNotify("notifyRsvp",v);}},
+          {label:"התראות מערכת",desc:"התראה כששליחת SMS אוטומטית לא יצאה (למשל כשנגמרה היתרה)",val:notifyApp,onChange:v=>{setNotifyApp(v);saveNotify("notifyApp",v);}},
         ].map(item=>(
           <div key={item.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid #f5f5f5"}}>
             <div><div style={{fontSize:13,fontWeight:700,color:"#1a1a1a"}}>{item.label}</div><div style={{fontSize:11,color:"#888",marginTop:2}}>{item.desc}</div></div>
@@ -7655,6 +7724,75 @@ const ALL_PACKAGES=[
 // חבילות ישנות שעוד רשומות אצל משתמשים — מוצגות רק אצל מי שיש לו, כדי שאפשר יהיה להסיר
 const LEGACY_PACKAGES={whatsapp:"WhatsApp (ישן)",vip:"VIP (ישן)",reception:"עמדת קבלת פנים (ישן)",production:"הפקת אירוע (ישן)",seating:"הושבה (ישן)"};
 
+// כרטיס לקוח באדמין: פרטים, אירועים עם סטטוס, חבילות, נייד (וואטסאפ) והערות פנימיות (admin_notes)
+function AdminCustomerCard({ user, stats, balances, pkgs, onOpenEvent, onClose }) {
+  const [note,setNote]=useState(null),[saved,setSaved]=useState(""),[err,setErr]=useState("");
+  useEffect(()=>{sb.from("admin_notes").select("note").eq("user_id",user.user_id).maybeSingle().then(({data,error})=>{setNote(data?.note||"");if(error)setErr(error.message);});},[user.user_id]);
+  const saveNote=async()=>{
+    setSaved("saving");
+    const{error}=await sb.from("admin_notes").upsert({user_id:user.user_id,note,updated_at:new Date().toISOString()});
+    if(error){setErr(error.message);setSaved("");return;}
+    setErr("");setSaved("saved");setTimeout(()=>setSaved(""),2000);
+  };
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
+  const fmt=d=>d?new Date(d).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"}):"—";
+  const phones=[...new Set(user.events.map(e=>e.host_phone).filter(p=>normPhone(p)))];
+  const pkgName=id=>ALL_PACKAGES.find(p=>p.id===id)?.name||LEGACY_PACKAGES[id]||id;
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(43,29,63,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} dir="rtl" role="dialog" aria-label={`כרטיס לקוח ${user.email||""}`} style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:640,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
+        <div style={{background:GRAD,color:"#fff",padding:"18px 20px",display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:46,height:46,borderRadius:"50%",background:"rgba(255,255,255,.25)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:20}}>{(user.email||"?")[0].toUpperCase()}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:900,fontSize:17,direction:"ltr",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis"}}>{user.email||user.user_id}</div>
+            <div style={{fontSize:12,opacity:.9}}>הצטרף {fmt(user.created_at)} · כניסה אחרונה {fmt(user.last_sign_in_at)}</div>
+          </div>
+          <button onClick={onClose} aria-label="סגירה" style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:10,width:34,height:34,fontSize:16,cursor:"pointer"}}>✕</button>
+        </div>
+        <div style={{padding:20,display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {phones.map(p=><a key={p} href={`https://wa.me/972${normPhone(p).slice(1)}`} target="_blank" rel="noopener noreferrer" style={{background:"#25D366",color:"#fff",borderRadius:10,padding:"7px 12px",fontSize:13,fontWeight:800,textDecoration:"none",direction:"ltr"}}>💬 {p}</a>)}
+            {user.email&&<a href={`mailto:${user.email}`} style={{background:C.blueXL,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:13,fontWeight:800,textDecoration:"none"}}>📧 מייל</a>}
+            {!phones.length&&<span style={{fontSize:12,color:C.muted,alignSelf:"center"}}>לא הוזן נייד בפרטי האירוע</span>}
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:900,marginBottom:6}}>📦 חבילות</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{pkgs.length?pkgs.map(p=><span key={p} style={{background:C.blueXL,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>{pkgName(p)}</span>):<span style={{fontSize:12,color:C.muted}}>חינם (בלי חבילה)</span>}</div>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:900,marginBottom:6}}>📅 אירועים ({user.events.length})</div>
+            {user.events.map(ev=>{const s=stats[ev.id]||{},pct=s.people?Math.round(s.confirmed/s.people*100):0;return(
+              <div key={ev.id} style={{border:`1px solid ${C.border}`,borderRadius:14,padding:"10px 12px",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                  <div style={{flex:1,minWidth:160}}>
+                    <div style={{fontWeight:900,fontSize:14}}>{ev.name}</div>
+                    <div style={{fontSize:12,color:C.muted}}>{ev.date?fmt(ev.date):"ללא תאריך"}{ev.venue?` · ${ev.venue}`:""}</div>
+                  </div>
+                  <button onClick={()=>onOpenEvent(ev)} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📅 פתח אירוע</button>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8,fontSize:12}}>
+                  {[[`${s.people||0} מוזמנים`],[`${s.confirmed||0} אישרו (${pct}%)`],[`${s.pending||0} ממתינים`],[`${s.seated||0}/${s.rows||0} הושבו`],[`SMS: ${balances[ev.id]?.balance??0}`]].map(([t])=>(
+                    <span key={t} style={{background:"#F7F3FB",borderRadius:100,padding:"3px 9px",fontWeight:700}}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            );})}
+            {!user.events.length&&<div style={{fontSize:13,color:C.muted}}>עוד לא נפתח אירוע</div>}
+          </div>
+          <div>
+            <div style={{display:"flex",alignItems:"center",marginBottom:6}}>
+              <div style={{flex:1,fontSize:13,fontWeight:900}}>📝 הערות פנימיות <span style={{fontWeight:500,color:C.muted}}>(רק אתה רואה)</span></div>
+              {saved==="saved"&&<span style={{fontSize:12,color:C.success,fontWeight:800}}>✓ נשמר</span>}
+            </div>
+            {note===null?<Spinner size={18}/>:<textarea value={note} onChange={e=>setNote(e.target.value)} onBlur={saveNote} placeholder={"לדוגמה: שילם בביט 15.10 · מעדיף שיחה בערב"}
+              style={{width:"100%",minHeight:90,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}/>}
+            {err&&<div role="alert" style={{fontSize:12,color:C.danger,marginTop:4}}>❌ {err}</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ניהול רשימת האולמות שמוצעים ללקוחות: הוספה ידנית, אישור מקומות מהאירועים, עריכה ומחיקה
 function AdminVenues({ card }) {
   const [list,setList]=useState(null),[cands,setCands]=useState([]),[busy,setBusy]=useState(false),[err,setErr]=useState("");
@@ -7825,7 +7963,10 @@ function AdminDashboard({ user, onLogout }) {
   const [txs,setTxs]=useState([]);
   const [guestCount,setGuestCount]=useState({}); // {event_id: n}
   const [loading,setLoading]=useState(true);
-  const [tab,setTab]=useState("requests");
+  const [tab,setTab]=useState("attention");
+  const [stats,setStats]=useState({});            // {event_id: {rows,people,confirmed,pending,seated,phones}}
+  const [failedRuns,setFailedRuns]=useState([]);  // שליחות אוטומטיות שנכשלו / דולגו ב-14 הימים האחרונים
+  const [custFor,setCustFor]=useState(null);      // כרטיס לקוח פתוח (user_id)
   const [search,setSearch]=useState("");
   const [saving,setSaving]=useState(null);
   const [addFor,setAddFor]=useState(null);   // {event, request?}
@@ -7846,17 +7987,23 @@ function AdminDashboard({ user, onLogout }) {
   // silent: רענון ברקע בלי ספינר (כשחוזרים לחלון / כל 30 שניות)
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
-    const [ev,g,pk,bal,req,tx,us]=await Promise.all([
-      sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone").order("created_at",{ascending:false}),
-      sb.from("guests").select("event_id"),
+    const since=new Date(Date.now()-14*864e5).toISOString();
+    const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
+      sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
+      sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
       sb.from("user_packages").select("user_id,package_id"),
       sb.from("sms_balance").select("event_id,balance,total_purchased,total_sent"),
       sb.from("sms_requests").select("*").order("created_at",{ascending:false}).limit(100),
       sb.from("sms_transactions").select("*").order("created_at",{ascending:false}).limit(60),
       sb.rpc("admin_list_users"),
+      sb.from("sms_schedule_runs").select("event_id,schedule_id,status,error,created_at").in("status",["failed","skipped"]).gte("created_at",since).order("created_at",{ascending:false}),
     ]);
     const evList=ev.data||[];
     const gc={};(g.data||[]).forEach(x=>{gc[x.event_id]=(gc[x.event_id]||0)+1;});
+    // סטטיסטיקה לכל אירוע: אנשים שאישרו / ממתינים / הושבו / עם טלפון
+    const st={};(g.data||[]).forEach(x=>{const s=st[x.event_id]||={rows:0,people:0,confirmed:0,pending:0,seated:0,phones:0};const n=x.guest_count||1;
+      s.rows++;s.people+=n;if(x.rsvp==="confirmed")s.confirmed+=n;else if(x.rsvp!=="declined")s.pending+=n;if(x.table_id)s.seated++;if(normPhone(x.phone))s.phones++;});
+    setStats(st);setFailedRuns(runs.data||[]);
     const pkgMap={};(pk.data||[]).forEach(p=>{(pkgMap[p.user_id]||=[]).push(p.package_id);});
     const balMap={};(bal.data||[]).forEach(b=>{balMap[b.event_id]=b;});
     // משתמשים: מהרשימה עם המיילים, ואם הפונקציה לא זמינה  -  לפי בעלי האירועים
@@ -7919,7 +8066,26 @@ function AdminDashboard({ user, onLogout }) {
   const fmtDate=d=>d?new Date(d).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—";
   const card={background:"#fff",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"};
   const chip=(bg,fg)=>({background:bg,color:fg,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"});
-  const TABS=[["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
+  // ─── צריך טיפול: מה דורש את תשומת הלב שלך עכשיו ───
+  const day0=new Date();day0.setHours(0,0,0,0);
+  const daysTo=d=>d?Math.round((new Date(d+"T00:00:00")-day0)/864e5):null;
+  const ownerPkgs=uid=>packages[uid]||[];
+  const attention=[];
+  if(pending.length)attention.push({lvl:"red",icon:"🛒",text:`${pending.length} בקשות רכישת SMS ממתינות לאישור`,go:()=>setTab("requests")});
+  failedRuns.forEach(r=>{const ev=eventOf(r.event_id);if(!ev)return;
+    attention.push({lvl:r.status==="failed"?"red":"amber",icon:r.status==="failed"?"✗":"⏭",text:`שליחה אוטומטית ${r.status==="failed"?"נכשלה":"דולגה"} · ${ev.name}`,sub:`${r.error||""} · ${fmtDate(r.created_at)}`,ev});});
+  events.filter(e=>{const d=daysTo(e.date);return d!==null&&d>=0&&d<=14;}).sort((a,b)=>a.date.localeCompare(b.date)).forEach(ev=>{
+    const d=daysTo(ev.date),s=stats[ev.id]||{},when=d===0?"היום":d===1?"מחר":`בעוד ${d} ימים`;
+    const smsOn=(ev.settings_json?.sms_schedule||[]).some(x=>x.enabled),bal=balances[ev.id]?.balance??0;
+    if(smsOn&&bal<(s.phones||0))attention.push({lvl:"red",icon:"📱",text:`אין מספיק SMS לתזמון · ${ev.name} (${when})`,sub:`יתרה ${bal}, אורחים עם נייד ${s.phones||0}`,ev});
+    if((s.confirmed||0)>0&&!s.seated)attention.push({lvl:"amber",icon:"🪑",text:`עוד לא הושיבו אף אחד · ${ev.name} (${when})`,sub:`${s.confirmed} אישרו הגעה`,ev});
+    if(d<=7&&s.people&&s.pending/s.people>.3)attention.push({lvl:"amber",icon:"⏳",text:`${s.pending} עוד לא ענו · ${ev.name} (${when})`,sub:`מתוך ${s.people} מוזמנים`,ev});
+    if(ownerPkgs(ev.user_id).includes("staff"))attention.push({lvl:"info",icon:"👥",text:`צוות הושבה · ${ev.name} · ${fmtDate(ev.date)} (${when})`,sub:ev.venue||"",ev});
+    if(ownerPkgs(ev.user_id).some(p=>p==="auto"||p==="whatsapp")&&(ev.settings_json?.wa_schedule||[]).some(x=>x.enabled))attention.push({lvl:"info",icon:"💬",text:`סבבי WhatsApp לשליחה ידנית · ${ev.name} (${when})`,ev});
+  });
+  // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
+  const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -7977,7 +8143,7 @@ function AdminDashboard({ user, onLogout }) {
             <button key={id} onClick={()=>setTab(id)} className={tab===id?"":"adm-tab"}
               style={{background:tab===id?GRAD:"#fff",color:tab===id?"#fff":C.text,border:`1.5px solid ${tab===id?"transparent":C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,boxShadow:tab===id?`0 8px 18px -8px ${C.blueM}`:"none"}}>
               {label}
-              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":(id==="requests"&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":(id==="requests"&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
+              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":((id==="requests"||id==="attention")&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":((id==="requests"||id==="attention")&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
             </button>
           ))}
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש לפי מייל או שם אירוע..."
@@ -7986,6 +8152,22 @@ function AdminDashboard({ user, onLogout }) {
 
         {loading?(
           <div style={{textAlign:"center",padding:60}}><Spinner size={36}/></div>
+        ):tab==="attention"?(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {!attention.length&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין כרגע שום דבר שדורש טיפול</div><div style={{fontSize:13,marginTop:4}}>בודק: בקשות רכישה, שליחות אוטומטיות שנכשלו, ואירועים ב-14 הימים הקרובים</div></div>}
+            {attention.map((a,i)=>{const col=a.lvl==="red"?C.danger:a.lvl==="amber"?"#B45309":C.blue;return(
+              <div key={i} className="adm-row" style={{...card,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",borderRight:`4px solid ${col}`}}>
+                <div style={{width:38,height:38,borderRadius:12,background:col+"14",color:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,flexShrink:0}}>{a.icon}</div>
+                <div style={{flex:1,minWidth:220}}>
+                  <div style={{fontWeight:800,fontSize:14}}>{a.text}</div>
+                  {(a.sub||a.ev)&&<div style={{fontSize:12,color:C.muted}}>{a.sub}{a.ev?`${a.sub?" · ":""}${emailOf(a.ev.user_id)}`:""}</div>}
+                </div>
+                {a.go&&<button onClick={a.go} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לטיפול ←</button>}
+                {a.ev&&<button onClick={()=>setCustFor(a.ev.user_id)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👤 כרטיס לקוח</button>}
+                {a.ev&&<button onClick={()=>openEvent(a.ev)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📅 פתח אירוע</button>}
+              </div>
+            );})}
+          </div>
         ):tab==="requests"?(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {pending.length===0&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין בקשות רכישה ממתינות</div></div>}
@@ -8057,6 +8239,7 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
                   <span style={chip(C.blueXL,C.text)}>{u.events.length} אירועים</span>
                   <span style={chip(C.blueXL,C.text)}>{u.guests} אורחים</span>
+                  <button onClick={()=>setCustFor(u.user_id)} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👤 כרטיס לקוח</button>
                   <button onClick={()=>setPwFor(u)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔑 סיסמה חדשה</button>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
@@ -8125,6 +8308,7 @@ function AdminDashboard({ user, onLogout }) {
       )}
 
       {pwFor&&<AdminPasswordModal user={pwFor} onClose={()=>setPwFor(null)}/>}
+      {custFor&&users.find(u=>u.user_id===custFor)&&<AdminCustomerCard user={users.find(u=>u.user_id===custFor)} stats={stats} balances={balances} pkgs={packages[custFor]||[]} onOpenEvent={openEvent} onClose={()=>setCustFor(null)}/>}
       {toast&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:C.text,color:"#fff",borderRadius:14,padding:"12px 18px",fontSize:14,fontWeight:800,zIndex:400,boxShadow:"0 14px 30px -10px rgba(0,0,0,.4)"}}>{toast}</div>}
     </div>
   );
