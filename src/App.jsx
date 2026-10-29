@@ -1617,7 +1617,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             {/* מפת אתר */}
             <nav aria-label="מפת אתר" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
               {[
-                ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["#contact","צור קשר"]]],
+                ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
                 ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
                 ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"]]],
               ].map(([head,links])=>(
@@ -2198,7 +2198,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
           {/* השדות לפי סוג האירוע (חתונה: חתן וכלה; בר מצווה: חתן/כלת המצווה; ברית: התינוק...) */}
-          {[[eventKind(event).a,event.groom_name||" - "],eventKind(event).b&&[eventKind(event).b,event.bride_name||" - "],["מס' נייד",user.phone||" - "]].filter(Boolean).map(([l,v])=>(
+          {[[eventKind(event).a,event.groom_name||" - "],eventKind(event).b&&[eventKind(event).b,event.bride_name||" - "],["מס' נייד",event.host_phone||user.phone||" - "]].filter(Boolean).map(([l,v])=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:8,borderBottom:"1px solid #f5f5f5"}}>
               <span style={{fontSize:13,color:"#555"}}>{l}</span>
               <span style={{fontSize:13,fontWeight:700,direction:l==="מס' נייד"?"ltr":"rtl"}}>{v}</span>
@@ -2289,6 +2289,136 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
 }
 
 // ─── MOBILE RSVP SCREEN ──────────────────────────────────────────────────────
+// ─── משימות לקראת האירוע (צ'קליסט) ─────────────────────────────────────────
+// ברירת מחדל לפי סוג האירוע: [ימים ביחס לאירוע (שלילי = לפני), משימה, קטגוריה]. נשמר באירוע: settings_json.tasks
+const TASK_CATS={plan:["🗓️","תכנון"],vendor:["🤝","ספקים"],guests:["👥","מוזמנים"],look:["👗","לבוש ומראה"],admin:["📄","סידורים"],day:["🎉","יום האירוע"]};
+const TASK_DEFAULTS={
+  wedding:[[-365,"קביעת תאריך ותקציב כללי","plan"],[-330,"רשימת מוזמנים ראשונית","guests"],[-300,"סגירת אולם / גן אירועים","vendor"],[-270,"סגירת צלם סטילס ווידאו","vendor"],[-270,"סגירת DJ / להקה","vendor"],[-240,"התחלת חיפוש שמלת כלה","look"],[-210,"סגירת עיצוב ופרחים","vendor"],[-180,"ניסיון איפור ושיער וסגירה","look"],[-180,"חליפת חתן","look"],[-150,"טבעות נישואין","look"],[-120,"עיצוב ההזמנה","guests"],[-90,"פתיחת תיק נישואין ברבנות","admin"],[-60,"שליחת הזמנות לאורחים","guests"],[-45,"סגירת רב / עורך טקס","admin"],[-30,"תזכורת לאורחים שלא אישרו הגעה","guests"],[-21,"סידור הושבה ראשוני","guests"],[-14,"מספר מנות סופי מול האולם","vendor"],[-7,"סידור הושבה סופי והדפסת כרטיסי שולחן","guests"],[-3,"תשלומים לספקים והכנת מעטפות","vendor"],[-1,"הכנת תיק לאירוע (טבעות, תעודות, מטען)","day"],[0,"שליחת מספרי שולחן לאורחים","day"],[2,"הודעות תודה לאורחים","guests"],[14,"רישום המתנות וסגירת חשבונות","plan"]],
+  bar_mitzvah:[[-300,"קביעת תאריך ותקציב","plan"],[-270,"רשימת מוזמנים ראשונית","guests"],[-240,"סגירת אולם","vendor"],[-210,"סגירת צלם ו-DJ","vendor"],[-180,"תיאום עלייה לתורה / תפילין עם בית הכנסת","admin"],[-120,"התחלת לימוד הפרשה / הכנת דרשה","admin"],[-90,"לבוש לבר/בת המצווה ולמשפחה","look"],[-60,"שליחת הזמנות","guests"],[-30,"תזכורת לאורחים שלא אישרו","guests"],[-14,"מספר מנות סופי","vendor"],[-7,"סידור הושבה סופי והדפסה","guests"],[-3,"תשלומים לספקים","vendor"],[0,"שליחת מספרי שולחן לאורחים","day"],[2,"הודעות תודה לאורחים","guests"]],
+  brit:[[-5,"תיאום מוהל","admin"],[-5,"סגירת מקום וקייטרינג","vendor"],[-4,"שליחת הזמנות","guests"],[-3,"בחירת סנדק וכיבודים","admin"],[-2,"צלם","vendor"],[-1,"סידור הושבה והדפסה","guests"],[0,"שליחת מספרי שולחן לאורחים","day"],[3,"הודעות תודה לאורחים","guests"]],
+  other:[[-120,"קביעת תאריך ותקציב","plan"],[-100,"רשימת מוזמנים ראשונית","guests"],[-90,"סגירת מקום","vendor"],[-75,"סגירת ספקים (צילום, מוזיקה, כיבוד)","vendor"],[-45,"שליחת הזמנות","guests"],[-21,"תזכורת לאורחים שלא אישרו","guests"],[-10,"מספר מנות סופי","vendor"],[-5,"סידור הושבה והדפסה","guests"],[-2,"תשלומים לספקים","vendor"],[0,"שליחת מספרי שולחן לאורחים","day"],[2,"הודעות תודה לאורחים","guests"]],
+};
+TASK_DEFAULTS.business=TASK_DEFAULTS.other;
+const DAY_MS=864e5;
+const eventDay=event=>event?.date?new Date(event.date+"T00:00:00"):null;
+// הרשימה: מה שנשמר, או ברירת המחדל של סוג האירוע
+const taskList=event=>{
+  const saved=event?.settings_json?.tasks;
+  if(Array.isArray(saved))return saved;
+  // "קביעת תאריך" מסומנת כבוצעה אם כבר יש תאריך לאירוע
+  return (TASK_DEFAULTS[event?.event_type]||TASK_DEFAULTS.wedding).map(([o,t,c],i)=>({id:"d"+i,t,o,c,done:!!event?.date&&t.startsWith("קביעת תאריך")}));
+};
+// תאריך יעד: משימה עם תאריך (d) או ימים ביחס לאירוע (o)
+const taskDue=(task,event)=>{
+  if(task.d)return new Date(task.d+"T00:00:00");
+  const ev=eventDay(event);return ev&&typeof task.o==="number"?new Date(ev.getTime()+task.o*DAY_MS):null;
+};
+const today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+// "באיחור" = עבר המועד אחרי שהאירוע נפתח. משימה שהמועד שלה עבר עוד לפני שהאירוע נפתח היא "להשלים בהקדם" (לא אדום)
+const eventOpened=event=>{const c=event?.created_at?new Date(event.created_at):null;if(!c||isNaN(c))return null;c.setHours(0,0,0,0);return c;};
+const taskCatchUp=(task,event)=>{const d=taskDue(task,event),c=eventOpened(event);return !task.done&&d&&c&&d<c;};
+const taskLate=(task,event)=>{const d=taskDue(task,event);return !task.done&&d&&d<today0()&&!taskCatchUp(task,event);};
+const sortTasks=(list,event)=>[...list].sort((a,b)=>(taskDue(a,event)?.getTime()??(a.o??9e9)*DAY_MS)-(taskDue(b,event)?.getTime()??(b.o??9e9)*DAY_MS));
+const fmtDue=d=>d?d.toLocaleDateString("he-IL",{day:"numeric",month:"short",year:d.getFullYear()!==new Date().getFullYear()?"numeric":undefined}):"";
+// שמירת הרשימה באירוע (מיזוג עם שאר settings_json)
+const saveTasks=async(event,next)=>{
+  const settings={...(event.settings_json||{}),tasks:next};
+  event.settings_json=settings;
+  const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+  if(error)alert("❌ המשימות לא נשמרו: "+error.message);
+};
+
+function TasksScreen({ event }) {
+  const [list,setList]=useState(()=>taskList(event));
+  useEffect(()=>{setList(taskList(event));},[event.id]);
+  const [filter,setFilter]=useState("open"),[title,setTitle]=useState(""),[due,setDue]=useState(""),[editId,setEditId]=useState(null);
+  const update=next=>{setList(next);saveTasks(event,next);};
+  const toggle=id=>update(list.map(t=>t.id===id?{...t,done:!t.done}:t));
+  const remove=id=>update(list.filter(t=>t.id!==id));
+  const rename=(id,t)=>{t=t.trim();if(t)update(list.map(x=>x.id===id?{...x,t}:x));setEditId(null);};
+  const add=()=>{if(!title.trim())return;update([...list,{id:"c"+Date.now().toString(36),t:title.trim(),c:"plan",d:due||null,done:false,custom:true}]);setTitle("");setDue("");};
+  const ev=eventDay(event);
+  const done=list.filter(t=>t.done).length,late=list.filter(t=>taskLate(t,event)).length;
+  const pct=list.length?Math.round(done/list.length*100):0;
+  const shown=sortTasks(list,event).filter(t=>filter==="all"||(filter==="open"?!t.done:filter==="late"?taskLate(t,event):t.done));
+  // קבוצות לפי זמן ביחס לאירוע
+  const bucket=t=>{
+    const d=taskDue(t,event);const o=d&&ev?Math.round((d-ev)/DAY_MS):t.o;
+    if(o==null)return"משימות נוספות";
+    if(o<=-180)return"חצי שנה ויותר לפני";if(o<=-90)return"3–6 חודשים לפני";if(o<=-30)return"1–3 חודשים לפני";
+    if(o<0)return"החודש האחרון";if(o===0)return"ביום האירוע";return"אחרי האירוע";
+  };
+  const groups=[];shown.forEach(t=>{const b=bucket(t);let g=groups.find(x=>x.b===b);if(!g)groups.push(g={b,items:[]});g.items.push(t);});
+  const inp={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",background:"#fff",minWidth:0};
+  return(
+    <div style={{direction:"rtl",maxWidth:760,margin:"0 auto",padding:16,paddingBottom:90}}>
+      <div style={{background:GRAD,borderRadius:18,padding:"18px 20px",color:"#fff",marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:18,fontWeight:900}}>✅ משימות לקראת האירוע</div>
+          <div style={{fontSize:13,opacity:.9,marginTop:2}}>{done} מתוך {list.length} הושלמו{late?` · ${late} באיחור`:""}</div>
+          <div style={{height:8,background:"rgba(255,255,255,.3)",borderRadius:100,marginTop:10,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"#fff",borderRadius:100,transition:"width .3s"}}/></div>
+        </div>
+        <div style={{fontSize:28,fontWeight:900}}>{pct}%</div>
+      </div>
+      {!ev&&<div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#B45309",marginBottom:12}}>⚠️ הגדירו תאריך אירוע ב"פרטי האירוע" כדי שלכל משימה יופיע תאריך יעד.</div>}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        {[["open","פתוחות"],["late",`באיחור${late?` (${late})`:""}`],["done","הושלמו"],["all","הכל"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setFilter(k)} aria-pressed={filter===k} style={{background:filter===k?C.blue:"#fff",color:filter===k?"#fff":C.blue,border:`1.5px solid ${filter===k?C.blue:C.border}`,borderRadius:100,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
+        ))}
+      </div>
+      <Card style={{padding:12,marginBottom:14,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+        <input value={title} onChange={e=>setTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="➕ משימה חדשה..." aria-label="משימה חדשה" style={{...inp,flex:"2 1 200px"}}/>
+        <DateField compact value={due} onChange={setDue} placeholder="תאריך יעד" style={{...inp,flex:"1 1 130px"}}/>
+        <button onClick={add} disabled={!title.trim()} style={{background:title.trim()?GRAD:"#E2E8F0",color:title.trim()?"#fff":"#999",border:"none",borderRadius:10,padding:"10px 18px",fontSize:14,fontWeight:900,cursor:title.trim()?"pointer":"default",fontFamily:"inherit"}}>הוסף</button>
+      </Card>
+      {groups.map(g=>(
+        <div key={g.b} style={{marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:900,color:C.muted,margin:"0 4px 8px"}}>{g.b}</div>
+          {g.items.map(t=>{const d=taskDue(t,event),lt=taskLate(t,event),cat=TASK_CATS[t.c]||TASK_CATS.plan;return(
+            <Card key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,opacity:t.done?.6:1,border:`1.5px solid ${lt?"#FEB2B2":C.border}`}}>
+              <button role="checkbox" aria-checked={t.done} aria-label={t.t} onClick={()=>toggle(t.id)}
+                style={{width:26,height:26,borderRadius:8,border:`2px solid ${t.done?"#25D366":"#CBD5E0"}`,background:t.done?"#25D366":"#fff",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{t.done?"✓":""}</button>
+              <span title={cat[1]} style={{fontSize:16,flexShrink:0}}>{cat[0]}</span>
+              <div style={{flex:1,minWidth:0}}>
+                {editId===t.id
+                  ?<input autoFocus defaultValue={t.t} onBlur={e=>rename(t.id,e.target.value)} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();if(e.key==="Escape")setEditId(null);}} style={{...inp,width:"100%",padding:"6px 10px"}}/>
+                  :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.t}</div>}
+                {d&&<div style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":C.muted,fontWeight:lt||taskCatchUp(t,event)?800:500}}>{lt?"⚠️ באיחור · ":taskCatchUp(t,event)?"⏩ להשלים בהקדם · ":""}{fmtDue(d)}</div>}
+              </div>
+              <button onClick={()=>setEditId(t.id)} aria-label={`עריכת ${t.t}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",padding:4}}>✏️</button>
+              <button onClick={()=>remove(t.id)} aria-label={`מחיקת ${t.t}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",padding:4}}>🗑️</button>
+            </Card>
+          );})}
+        </div>
+      ))}
+      {!shown.length&&<div style={{textAlign:"center",color:C.muted,fontSize:14,padding:30}}>{filter==="late"?"🎉 אין משימות באיחור":filter==="open"?"🎉 כל המשימות הושלמו":"אין משימות"}</div>}
+    </div>
+  );
+}
+// כרטיס "המשימות הקרובות" למסך הבית
+function UpcomingTasks({ event, onOpen, style }) {
+  const list=taskList(event),open=sortTasks(list.filter(t=>!t.done),event).slice(0,3);
+  const late=list.filter(t=>taskLate(t,event)).length,done=list.filter(t=>t.done).length;
+  return(
+    <div style={{background:"#fff",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)",...style}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>✅ המשימות הקרובות</div>
+          <div style={{fontSize:12,color:"#888"}}>{done} / {list.length} הושלמו{late?<span style={{color:C.danger,fontWeight:800}}> · {late} באיחור</span>:null}</div>
+        </div>
+        <button onClick={onOpen} style={{background:"#F6F0FF",border:"none",color:"#9147D6",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לכל המשימות ←</button>
+      </div>
+      {open.length?open.map(t=>{const d=taskDue(t,event),lt=taskLate(t,event);return(
+        <div key={t.id} onClick={onOpen} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:12,background:lt?"#FFF5F5":"#FAFAFA",border:`1px solid ${lt?"#FEB2B2":"#EEE"}`,marginBottom:6,cursor:"pointer"}}>
+          <span style={{fontSize:15}}>{(TASK_CATS[t.c]||TASK_CATS.plan)[0]}</span>
+          <span style={{flex:1,fontSize:13,fontWeight:700,color:"#2B1D3F"}}>{t.t}</span>
+          {d&&<span style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":"#888",fontWeight:lt?800:500,whiteSpace:"nowrap"}}>{taskCatchUp(t,event)?"בהקדם":fmtDue(d)}</span>}
+        </div>
+      );}):<div style={{fontSize:13,color:"#276749",fontWeight:700}}>🎉 כל המשימות הושלמו</div>}
+    </div>
+  );
+}
+
 // הדפסת אישורי הגעה: סיכום + רשימה לפי סטטוס (מגיעים / ממתינים / לא מגיעים). only = סטטוס אחד בלבד (או "all")
 function printRsvpList(event,allGuests,tables,only="all"){
   const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -2495,7 +2625,7 @@ const screenLocked=(id,userPackages)=>{
 };
 // המסך האחרון (ותצוגת ההושבה) נשמר בדפדפן כדי שרענון יחזיר לאותו מקום באותו אירוע
 const LAST_SCREEN_KEY="sidor_last_screen";
-const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts"];
+const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts","tasks"];
 const readLastScreen=eventId=>{
   try{const s=JSON.parse(localStorage.getItem(LAST_SCREEN_KEY)||"null");
     if(s&&s.eventId===eventId&&RESTORABLE_SCREENS.includes(s.screen))return s;}catch{}
@@ -3002,6 +3132,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
         </div>
 
+        <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
+
         {/* ─── התקדמות אישורי הגעה ─── */}
         <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
           <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:14}}>התקדמות אישורי הגעה</div>
@@ -3067,6 +3199,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"💰",label:"תקציב",nav:"budget",bg:"#FFFBE6",color:"#B48009"},
               {icon:"📷",label:"כניסה לאולם",nav:"checkin",bg:"#EEF7FF",color:"#2B6CB0"},
               {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
+              {icon:"✅",label:"משימות",nav:"tasks",bg:"#F0FFF4",color:"#276749"},
               {icon:"⚙️",label:"הגדרות",nav:"settings",bg:"#F5F5F5",color:"#555"},
             ].map(item=>(
               <div key={item.nav} onClick={()=>screenLocked(item.nav,userPackages)?setModal("locked"):setScreen(item.nav)}
@@ -3092,7 +3225,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit"}}>→ חזרה</button>
         }
         <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="settings"?"⚙️ הגדרות":event.name}
+          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="tasks"?"✅ משימות":screen==="settings"?"⚙️ הגדרות":event.name}
         </span>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
         {screen==="seating"&&<button onClick={undo} disabled={!lastUndo||saving} aria-label="ביטול פעולה" title={lastUndo?`ביטול: ${lastUndo.label}`:"אין פעולה לבטל"} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:lastUndo?"pointer":"default",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap",opacity:lastUndo?1:.5}}>↩ בטל</button>}
@@ -3193,6 +3326,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
+        {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
@@ -3216,6 +3350,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {id:"budget",icon:"💰",label:"ניהול תקציב"},
     {id:"checkin",icon:"📷",label:"כניסה לאולם"},
     {id:"gifts",icon:"🎁",label:"מתנות"},
+    {id:"tasks",icon:"✅",label:"משימות"},
     {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
 
@@ -3301,6 +3436,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <span className="sx-ic">{item.icon}</span>
                   <span style={{flex:1}}>{item.label}</span>
                   {isLocked&&<span title="דורש חבילה" style={{fontSize:10,background:"#FFF4E0",color:"#B07A12",borderRadius:100,padding:"2px 7px",fontWeight:800}}>🔒</span>}
+                  {item.id==="tasks"&&(()=>{const n=taskList(event).filter(t=>taskLate(t,event)).length;return n>0&&<span title={`${n} משימות באיחור`} style={{fontSize:10,background:C.danger,color:"#fff",borderRadius:100,padding:"2px 7px",fontWeight:800}}>{n}</span>;})()}
                 </div>
               );
             })}
@@ -3407,6 +3543,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   </div>
                 </div>
               </div>
+
+              <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{marginBottom:20,padding:"22px 24px"}}/>
 
               {/* ─── שורה אמצעית: אישורי הגעה + קישור + פעולות אחרונות ─── */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:20,marginBottom:20}}>
@@ -4031,6 +4169,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
+        {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
@@ -4142,6 +4281,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     venue_address:event.venue_address||"",
     venue_map:event.venue_map||"",
     venue_phone:event.venue_phone||"",
+    host_phone:event.host_phone||"",
     welcome_text:event.welcome_text||"",
     personal_text:event.personal_text||"",
     name_display:event.name_display||"full",
@@ -4277,6 +4417,14 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
             <input value={form.bride_father} onChange={e=>setForm(f=>({...f,bride_father:e.target.value}))} placeholder={kind.pb} maxLength={75}
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>}
+        </div>
+
+        {/* נייד של בעל השמחה — ליצירת קשר (מוצג גם בהגדרות ובאדמין) */}
+        <div style={{marginTop:16}}>
+          <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:8}}>📱 מספר נייד של בעל/ת השמחה <span style={{color:"#aaa",fontWeight:400}}>(ליצירת קשר בנוגע לאירוע)</span></div>
+          <input value={form.host_phone} onChange={e=>setForm(f=>({...f,host_phone:e.target.value}))} placeholder="050-0000000" type="tel" dir="ltr" inputMode="tel" maxLength={20}
+            style={{width:"100%",maxWidth:260,border:`1.5px solid ${form.host_phone&&!normPhone(form.host_phone)?"#FC8181":"#E2E8F0"}`,borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box",textAlign:"right"}}/>
+          {form.host_phone&&!normPhone(form.host_phone)&&<div style={{fontSize:11,color:"#C53030",marginTop:4}}>מספר נייד לא תקין</div>}
         </div>
         {!kind.b&&<div style={{fontSize:11,color:"#718096",marginTop:10}}>{kind.emoji} ההודעות ייכתבו כך: "מוזמנים ל{eventWords({...event,...form}).name}"</div>}
       </div>
@@ -7699,7 +7847,7 @@ function AdminDashboard({ user, onLogout }) {
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
     const [ev,g,pk,bal,req,tx,us]=await Promise.all([
-      sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at").order("created_at",{ascending:false}),
+      sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id"),
       sb.from("user_packages").select("user_id,package_id"),
       sb.from("sms_balance").select("event_id,balance,total_purchased,total_sent"),
@@ -7903,6 +8051,9 @@ function AdminDashboard({ user, onLogout }) {
                   <div style={{flex:1,minWidth:200}}>
                     <div style={{fontWeight:900,fontSize:15,direction:"ltr",textAlign:"right"}}>{u.email||u.user_id}</div>
                     <div style={{fontSize:12,color:C.muted}}>הצטרף {fmtDate(u.created_at)} · כניסה אחרונה {fmtDate(u.last_sign_in_at)}</div>
+                    {[...new Set(u.events.map(e=>e.host_phone).filter(p=>normPhone(p)))].map(p=>(
+                      <a key={p} href={`https://wa.me/972${normPhone(p).slice(1)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",fontSize:12,fontWeight:800,color:"#1FA855",textDecoration:"none",marginTop:3,marginLeft:10,direction:"ltr"}}>💬 {p}</a>
+                    ))}
                   </div>
                   <span style={chip(C.blueXL,C.text)}>{u.events.length} אירועים</span>
                   <span style={chip(C.blueXL,C.text)}>{u.guests} אורחים</span>
@@ -8052,6 +8203,113 @@ function LegalPage({ kind }) {
   );
 }
 
+// ─── מדריכים (sidoril.com/guides/...) — כתובות רגילות (לא #) כדי שגוגל יאנדקס ───
+const GUIDES=[
+  {slug:"wedding-checklist",icon:"✅",title:"צ'קליסט לחתונה: מה לעשות ומתי",desc:"לוח זמנים מסודר להכנות לחתונה, משנה לפני ועד יום אחרי, כדי ששום דבר לא ייפול בין הכיסאות.",sections:[
+    {h:"שנה עד חצי שנה לפני",p:"זה השלב של ההחלטות הגדולות. קודם כל תאריך ותקציב כללי, כי שניהם מכתיבים את כל השאר. אחר כך רשימת מוזמנים ראשונית: גם אם היא לא סופית, היא קובעת את גודל האולם.\n\n• סגירת אולם או גן אירועים\n• סגירת צלם ו-DJ או להקה (הטובים נתפסים מוקדם)\n• התחלת חיפוש שמלה וחליפה"},
+    {h:"6 עד 3 חודשים לפני",p:"עכשיו סוגרים את הפרטים: עיצוב ופרחים, איפור ושיער (כולל ניסיון), טבעות ועיצוב ההזמנה. כדאי גם לפתוח תיק נישואין ברבנות כשלושה חודשים לפני, כדי לא להיות בלחץ של מסמכים ברגע האחרון."},
+    {h:"חודשיים עד חודש לפני",p:"שולחים הזמנות לאורחים, בערך חודשיים לפני. הזמנה דיגיטלית עם קישור אישי חוסכת הדפסה ונותנת לכם אישורי הגעה בזמן אמת. כחודש לפני שולחים תזכורת למי שעוד לא ענה."},
+    {h:"החודש האחרון",p:"• סידור הושבה ראשוני כשלושה שבועות לפני\n• מספר מנות סופי מול האולם (לפי אישורי ההגעה)\n• סידור הושבה סופי והדפסת כרטיסי שולחן שבוע לפני\n• תשלומים לספקים והכנת מעטפות"},
+    {h:"ביום האירוע ואחריו",p:"ביום האירוע שולחים לאורחים את מספר השולחן, ובכניסה סורקים את ה-QR כדי לדעת מי הגיע. אחרי האירוע: הודעת תודה לאורחים ורישום המתנות."},
+    {h:"איך לא לשכוח כלום",p:"ב-Sidor-IL יש מסך משימות עם כל הרשימה הזו, מותאמת לתאריך האירוע שלכם. כל משימה מקבלת תאריך יעד, ומה שבאיחור מסומן באדום."},
+  ]},
+  {slug:"seating-tips",icon:"🪑",title:"סידור הושבה לחתונה: 8 טיפים שיחסכו לכם ויכוחים",desc:"איך לבנות סידור הושבה שכולם מרוצים ממנו: קבוצות, שולחנות, אילוצים ומה עושים עם מי שלא מסתדר.",sections:[
+    {h:"1. מתחילים מקבוצות, לא משמות",p:"מחלקים את המוזמנים לקטגוריות: משפחה קרובה, משפחה מורחבת, חברים מהעבודה, מהצבא, חברים של ההורים. קבוצה שיושבת יחד נהנית יותר, והסידור נבנה הרבה יותר מהר."},
+    {h:"2. שולחן מלא עדיף על שולחן חצי ריק",p:"עדיף 10 אנשים בשולחן של 10 מאשר שני שולחנות של 6. שולחנות חצי ריקים מורידים את האווירה ועולים לכם יותר."},
+    {h:"3. רושמים אילוצים מראש",p:"מי חייב לשבת יחד (זוגות, משפחות עם ילדים) ומי בשום אופן לא ליד מי. כשהאילוצים כתובים, אין צורך לזכור אותם בראש, והסידור האוטומטי ישמור עליהם."},
+    {h:"4. המשפחה הקרובה קרוב לרחבה",p:"השולחנות הקרובים לבמה ולרחבה הולכים להורים, לסבים ולחברים הכי קרובים. מבוגרים מעדיפים מקום רחוק מהרמקולים."},
+    {h:"5. בונים על אישורי הגעה, לא על הרשימה",p:"מושיבים רק מי שאישר הגעה. כך לא נשארים כיסאות ריקים ולא נפתחים שולחנות מיותרים."},
+    {h:"6. משאירים שולחן גמיש",p:"תמיד יש מישהו שמגיע בלי לאשר. שולחן אחד עם כמה מקומות פנויים יחסוך לכם בלגן בכניסה."},
+    {h:"7. מדפיסים לכניסה",p:"רשימה לפי א-ב עם מספר השולחן, או כרטיס שם לכל אורח, עוזרים למארחים בכניסה. עוד יותר טוב: QR אישי שמציג לאורח את השולחן שלו."},
+    {h:"8. נותנים למחשב לעשות את העבודה הקשה",p:"ב-Sidor-IL אפשר לגרור אורחים לשולחנות על מפת האולם, או ללחוץ על הושבה אוטומטית שמושיבה לפי קטגוריות ושומרת על כללי \"ביחד\" ו\"לא ליד\"."},
+  ]},
+  {slug:"rsvp-guide",icon:"💌",title:"אישורי הגעה: מתי לשלוח, מה לכתוב ואיך לקבל תשובות",desc:"המדריך המלא לאישורי הגעה: תזמון, נוסח, תזכורות ומה עושים עם מי שלא עונה.",sections:[
+    {h:"מתי לשלוח את ההזמנה",p:"בדרך כלל כחודשיים לפני האירוע. מוקדם מדי, אנשים שוכחים. מאוחר מדי, הם כבר תכננו משהו אחר. לאירוע קטן או לברית אפשר לשלוח גם שבוע-שבועיים לפני."},
+    {h:"מה לכתוב",p:"קצר ואישי: שם האורח, מה האירוע, תאריך ומקום, וקישור לאישור הגעה. הודעה עם השם של האורח מקבלת הרבה יותר תשובות מהודעה כללית.\n\nלדוגמה: \"שלום דנה! מוזמנים לחתונה שלנו 💍 יום חמישי, 14 ביוני, באולמי הגן. לאישור הגעה: [קישור]\""},
+    {h:"תזכורת למי שלא ענה",p:"כחודש לפני שולחים תזכורת רק למי שעוד לא אישר. אין צורך להטריד את מי שכבר ענה. שבוע-שבועיים אחר כך אפשר תזכורת אחרונה, או טלפון."},
+    {h:"SMS, WhatsApp או טלפון?",p:"SMS מגיע לכל טלפון ולא תלוי באפליקציה. WhatsApp מרגיש אישי יותר. טלפונים הם הדרך הכי יעילה לתפוס את האחרונים שלא ענו. השילוב של כולם נותן את אחוז התשובות הכי גבוה."},
+    {h:"ביום האירוע",p:"בבוקר האירוע שולחים לכל מי שאישר את מספר השולחן שלו. זה חוסך תורים בכניסה ונותן לאורחים הרגשה שחיכו להם."},
+    {h:"לעשות את זה אוטומטית",p:"ב-Sidor-IL קובעים פעם אחת מתי לשלוח הזמנה, תזכורת, מספר שולחן ותודה, וההודעות יוצאות בזמן. כל תשובה מתעדכנת אצלכם מיד."},
+  ]},
+  {slug:"how-many-will-come",icon:"📊",title:"כמה מוזמנים באמת יגיעו? איך להעריך אחוז הגעה",desc:"איך להעריך כמה אורחים יגיעו בפועל, מה משפיע על זה, ומתי לסגור מספר מנות מול האולם.",sections:[
+    {h:"למה זה כל כך חשוב",p:"האולם מחייב לפי מספר מנות שסוגרים מראש. הזמנתם יותר מדי, שילמתם על כיסאות ריקים. פחות מדי, ויש לחץ ברגע האחרון."},
+    {h:"מה משפיע על אחוז ההגעה",p:"• יום בשבוע: באמצע השבוע מגיעים פחות מאשר בסוף שבוע\n• מרחק: אירוע רחוק מהמרכז מוריד את ההגעה\n• עונה וחגים: בקיץ ובתקופת חגים יש יותר ביטולים\n• הקרבה: משפחה קרובה כמעט תמיד מגיעה, מכרים רחוקים פחות"},
+    {h:"איך מעריכים מראש",p:"מחלקים את הרשימה לקבוצות לפי קרבה ומעריכים לכל קבוצה בנפרד. נהוג להניח שמשפחה וחברים קרובים יגיעו כמעט כולם, ושבקבוצות הרחוקות יותר יגיעו פחות. זו הערכה בלבד, ולכן אישורי הגעה הם מה שקובע בסוף."},
+    {h:"מתי סוגרים מספר",p:"בדרך כלל כשבועיים לפני האירוע, לפי מי שאישר הגעה, ועוד מרווח קטן למי שיגיע בלי לאשר. כדאי לשאול את האולם מה המרווח שהם מאפשרים לשנות ברגע האחרון."},
+    {h:"לראות את המספרים בזמן אמת",p:"ב-Sidor-IL רואים כל רגע כמה אישרו, כמה לא מגיעים וכמה עוד לא ענו, בספירת אנשים (לא רק רשומות). ביום האירוע, סריקת ה-QR בכניסה מראה כמה הגיעו בפועל."},
+  ]},
+];
+function GuidesPage({ slug }) {
+  const g=slug?GUIDES.find(x=>x.slug===slug):null;
+  useEffect(()=>{
+    window.scrollTo(0,0);
+    const title=g?`${g.title} | Sidor-IL`:"מדריכים לתכנון אירוע | Sidor-IL";
+    const desc=g?g.desc:"מדריכים מעשיים לתכנון חתונה ואירועים: צ'קליסט, סידור הושבה, אישורי הגעה ואחוז הגעה.";
+    document.title=title;
+    const m=document.querySelector('meta[name="description"]'),old=m?.getAttribute("content");m?.setAttribute("content",desc);
+    const c=document.querySelector('link[rel="canonical"]'),oldC=c?.getAttribute("href");c?.setAttribute("href",`https://www.sidoril.com/guides${g?"/"+g.slug:""}`);
+    return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";if(old)m.setAttribute("content",old);if(oldC)c.setAttribute("href",oldC);};
+  },[slug]);
+  const wrap={fontFamily:"'Heebo',sans-serif",background:"#FBF7FC",minHeight:"100vh",color:"#2B1D3F"};
+  const header=(
+    <header style={{background:"#fff",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+      <a href="/" style={{fontWeight:900,fontSize:18,color:"#2B1D3F",textDecoration:"none"}}>◈ Sidor-IL</a>
+      <span style={{color:"#ccc"}} aria-hidden="true">|</span>
+      <a href="/guides" style={{color:C.muted,fontWeight:700,fontSize:14,textDecoration:"none"}}>מדריכים</a>
+      <a href="/" style={{marginInlineStart:"auto",background:GRAD,color:"#fff",borderRadius:12,padding:"8px 16px",fontSize:14,fontWeight:800,textDecoration:"none"}}>התחילו בחינם</a>
+    </header>
+  );
+  const cta=(
+    <div style={{background:GRAD,borderRadius:20,padding:"24px 22px",color:"#fff",textAlign:"center",marginTop:36}}>
+      <div style={{fontSize:20,fontWeight:900,marginBottom:6}}>מתכננים אירוע?</div>
+      <div style={{fontSize:14,opacity:.92,marginBottom:14}}>סידור הושבה, אישורי הגעה, משימות ותקציב, הכל במקום אחד. בחינם להתחלה.</div>
+      <a href="/" style={{display:"inline-block",background:"#fff",color:"#9147D6",borderRadius:12,padding:"11px 24px",fontSize:15,fontWeight:900,textDecoration:"none"}}>פתחו אירוע ב-Sidor-IL ←</a>
+    </div>
+  );
+  if(slug&&!g)return(<div dir="rtl" lang="he" style={wrap}>{header}<main style={{maxWidth:760,margin:"0 auto",padding:"60px 24px",textAlign:"center"}}><h1 style={{fontSize:24}}>המדריך לא נמצא</h1><a href="/guides" style={{color:C.blue,fontWeight:800}}>לכל המדריכים</a></main></div>);
+  if(!g)return(
+    <div dir="rtl" lang="he" style={wrap}>{header}
+      <main style={{maxWidth:900,margin:"0 auto",padding:"40px 24px 80px"}}>
+        <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 8px"}}>מדריכים לתכנון אירוע</h1>
+        <p style={{fontSize:15,color:C.muted,margin:"0 0 28px"}}>טיפים מעשיים לחתונה, בר/בת מצווה, ברית וכל אירוע: מה לעשות, מתי, ואיך לחסוך כאב ראש.</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:16}}>
+          {GUIDES.map(x=>(
+            <a key={x.slug} href={`/guides/${x.slug}`} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:18,padding:20,textDecoration:"none",color:"inherit",boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"}}>
+              <div style={{fontSize:30,marginBottom:8}}>{x.icon}</div>
+              <h2 style={{fontSize:17,fontWeight:900,margin:"0 0 6px",lineHeight:1.4}}>{x.title}</h2>
+              <p style={{fontSize:13,color:C.muted,margin:0,lineHeight:1.7}}>{x.desc}</p>
+            </a>
+          ))}
+        </div>
+        {cta}
+      </main>
+    </div>
+  );
+  const others=GUIDES.filter(x=>x.slug!==g.slug);
+  return(
+    <div dir="rtl" lang="he" style={wrap}>{header}
+      <main style={{maxWidth:760,margin:"0 auto",padding:"36px 24px 80px"}}>
+        <nav aria-label="פירורי לחם" style={{fontSize:13,color:C.muted,marginBottom:14}}><a href="/guides" style={{color:C.muted}}>מדריכים</a> › {g.title}</nav>
+        <article>
+          <h1 style={{fontSize:28,fontWeight:900,margin:"0 0 10px",lineHeight:1.3}}>{g.icon} {g.title}</h1>
+          <p style={{fontSize:16,color:"#5A4F70",lineHeight:1.8,margin:"0 0 26px"}}>{g.desc}</p>
+          {g.sections.map(s=>(
+            <section key={s.h} style={{marginBottom:24}}>
+              <h2 style={{fontSize:19,fontWeight:900,margin:"0 0 8px"}}>{s.h}</h2>
+              <p style={{fontSize:15,color:"#3E3555",lineHeight:1.9,margin:0,whiteSpace:"pre-line"}}>{s.p}</p>
+            </section>
+          ))}
+        </article>
+        {cta}
+        <div style={{marginTop:32}}>
+          <div style={{fontSize:15,fontWeight:900,marginBottom:10}}>עוד מדריכים</div>
+          {others.map(x=><a key={x.slug} href={`/guides/${x.slug}`} style={{display:"block",color:C.blue,fontWeight:700,fontSize:14,marginBottom:8}}>{x.icon} {x.title}</a>)}
+        </div>
+      </main>
+    </div>
+  );
+}
+
 // קישור אישי קצר מ-SMS (sidoril.com/i/<קוד>)  -  מתרגם לדף ההזמנה של האורח
 function ShortLinkRedirect({ short }) {
   const [missing,setMissing]=useState(false);
@@ -8147,6 +8405,8 @@ export default function App() {
 
   const shortMatch=path.match(/^\/i\/([a-z0-9]+)\/?$/i);
   if(shortMatch)return <ShortLinkRedirect short={shortMatch[1]}/>;
+  const guideMatch=path.match(/^\/guides(?:\/([\w-]+))?\/?$/);
+  if(guideMatch)return <><GuidesPage slug={guideMatch[1]||null}/><AccessibilityWidget/></>;
 
   const inviteMatch=path.match(/^\/invite\/([a-z0-9]+)/i)||hash.match(/^#\/invite\/([a-z0-9]+)/i);
   if(inviteMatch){
