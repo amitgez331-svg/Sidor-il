@@ -18,12 +18,21 @@ const GRAD=`linear-gradient(120deg,${C.coral},${C.blueM},${C.blueL})`;
 
 // ─── שיתוף ההזמנה בוואטסאפ ────────────────────────────────────────────────────
 const WA_GREEN="#25D366";
+// הודעת ההזמנה לשליחה ידנית בוואטסאפ: באותו סגנון של הזמנת ה-SMS, אבל בלי שם (נשלחת לכולם אותו דבר)
 const inviteShareText=(event,url)=>{
   const ew=eventWords(event);
-  const title=event.event_type==="wedding"&&event.groom_name&&event.bride_name
-    ?`💍 ${event.groom_name} ו${event.bride_name} מתחתנים!`:`${ew.emoji} ${ew.name}`;
-  const date=event.date?new Date(event.date).toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"}):"";
-  return [title,date&&`📅 ${date}${event.event_time?" · "+event.event_time:""}`,event.venue&&`📍 ${event.venue}`,"","נשמח לראותכם! לפרטים ולאישור הגעה 👇",url,giftLine(event)&&"",giftLine(event)].filter(x=>x!==false&&x!==undefined&&x!==null).join("\n");
+  const d=event.date?new Date(event.date):null;
+  const days=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  const date=d&&!isNaN(d)?`יום ${days[d.getDay()]}, ${d.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}${event.event_time?" · "+event.event_time:""}`:"בקרוב";
+  const gift=giftLine(event);
+  const own=event.welcome_text?.trim();
+  if(own){
+    const t=own.replace(/[ \t]*\{שם( מלא)?\}/g,"").replace(/\{שולחן\}/g,"");
+    const body=t.includes("{קישור}")?t.replace(/\{קישור\}/g,url):`${t}\n\n👇 לאישור הגעה:\n${url}`;
+    return gift&&!body.includes(giftLink(event))?`${body}\n\n${gift}`:body;
+  }
+  return [`שלום! 💌`,``,`מוזמנים ל${ew.name}! ${ew.emoji}`,`נשמח לראותכם ביום המיוחד.`,``,`📅 ${date}`,`📍 ${event.venue||"יפורסם בקרוב"}`,``,`👇 לאישור הגעה:`,url,
+    ...(ew.hosts?[``,`באהבה,`,`${ew.hosts} ${ew.emoji}`]:[]),...(gift?[``,gift]:[])].join("\n");
 };
 // שדה תאריך מימין לשמאל: מציג את התאריך בעברית ("יום ב׳, 14 ביוני 2027") ופותח את בורר התאריכים של הדפדפן.
 // שדה ה-date המקורי מציג 14/06/2027 משמאל לימין עם האייקון בצד הלא נכון.
