@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.sidoril.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.sidoril.com/events/wedding</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.sidoril.com/events/bar-mitzvah</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.sidoril.com/events/brit</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.sidoril.com/events/business</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.sidoril.com/guides</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.sidoril.com/guides/wedding-checklist</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.sidoril.com/guides/seating-tips</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>

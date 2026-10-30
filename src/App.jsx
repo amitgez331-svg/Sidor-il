@@ -64,6 +64,19 @@ function DateField({ value, onChange, style, compact=false, placeholder="בחר�
   );
 }
 const shareInviteWA=(event,url)=>window.open(waShareUrl(inviteShareText(event,url)),"_blank","noopener,noreferrer");
+// קודי הפניה: sidoril.com/?ref=<קוד> (אולם, שותף, חבר מביא חבר, דף הזמנה) נשמר במכשיר ל-60 יום
+// ונרשם פעם אחת על משתמש חדש. האדמין רואה מי הגיע דרך איזה קוד
+const REF_KEY="sidor_ref";
+const captureRef=()=>{try{const r=new URLSearchParams(window.location.search).get("ref");if(r&&/^[\w-]{2,40}$/.test(r))localStorage.setItem(REF_KEY,JSON.stringify({ref:r.toLowerCase(),at:Date.now()}));}catch{}};
+const myRefCode=u=>u?.id?u.id.replace(/-/g,"").slice(0,8):"";
+const applyRef=async u=>{
+  let r=null;try{const v=JSON.parse(localStorage.getItem(REF_KEY)||"null");if(v&&Date.now()-v.at<60*864e5)r=v.ref;}catch{}
+  if(!u||!r)return;
+  try{localStorage.removeItem(REF_KEY);}catch{}
+  // רק משתמש שנרשם עכשיו (לא משתמש ותיק שלחץ על קישור), ולא הפניה עצמית
+  if(u.user_metadata?.ref||r===myRefCode(u)||Date.now()-new Date(u.created_at).getTime()>3*864e5)return;
+  await sb.auth.updateUser({data:{ref:r}}).catch(()=>{});
+};
 const WaIcon=({size=16,color="#fff"})=>(
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88m8.41-18.3A11.81 11.81 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg>
 );
@@ -1644,6 +1657,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               {[
                 ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
                 ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
+                ["לפי אירוע",EVENT_LANDINGS.map(x=>[`/events/${x.slug}`,x.nav])],
                 ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"]]],
               ].map(([head,links])=>(
                 <div key={head}>
@@ -2419,6 +2433,29 @@ function ProducerProfileCard({ user }) {
 }
 
 // ─── MOBILE SETTINGS SCREEN ──────────────────────────────────────────────────
+// חבר מביא חבר: קישור אישי עם קוד ההפניה של המשתמש
+function InviteFriendsCard({ user }) {
+  const [copied,setCopied]=useState(false);
+  const link=`https://www.sidoril.com/?ref=${myRefCode(user)}`;
+  const text=`היי! סידרתי את ההושבה ואישורי ההגעה לאירוע שלי ב-Sidor-IL וזה חסך לי המון כאב ראש 🙌\nשווה לנסות:\n${link}`;
+  const copy=()=>{navigator.clipboard?.writeText(link).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);}).catch(()=>{});};
+  if(!myRefCode(user))return null;
+  return(
+    <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+      <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:4}}>🎁 הזמינו חברים</div>
+      <div style={{fontSize:12,color:"#777",lineHeight:1.6,marginBottom:12}}>מכירים מישהו שמתכנן חתונה או אירוע? שלחו לו את הקישור האישי שלכם, וכל מי שנרשם דרכו נרשם אצלנו על שמכם.</div>
+      <div style={{display:"flex",alignItems:"center",gap:8,background:"#F7F3FB",borderRadius:10,padding:"9px 12px",marginBottom:10}}>
+        <span style={{flex:1,fontSize:12,fontWeight:700,color:"#3A2464",direction:"ltr",textAlign:"left",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link.replace("https://","")}</span>
+        <button onClick={copy} style={{background:"none",border:"none",color:"#9147D6",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>{copied?"✓ הועתק":"📋 העתקה"}</button>
+      </div>
+      <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer"
+        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#25D366",color:"#fff",borderRadius:10,padding:11,fontSize:13,fontWeight:800,textDecoration:"none"}}>
+        <WaIcon size={16}/> שליחה לחברים בוואטסאפ
+      </a>
+    </div>
+  );
+}
+
 function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
   const [pwForm,setPwForm]=useState({newP:"",confirm:""});
   const [pwMsg,setPwMsg]=useState(null);
@@ -2476,6 +2513,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
 
       <ProducerProfileCard user={user}/>
       <TestimonialCard user={user} event={event}/>
+      <InviteFriendsCard user={user}/>
 
       {/* שינוי סיסמה */}
       <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
@@ -7988,9 +8026,11 @@ function InvitePage({ code, guestId }) {
             {event.brand.phone&&<a href={`tel:${String(event.brand.phone).replace(/[^\d+]/g,"")}`} style={{fontSize:12,color:"#888",textDecoration:"none",direction:"ltr",display:"inline-block"}}>📞 {event.brand.phone}</a>}
           </div>
         )}
-        <div style={{textAlign:"center",fontSize:12,color:"#aaa",paddingBottom:20}}>
-          מופעל על ידי ◈ Sidor-IL
-        </div>
+        <a href="https://www.sidoril.com/?ref=invite" target="_blank" rel="noopener"
+          style={{display:"block",textAlign:"center",textDecoration:"none",padding:"4px 12px 22px",color:"#999",fontSize:12,lineHeight:1.7}}>
+          נוצר ב־<b style={{color:"#7A5BB0"}}>◈ Sidor-IL</b><br/>
+          <span style={{color:"#B07AA8",fontWeight:700}}>מתכננים אירוע? סידור הושבה ואישורי הגעה, התחילו בחינם ←</span>
+        </a>
       </div>
     </div>
   );
@@ -8495,6 +8535,60 @@ function AdminCustomerCard({ user, stats, balances, pkgs, onOpenEvent, onClose }
     </div>
   );
 }
+// הפניות: מי נרשם דרך איזה קוד (אולם/שותף, חבר מביא חבר, דף הזמנה) + יצירת קישור לשותף
+function AdminReferrals({ card, refs, users, packages, onCustomer }) {
+  const [name,setName]=useState(""),[copied,setCopied]=useState("");
+  const code=name.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^\w-]/g,"").slice(0,40);
+  const link=code.length>=2?`https://www.sidoril.com/?ref=${code}`:"";
+  const copy=t=>{navigator.clipboard?.writeText(t).then(()=>{setCopied(t);setTimeout(()=>setCopied(""),2000);}).catch(()=>{});};
+  const byCode={};
+  Object.entries(refs).forEach(([uid,r])=>{(byCode[r]||=[]).push(users.find(u=>u.user_id===uid)||{user_id:uid,email:null,events:[]});});
+  const label=r=>{
+    if(r==="invite")return{icon:"💌",txt:"דף הזמנה של אורח",sub:"אורחים שלחצו על \"נוצר ב-Sidor-IL\""};
+    const friend=users.find(u=>myRefCode({id:u.user_id})===r);
+    if(friend)return{icon:"🎁",txt:`חבר של ${friend.email||friend.user_id.slice(0,8)}`,sub:"חבר מביא חבר"};
+    return{icon:"🤝",txt:r,sub:"קוד שותף (אולם / מפיק / קמפיין)"};
+  };
+  const rows=Object.entries(byCode).sort((a,b)=>b[1].length-a[1].length);
+  const paid=u=>(packages[u.user_id]||[]).length>0;
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:4}}>🔗 קישור לשותף חדש</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>כתבו שם באנגלית (למשל olamei-hagan), ותנו לאולם או למפיק את הקישור. כל מי שנרשם דרכו יופיע כאן.</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="שם השותף באנגלית" dir="ltr"
+            style={{flex:"1 1 200px",border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 12px",fontSize:14,fontFamily:"inherit",outline:"none"}}/>
+          {link&&<span style={{fontSize:13,fontWeight:700,direction:"ltr",color:C.text}}>{link}</span>}
+          {link&&<button onClick={()=>copy(link)} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{copied===link?"✓ הועתק":"📋 העתקה"}</button>}
+        </div>
+      </div>
+      {!rows.length&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>🎯</div><div style={{fontWeight:800,marginTop:6}}>עוד אין נרשמים דרך קישורי הפניה</div></div>}
+      {rows.map(([r,us])=>{const l=label(r);return(
+        <div key={r} className="adm-row" style={{...card,padding:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:10}}>
+            <div style={{width:42,height:42,borderRadius:12,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{l.icon}</div>
+            <div style={{flex:1,minWidth:180}}>
+              <div style={{fontWeight:900,fontSize:15}}>{l.txt}</div>
+              <div style={{fontSize:12,color:C.muted}}>{l.sub} · קוד <span dir="ltr">{r}</span></div>
+            </div>
+            <span style={{background:C.blueXL,color:C.text,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>{us.length} נרשמו</span>
+            <span style={{background:"#E9FBF4",color:C.success,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>{us.filter(paid).length} עם חבילה</span>
+          </div>
+          {us.map(u=>(
+            <div key={u.user_id} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,padding:"7px 0",borderTop:`1px solid ${C.border}`}}>
+              <span style={{flex:1,direction:"ltr",textAlign:"right"}}>{u.email||u.user_id.slice(0,8)}</span>
+              <span style={{color:C.muted}}>{u.events?.length||0} אירועים</span>
+              {paid(u)&&<span style={{color:C.success,fontWeight:800}}>💳</span>}
+              <button onClick={()=>onCustomer(u.user_id)} style={{background:"none",border:"none",color:C.blue,fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>👤 כרטיס לקוח</button>
+            </div>
+          ))}
+        </div>
+      );})}
+    </div>
+  );
+}
+
 // ניהול רשימת האולמות שמוצעים ללקוחות: הוספה ידנית, אישור מקומות מהאירועים, עריכה ומחיקה
 function AdminVenues({ card }) {
   const [list,setList]=useState(null),[cands,setCands]=useState([]),[busy,setBusy]=useState(false),[err,setErr]=useState("");
@@ -8671,6 +8765,7 @@ function AdminDashboard({ user, onLogout }) {
   const [custFor,setCustFor]=useState(null);      // כרטיס לקוח פתוח (user_id)
   const [waBalances,setWaBalances]=useState({});  // {event_id: רשומות WhatsApp}
   const [waRequests,setWaRequests]=useState([]);  // בקשות רכישת WhatsApp
+  const [refs,setRefs]=useState({});              // {user_id: קוד הפניה שדרכו נרשם}
   const [search,setSearch]=useState("");
   const [saving,setSaving]=useState(null);
   const [addFor,setAddFor]=useState(null);   // {event, request?}
@@ -8695,6 +8790,7 @@ function AdminDashboard({ user, onLogout }) {
     // WhatsApp בטבלאות נפרדות (wa_balance / wa_requests) — לא קשור ל-SMS
     sb.from("wa_balance").select("event_id,balance").then(({data})=>setWaBalances(Object.fromEntries((data||[]).map(b=>[b.event_id,b.balance])))).catch(()=>{});
     sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
+    sb.rpc("admin_list_referrals").then(({data})=>setRefs(Object.fromEntries((data||[]).map(r=>[r.user_id,r.ref])))).catch(()=>{});
     const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
@@ -8804,7 +8900,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["reviews","⭐ המלצות",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -8987,7 +9083,7 @@ function AdminDashboard({ user, onLogout }) {
                   <div style={{width:42,height:42,borderRadius:"50%",background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:17}}>{(u.email||"?")[0].toUpperCase()}</div>
                   <div style={{flex:1,minWidth:200}}>
                     <div style={{fontWeight:900,fontSize:15,direction:"ltr",textAlign:"right"}}>{u.email||u.user_id}</div>
-                    <div style={{fontSize:12,color:C.muted}}>הצטרף {fmtDate(u.created_at)} · כניסה אחרונה {fmtDate(u.last_sign_in_at)}</div>
+                    <div style={{fontSize:12,color:C.muted}}>הצטרף {fmtDate(u.created_at)} · כניסה אחרונה {fmtDate(u.last_sign_in_at)}{refs[u.user_id]&&<> · 🎯 הגיע דרך <b>{refs[u.user_id]}</b></>}</div>
                     {[...new Set(u.events.map(e=>e.host_phone).filter(p=>normPhone(p)))].map(p=>(
                       <a key={p} href={`https://wa.me/972${normPhone(p).slice(1)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",fontSize:12,fontWeight:800,color:"#1FA855",textDecoration:"none",marginTop:3,marginLeft:10,direction:"ltr"}}>💬 {p}</a>
                     ))}
@@ -9017,6 +9113,8 @@ function AdminDashboard({ user, onLogout }) {
           </div>
         ):tab==="venues"?(
           <AdminVenues card={card}/>
+        ):tab==="referrals"?(
+          <AdminReferrals card={card} refs={refs} users={users} packages={packages} onCustomer={setCustFor}/>
         ):tab==="reviews"?(
           <AdminTestimonials card={card}/>
         ):(
@@ -9192,14 +9290,7 @@ function GuidesPage({ slug }) {
     return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";if(old)m.setAttribute("content",old);if(oldC)c.setAttribute("href",oldC);};
   },[slug]);
   const wrap={fontFamily:"'Heebo',sans-serif",background:"#FBF7FC",minHeight:"100vh",color:"#2B1D3F"};
-  const header=(
-    <header style={{background:"#fff",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-      <a href="/" style={{fontWeight:900,fontSize:18,color:"#2B1D3F",textDecoration:"none"}}>◈ Sidor-IL</a>
-      <span style={{color:"#ccc"}} aria-hidden="true">|</span>
-      <a href="/guides" style={{color:C.muted,fontWeight:700,fontSize:14,textDecoration:"none"}}>מדריכים</a>
-      <a href="/" style={{marginInlineStart:"auto",background:GRAD,color:"#fff",borderRadius:12,padding:"8px 16px",fontSize:14,fontWeight:800,textDecoration:"none"}}>התחילו בחינם</a>
-    </header>
-  );
+  const header=<SeoHeader/>;
   const cta=(
     <div style={{background:GRAD,borderRadius:20,padding:"24px 22px",color:"#fff",textAlign:"center",marginTop:36}}>
       <div style={{fontSize:20,fontWeight:900,marginBottom:6}}>מתכננים אירוע?</div>
@@ -9251,6 +9342,103 @@ function GuidesPage({ slug }) {
   );
 }
 
+// דפי נחיתה לפי סוג אירוע (sidoril.com/events/<סוג>) — לחיפוש בגוגל ולקמפיינים
+const EVENT_LANDINGS=[
+  {slug:"wedding",icon:"💍",nav:"חתונה",title:"סידור הושבה ואישורי הגעה לחתונה",
+    desc:"מערכת לסידור הושבה לחתונה: מפת אולם, הושבה אוטומטית, אישורי הגעה ב-SMS ובוואטסאפ, וכניסה מסודרת לאולם. מתחילים בחינם.",
+    lead:"מ-300 מוזמנים ועד המנה האחרונה מול האולם: כל מה שצריך כדי לדעת מי מגיע ואיפה כל אחד יושב, בלי אקסלים ובלי ויכוחים.",
+    points:[["🗺️","מפת אולם אמיתית","גוררים שולחנות, רחבה ובמה, ומושיבים אורחים בגרירה."],["✨","הושבה אוטומטית","לפי קטגוריות (משפחת הכלה, חברים מהצבא...) ועם כללי \"ביחד\" ו\"לא ליד\"."],["💌","אישורי הגעה","הזמנה דיגיטלית עם קישור אישי, תזכורות למי שלא ענה, ומספרים בזמן אמת."],["📊","מספר מנות מדויק","רואים כמה אנשים אישרו (לא רק רשומות), כדי לסגור מספר נכון מול האולם."],["🎟️","כניסה בלי תורים","QR אישי, רשימה מודפסת, עמדת טאבלט או צוות הושבה ביום החתונה."],["🎁","מתנות ותקציב","רישום מתנות, מעקב הוצאות ומשימות לפי תאריך החתונה."]],
+    faq:[["כמה זמן לפני החתונה מתחילים?","מומלץ לפתוח את האירוע כשיש רשימת מוזמנים ראשונית, ולשלוח הזמנות כחודשיים לפני."],["אפשר לייבא את רשימת המוזמנים?","כן, מאקסל או מאנשי הקשר בטלפון."],["החתן והכלה יכולים לעבוד יחד?","כן, משתפים את האירוע וכל אחד עובד מהטלפון שלו."]]},
+  {slug:"bar-mitzvah",icon:"✡️",nav:"בר/בת מצווה",title:"סידור הושבה ואישורי הגעה לבר מצווה ובת מצווה",
+    desc:"סידור הושבה לבר ובת מצווה: מפת אולם, שולחן ילדים, אישורי הגעה ב-SMS ובוואטסאפ והושבה אוטומטית. מתחילים בחינם.",
+    lead:"משפחה מורחבת, חברים מהכיתה ומהחוגים, והורים של חברים: מסדרים את כולם במקום אחד, בלי להתבלבל.",
+    points:[["🗺️","מפת אולם","שולחנות עגולים, אבירים ושולחנות ילדים, בדיוק כמו באולם."],["👦","שולחן ילדים בקלות","קטגוריה נפרדת לחברים של חתן או כלת המצווה, והושבה אוטומטית לפיה."],["💌","אישורי הגעה","הזמנה דיגיטלית עם תאריך, שעה ומקום, ותזכורות למי שלא ענה."],["📊","ספירה מדויקת","כמה מבוגרים, כמה ילדים, ומי עוד לא ענה."],["🎟️","כניסה מסודרת","כל אורח מקבל את מספר השולחן שלו ביום האירוע."],["🧾","משימות ותקציב","רשימת משימות מותאמת לתאריך ומעקב הוצאות."]],
+    faq:[["אפשר לעשות גם אירוע בוקר בבית הכנסת?","כן, פותחים אירוע נפרד לכל חלק."],["מתאים גם לבת מצווה?","כן, בוחרים את סוג האירוע וההזמנה מותאמת אליו."]]},
+  {slug:"brit",icon:"👶",nav:"ברית",title:"אישורי הגעה והושבה לברית ולבריתה",
+    desc:"הזמנה דיגיטלית ואישורי הגעה לברית תוך דקות: שולחים בוואטסאפ, רואים מי מגיע, ומושיבים בקלות. מתחילים בחינם.",
+    lead:"ברית מתארגנת בשבוע אחד. שולחים הזמנה דיגיטלית כבר היום, ורואים בזמן אמת מי מגיע.",
+    points:[["⚡","הזמנה תוך דקות","ממלאים תאריך, שעה ומקום, ומקבלים קישור מוכן לשליחה."],["💬","שליחה בוואטסאפ","הודעה מעוצבת עם קישור לאישור הגעה, ישר מהטלפון."],["📊","מי מגיע","רואים מי אישר, כמה אנשים, ומי עוד לא ענה."],["🗺️","הושבה פשוטה","מסדרים שולחנות במפה או מדפיסים רשימה לכניסה."]],
+    faq:[["אפשר להשתמש גם לבריתה?","כן, עורכים את נוסח ההזמנה כמו שרוצים."],["צריך להתקין אפליקציה?","לא, הכל עובד מהדפדפן בטלפון ובמחשב."]]},
+  {slug:"business",icon:"💼",nav:"אירוע עסקי",title:"ניהול רישום והושבה לאירועים עסקיים וכנסים",
+    desc:"אישורי הגעה, הושבה וצ'ק-אין לכנסים, ערבי חברה ואירועי לקוחות: רשימות, QR בכניסה ועמדת טאבלט. מתחילים בחינם.",
+    lead:"ערב חברה, כנס לקוחות או השקה: יודעים מי נרשם, מסדרים שולחנות לפי מחלקות וחברות, ומקבלים את האורחים בכניסה במהירות.",
+    points:[["📋","רשימות מוזמנים","ייבוא מאקסל, חלוקה לפי חברה או מחלקה."],["💌","הזמנה ואישור הגעה","דף הזמנה מקצועי עם פרטי האירוע וקישור אישי לכל מוזמן."],["🗺️","הושבה לפי קבוצות","מפת אולם והושבה אוטומטית לפי חברה או צוות."],["📟","צ'ק-אין בכניסה","סריקת QR או עמדת טאבלט שבה האורח מקליד את השם ומקבל את השולחן."],["📊","נתונים בזמן אמת","כמה נרשמו, כמה הגיעו בפועל ומי חסר."]],
+    faq:[["אפשר לנהל כמה אירועים במקביל?","כן, כל אירוע מנוהל בנפרד מאותו חשבון."],["יש שירות בשטח?","כן, אפשר להזמין צוות הושבה או עמדת טאבלט ליום האירוע."]]},
+];
+function SeoHeader() {
+  return(
+    <header style={{background:"#fff",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+      <a href="/" style={{fontWeight:900,fontSize:18,color:"#2B1D3F",textDecoration:"none"}}>◈ Sidor-IL</a>
+      <span style={{color:"#ccc"}} aria-hidden="true">|</span>
+      <a href="/guides" style={{color:C.muted,fontWeight:700,fontSize:14,textDecoration:"none"}}>מדריכים</a>
+      <a href="/" style={{marginInlineStart:"auto",background:GRAD,color:"#fff",borderRadius:12,padding:"8px 16px",fontSize:14,fontWeight:800,textDecoration:"none"}}>התחילו בחינם</a>
+    </header>
+  );
+}
+function EventLandingPage({ slug }) {
+  const p=EVENT_LANDINGS.find(x=>x.slug===slug);
+  useEffect(()=>{
+    window.scrollTo(0,0);
+    if(!p)return;
+    document.title=`${p.title} | Sidor-IL`;
+    const m=document.querySelector('meta[name="description"]'),old=m?.getAttribute("content");m?.setAttribute("content",p.desc);
+    const c=document.querySelector('link[rel="canonical"]'),oldC=c?.getAttribute("href");c?.setAttribute("href",`https://www.sidoril.com/events/${p.slug}`);
+    const ld=document.createElement("script");ld.type="application/ld+json";
+    ld.text=JSON.stringify({"@context":"https://schema.org","@type":"FAQPage",mainEntity:p.faq.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}))});
+    document.head.appendChild(ld);
+    return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";if(old)m.setAttribute("content",old);if(oldC)c.setAttribute("href",oldC);ld.remove();};
+  },[slug]);
+  const wrap={fontFamily:"'Heebo',sans-serif",background:"#FBF7FC",minHeight:"100vh",color:"#2B1D3F"};
+  if(!p)return(<div dir="rtl" lang="he" style={wrap}><SeoHeader/><main style={{maxWidth:760,margin:"0 auto",padding:"60px 24px",textAlign:"center"}}><h1 style={{fontSize:24}}>הדף לא נמצא</h1><a href="/" style={{color:C.blue,fontWeight:800}}>לדף הבית</a></main></div>);
+  const cta=(label)=>(
+    <a href={`/?ref=lp-${p.slug}`} style={{display:"inline-block",background:GRAD,color:"#fff",borderRadius:14,padding:"14px 28px",fontSize:16,fontWeight:900,textDecoration:"none",boxShadow:"0 14px 30px -12px rgba(240,96,158,.6)"}}>{label}</a>
+  );
+  return(
+    <div dir="rtl" lang="he" style={wrap}><SeoHeader/>
+      <main>
+        <section style={{maxWidth:900,margin:"0 auto",padding:"48px 24px 28px",textAlign:"center"}}>
+          <div style={{fontSize:46,marginBottom:8}}>{p.icon}</div>
+          <h1 style={{fontSize:"clamp(26px,5vw,38px)",fontWeight:900,margin:"0 0 14px",lineHeight:1.25}}>{p.title}</h1>
+          <p style={{fontSize:17,color:"#5A4F70",lineHeight:1.8,margin:"0 auto 24px",maxWidth:640}}>{p.lead}</p>
+          {cta("פתחו אירוע בחינם ←")}
+        </section>
+        <section style={{maxWidth:960,margin:"0 auto",padding:"10px 24px 20px"}}>
+          <h2 style={{fontSize:22,fontWeight:900,textAlign:"center",margin:"0 0 18px"}}>מה מקבלים</h2>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14}}>
+            {p.points.map(([i,h,t])=>(
+              <div key={h} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:18,padding:20,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"}}>
+                <div style={{fontSize:28,marginBottom:6}}>{i}</div>
+                <h3 style={{fontSize:16,fontWeight:900,margin:"0 0 6px"}}>{h}</h3>
+                <p style={{fontSize:14,color:C.muted,margin:0,lineHeight:1.7}}>{t}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section style={{maxWidth:760,margin:"0 auto",padding:"24px 24px 10px"}}>
+          <h2 style={{fontSize:22,fontWeight:900,margin:"0 0 14px"}}>שאלות נפוצות</h2>
+          {p.faq.map(([q,a])=>(
+            <details key={q} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+              <summary style={{fontWeight:800,fontSize:15,cursor:"pointer"}}>{q}</summary>
+              <p style={{fontSize:14,color:"#3E3555",lineHeight:1.8,margin:"8px 0 0"}}>{a}</p>
+            </details>
+          ))}
+        </section>
+        <section style={{maxWidth:760,margin:"0 auto",padding:"24px 24px 70px",textAlign:"center"}}>
+          <div style={{background:GRAD,borderRadius:22,padding:"28px 22px",color:"#fff"}}>
+            <div style={{fontSize:21,fontWeight:900,marginBottom:6}}>מוכנים להתחיל?</div>
+            <div style={{fontSize:14,opacity:.92,marginBottom:16}}>פותחים אירוע תוך דקה, בלי כרטיס אשראי.</div>
+            <a href={`/?ref=lp-${p.slug}`} style={{display:"inline-block",background:"#fff",color:"#9147D6",borderRadius:12,padding:"12px 26px",fontSize:15,fontWeight:900,textDecoration:"none"}}>פתחו אירוע ב-Sidor-IL ←</a>
+          </div>
+          <nav aria-label="סוגי אירועים" style={{marginTop:26,fontSize:14,display:"flex",gap:"8px 18px",flexWrap:"wrap",justifyContent:"center"}}>
+            {EVENT_LANDINGS.filter(x=>x.slug!==p.slug).map(x=><a key={x.slug} href={`/events/${x.slug}`} style={{color:C.blue,fontWeight:700}}>{x.icon} {x.nav}</a>)}
+            <a href="/guides" style={{color:C.blue,fontWeight:700}}>📚 מדריכים</a>
+          </nav>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 // קישור אישי קצר מ-SMS (sidoril.com/i/<קוד>)  -  מתרגם לדף ההזמנה של האורח
 function ShortLinkRedirect({ short }) {
   const [missing,setMissing]=useState(false);
@@ -9296,9 +9484,11 @@ export default function App() {
 
   // ← useEffect חייב להיות לפני כל return!
   useEffect(()=>{
+    captureRef();
     sb.auth.getSession().then(async({data})=>{
       const u=data.session?.user||null;
       setUser(u);
+      applyRef(u);
       // שחזור האירוע האחרון אחרי רענון דף
       const savedId=localStorage.getItem("sidor_event_id");
       if(u&&savedId){
@@ -9315,6 +9505,7 @@ export default function App() {
         setUser(null);setEvent(null);localStorage.removeItem("sidor_event_id");
       } else {
         setUser(session.user);
+        if(evt==="SIGNED_IN")applyRef(session.user);
       }
     });
     return()=>subscription.unsubscribe();
@@ -9350,6 +9541,8 @@ export default function App() {
   if(shortMatch)return <ShortLinkRedirect short={shortMatch[1]}/>;
   const guideMatch=path.match(/^\/guides(?:\/([\w-]+))?\/?$/);
   if(guideMatch)return <><GuidesPage slug={guideMatch[1]||null}/><AccessibilityWidget/></>;
+  const lpMatch=path.match(/^\/events\/([\w-]+)\/?$/);
+  if(lpMatch)return <><EventLandingPage slug={lpMatch[1]}/><AccessibilityWidget/></>;
 
   const inviteMatch=path.match(/^\/invite\/([a-z0-9]+)/i)||hash.match(/^#\/invite\/([a-z0-9]+)/i);
   if(inviteMatch){
