@@ -2442,8 +2442,12 @@ const taskDue=(task,event)=>{
 const today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
 // "באיחור" = עבר המועד אחרי שהאירוע נפתח. משימה שהמועד שלה עבר עוד לפני שהאירוע נפתח היא "להשלים בהקדם" (לא אדום)
 const eventOpened=event=>{const c=event?.created_at?new Date(event.created_at):null;if(!c||isNaN(c))return null;c.setHours(0,0,0,0);return c;};
-const taskCatchUp=(task,event)=>{const d=taskDue(task,event),c=eventOpened(event);return !task.done&&d&&c&&d<c;};
-const taskLate=(task,event)=>{const d=taskDue(task,event);return !task.done&&d&&d<today0()&&!taskCatchUp(task,event);};
+// תאריך האירוע עבר: משימות שהיו אמורות להיעשות לפני האירוע כבר לא רלוונטיות — "עבר תאריך החתונה" (לא באיחור)
+const eventPassed=event=>{const ev=eventDay(event);return !!ev&&ev<today0();};
+const eventWord=event=>event?.event_type==="wedding"||!event?.event_type?"החתונה":"האירוע";
+const taskPastEvent=(task,event)=>{if(task.done||!eventPassed(event))return false;const d=taskDue(task,event);return d?d<=eventDay(event):(task.o??0)<=0;};
+const taskCatchUp=(task,event)=>{const d=taskDue(task,event),c=eventOpened(event);return !task.done&&d&&c&&d<c&&!taskPastEvent(task,event);};
+const taskLate=(task,event)=>{const d=taskDue(task,event);return !task.done&&d&&d<today0()&&!taskCatchUp(task,event)&&!taskPastEvent(task,event);};
 const sortTasks=(list,event)=>[...list].sort((a,b)=>(taskDue(a,event)?.getTime()??(a.o??9e9)*DAY_MS)-(taskDue(b,event)?.getTime()??(b.o??9e9)*DAY_MS));
 const fmtDue=d=>d?d.toLocaleDateString("he-IL",{day:"numeric",month:"short",year:d.getFullYear()!==new Date().getFullYear()?"numeric":undefined}):"";
 // שמירת הרשימה באירוע (מיזוג עם שאר settings_json)
@@ -2488,6 +2492,7 @@ function TasksScreen({ event }) {
         <div style={{fontSize:28,fontWeight:900}}>{pct}%</div>
       </div>
       {!ev&&<div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#B45309",marginBottom:12}}>⚠️ הגדירו תאריך אירוע ב"פרטי האירוע" כדי שלכל משימה יופיע תאריך יעד.</div>}
+      {eventPassed(event)&&<div style={{background:"#F7FAFC",border:"1px solid #E2E8F0",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#4A5568",marginBottom:12}}>📅 תאריך {eventWord(event)} עבר. המשימות שלפני {eventWord(event)} כבר לא רלוונטיות, ונשארו רק המשימות שאחריה (תודות, מתנות).</div>}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
         {[["all","הכל"],["open","פתוחות"],["late",`באיחור${late?` (${late})`:""}`],["done","הושלמו"]].map(([k,l])=>(
           <button key={k} onClick={()=>setFilter(k)} aria-pressed={filter===k} style={{background:filter===k?C.blue:"#fff",color:filter===k?"#fff":C.blue,border:`1.5px solid ${filter===k?C.blue:C.border}`,borderRadius:100,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
@@ -2510,7 +2515,9 @@ function TasksScreen({ event }) {
                 {editId===t.id
                   ?<input autoFocus defaultValue={t.t} onBlur={e=>rename(t.id,e.target.value)} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();if(e.key==="Escape")setEditId(null);}} style={{...inp,width:"100%",padding:"6px 10px"}}/>
                   :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:t.done?"#8A9A90":C.text,textDecoration:t.done?"line-through":"none",textDecorationThickness:2,textDecorationColor:"#25D366"}}>{t.t}</div>}
-                {d&&<div style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":C.muted,fontWeight:lt||taskCatchUp(t,event)?800:500}}>{lt?"⚠️ באיחור · ":taskCatchUp(t,event)?"⏩ להשלים בהקדם · ":""}{fmtDue(d)}</div>}
+                {taskPastEvent(t,event)
+                  ?<div style={{fontSize:11,color:"#A0AEC0",fontWeight:700}}>📅 עבר תאריך {eventWord(event)}</div>
+                  :d&&<div style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":C.muted,fontWeight:lt||taskCatchUp(t,event)?800:500}}>{lt?"⚠️ באיחור · ":taskCatchUp(t,event)?"⏩ להשלים בהקדם · ":""}{fmtDue(d)}</div>}
               </div>
               <button onClick={()=>setEditId(t.id)} aria-label={`עריכת ${t.t}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",padding:4}}>✏️</button>
               <button onClick={()=>remove(t.id)} aria-label={`מחיקת ${t.t}`} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#A0AEC0",padding:4}}>🗑️</button>
@@ -2524,14 +2531,15 @@ function TasksScreen({ event }) {
 }
 // כרטיס "המשימות הקרובות" למסך הבית
 function UpcomingTasks({ event, onOpen, style }) {
-  const list=taskList(event),open=sortTasks(list.filter(t=>!t.done),event).slice(0,3);
+  // אחרי האירוע: לא מציגים את המשימות שלפניו (עבר תאריך החתונה)
+  const list=taskList(event),open=sortTasks(list.filter(t=>!t.done&&!taskPastEvent(t,event)),event).slice(0,3);
   const late=list.filter(t=>taskLate(t,event)).length,done=list.filter(t=>t.done).length;
   return(
     <div style={{background:"#fff",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)",...style}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
         <div style={{flex:1}}>
           <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>✅ המשימות הקרובות</div>
-          <div style={{fontSize:12,color:"#888"}}>{done} / {list.length} הושלמו{late?<span style={{color:C.danger,fontWeight:800}}> · {late} באיחור</span>:null}</div>
+          <div style={{fontSize:12,color:"#888"}}>{eventPassed(event)?`📅 עבר תאריך ${eventWord(event)}`:`${done} / ${list.length} הושלמו`}{late?<span style={{color:C.danger,fontWeight:800}}> · {late} באיחור</span>:null}</div>
         </div>
         <button onClick={onOpen} style={{background:"#F6F0FF",border:"none",color:"#9147D6",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לכל המשימות ←</button>
       </div>
@@ -2541,7 +2549,7 @@ function UpcomingTasks({ event, onOpen, style }) {
           <span style={{flex:1,fontSize:13,fontWeight:700,color:"#2B1D3F"}}>{t.t}</span>
           {d&&<span style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":"#888",fontWeight:lt?800:500,whiteSpace:"nowrap"}}>{taskCatchUp(t,event)?"בהקדם":fmtDue(d)}</span>}
         </div>
-      );}):<div style={{fontSize:13,color:"#276749",fontWeight:700}}>🎉 כל המשימות הושלמו</div>}
+      );}):<div style={{fontSize:13,color:"#276749",fontWeight:700}}>{eventPassed(event)?"🎉 אין משימות פתוחות אחרי האירוע":"🎉 כל המשימות הושלמו"}</div>}
     </div>
   );
 }
