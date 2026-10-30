@@ -10,7 +10,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 const ADMIN_EMAIL = "amitgez331@gmail.com";
-const PACKAGES = ["basic", "sms", "auto", "staff", "producer"]; // כמו ALL_PACKAGES ב-App.jsx
+const PACKAGES = ["basic", "sms", "auto", "staff", "kiosk", "producer"]; // כמו ALL_PACKAGES ב-App.jsx
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 Deno.serve(async (req) => {
