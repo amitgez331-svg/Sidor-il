@@ -6469,50 +6469,102 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const sentOk=results?.filter(r=>r.status?.includes("✓")).length||0;
   const sentFail=results?.filter(r=>r.status?.includes("✗")).length||0;
 
-  // רכישת החבילה (כמו כרטיס "הודעות WhatsApp" בדף החבילות): באותו דף עם הנוסחים, כמו ב-SMS.
-  // מי שכבר יש לו את החבילה רואה שורה מקוצרת, ויכול לפתוח את הכרטיס כדי להוסיף רשומות
-  const waOwned=userPackages.some(p=>["auto","vip","whatsapp"].includes(p?.package_id??p));
-  const [showBuy,setShowBuy]=useState(false);
-  const waPurchase=(waOwned&&!showBuy)
-    ?<div style={{background:"#F0FFF4",border:"1.5px solid #9AE6B4",borderRadius:14,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{flex:1,fontSize:13,fontWeight:800,color:"#276749"}}>✅ חבילת WhatsApp פעילה · 4 סבבים לכל רשומה</span>
-        <button onClick={()=>setShowBuy(true)} style={{background:"#fff",border:`1.5px solid ${WA_GREEN}`,color:"#075E54",borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🛒 הוספת רשומות</button>
-      </div>
-    :(
-      <div style={{background:"#fff",border:`2px solid ${WA_GREEN}`,borderRadius:18,overflow:"hidden",boxShadow:`0 4px 20px ${WA_GREEN}33`,marginBottom:16}}>
-        <div style={{padding:16,display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:46,height:46,borderRadius:13,background:WA_GREEN+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>💬</div>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontWeight:900,fontSize:15,color:"#1a1a1a"}}>הודעות WhatsApp</div>
-              <span style={{fontSize:10,fontWeight:800,background:WA_GREEN,color:"#fff",padding:"2px 8px",borderRadius:100}}>4 סבבים</span>
-            </div>
-            <div style={{fontSize:12,color:"#888",marginTop:2}}>4 הודעות WhatsApp אוטומטיות לכל רשומה</div>
-          </div>
-          <div style={{fontSize:18,fontWeight:900,color:WA_GREEN,flexShrink:0}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה</div>
-        </div>
-        <div style={{padding:"0 16px 16px",borderTop:"1px solid #f0f0f0"}}>
-          <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"10px 12px",margin:"14px 0",fontSize:12,color:"#B45309",fontWeight:700}}>
-            ⚠️ דורש את החבילה הבסיסית ({fmtShekel(BASIC_PRICE)}). רשומה = אורח או משפחה עם מספר טלפון אחד.
-          </div>
-          <div style={{marginBottom:16}}>
-            {["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r),`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`].map(f=>(
-              <div key={f} style={{fontSize:13,color:"#1a1a1a",marginBottom:7}}>{f}</div>
-            ))}
-          </div>
-          <div style={{marginBottom:14}}>
-            <SmsQuantityPicker value={waQty} onChange={setWaQty} color={WA_GREEN} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned}
-              unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?" callOn={waCall} onCallOn={setWaCall}/>
-          </div>
-          <a href={`https://wa.me/972526817102?text=${encodeURIComponent(`שלום, אני מעוניין בחבילת "הודעות WhatsApp" - ${waQty.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (4 סבבים)${waCall?` + מוקד מתקשר ל-${waQty.toLocaleString()} רשומות × ${fmtShekel(CALL_RECORD_PRICE)}`:""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(waSum)} לאירוע "${event.name}"`)}`}
-            target="_blank" rel="noopener"
-            style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",background:`linear-gradient(135deg,${WA_GREEN},${WA_GREEN}CC)`,color:"#fff",borderRadius:12,padding:13,fontSize:15,fontWeight:700,textDecoration:"none"}}>
-            💬 פנה לרכישה בוואטסאפ - {fmtShekel(waSum)}
-          </a>
-          {waOwned&&<button onClick={()=>setShowBuy(false)} style={{display:"block",margin:"10px auto 0",background:"none",border:"none",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>סגור</button>}
+  // יתרת WhatsApp ברשומות (רשומה = אורח = סבב של 4 הודעות) + רכישה כמו ב-SMS:
+  // בקשה נשמרת (request_wa), נפתח וואטסאפ עם הפרטים, והיתרה נטענת אחרי שהאדמין מאשר תשלום
+  const [waBalance,setWaBalance]=useState(null),[waPending,setWaPending]=useState([]),[buyOpen,setBuyOpen]=useState(false),[buying,setBuying]=useState(false);
+  const loadWa=async()=>{
+    const [{data},{data:reqs}]=await Promise.all([
+      sb.from("wa_balance").select("balance").eq("event_id",event.id).maybeSingle(),
+      sb.from("wa_requests").select("id,records,price,created_at").eq("event_id",event.id).eq("status","pending").order("created_at",{ascending:false}),
+    ]);
+    setWaBalance(data?.balance??0);setWaPending(reqs||[]);
+  };
+  useEffect(()=>{
+    loadWa().catch(()=>setWaBalance(0));
+    const refresh=()=>{if(document.visibilityState==="visible")loadWa().catch(()=>{});};
+    window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",refresh);
+    return()=>{window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",refresh);};
+  },[event.id]);
+  const waNeeded=withPhone.length, waShort=waBalance!==null&&waBalance<waNeeded;
+  const confirmWaPurchase=async()=>{
+    setBuying(true);
+    const{error}=await sb.rpc("request_wa",{p_event:event.id,p_records:waQty,p_price:waSum});
+    setBuying(false);
+    if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
+    const msg=`שלום, אני מעוניין בחבילת "הודעות WhatsApp" - ${waQty.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (סבב של 4 הודעות לכל רשומה)${waCall?` + מוקד מתקשר ל-${waQty.toLocaleString()} רשומות × ${fmtShekel(CALL_RECORD_PRICE)}`:""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(waSum)} לאירוע "${event.name}"`;
+    window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
+    setBuyOpen(false);await loadWa();
+  };
+  const waPurchase=(<>
+    {/* יתרת רשומות */}
+    <div style={{background:"#fff",borderRadius:14,padding:"14px 18px",marginBottom:16,border:`1.5px solid ${waShort?"#FC8181":C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:44,height:44,borderRadius:12,background:waBalance?"#F0FFF4":"#FFF5F5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{waBalance===null?"⏳":waBalance?"💬":"⚠️"}</div>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:C.text}}>יתרת רשומות WhatsApp</div>
+          <div style={{fontSize:11,color:C.muted}}>כל רשומה = אורח אחד = סבב של 4 הודעות · אורחים עם נייד: {waNeeded}</div>
         </div>
       </div>
-    );
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:32,fontWeight:900,lineHeight:1,color:!waBalance?"#E53E3E":waShort?"#DD6B20":"#276749"}}>{waBalance===null?"...":waBalance.toLocaleString()}</div>
+        <div style={{fontSize:10,color:C.muted,fontWeight:600}}>רשומות זמינות</div>
+      </div>
+    </div>
+
+    {/* רכישת רשומות */}
+    <div style={{background:"#fff",border:`2px solid ${WA_GREEN}`,borderRadius:18,overflow:"hidden",boxShadow:`0 4px 20px ${WA_GREEN}33`,marginBottom:16}}>
+      <div style={{padding:16,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:46,height:46,borderRadius:13,background:WA_GREEN+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🛒</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontWeight:900,fontSize:15,color:"#1a1a1a"}}>רכישת רשומות WhatsApp</div>
+            <span style={{fontSize:10,fontWeight:800,background:WA_GREEN,color:"#fff",padding:"2px 8px",borderRadius:100}}>4 סבבים</span>
+          </div>
+          <div style={{fontSize:12,color:"#888",marginTop:2}}>{fmtShekel(WA_RECORD_PRICE)} לרשומה · סבב של 4 הודעות אוטומטיות לכל אורח</div>
+        </div>
+      </div>
+      <div style={{padding:"0 16px 16px",borderTop:"1px solid #f0f0f0"}}>
+        {waPending.length>0&&(
+          <div style={{background:"#FFF8E8",border:"1px solid #F5DDA6",borderRadius:12,padding:"10px 12px",margin:"14px 0 0",fontSize:12,color:"#8A5A00",fontWeight:700}}>
+            ⏳ ממתין לאישור תשלום: {waPending.map(r=>`${r.records} רשומות (₪${r.price})`).join(" · ")}
+            <div style={{fontWeight:500,marginTop:3}}>היתרה תיטען מיד אחרי שהתשלום יאושר.</div>
+          </div>
+        )}
+        <div style={{margin:"14px 0 8px"}}>
+          {WA_ROUNDS.map(r=><div key={r} style={{fontSize:13,color:"#1a1a1a",marginBottom:6}}>💬 {r}</div>)}
+        </div>
+        <div style={{marginBottom:12}}>
+          <SmsQuantityPicker value={waQty} onChange={setWaQty} color={WA_GREEN} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned}
+            unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) לקנות?" callOn={waCall} onCallOn={setWaCall}/>
+        </div>
+        <button onClick={()=>setBuyOpen(true)} className="sx-btn"
+          style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",background:`linear-gradient(135deg,${WA_GREEN},${WA_GREEN}CC)`,color:"#fff",border:"none",borderRadius:12,padding:13,fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+          🛒 רכישת {waQty.toLocaleString()} רשומות{waCall?" + מוקד":""}{smsBase?" + בסיסית":""} · {fmtShekel(waSum)}
+        </button>
+        <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:8}}>💳 תשלום ב-Bit או בהעברה · הרשומות נטענות אחרי אישור התשלום</div>
+      </div>
+    </div>
+
+    {buyOpen&&(
+      <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setBuyOpen(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"24px 22px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
+          <div style={{fontSize:40,marginBottom:6}}>💬</div>
+          <div style={{fontSize:19,fontWeight:900,color:C.text}}>{waQty.toLocaleString()} רשומות WhatsApp</div>
+          <div style={{fontSize:13,color:C.muted,marginTop:2}}>סבב של 4 הודעות לכל רשומה</div>
+          <div style={{fontSize:28,fontWeight:900,color:"#075E54",margin:"6px 0 12px"}}>{fmtShekel(waSum)}</div>
+          <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:16,textAlign:"right",background:"#F0FFF4",borderRadius:12,padding:"10px 12px"}}>
+            1. לחיצה על "שלח בקשה" פותחת וואטסאפ עם הפרטים<br/>
+            2. נשלח לך פרטי תשלום (Bit / העברה)<br/>
+            3. אחרי התשלום הרשומות נטענות ליתרה שלך
+          </div>
+          <button onClick={confirmWaPurchase} disabled={buying} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:WA_GREEN,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+            <WaIcon size={18}/> {buying?"שולח...":"שלח בקשה בוואטסאפ"}
+          </button>
+          <button onClick={()=>setBuyOpen(false)} style={{background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
+        </div>
+      </div>
+    )}
+  </>);
 
   return(
     <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
@@ -8183,6 +8235,8 @@ function AdminDashboard({ user, onLogout }) {
   const [stats,setStats]=useState({});            // {event_id: {rows,people,confirmed,pending,seated,phones}}
   const [failedRuns,setFailedRuns]=useState([]);  // שליחות אוטומטיות שנכשלו / דולגו ב-14 הימים האחרונים
   const [custFor,setCustFor]=useState(null);      // כרטיס לקוח פתוח (user_id)
+  const [waBalances,setWaBalances]=useState({});  // {event_id: רשומות WhatsApp}
+  const [waRequests,setWaRequests]=useState([]);  // בקשות רכישת WhatsApp
   const [search,setSearch]=useState("");
   const [saving,setSaving]=useState(null);
   const [addFor,setAddFor]=useState(null);   // {event, request?}
@@ -8204,6 +8258,9 @@ function AdminDashboard({ user, onLogout }) {
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
     const since=new Date(Date.now()-14*864e5).toISOString();
+    // WhatsApp בטבלאות נפרדות (wa_balance / wa_requests) — לא קשור ל-SMS
+    sb.from("wa_balance").select("event_id,balance").then(({data})=>setWaBalances(Object.fromEntries((data||[]).map(b=>[b.event_id,b.balance])))).catch(()=>{});
+    sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
     const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
@@ -8242,6 +8299,12 @@ function AdminDashboard({ user, onLogout }) {
   const emailOf=uid=>users.find(u=>u.user_id===uid)?.email||(uid?uid.slice(0,8)+"…":"");
   const eventOf=id=>events.find(e=>e.id===id);
   const pending=requests.filter(r=>r.status==="pending");
+  const waPendingReqs=waRequests.filter(r=>r.status==="pending");
+  const rejectWa=async r=>{
+    if(!window.confirm(`לדחות בקשה ל-${r.records} רשומות WhatsApp?`))return;
+    const{error}=await sb.rpc("admin_reject_wa_request",{p_request:r.id});
+    if(error)flash("❌ "+error.message);else{flash("הבקשה נדחתה");loadData();}
+  };
 
   const togglePackage=async(userId,pkgId,hasIt)=>{
     setSaving(`${userId}-${pkgId}`);
@@ -8253,19 +8316,23 @@ function AdminDashboard({ user, onLogout }) {
     setSaving(null);
   };
 
-  const openAdd=(event,request=null)=>{setAddFor({event,request});setAddAmount(request?.amount||500);setAddNote(request?`אישור תשלום ₪${request.price??""}`:"");};
+  // channel: "sms" או "wa" (רשומות WhatsApp). בקשה קובעת את הערוץ בעצמה
+  const openAdd=(event,request=null,channel="sms")=>{const ch=request?.channel||channel;setAddFor({event,request,channel:ch});setAddAmount(request?.amount||(ch==="wa"?100:500));setAddNote(request?`אישור תשלום ₪${request.price??""}`:"");};
   // כמה חסר ב-019 כדי לכסות את מה שכבר נמכר + הכמות החדשה (0 = יש מספיק / לא ידוע)
   const providerShort=amt=>provider?.ok&&amt>0?Math.max(0,(provider.committed||0)+amt-(provider.provider_balance||0)):0;
   const doAdd=async()=>{
     const amt=parseInt(addAmount,10);
     if(!amt){flash("הזן כמות");return;}
-    const short=providerShort(amt);
+    const wa=addFor.channel==="wa";
+    const short=wa?0:providerShort(amt);
     if(short>0&&!window.confirm(`⚠️ בחשבון ה-019 חסרות ${short.toLocaleString()} הודעות כדי לכסות את כל מה שנמכר ללקוחות.\nמומלץ לטעון את חשבון ה-019 קודם.\n\nלהמשיך בכל זאת?`))return;
     setSaving("add");
-    const{data,error}=await sb.rpc("admin_add_sms",{p_event:addFor.event.id,p_amount:amt,p_note:addNote||null,p_request:addFor.request?.id||null});
+    const{data,error}=wa
+      ?await sb.rpc("admin_add_wa",{p_event:addFor.event.id,p_records:amt,p_note:addNote||null,p_request:addFor.request?.id||null})
+      :await sb.rpc("admin_add_sms",{p_event:addFor.event.id,p_amount:amt,p_note:addNote||null,p_request:addFor.request?.id||null});
     setSaving(null);
     if(error){flash("❌ "+error.message);return;}
-    flash(`✅ ${amt>0?"נוספו":"הורדו"} ${Math.abs(amt)} SMS · יתרה חדשה: ${data}`);
+    flash(`✅ ${amt>0?"נוספו":"הורדו"} ${Math.abs(amt)} ${wa?"רשומות WhatsApp":"SMS"} · יתרה חדשה: ${data}`);
     setAddFor(null);loadData();
   };
   const reject=async r=>{
@@ -8288,6 +8355,7 @@ function AdminDashboard({ user, onLogout }) {
   const ownerPkgs=uid=>packages[uid]||[];
   const attention=[];
   if(pending.length)attention.push({lvl:"red",icon:"🛒",text:`${pending.length} בקשות רכישת SMS ממתינות לאישור`,go:()=>setTab("requests")});
+  if(waPendingReqs.length)attention.push({lvl:"red",icon:"💬",text:`${waPendingReqs.length} בקשות רכישת WhatsApp ממתינות לאישור`,go:()=>setTab("wa_requests")});
   failedRuns.forEach(r=>{const ev=eventOf(r.event_id);if(!ev)return;
     attention.push({lvl:r.status==="failed"?"red":"amber",icon:r.status==="failed"?"✗":"⏭",text:`שליחה אוטומטית ${r.status==="failed"?"נכשלה":"דולגה"} · ${ev.name}`,sub:`${r.error||""} · ${fmtDate(r.created_at)}`,ev});});
   events.filter(e=>{const d=daysTo(e.date);return d!==null&&d>=0&&d<=14;}).sort((a,b)=>a.date.localeCompare(b.date)).forEach(ev=>{
@@ -8301,7 +8369,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -8359,7 +8427,7 @@ function AdminDashboard({ user, onLogout }) {
             <button key={id} onClick={()=>setTab(id)} className={tab===id?"":"adm-tab"}
               style={{background:tab===id?GRAD:"#fff",color:tab===id?"#fff":C.text,border:`1.5px solid ${tab===id?"transparent":C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,boxShadow:tab===id?`0 8px 18px -8px ${C.blueM}`:"none"}}>
               {label}
-              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":((id==="requests"||id==="attention")&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":((id==="requests"||id==="attention")&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
+              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":((id==="requests"||id==="attention"||id==="wa_requests")&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":((id==="requests"||id==="attention"||id==="wa_requests")&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
             </button>
           ))}
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש לפי מייל או שם אירוע..."
@@ -8383,6 +8451,34 @@ function AdminDashboard({ user, onLogout }) {
                 {a.ev&&<button onClick={()=>openEvent(a.ev)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📅 פתח אירוע</button>}
               </div>
             );})}
+          </div>
+        ):tab==="wa_requests"?(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {waPendingReqs.length===0&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין בקשות WhatsApp ממתינות</div></div>}
+            {waPendingReqs.map(r=>{const ev=eventOf(r.event_id);return(
+              <div key={r.id} className="adm-row" style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",borderRight:`4px solid ${WA_GREEN}`}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#E9FBF4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>💬</div>
+                <div style={{flex:1,minWidth:200}}>
+                  <div style={{fontWeight:900,fontSize:16}}>{r.records.toLocaleString()} רשומות WhatsApp · ₪{r.price??"—"}</div>
+                  <div style={{fontSize:13,color:C.muted}}>{ev?.name||"אירוע"} · {emailOf(r.user_id)} · {fmtDate(r.created_at)}</div>
+                </div>
+                <span style={chip("#E9FBF4","#276749")}>יתרה כרגע: {waBalances[r.event_id]??0}</span>
+                <button onClick={()=>ev&&openAdd(ev,{id:r.id,amount:r.records,price:r.price,channel:"wa"})} className="sx-btn" style={{background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,padding:"9px 16px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>✅ אשר תשלום והטען</button>
+                <button onClick={()=>rejectWa(r)} className="sx-btn" style={{background:"#fff",color:C.danger,border:`1.5px solid #F4C7CD`,borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>דחה</button>
+              </div>
+            );})}
+            {waRequests.filter(r=>r.status!=="pending").length>0&&(
+              <div style={{...card,padding:"12px 16px",marginTop:6}}>
+                <div style={{fontSize:13,fontWeight:900,color:C.muted,marginBottom:8}}>בקשות שטופלו</div>
+                {waRequests.filter(r=>r.status!=="pending").slice(0,10).map(r=>(
+                  <div key={r.id} style={{display:"flex",gap:10,fontSize:13,padding:"6px 0",borderTop:`1px solid ${C.border}`}}>
+                    <span style={chip(r.status==="approved"?"#E9FBF4":"#FDECEE",r.status==="approved"?C.success:C.danger)}>{r.status==="approved"?"אושרה":"נדחתה"}</span>
+                    <span style={{flex:1}}>{r.records} רשומות · {eventOf(r.event_id)?.name||""}</span>
+                    <span style={{color:C.muted}}>{fmtDate(r.handled_at)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ):tab==="requests"?(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -8434,6 +8530,14 @@ function AdminDashboard({ user, onLogout }) {
                     <div style={{fontSize:11,color:C.muted,fontWeight:700}}>יתרת SMS · נשלחו {b?.total_sent??0}</div>
                   </div>
                   <button onClick={()=>openAdd(ev)} className="sx-btn sx-btn-primary" style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף SMS</button>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,background:"#F0FFF4",borderRadius:14,padding:"10px 12px"}}>
+                  <div style={{fontSize:22}}>💬</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:20,fontWeight:900,lineHeight:1}}>{(waBalances[ev.id]??0).toLocaleString()}</div>
+                    <div style={{fontSize:11,color:C.muted,fontWeight:700}}>רשומות WhatsApp (4 הודעות לרשומה)</div>
+                  </div>
+                  <button onClick={()=>openAdd(ev,null,"wa")} className="sx-btn" style={{background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף WhatsApp</button>
                 </div>
               </div>
             );})}
@@ -8497,17 +8601,17 @@ function AdminDashboard({ user, onLogout }) {
       {addFor&&(
         <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setAddFor(null)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"22px",width:"100%",maxWidth:430,boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
-            <div style={{fontSize:19,fontWeight:900,marginBottom:2}}>📱 {addFor.request?"אישור רכישה":"הוספת SMS"}</div>
-            <div style={{fontSize:13,color:C.muted,marginBottom:14}}>{addFor.event.name} · יתרה כרגע {balances[addFor.event.id]?.balance??0}</div>
+            <div style={{fontSize:19,fontWeight:900,marginBottom:2}}>{addFor.channel==="wa"?"💬":"📱"} {addFor.request?"אישור רכישה":addFor.channel==="wa"?"הוספת רשומות WhatsApp":"הוספת SMS"}</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:14}}>{addFor.event.name} · יתרה כרגע {addFor.channel==="wa"?`${waBalances[addFor.event.id]??0} רשומות WhatsApp`:balances[addFor.event.id]?.balance??0}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
-              {SMS_PACKS.map(([a])=>(
+              {(addFor.channel==="wa"?[[100],[200],[300],[400],[500],[700]]:SMS_PACKS).map(([a])=>(
                 <button key={a} onClick={()=>setAddAmount(a)} style={{background:+addAmount===a?GRAD:C.blueXL,color:+addAmount===a?"#fff":C.text,border:"none",borderRadius:10,padding:"9px 0",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>{a}</button>
               ))}
             </div>
             <div style={{fontSize:12,fontWeight:800,color:C.muted,margin:"4px 0 6px"}}>כמות (אפשר מספר שלילי כדי להוריד)</div>
             <input type="number" value={addAmount} onChange={e=>setAddAmount(e.target.value)} dir="ltr"
               style={{width:"100%",boxSizing:"border-box",background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:18,fontWeight:900,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:10,textAlign:"center"}}/>
-            {providerShort(+addAmount||0)>0&&(
+            {addFor.channel!=="wa"&&providerShort(+addAmount||0)>0&&(
               <div style={{background:"#FDECEE",border:"1px solid #F4C7CD",color:C.danger,borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:800,marginBottom:10}}>
                 ⚠️ אחרי ההוספה יחסרו ב-019 {providerShort(+addAmount).toLocaleString()} הודעות. כדאי לטעון את חשבון ה-019 קודם.
               </div>
@@ -8516,7 +8620,7 @@ function AdminDashboard({ user, onLogout }) {
               style={{width:"100%",boxSizing:"border-box",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:14}}/>
             <button onClick={doAdd} disabled={saving==="add"} className="sx-btn sx-btn-primary"
               style={{width:"100%",background:GRAD,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:6,opacity:saving==="add"?.6:1}}>
-              {saving==="add"?"שומר...":+addAmount<0?`הורד ${Math.abs(+addAmount)} SMS`:`טען ${(+addAmount||0).toLocaleString()} SMS`}
+              {saving==="add"?"שומר...":(()=>{const u=addFor.channel==="wa"?"רשומות WhatsApp":"SMS";return +addAmount<0?`הורד ${Math.abs(+addAmount)} ${u}`:`טען ${(+addAmount||0).toLocaleString()} ${u}`;})()}
             </button>
             <button onClick={()=>setAddFor(null)} style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:6}}>ביטול</button>
           </div>
