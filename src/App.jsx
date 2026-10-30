@@ -23,7 +23,7 @@ const inviteShareText=(event,url)=>{
   const ew=eventWords(event);
   const d=event.date?new Date(event.date):null;
   const days=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-  const date=d&&!isNaN(d)?`יום ${days[d.getDay()]}, ${d.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}${event.event_time?" · "+event.event_time:""}`:"בקרוב";
+  const date=d&&!isNaN(d)?`יום ${days[d.getDay()]}, ${d.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}`:"בקרוב";
   const gift=giftLine(event);
   const own=event.welcome_text?.trim();
   if(own){
@@ -31,9 +31,22 @@ const inviteShareText=(event,url)=>{
     const body=t.includes("{קישור}")?t.replace(/\{קישור\}/g,url):`${t}\n\n👇 לאישור הגעה:\n${url}`;
     return gift&&!body.includes(giftLink(event))?`${body}\n\n${gift}`:body;
   }
-  return [`שלום! 💌`,``,`מוזמנים ל${ew.name}! ${ew.emoji}`,`נשמח לראותכם ביום המיוחד.`,``,`📅 ${date}`,`📍 ${event.venue||"יפורסם בקרוב"}`,``,`👇 לאישור הגעה:`,url,
-    ...(ew.hosts?[``,`באהבה,`,`${ew.hosts} ${ew.emoji}`]:[]),...(gift?[``,gift]:[])].join("\n");
+  // *טקסט* = מודגש בוואטסאפ
+  const wed=event.event_type==="wedding"&&event.groom_name&&event.bride_name;
+  const title=wed?`${event.groom_name} ו${event.bride_name} מתחתנים!`:`מוזמנים ל${ew.name}!`;
+  // משפט הפתיחה לפי סוג האירוע
+  const intro={
+    wedding:[`שמחים להזמין אתכם לחגוג איתנו`,`את היום המיוחד שלנו ${ew.emoji}`],
+    business:[`נשמח לארח אתכם באירוע ${ew.emoji}`],
+  }[ew.type]||[`שמחים להזמין אתכם לחגוג איתנו ${ew.emoji}`];
+  // חתונה בלי שמות בני הזוג — בלי חתימה (אחרת נחתם בשם האירוע)
+  const sign=ew.type==="wedding"&&!event.groom_name&&!event.bride_name?"":ew.hosts;
+  return [`✨ *${title}* ✨`,``,...intro,``,
+    `📅 *${date}*`,...(event.event_time?[`🕗 *${event.event_time}*`]:[]),`📍 *${event.venue||"יפורסם בקרוב"}*`,``,
+    `✅ *לאישור הגעה:*`,url,``,ew.type==="business"?`נשמח לראותכם!`:`נשמח לראותכם! ❤️`,...(sign?[sign]:[]),...(gift?[``,gift]:[])].join("\n");
 };
+// api.whatsapp.com ולא wa.me: ההפניה של wa.me שוברת אימוג'י (מופיעים כ-�)
+const waShareUrl=text=>"https://api.whatsapp.com/send?text="+encodeURIComponent(text);
 // שדה תאריך מימין לשמאל: מציג את התאריך בעברית ("יום ב׳, 14 ביוני 2027") ופותח את בורר התאריכים של הדפדפן.
 // שדה ה-date המקורי מציג 14/06/2027 משמאל לימין עם האייקון בצד הלא נכון.
 function DateField({ value, onChange, style, compact=false, placeholder="בחרו תאריך" }) {
@@ -50,7 +63,7 @@ function DateField({ value, onChange, style, compact=false, placeholder="בחר�
     </div>
   );
 }
-const shareInviteWA=(event,url)=>window.open("https://wa.me/?text="+encodeURIComponent(inviteShareText(event,url)),"_blank","noopener,noreferrer");
+const shareInviteWA=(event,url)=>window.open(waShareUrl(inviteShareText(event,url)),"_blank","noopener,noreferrer");
 const WaIcon=({size=16,color="#fff"})=>(
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88m8.41-18.3A11.81 11.81 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg>
 );
@@ -8532,7 +8545,7 @@ function CredentialsBox({ email, password, onClose }) {
       <div style={{direction:"ltr",textAlign:"left",fontFamily:"monospace",fontSize:14,background:"#fff",borderRadius:10,padding:"8px 12px",marginBottom:10}}>{email}<br/>{password}</div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <button onClick={()=>{navigator.clipboard?.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} className="sx-btn" style={{background:"#fff",border:"1.5px solid #9AE6B4",color:"#276749",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{copied?"✓ הועתק":"📋 העתק הודעה"}</button>
-        <a href={"https://wa.me/?text="+encodeURIComponent(text)} target="_blank" rel="noopener noreferrer" style={{background:"#25D366",color:"#fff",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,textDecoration:"none"}}>💬 שלח בוואטסאפ</a>
+        <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer" style={{background:"#25D366",color:"#fff",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,textDecoration:"none"}}>💬 שלח בוואטסאפ</a>
         {onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>סגור</button>}
       </div>
     </div>
