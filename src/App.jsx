@@ -1568,6 +1568,9 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </section>
 
+      {/* ─── המלצות לקוחות (רק מאושרות, מוסתר כשאין) ─── */}
+      <LandingTestimonials/>
+
       {/* ─── CTA ─────────────────────────────────────────────────── */}
       <section id="contact" style={{padding:"70px 6vw 110px"}}>
         <div className="fu" style={{maxWidth:1060,margin:"0 auto",borderRadius:36,padding:"70px 30px",textAlign:"center",position:"relative",overflow:"hidden",
@@ -2223,6 +2226,122 @@ function PushDevice() {
   );
 }
 
+// ─── המלצות לקוחות (testimonials): הלקוח שולח, האדמין מאשר, רק מאושרות בדף הבית ───
+const Stars=({value,onChange,size=22})=>(
+  <div style={{display:"flex",gap:2,direction:"ltr"}} role={onChange?"radiogroup":undefined} aria-label="דירוג">
+    {[1,2,3,4,5].map(n=>onChange
+      ?<button key={n} type="button" onClick={()=>onChange(n)} aria-label={`${n} כוכבים`} aria-pressed={value===n} style={{background:"none",border:"none",cursor:"pointer",fontSize:size,padding:0,color:n<=value?"#F5B301":"#D9D3E3"}}>★</button>
+      :<span key={n} aria-hidden="true" style={{fontSize:size,color:n<=value?"#F5B301":"#D9D3E3"}}>★</span>)}
+  </div>
+);
+function TestimonialCard({ user, event }) {
+  const [mine,setMine]=useState(null),[rating,setRating]=useState(5),[text,setText]=useState(""),[busy,setBusy]=useState(false),[msg,setMsg]=useState("");
+  const defName=event.groom_name&&event.bride_name?`${event.groom_name} ו${event.bride_name}`:(event.groom_name||"");
+  const [name,setName]=useState(defName);
+  useEffect(()=>{sb.from("testimonials").select("id,approved").eq("user_id",user.id).limit(1).then(({data})=>setMine(data?.[0]||false));},[user.id]);
+  const send=async()=>{
+    if(text.trim().length<10){setMsg("❌ כתבו לפחות משפט אחד 🙂");return;}
+    setBusy(true);
+    const label={wedding:"חתונה",bar_mitzvah:"בר/ת מצווה",brit:"ברית",business:"אירוע עסקי"}[event.event_type]||"אירוע";
+    const{error}=await sb.from("testimonials").insert({name:(name.trim()||"לקוח/ה").slice(0,60),event_label:label,text:text.trim().slice(0,600),rating});
+    setBusy(false);
+    if(error){setMsg("❌ "+error.message);return;}
+    setMine({approved:false});setMsg("");
+  };
+  if(mine===null)return null;
+  return(
+    <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+      <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:4}}>⭐ ספרו לנו איך היה</div>
+      {mine?<div style={{fontSize:13,color:"#276749",fontWeight:700}}>תודה רבה על ההמלצה! 💜 {mine.approved?"היא כבר מופיעה באתר.":"היא תופיע באתר אחרי שנאשר אותה."}</div>:<>
+        <div style={{fontSize:12,color:"#666",marginBottom:10}}>ההמלצה שלכם עוזרת לזוגות אחרים לבחור. אחרי אישור היא תופיע בדף הבית.</div>
+        <Stars value={rating} onChange={setRating} size={28}/>
+        <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={600} placeholder="מה הכי עזר לכם? (למשל: ההושבה האוטומטית חסכה לנו ערב שלם...)" aria-label="ההמלצה"
+          style={{width:"100%",minHeight:80,border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box",margin:"10px 0 8px"}}/>
+        <input value={name} onChange={e=>setName(e.target.value)} maxLength={60} placeholder="השם שיופיע (למשל: נועה ואיתי)" aria-label="שם להצגה"
+          style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",marginBottom:10}}/>
+        {msg&&<div role="alert" style={{fontSize:12,color:"#C53030",fontWeight:700,marginBottom:8}}>{msg}</div>}
+        <button onClick={send} disabled={busy} style={{background:"#3A2464",color:"#fff",border:"none",borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{busy?"שולח...":"שלחו המלצה"}</button>
+      </>}
+    </div>
+  );
+}
+// אדמין: אישור, הסתרה, מחיקה והוספה ידנית של המלצות אמיתיות
+function AdminTestimonials({ card }) {
+  const [list,setList]=useState(null),[f,setF]=useState({name:"",event_label:"חתונה",text:"",rating:5}),[err,setErr]=useState("");
+  const load=async()=>{const{data,error}=await sb.from("testimonials").select("*").order("approved").order("created_at",{ascending:false});setList(data||[]);if(error)setErr(error.message);};
+  useEffect(()=>{load();},[]);
+  const upd=async(t,patch)=>{const{error}=await sb.from("testimonials").update(patch).eq("id",t.id);if(error)setErr(error.message);else load();};
+  const del=async t=>{if(!confirm(`למחוק את ההמלצה של ${t.name}?`))return;const{error}=await sb.from("testimonials").delete().eq("id",t.id);if(error)setErr(error.message);else load();};
+  const add=async()=>{if(!f.name.trim()||f.text.trim().length<5)return;const{error}=await sb.from("testimonials").insert({...f,name:f.name.trim(),text:f.text.trim(),approved:true});if(error){setErr(error.message);return;}setF({name:"",event_label:"חתונה",text:"",rating:5});load();};
+  const inp={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 12px",fontSize:14,fontFamily:"inherit",outline:"none",minWidth:0};
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:4}}>➕ הוספת המלצה שקיבלתם</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:10}}>רק המלצות אמיתיות (למשל מוואטסאפ, באישור הלקוח). היא מתפרסמת מיד בדף הבית.</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+          <input value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="שם (למשל: נועה ואיתי)" aria-label="שם" style={{...inp,flex:"1 1 160px"}}/>
+          <input value={f.event_label} onChange={e=>setF({...f,event_label:e.target.value})} placeholder="סוג אירוע" aria-label="סוג אירוע" style={{...inp,flex:"0 1 140px"}}/>
+          <Stars value={f.rating} onChange={r=>setF({...f,rating:r})}/>
+        </div>
+        <textarea value={f.text} onChange={e=>setF({...f,text:e.target.value})} placeholder="טקסט ההמלצה" aria-label="טקסט ההמלצה" style={{...inp,width:"100%",minHeight:70,boxSizing:"border-box",resize:"vertical",marginBottom:8}}/>
+        <button onClick={add} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>הוסף ופרסם</button>
+        {err&&<div role="alert" style={{color:C.danger,fontSize:13,fontWeight:700,marginTop:8}}>❌ {err}</div>}
+      </div>
+      {list===null?<Spinner size={22}/>:!list.length?<div style={{...card,padding:30,textAlign:"center",color:C.muted}}>עוד אין המלצות. לקוחות יכולים לשלוח מתוך "הגדרות" באתר.</div>
+        :list.map(t=>(
+          <div key={t.id} className="adm-row" style={{...card,padding:"12px 16px",borderRight:`4px solid ${t.approved?C.success:C.gold}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:6}}>
+              <span style={{fontWeight:900}}>{t.name}</span>
+              <span style={{fontSize:12,color:C.muted}}>{t.event_label||""} · {new Date(t.created_at).toLocaleDateString("he-IL")}</span>
+              {t.rating&&<Stars value={t.rating} size={14}/>}
+              <span style={{marginRight:"auto",background:t.approved?"#E9FBF4":"#FFF4E0",color:t.approved?C.success:"#B07A12",borderRadius:100,padding:"2px 10px",fontSize:12,fontWeight:800}}>{t.approved?"מוצגת באתר":"ממתינה לאישור"}</span>
+            </div>
+            <div style={{fontSize:14,lineHeight:1.7,marginBottom:8}}>{t.text}</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>upd(t,{approved:!t.approved})} className="sx-btn" style={{background:t.approved?"#fff":C.success,color:t.approved?C.text:"#fff",border:`1.5px solid ${t.approved?C.border:C.success}`,borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{t.approved?"הסתר מהאתר":"✅ אשר והצג"}</button>
+              <button onClick={()=>del(t)} style={{background:"none",border:"none",color:"#A0AEC0",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>🗑️ מחק</button>
+            </div>
+          </div>
+        ))}
+    </div>
+  );
+}
+// דף הבית: המלצות מאושרות + מספרים אמיתיים מהמערכת (מוצגים רק כשיש מספיק)
+function LandingTestimonials() {
+  const [items,setItems]=useState([]),[stats,setStats]=useState(null);
+  useEffect(()=>{
+    sb.from("testimonials").select("id,name,event_label,text,rating").eq("approved",true).order("created_at",{ascending:false}).limit(6).then(({data})=>setItems(data||[])).catch(()=>{});
+    sb.rpc("public_stats").then(({data})=>setStats(data||null)).catch(()=>{});
+  },[]);
+  const showStats=stats&&stats.events>=20;
+  if(!items.length&&!showStats)return null;
+  return(
+    <section id="reviews" style={{padding:"70px 6vw",background:"#fff"}}>
+      <div style={{maxWidth:1120,margin:"0 auto"}}>
+        <h2 style={{fontSize:"clamp(26px,3.4vw,38px)",fontWeight:900,textAlign:"center",margin:"0 0 10px"}}>מה אומרים עלינו</h2>
+        {showStats&&<div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap",margin:"18px 0 30px"}}>
+          {[[stats.events,"אירועים נוהלו"],[stats.guests,"אורחים הוזמנו"],[stats.seated,"אורחים הושבו"]].map(([v,l])=>(
+            <div key={l} style={{background:"#F8F3FF",borderRadius:18,padding:"14px 24px",textAlign:"center",minWidth:140}}>
+              <div style={{fontSize:30,fontWeight:900,color:"#9147D6"}}>{Number(v).toLocaleString("he-IL")}+</div>
+              <div style={{fontSize:13,color:"#6E6585",fontWeight:700}}>{l}</div>
+            </div>
+          ))}
+        </div>}
+        {items.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16,marginTop:18}}>
+          {items.map(t=>(
+            <figure key={t.id} style={{margin:0,background:"#FBF8FD",border:"1px solid #EFE6F5",borderRadius:20,padding:20}}>
+              {t.rating&&<Stars value={t.rating} size={18}/>}
+              <blockquote style={{margin:"10px 0 12px",fontSize:15,lineHeight:1.8,color:"#3E3555"}}>"{t.text}"</blockquote>
+              <figcaption style={{fontSize:13,fontWeight:800,color:"#2B1D3F"}}>{t.name}{t.event_label?<span style={{fontWeight:500,color:"#888"}}> · {t.event_label}</span>:null}</figcaption>
+            </figure>
+          ))}
+        </div>}
+      </div>
+    </section>
+  );
+}
+
 // ─── פרופיל מפיק: השם, הנייד והלוגו שמוצגים בתחתית ההזמנה לאורחים (רק לחשבון מפיק) ───
 function ProducerProfileCard({ user }) {
   const [isProducer,setIsProducer]=useState(false),[p,setP]=useState(null),[busy,setBusy]=useState(false),[msg,setMsg]=useState("");
@@ -2334,6 +2453,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
       </div>
 
       <ProducerProfileCard user={user}/>
+      <TestimonialCard user={user} event={event}/>
 
       {/* שינוי סיסמה */}
       <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
@@ -2554,6 +2674,65 @@ function UpcomingTasks({ event, onOpen, style }) {
   );
 }
 
+// ─── שאלות נוספות באישור ההגעה (מנות, ילדים, אלרגיות, הסעה) ───
+// ההגדרה: settings_json.rsvpQ · התשובה של כל אורח: guests.rsvp_extra
+const DEFAULT_MEALS=["רגיל","צמחוני","טבעוני","ללא גלוטן"];
+const rsvpQOf=event=>({meal:false,mealOptions:DEFAULT_MEALS,kids:false,allergies:false,transport:false,...(event?.settings_json?.rsvpQ||{})});
+const anyRsvpQ=q=>q.meal||q.kids||q.allergies||q.transport;
+// סיכום מכל מי שאישר הגעה: מנות לפי סוג, ילדים, הסעה, ורשימת אלרגיות
+const rsvpExtrasSummary=(event,guests)=>{
+  const q=rsvpQOf(event),meals={},allergies=[];let kids=0,transport=0,people=0,answered=0;
+  guests.filter(g=>g.rsvp==="confirmed").forEach(g=>{
+    const n=g.guest_count||1,x=g.rsvp_extra||{};people+=n;
+    if(g.rsvp_extra)answered++;
+    let picked=0;Object.entries(x.meals||{}).forEach(([k,v])=>{const c=Math.max(0,+v||0);if(c){meals[k]=(meals[k]||0)+c;picked+=c;}});
+    if(q.meal&&picked<n)meals["לא צוין"]=(meals["לא צוין"]||0)+(n-picked);
+    kids+=Math.max(0,+x.kids||0);
+    if(x.transport)transport+=n;
+    if(String(x.allergies||"").trim())allergies.push({name:g.name,text:String(x.allergies).trim()});
+  });
+  return {q,meals,kids,transport,allergies,people,answered};
+};
+function printCateringReport(event,guests){
+  const s=rsvpExtrasSummary(event,guests);
+  const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const title=esc(event.name||""),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
+  const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
+  w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>דוח לקייטרינג · ${title}</title><style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+    body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 18px;font-size:13px}
+    h2{font-size:16px;margin:20px 0 8px;border-bottom:2px solid #2B1D3F;padding-bottom:4px}table{border-collapse:collapse;font-size:14px;min-width:300px}td,th{border-bottom:1px solid #EEE6F7;padding:6px 10px;text-align:right}th{background:#F4EEFC}
+    .big{font-size:22px;font-weight:900}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}@media print{.bar{display:none}body{margin:10mm}}
+  </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+  <h1>דוח לקייטרינג ולאולם · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · הודפס ${new Date().toLocaleDateString("he-IL")}</div>
+  <div class="big">${s.people} אנשים אישרו הגעה${s.q.kids?` · מתוכם ${s.kids} ילדים`:""}</div>
+  ${s.q.meal?`<h2>מנות</h2><table><tr><th>סוג מנה</th><th>כמות</th></tr>${Object.entries(s.meals).map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${v}</b></td></tr>`).join("")}</table>`:""}
+  ${s.q.transport?`<h2>הסעה</h2><div>${s.transport} אנשים צריכים הסעה</div>`:""}
+  ${s.q.allergies?`<h2>אלרגיות והערות (${s.allergies.length})</h2>${s.allergies.length?`<table><tr><th>אורח</th><th>אלרגיה / הערה</th></tr>${s.allergies.map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.text)}</td></tr>`).join("")}</table>`:"<div>אין</div>"}`:""}
+  </body></html>`);
+  w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+}
+// כרטיס הסיכום במסך אישורי הגעה (רק אם הופעלה לפחות שאלה אחת)
+function RsvpExtrasCard({ event, guests, style }) {
+  const s=rsvpExtrasSummary(event,guests);
+  if(!anyRsvpQ(s.q))return null;
+  const chip={background:"#F7F3FB",borderRadius:100,padding:"4px 10px",fontSize:12,fontWeight:800,color:"#2B1D3F"};
+  return(
+    <div style={{background:"#fff",borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 10px rgba(155,107,255,.08)",border:"1px solid #EFE6F5",...style}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+        <div style={{flex:1,fontWeight:900,fontSize:14,color:"#2B1D3F"}}>🍽️ תשובות נוספות מהאורחים <span style={{fontWeight:500,color:"#888",fontSize:12}}>({s.answered} ענו)</span></div>
+        <button onClick={()=>printCateringReport(event,guests)} style={{background:"#2B1D3F",color:"#fff",border:"none",borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🖨️ דוח לקייטרינג</button>
+      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {s.q.meal&&Object.entries(s.meals).map(([k,v])=><span key={k} style={chip}>{k}: {v}</span>)}
+        {s.q.kids&&<span style={chip}>👶 ילדים: {s.kids}</span>}
+        {s.q.transport&&<span style={chip}>🚌 הסעה: {s.transport}</span>}
+        {s.q.allergies&&<span style={{...chip,background:s.allergies.length?"#FFF5F5":"#F7F3FB",color:s.allergies.length?"#C53030":"#2B1D3F"}}>⚠️ אלרגיות: {s.allergies.length}</span>}
+      </div>
+    </div>
+  );
+}
+
 // הדפסת אישורי הגעה: סיכום + רשימה לפי סטטוס (מגיעים / ממתינים / לא מגיעים). only = סטטוס אחד בלבד (או "all")
 function printRsvpList(event,allGuests,tables,only="all"){
   const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -2713,6 +2892,8 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
           <button onClick={()=>setModal("addGuest")} style={{flex:1,background:"#3D5475",color:"#fff",border:"none",borderRadius:50,padding:"10px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>➕ הוסף מוזמן</button>
         </div>
       </div>
+
+      <RsvpExtrasCard event={event} guests={allGuests} style={{margin:"10px 16px 0"}}/>
 
       {/* חיפוש + ייבוא אורחים */}
       <div style={{padding:"10px 16px",display:"flex",gap:8}}>
@@ -4518,7 +4699,9 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     hebrewDate: event.settings_json?.hebrewDate??true,
     countdown: event.settings_json?.countdown??true,
     shareBtn: event.settings_json?.shareBtn??true,
+    rsvpQ: rsvpQOf(event),
   });
+  const setQ=patch=>setSettings(s=>({...s,rsvpQ:{...s.rsvpQ,...patch}}));
 
   // שמירה אוטומטית: כל שינוי נשמר כשנייה אחרי שמפסיקים להקליד, וגם ביציאה מהמסך.
   // השמירות רצות אחת אחרי השנייה ותמיד עם הנתונים העדכניים (latestRef)
@@ -4804,6 +4987,34 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         )}
       </div>
 
+      {/* שאלות נוספות באישור ההגעה */}
+      <div style={{background:"#fff",borderRadius:14,padding:"24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
+        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>🍽️ שאלות נוספות באישור ההגעה</div>
+        <div style={{fontSize:12,color:"#718096",margin:"8px 0 12px"}}>אורח שמאשר הגעה יענה גם על השאלות שתסמנו. התשובות מסוכמות במסך אישורי ההגעה, עם דוח מוכן לקייטרינג ולאולם.</div>
+        {[
+          {key:"meal",label:"סוג מנה",desc:"כמה מנות מכל סוג (לפי מספר המגיעים)"},
+          {key:"kids",label:"כמה ילדים",desc:"מתוך המגיעים"},
+          {key:"allergies",label:"אלרגיות והערות",desc:"טקסט חופשי לקייטרינג"},
+          {key:"transport",label:"צריכים הסעה",desc:"כן / לא"},
+        ].map(item=>(
+          <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #F7FAFC"}}>
+            <div><div style={{fontSize:14,fontWeight:700,color:"#1A202C"}}>{item.label}</div><div style={{fontSize:12,color:"#718096",marginTop:2}}>{item.desc}</div></div>
+            <div role="switch" aria-checked={!!settings.rsvpQ[item.key]} aria-label={item.label} tabIndex={0} onClick={()=>setQ({[item.key]:!settings.rsvpQ[item.key]})} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setQ({[item.key]:!settings.rsvpQ[item.key]});}}}
+              style={{width:44,height:24,borderRadius:12,background:settings.rsvpQ[item.key]?"#276749":"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0,marginRight:8}}>
+              <div style={{position:"absolute",top:2,right:settings.rsvpQ[item.key]?2:18,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"right .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
+            </div>
+          </div>
+        ))}
+        {settings.rsvpQ.meal&&(
+          <div style={{marginTop:12}}>
+            <div style={{fontSize:12,color:"#718096",fontWeight:700,marginBottom:6}}>סוגי המנות (מופרדים בפסיק)</div>
+            <input defaultValue={(settings.rsvpQ.mealOptions||DEFAULT_MEALS).join(", ")} aria-label="סוגי המנות"
+              onBlur={e=>{const opts=e.target.value.split(/[,،]/).map(x=>x.trim()).filter(Boolean).slice(0,8);setQ({mealOptions:opts.length?opts:DEFAULT_MEALS});}}
+              style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+          </div>
+        )}
+      </div>
+
       {/* הגדרות נוספות */}
       <div style={{background:"#fff",borderRadius:14,padding:"24px",marginBottom:16,boxShadow:"0 1px 8px rgba(0,0,0,.05)"}}>
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:16,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>⚙️ הגדרות נוספות</div>
@@ -5053,6 +5264,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
           </div>
         </div>
       )}
+
+      <RsvpExtrasCard event={event} guests={allGuests} style={{marginBottom:16}}/>
 
       {/* סטטיסטיקות */}
       <div style={{display:"flex",gap:10,marginBottom:16}}>
@@ -6870,9 +7083,58 @@ function QrScanner({ onScan }) {
       <div style={{position:"absolute",inset:"18%",border:"3px solid rgba(255,255,255,.85)",borderRadius:18,boxShadow:"0 0 0 999px rgba(0,0,0,.25)"}}/>
     </div>;
 }
+// ─── עמדת קבלת פנים לטאבלט: מסך מלא, האורח מקליד שם ורואה את מספר השולחן ───
+// בלי טלפונים ובלי רשימה מלאה: תוצאות רק מ-2 אותיות, עד 6 שמות. יציאה רק בלחיצה ארוכה (שאורחים לא יצאו בטעות)
+function KioskMode({ event, guests, tables, onPick, mark, setMark, onClose }) {
+  const [q,setQ]=useState(""),[shown,setShown]=useState(null);
+  const inputRef=useRef(null),timer=useRef(null),hold=useRef(null);
+  const tableOf=g=>tables.find(t=>t.id===g.table_id);
+  const norm=s=>String(s||"").replace(/["'״׳\-]/g,"").trim();
+  const qq=norm(q);
+  const results=qq.length<2?[]:guests.filter(g=>g.rsvp!=="declined"&&norm(g.name).includes(qq)).slice(0,6);
+  const pick=g=>{onPick?.(g);setShown(g);setQ("");clearTimeout(timer.current);timer.current=setTimeout(()=>{setShown(null);inputRef.current?.focus();},9000);};
+  useEffect(()=>{document.documentElement.requestFullscreen?.().catch(()=>{});return()=>{clearTimeout(timer.current);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});};},[]);
+  const startHold=()=>{hold.current=setTimeout(onClose,1500);},endHold=()=>clearTimeout(hold.current);
+  const title=event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name;
+  return(
+    <div dir="rtl" role="dialog" aria-label="עמדת קבלת פנים" style={{position:"fixed",inset:0,zIndex:600,background:"linear-gradient(160deg,#2B1D3F,#5B3C8C 55%,#9B6BFF)",color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",padding:"5vh 24px",fontFamily:"'Heebo',sans-serif",overflowY:"auto"}}>
+      <button onMouseDown={startHold} onMouseUp={endHold} onMouseLeave={endHold} onTouchStart={startHold} onTouchEnd={endHold}
+        title="לחיצה ארוכה ליציאה" style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"rgba(255,255,255,.7)",borderRadius:10,padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>✕ יציאה (לחיצה ארוכה)</button>
+      <label style={{position:"absolute",top:16,right:16,fontSize:12,color:"rgba(255,255,255,.75)",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
+        <input type="checkbox" checked={mark} onChange={e=>setMark(e.target.checked)}/> לסמן "הגיע" כשבוחרים שם
+      </label>
+      <div style={{fontSize:"clamp(16px,2.4vw,22px)",opacity:.85,marginTop:24}}>ברוכים הבאים</div>
+      <div style={{fontSize:"clamp(30px,5vw,56px)",fontWeight:900,textAlign:"center",lineHeight:1.15,marginBottom:"4vh"}}>{title}</div>
+      {shown?(
+        <div onClick={()=>{setShown(null);inputRef.current?.focus();}} style={{textAlign:"center",cursor:"pointer",animation:"fadeUp .3s ease both"}}>
+          <div style={{fontSize:"clamp(24px,4vw,40px)",fontWeight:800,marginBottom:12}}>שלום {String(shown.name).split(" ")[0]}! 🎉</div>
+          {tableOf(shown)?<>
+            <div style={{fontSize:"clamp(18px,2.6vw,26px)",opacity:.85}}>השולחן שלך</div>
+            <div style={{fontSize:"clamp(90px,18vw,200px)",fontWeight:900,lineHeight:1}}>{tableOf(shown).num}</div>
+            {String(tableOf(shown).name||"").replace(/^\s*\d+\s*/,"").trim()&&<div style={{fontSize:"clamp(16px,2.4vw,24px)",opacity:.8}}>{String(tableOf(shown).name).replace(/^\s*\d+\s*/,"").trim()}</div>}
+          </>:<div style={{fontSize:"clamp(20px,3vw,30px)",background:"rgba(255,255,255,.15)",borderRadius:16,padding:"16px 24px"}}>גשו בבקשה לצוות הקבלה 🙏</div>}
+          <div style={{fontSize:14,opacity:.6,marginTop:28}}>לחצו כדי לחפש שם אחר</div>
+        </div>
+      ):(
+        <div style={{width:"100%",maxWidth:640}}>
+          <input ref={inputRef} autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="הקלידו את השם שלכם" aria-label="השם שלכם"
+            style={{width:"100%",boxSizing:"border-box",fontSize:"clamp(22px,3.4vw,34px)",padding:"18px 22px",borderRadius:18,border:"none",outline:"none",fontFamily:"inherit",textAlign:"center",color:"#2B1D3F",boxShadow:"0 20px 40px -20px rgba(0,0,0,.5)"}}/>
+          <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:10}}>
+            {results.map(g=>(
+              <button key={g.id} onClick={()=>pick(g)} style={{background:"rgba(255,255,255,.95)",color:"#2B1D3F",border:"none",borderRadius:16,padding:"16px 20px",fontSize:"clamp(20px,2.8vw,28px)",fontWeight:800,cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>{g.name}</button>
+            ))}
+            {qq.length>=2&&!results.length&&<div style={{textAlign:"center",opacity:.8,fontSize:18,marginTop:8}}>לא מצאנו את השם. נסו לכתוב אחרת, או גשו לצוות הקבלה 🙏</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CheckinScreen({ event, guests, tables, onReload }) {
   const [list,setList]=useState(guests);
   useEffect(()=>{setList(guests);},[guests]);
+  const [kiosk,setKiosk]=useState(false),[markOnKiosk,setMarkOnKiosk]=useState(true);
   const [scan,setScan]=useState(false),[found,setFound]=useState(null),[q,setQ]=useState("");
   const lastRef=useRef({text:"",at:0});
   const tableOf=g=>tables.find(t=>t.id===g.table_id);
@@ -6907,6 +7169,10 @@ function CheckinScreen({ event, guests, tables, onReload }) {
       <button onClick={()=>{setScan(s=>!s);setFound(null);}} style={{width:"100%",background:scan?C.surface:GRAD,color:scan?C.blue:"#fff",border:scan?`2px solid ${C.blueL}`:"none",borderRadius:14,padding:14,fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
         {scan?"✕ סגור מצלמה":"📷 סריקת QR של אורח"}
       </button>
+      <button onClick={()=>setKiosk(true)} style={{width:"100%",background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:14,padding:12,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
+        📟 עמדת קבלת פנים לטאבלט (האורח מקליד את שמו ורואה שולחן)
+      </button>
+      {kiosk&&<KioskMode event={event} guests={list} tables={tables} onPick={g=>{if(markOnKiosk&&!g.arrived_at)setArrived(g,true);}} mark={markOnKiosk} setMark={setMarkOnKiosk} onClose={()=>setKiosk(false)}/>}
       {scan&&<QrScanner onScan={onScan}/>}
       {found&&(found.miss
         ?<div style={{marginTop:12,background:"#FFF5F5",border:"1.5px solid #FED7D7",borderRadius:16,padding:16,textAlign:"center",color:"#C53030",fontWeight:800}}>❓ הקוד לא שייך לאורח באירוע הזה</div>
@@ -7246,6 +7512,7 @@ function InvitePage({ code, guestId }) {
   const [submitting,setSubmitting]=useState(false);
   const [submitted,setSubmitted]=useState(false);
   const [knownGuest,setKnownGuest]=useState(null); // אורח מזוהה מהקישור
+  const [extra,setExtra]=useState({meals:{},kids:0,allergies:"",transport:false}); // שאלות נוספות (אם בעל האירוע הפעיל)
   // duplicate detection
   const [dupGuest,setDupGuest]=useState(null);
   const [showDupModal,setShowDupModal]=useState(false);
@@ -7270,6 +7537,7 @@ function InvitePage({ code, guestId }) {
           setPhone(g.phone||"");
           setGuestCount(g.guest_count||1);
           if(g.rsvp&&g.rsvp!=="pending")setRsvp(g.rsvp);
+          if(g.rsvp_extra)setExtra(x=>({...x,...g.rsvp_extra,meals:g.rsvp_extra.meals||{}}));
         }
       }
     })();
@@ -7281,6 +7549,13 @@ function InvitePage({ code, guestId }) {
     const{data,error}=await sb.rpc("submit_rsvp",{
       p_code:code,p_name:r.name||"",p_phone:(r.phone||"").trim(),p_count:guestCount,p_rsvp:rsvp,
       p_guest:knownGuest?.id||null,p_update_existing:updateExisting,
+      // תשובות נוספות נשלחות רק כשמאשרים הגעה ורק אם בעל האירוע הפעיל שאלות
+      ...(rsvp==="confirmed"&&event&&anyRsvpQ(rsvpQOf(event))?{p_extra:{
+        ...(rsvpQOf(event).meal?{meals:Object.fromEntries(Object.entries(extra.meals||{}).filter(([,v])=>+v>0))}:{}),
+        ...(rsvpQOf(event).kids?{kids:Math.min(+extra.kids||0,guestCount)}:{}),
+        ...(rsvpQOf(event).allergies?{allergies:String(extra.allergies||"").slice(0,300)}:{}),
+        ...(rsvpQOf(event).transport?{transport:!!extra.transport}:{}),
+      }}:{}),
     });
     if(error||!data||["no_invite","no_name"].includes(data.status)){
       setSaveError(error?"לא הצלחנו לשמור את האישור. בדקו את החיבור ונסו שוב.":data?.status==="no_name"?"נא למלא שם":"ההזמנה כבר לא פעילה");
@@ -7539,6 +7814,37 @@ function InvitePage({ code, guestId }) {
               ✗ לא מגיעים
             </button>
           </div>
+
+          {/* שאלות נוספות שבעל האירוע הפעיל — רק למי שמאשר הגעה */}
+          {rsvp==="confirmed"&&anyRsvpQ(rsvpQOf(event))&&(()=>{const q=rsvpQOf(event),picked=Object.values(extra.meals||{}).reduce((a,b)=>a+(+b||0),0);
+            const step=(v,set,max)=>(<div style={{display:"flex",alignItems:"center",gap:10}}>
+              <button type="button" onClick={()=>set(Math.max(0,v-1))} aria-label="פחות" style={{width:30,height:30,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:17,cursor:"pointer",fontWeight:700}}>−</button>
+              <span style={{minWidth:22,textAlign:"center",fontWeight:900,fontSize:16}}>{v}</span>
+              <button type="button" onClick={()=>set(Math.min(max,v+1))} aria-label="יותר" disabled={v>=max} style={{width:30,height:30,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:17,cursor:v>=max?"default":"pointer",fontWeight:700,opacity:v>=max?.4:1}}>+</button>
+            </div>);
+            return(
+            <div style={{background:"#fff",border:"1px solid #eee",borderRadius:12,padding:"12px 14px",marginBottom:14,textAlign:"right"}}>
+              {q.meal&&<div style={{marginBottom:12}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#333",marginBottom:6}}>🍽️ סוג מנה <span style={{fontWeight:500,color:"#888"}}>(נבחרו {picked} מתוך {guestCount})</span></div>
+                {(q.mealOptions||DEFAULT_MEALS).map(m=>{const v=+(extra.meals?.[m]||0);return(
+                  <div key={m} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0"}}>
+                    <span style={{fontSize:14,color:"#333"}}>{m}</span>
+                    {step(v,n=>setExtra(x=>({...x,meals:{...x.meals,[m]:n}})),v+Math.max(0,guestCount-picked))}
+                  </div>);})}
+              </div>}
+              {q.kids&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0",borderTop:q.meal?"1px solid #f3f3f3":"none"}}>
+                <span style={{fontSize:13,fontWeight:800,color:"#333"}}>👶 מתוכם ילדים</span>
+                {step(Math.min(+extra.kids||0,guestCount),n=>setExtra(x=>({...x,kids:n})),guestCount)}
+              </div>}
+              {q.transport&&<label style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",fontSize:13,fontWeight:800,color:"#333",cursor:"pointer",borderTop:"1px solid #f3f3f3"}}>
+                <input type="checkbox" checked={!!extra.transport} onChange={e=>setExtra(x=>({...x,transport:e.target.checked}))}/> 🚌 צריכים הסעה
+              </label>}
+              {q.allergies&&<div style={{paddingTop:8,borderTop:"1px solid #f3f3f3"}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#333",marginBottom:6}}>⚠️ אלרגיות או הערות למטבח</div>
+                <input value={extra.allergies||""} onChange={e=>setExtra(x=>({...x,allergies:e.target.value}))} maxLength={300} placeholder="לא חובה"
+                  style={{width:"100%",background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+              </div>}
+            </div>);})()}
 
           {saveError&&<div role="alert" style={{background:"#FDECEE",color:"#C53030",border:"1px solid #F9D2D8",borderRadius:12,padding:"10px 12px",fontSize:13,fontWeight:700,marginBottom:10,textAlign:"center"}}>⚠️ {saveError}</div>}
           <button onClick={submit} disabled={!firstName.trim()||!rsvp||submitting}
@@ -8369,7 +8675,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["reviews","⭐ המלצות",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -8582,6 +8888,8 @@ function AdminDashboard({ user, onLogout }) {
           </div>
         ):tab==="venues"?(
           <AdminVenues card={card}/>
+        ):tab==="reviews"?(
+          <AdminTestimonials card={card}/>
         ):(
           <div style={{...card,padding:"8px 16px"}}>
             {txs.length===0&&<div style={{padding:30,textAlign:"center",color:C.muted}}>אין עדיין תנועות SMS</div>}
@@ -8835,11 +9143,13 @@ function ShortLinkRedirect({ short }) {
 export default function App() {
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
   const [legal,setLegal]=useState(LEGAL_ROUTES[window.location.hash]||null);
+  const [,setHashTick]=useState(0);
   const [showResetPw,setShowResetPw]=useState(false);
   const [resetPw,setResetPw]=useState({newP:"",confirm:"",msg:null,loading:false});
 
   useEffect(()=>{
-    const onHash=()=>setLegal(LEGAL_ROUTES[window.location.hash]||null);
+    // כל שינוי בכתובת (#) מרנדר מחדש — למשל "→ לאתר" מדף הניהול
+    const onHash=()=>{setLegal(LEGAL_ROUTES[window.location.hash]||null);setHashTick(t=>t+1);};
     window.addEventListener("hashchange",onHash);
     // זיהוי קישור שחזור סיסמה בלבד (לא כניסה עם גוגל)
     const hash=window.location.hash;
