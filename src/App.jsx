@@ -7815,8 +7815,8 @@ function InvitePage({ code, guestId }) {
             </button>
           </div>
 
-          {/* שאלות נוספות שבעל האירוע הפעיל — רק למי שמאשר הגעה */}
-          {rsvp==="confirmed"&&anyRsvpQ(rsvpQOf(event))&&(()=>{const q=rsvpQOf(event),picked=Object.values(extra.meals||{}).reduce((a,b)=>a+(+b||0),0);
+          {/* שאלות נוספות שבעל האירוע הפעיל — מוצגות מיד, ונעלמות רק כשבוחרים "לא מגיעים" (נשמרות רק עם "מגיעים") */}
+          {rsvp!=="declined"&&anyRsvpQ(rsvpQOf(event))&&(()=>{const q=rsvpQOf(event),picked=Object.values(extra.meals||{}).reduce((a,b)=>a+(+b||0),0);
             const step=(v,set,max)=>(<div style={{display:"flex",alignItems:"center",gap:10}}>
               <button type="button" onClick={()=>set(Math.max(0,v-1))} aria-label="פחות" style={{width:30,height:30,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:17,cursor:"pointer",fontWeight:700}}>−</button>
               <span style={{minWidth:22,textAlign:"center",fontWeight:900,fontSize:16}}>{v}</span>
