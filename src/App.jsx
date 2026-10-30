@@ -7092,26 +7092,74 @@ function QrScanner({ onScan }) {
       <div style={{position:"absolute",inset:"18%",border:"3px solid rgba(255,255,255,.85)",borderRadius:18,boxShadow:"0 0 0 999px rgba(0,0,0,.25)"}}/>
     </div>;
 }
+// פתק שולחן קטן להדפסה מהעמדה (מתאים גם למדפסת קבלות 80 מ"מ). מדפיס דרך מסגרת נסתרת כדי לא לצאת ממסך מלא
+function printSeatSlip(event,g,t){
+  const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const title=event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name;
+  const tname=t?String(t.name||"").replace(/^\s*\d+\s*/,"").trim():"";
+  const f=document.createElement("iframe");
+  f.style.cssText="position:fixed;width:0;height:0;border:0;left:-9999px";
+  document.body.appendChild(f);
+  const d=f.contentWindow.document;
+  d.open();d.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+    @page{size:80mm auto;margin:4mm}body{font-family:Heebo,Arial,sans-serif;color:#000;text-align:center;margin:0}
+    .t{font-size:14px}.n{font-size:20px;font-weight:900;margin:8px 0 4px}.l{font-size:13px}.num{font-size:64px;font-weight:900;line-height:1}.sub{font-size:13px}
+    hr{border:0;border-top:1px dashed #000;margin:10px 0}
+  </style></head><body><div class="t">${esc(title)}</div><hr><div class="n">${esc(g.name)}</div>${
+    t?`<div class="l">השולחן שלך</div><div class="num">${esc(t.num)}</div>${tname?`<div class="sub">${esc(tname)}</div>`:""}`:`<div class="l">גשו בבקשה לצוות הקבלה</div>`
+  }<hr><div class="t">ברוכים הבאים! 🎉</div></body></html>`);d.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch{}setTimeout(()=>f.remove(),1500);},300);
+}
+// קוד יציאה מהעמדה, נשמר במכשיר לכל אירוע (ברירת מחדל 1234)
+const kioskPinKey=id=>"sidor_kiosk_pin_"+id;
+const getKioskPin=id=>{try{return localStorage.getItem(kioskPinKey(id))||"1234";}catch{return "1234";}};
+
 // ─── עמדת קבלת פנים לטאבלט: מסך מלא, האורח מקליד שם ורואה את מספר השולחן ───
-// בלי טלפונים ובלי רשימה מלאה: תוצאות רק מ-2 אותיות, עד 6 שמות. יציאה רק בלחיצה ארוכה (שאורחים לא יצאו בטעות)
-function KioskMode({ event, guests, tables, onPick, mark, setMark, onClose }) {
+// בלי טלפונים ובלי רשימה מלאה: תוצאות רק מ-2 אותיות, עד 6 שמות. יציאה רק עם קוד (שאורחים לא יצאו בטעות)
+function KioskMode({ event, guests, tables, onPick, autoPrint, showPrint, onClose }) {
   const [q,setQ]=useState(""),[shown,setShown]=useState(null);
-  const inputRef=useRef(null),timer=useRef(null),hold=useRef(null);
+  const [pinOpen,setPinOpen]=useState(false),[pin,setPin]=useState(""),[pinErr,setPinErr]=useState(false);
+  const inputRef=useRef(null),timer=useRef(null);
+  const pinRef=useRef("");
+  const setPinBoth=v=>{pinRef.current=v;setPin(v);};
+  const pressPin=k=>{
+    const code=getKioskPin(event.id);
+    if(pinRef.current.length>=code.length)return;
+    const v=pinRef.current+k;setPinBoth(v);setPinErr(false);
+    if(v.length>=code.length){if(v===code)onClose();else{setPinErr(true);setTimeout(()=>{setPinBoth("");setPinErr(false);},700);}}
+  };
   const tableOf=g=>tables.find(t=>t.id===g.table_id);
   const norm=s=>String(s||"").replace(/["'״׳\-]/g,"").trim();
   const qq=norm(q);
   const results=qq.length<2?[]:guests.filter(g=>g.rsvp!=="declined"&&norm(g.name).includes(qq)).slice(0,6);
-  const pick=g=>{onPick?.(g);setShown(g);setQ("");clearTimeout(timer.current);timer.current=setTimeout(()=>{setShown(null);inputRef.current?.focus();},9000);};
+  const pick=g=>{onPick?.(g);setShown(g);setQ("");if(autoPrint)printSeatSlip(event,g,tableOf(g));clearTimeout(timer.current);timer.current=setTimeout(()=>{setShown(null);inputRef.current?.focus();},9000);};
   useEffect(()=>{document.documentElement.requestFullscreen?.().catch(()=>{});return()=>{clearTimeout(timer.current);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});};},[]);
-  const startHold=()=>{hold.current=setTimeout(onClose,1500);},endHold=()=>clearTimeout(hold.current);
   const title=event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name;
   return(
     <div dir="rtl" role="dialog" aria-label="עמדת קבלת פנים" style={{position:"fixed",inset:0,zIndex:600,background:"linear-gradient(160deg,#2B1D3F,#5B3C8C 55%,#9B6BFF)",color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",padding:"5vh 24px",fontFamily:"'Heebo',sans-serif",overflowY:"auto"}}>
-      <button onMouseDown={startHold} onMouseUp={endHold} onMouseLeave={endHold} onTouchStart={startHold} onTouchEnd={endHold}
-        title="לחיצה ארוכה ליציאה" style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"rgba(255,255,255,.7)",borderRadius:10,padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>✕ יציאה (לחיצה ארוכה)</button>
-      <label style={{position:"absolute",top:16,right:16,fontSize:12,color:"rgba(255,255,255,.75)",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
-        <input type="checkbox" checked={mark} onChange={e=>setMark(e.target.checked)}/> לסמן "הגיע" כשבוחרים שם
-      </label>
+      <button onClick={()=>{setPinBoth("");setPinErr(false);setPinOpen(true);}}
+        title="יציאה עם קוד" style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"rgba(255,255,255,.7)",borderRadius:10,padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>🔒 יציאה</button>
+      {pinOpen&&(
+        <div onClick={()=>setPinOpen(false)} style={{position:"fixed",inset:0,zIndex:10,background:"rgba(20,12,35,.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",color:"#2B1D3F",borderRadius:22,padding:"22px 20px",width:"100%",maxWidth:320,textAlign:"center",animation:pinErr?"shake .35s":"none"}}>
+            <style>{`@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}`}</style>
+            <div style={{fontSize:17,fontWeight:900,marginBottom:4}}>🔒 יציאה מהעמדה</div>
+            <div style={{fontSize:13,color:"#6E6585",marginBottom:14}}>הקלידו את הקוד</div>
+            <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:16,direction:"ltr"}}>
+              {Array.from({length:getKioskPin(event.id).length}).map((_,i)=>(
+                <div key={i} style={{width:14,height:14,borderRadius:"50%",background:pinErr?"#E53E3E":i<pin.length?"#5B3C8C":"#E2DCEB"}}/>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,direction:"ltr"}}>
+              {["1","2","3","4","5","6","7","8","9","✕","0","⌫"].map(k=>(
+                <button key={k} onClick={()=>k==="✕"?setPinOpen(false):k==="⌫"?setPinBoth(pinRef.current.slice(0,-1)):pressPin(k)}
+                  style={{background:k==="✕"||k==="⌫"?"#F4EEFC":"#fff",border:"1.5px solid #E2DCEB",borderRadius:14,padding:"14px 0",fontSize:22,fontWeight:800,color:"#2B1D3F",cursor:"pointer",fontFamily:"inherit"}}>{k}</button>
+              ))}
+            </div>
+            {pinErr&&<div style={{color:"#E53E3E",fontSize:13,fontWeight:700,marginTop:10}}>קוד שגוי</div>}
+          </div>
+        </div>
+      )}
       <div style={{fontSize:"clamp(16px,2.4vw,22px)",opacity:.85,marginTop:24}}>ברוכים הבאים</div>
       <div style={{fontSize:"clamp(30px,5vw,56px)",fontWeight:900,textAlign:"center",lineHeight:1.15,marginBottom:"4vh"}}>{title}</div>
       {shown?(
@@ -7122,7 +7170,9 @@ function KioskMode({ event, guests, tables, onPick, mark, setMark, onClose }) {
             <div style={{fontSize:"clamp(90px,18vw,200px)",fontWeight:900,lineHeight:1}}>{tableOf(shown).num}</div>
             {String(tableOf(shown).name||"").replace(/^\s*\d+\s*/,"").trim()&&<div style={{fontSize:"clamp(16px,2.4vw,24px)",opacity:.8}}>{String(tableOf(shown).name).replace(/^\s*\d+\s*/,"").trim()}</div>}
           </>:<div style={{fontSize:"clamp(20px,3vw,30px)",background:"rgba(255,255,255,.15)",borderRadius:16,padding:"16px 24px"}}>גשו בבקשה לצוות הקבלה 🙏</div>}
-          <div style={{fontSize:14,opacity:.6,marginTop:28}}>לחצו כדי לחפש שם אחר</div>
+          {showPrint&&<button onClick={e=>{e.stopPropagation();printSeatSlip(event,shown,tableOf(shown));}}
+            style={{marginTop:24,background:"rgba(255,255,255,.95)",color:"#2B1D3F",border:"none",borderRadius:14,padding:"12px 26px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🖨️ הדפסת פתק שולחן</button>}
+          <div style={{fontSize:14,opacity:.6,marginTop:20}}>לחצו כדי לחפש שם אחר</div>
         </div>
       ):(
         <div style={{width:"100%",maxWidth:640}}>
@@ -7144,6 +7194,9 @@ function CheckinScreen({ event, guests, tables, onReload }) {
   const [list,setList]=useState(guests);
   useEffect(()=>{setList(guests);},[guests]);
   const [kiosk,setKiosk]=useState(false),[markOnKiosk,setMarkOnKiosk]=useState(true);
+  const [kioskPrint,setKioskPrint]=useState("button"); // off | button | auto
+  const [kioskPin,setKioskPin]=useState(()=>getKioskPin(event.id));
+  const saveKioskPin=v=>{const d=v.replace(/\D/g,"").slice(0,6);setKioskPin(d);try{if(d.length>=4)localStorage.setItem(kioskPinKey(event.id),d);}catch{}};
   const [scan,setScan]=useState(false),[found,setFound]=useState(null),[q,setQ]=useState("");
   const lastRef=useRef({text:"",at:0});
   const tableOf=g=>tables.find(t=>t.id===g.table_id);
@@ -7178,10 +7231,31 @@ function CheckinScreen({ event, guests, tables, onReload }) {
       <button onClick={()=>{setScan(s=>!s);setFound(null);}} style={{width:"100%",background:scan?C.surface:GRAD,color:scan?C.blue:"#fff",border:scan?`2px solid ${C.blueL}`:"none",borderRadius:14,padding:14,fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
         {scan?"✕ סגור מצלמה":"📷 סריקת QR של אורח"}
       </button>
-      <button onClick={()=>setKiosk(true)} style={{width:"100%",background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:14,padding:12,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
-        📟 עמדת קבלת פנים לטאבלט (האורח מקליד את שמו ורואה שולחן)
-      </button>
-      {kiosk&&<KioskMode event={event} guests={list} tables={tables} onPick={g=>{if(markOnKiosk&&!g.arrived_at)setArrived(g,true);}} mark={markOnKiosk} setMark={setMarkOnKiosk} onClose={()=>setKiosk(false)}/>}
+      <div style={{background:C.surface,border:`1.5px solid ${C.blueL}`,borderRadius:14,padding:12,marginBottom:12}}>
+        <button onClick={()=>{if(kioskPin.length<4){alert("קוד היציאה צריך להיות לפחות 4 ספרות");return;}setKiosk(true);}} style={{width:"100%",background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:12,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
+          📟 עמדת קבלת פנים לטאבלט (האורח מקליד את שמו ורואה שולחן)
+        </button>
+        <div style={{display:"grid",gap:8,fontSize:13,color:C.text}}>
+          <label style={{display:"flex",alignItems:"center",gap:8}}>
+            🔒 קוד יציאה:
+            <input value={kioskPin} onChange={e=>saveKioskPin(e.target.value)} inputMode="numeric" aria-label="קוד יציאה מהעמדה"
+              style={{width:90,padding:"6px 10px",borderRadius:10,border:`1.5px solid ${kioskPin.length<4?"#FC8181":C.border}`,fontSize:15,fontWeight:800,letterSpacing:3,textAlign:"center",fontFamily:"inherit",direction:"ltr"}}/>
+            <span style={{fontSize:11,color:C.muted}}>4–6 ספרות</span>
+          </label>
+          <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+            <input type="checkbox" checked={markOnKiosk} onChange={e=>setMarkOnKiosk(e.target.checked)}/> לסמן "הגיע" כשאורח בוחר את שמו
+          </label>
+          <label style={{display:"flex",alignItems:"center",gap:8}}>
+            🖨️ הדפסת פתק שולחן:
+            <select value={kioskPrint} onChange={e=>setKioskPrint(e.target.value)} style={{padding:"6px 10px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:13,fontFamily:"inherit",background:"#fff"}}>
+              <option value="off">בלי הדפסה</option>
+              <option value="button">כפתור הדפסה לאורח</option>
+              <option value="auto">הדפסה אוטומטית</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      {kiosk&&<KioskMode event={event} guests={list} tables={tables} onPick={g=>{if(markOnKiosk&&!g.arrived_at)setArrived(g,true);}} autoPrint={kioskPrint==="auto"} showPrint={kioskPrint!=="off"} onClose={()=>setKiosk(false)}/>}
       {scan&&<QrScanner onScan={onScan}/>}
       {found&&(found.miss
         ?<div style={{marginTop:12,background:"#FFF5F5",border:"1.5px solid #FED7D7",borderRadius:16,padding:16,textAlign:"center",color:"#C53030",fontWeight:800}}>❓ הקוד לא שייך לאורח באירוע הזה</div>
