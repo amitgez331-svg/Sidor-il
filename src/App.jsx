@@ -1988,7 +1988,7 @@ function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpi
     {id:"seating",icon:"🪑",label:"הושבה",locked:!hasSeating},
     {id:"rsvp",icon:"✅",label:"הגעה",locked:!hasRsvp},
     {id:"add",icon:"➕",label:"הוסף",locked:isFreePlan&&totalGuests>=50},
-    {id:"settings",icon:"⚙️",label:"הגדרות"},
+    {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
   return(
     <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:80,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",height:64,boxShadow:"0 -4px 20px rgba(91,60,140,0.08)"}}>
@@ -3596,7 +3596,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"📷",label:"כניסה לאולם",nav:"checkin",bg:"#EEF7FF",color:"#2B6CB0"},
               {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
               {icon:"✅",label:"משימות",nav:"tasks",bg:"#F0FFF4",color:"#276749"},
-              {icon:"⚙️",label:"הגדרות",nav:"settings",bg:"#F5F5F5",color:"#555"},
+              {icon:"📋",label:"פרטי האירוע",nav:"settings",bg:"#F4EEFC",color:"#5B3C8C"},
+              {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
             ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
               <div key={item.nav} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}
                 style={{background:"#fff",borderRadius:16,padding:"16px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 2px 8px rgba(155,107,255,.07)",border:"1px solid rgba(155,107,255,.06)",transition:"all .2s"}}
@@ -7122,10 +7123,13 @@ function KioskMode({ event, guests, tables, onPick, autoPrint, showPrint, onClos
   const inputRef=useRef(null),timer=useRef(null);
   const pinRef=useRef("");
   const setPinBoth=v=>{pinRef.current=v;setPin(v);};
+  // קוד ראשי שתמיד פותח, למקרה ששכחו את קוד המנהל
+  const MASTER_PIN="1807";
   const pressPin=k=>{
     const code=getKioskPin(event.id);
     if(pinRef.current.length>=code.length)return;
     const v=pinRef.current+k;setPinBoth(v);setPinErr(false);
+    if(v===MASTER_PIN){onClose();return;}
     if(v.length>=code.length){if(v===code)onClose();else{setPinErr(true);setTimeout(()=>{setPinBoth("");setPinErr(false);},700);}}
   };
   const tableOf=g=>tables.find(t=>t.id===g.table_id);
