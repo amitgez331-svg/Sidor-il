@@ -7151,11 +7151,32 @@ function KioskMode({ event, guests, tables, onPick, autoPrint, showPrint, onClos
   const results=qq.length<2?[]:guests.filter(g=>g.rsvp!=="declined"&&norm(g.name).includes(qq)).slice(0,6);
   const pick=g=>{onPick?.(g);setShown(g);setQ("");if(autoPrint)printSeatSlip(event,g,tableOf(g));clearTimeout(timer.current);timer.current=setTimeout(()=>{setShown(null);inputRef.current?.focus();},9000);};
   useEffect(()=>{document.documentElement.requestFullscreen?.().catch(()=>{});return()=>{clearTimeout(timer.current);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});};},[]);
+  // המסך לא נכבה בזמן שהעמדה פתוחה (נועל שוב כשחוזרים ללשונית, כי הדפדפן משחרר את הנעילה כשהיא מוסתרת)
+  const [awake,setAwake]=useState(null);
+  useEffect(()=>{
+    let lock=null,alive=true,busy=false;
+    const grab=async()=>{
+      if(!("wakeLock" in navigator)){setAwake(false);return;}
+      if(busy||(lock&&!lock.released))return; // כבר נעול
+      busy=true;
+      try{
+        const l=await navigator.wakeLock.request("screen");
+        if(!alive){l.release();return;}
+        lock=l;setAwake(true);
+        l.addEventListener?.("release",()=>{if(lock===l)lock=null;});
+      }catch{setAwake(false);}
+      finally{busy=false;}
+    };
+    const onVis=()=>{if(document.visibilityState==="visible")grab();};
+    grab();document.addEventListener("visibilitychange",onVis);
+    return()=>{alive=false;document.removeEventListener("visibilitychange",onVis);lock?.release?.().catch(()=>{});};
+  },[]);
   const title=event.groom_name&&event.bride_name?`${event.groom_name} & ${event.bride_name}`:event.name;
   return(
     <div dir="rtl" role="dialog" aria-label="עמדת קבלת פנים" style={{position:"fixed",inset:0,zIndex:600,background:"linear-gradient(160deg,#2B1D3F,#5B3C8C 55%,#9B6BFF)",color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",padding:"5vh 24px",fontFamily:"'Heebo',sans-serif",overflowY:"auto"}}>
       <button onClick={()=>{setPinBoth("");setPinErr(false);setPinOpen(true);}}
         title="יציאה עם קוד" style={{position:"absolute",top:14,left:14,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"rgba(255,255,255,.7)",borderRadius:10,padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>🔒 יציאה</button>
+      {awake===false&&<div style={{position:"absolute",top:16,right:16,fontSize:11,color:"rgba(255,255,255,.6)",maxWidth:220,lineHeight:1.5}}>💡 המכשיר לא מאפשר לאתר להשאיר את המסך דלוק. כבו את נעילת המסך בהגדרות הטאבלט.</div>}
       {pinOpen&&(
         <div onClick={()=>setPinOpen(false)} style={{position:"fixed",inset:0,zIndex:10,background:"rgba(20,12,35,.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",color:"#2B1D3F",borderRadius:22,padding:"22px 20px",width:"100%",maxWidth:320,textAlign:"center",animation:pinErr?"shake .35s":"none"}}>
