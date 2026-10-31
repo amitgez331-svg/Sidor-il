@@ -2301,7 +2301,11 @@ function TestimonialCard({ user, event }) {
   return(
     <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
       <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:4}}>⭐ ספרו לנו איך היה</div>
-      {mine?<div style={{fontSize:13,color:"#276749",fontWeight:700}}>תודה רבה על ההמלצה! 💜 {mine.approved?"היא כבר מופיעה באתר.":"היא תופיע באתר אחרי שנאשר אותה."}</div>:<>
+      {mine?<>
+        <div style={{fontSize:13,color:"#276749",fontWeight:700}}>תודה רבה על ההמלצה! 💜 {mine.approved?"היא כבר מופיעה באתר.":"היא תופיע באתר אחרי שנאשר אותה."}</div>
+        <div style={{fontSize:12,color:"#666",margin:"10px 0 8px"}}>נשמח מאוד אם תכתבו אותה גם בגוגל, זה עוזר לזוגות אחרים למצוא אותנו 🙏</div>
+        <GoogleReviewButton/>
+      </>:<>
         <div style={{fontSize:12,color:"#666",marginBottom:10}}>ההמלצה שלכם עוזרת לזוגות אחרים לבחור. אחרי אישור היא תופיע בדף הבית.</div>
         <Stars value={rating} onChange={setRating} size={28}/>
         <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={600} placeholder="מה הכי עזר לכם? (למשל: ההושבה האוטומטית חסכה לנו ערב שלם...)" aria-label="ההמלצה"
@@ -2722,6 +2726,14 @@ function TasksScreen({ event }) {
     </div>
   );
 }
+// קישור לכתיבת ביקורת בפרופיל העסק בגוגל
+const GOOGLE_REVIEW_URL="https://g.page/r/CSW-aObv3rBVEBM/review";
+const GoogleReviewButton=({style})=>(
+  <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer"
+    style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#fff",color:"#1a73e8",border:"1.5px solid #D2E3FC",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:800,textDecoration:"none",fontFamily:"inherit",...style}}>
+    <span style={{color:"#F4B400"}}>★</span> דרגו אותנו בגוגל
+  </a>
+);
 // אחרי האירוע (עד 30 יום): הודעת תודה מוכנה לאורחים, רישום מתנות והמלצה
 const thankYouText=event=>{
   const ew=eventWords(event);
@@ -2746,7 +2758,8 @@ function PostEventCard({ event, onGo, style }) {
         <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer" style={{...btn,background:"#25D366",color:"#fff",border:"none"}}><WaIcon size={15}/> שליחה בוואטסאפ</a>
         <button onClick={copy} style={btn}>{copied?"✓ הועתק":"📋 העתקת הנוסח"}</button>
         {!biz&&<button onClick={()=>onGo("gifts")} style={btn}>🎁 רישום מתנות</button>}
-        <button onClick={()=>onGo("user_settings")} style={btn}>⭐ ספרו לנו איך היה</button>
+        <button onClick={()=>onGo("user_settings")} style={btn}>💜 המלצה לאתר</button>
+        <GoogleReviewButton/>
       </div>
     </div>
   );
