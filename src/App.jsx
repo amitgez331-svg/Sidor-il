@@ -3004,9 +3004,11 @@ const screenLocked=(id,userPackages)=>{
 // המסך האחרון (ותצוגת ההושבה) נשמר בדפדפן כדי שרענון יחזיר לאותו מקום באותו אירוע
 const LAST_SCREEN_KEY="sidor_last_screen";
 const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts","tasks"];
+// פתיחה חדשה של האתר/האפליקציה (לא רענון באותה לשונית) מתחילה במסך הראשי
+const FRESH_OPEN=(()=>{try{const f=!sessionStorage.getItem("sidor_tab");sessionStorage.setItem("sidor_tab","1");return f;}catch{return false;}})();
 const readLastScreen=eventId=>{
   try{const s=JSON.parse(localStorage.getItem(LAST_SCREEN_KEY)||"null");
-    if(s&&s.eventId===eventId&&RESTORABLE_SCREENS.includes(s.screen))return s;}catch{}
+    if(s&&s.eventId===eventId&&RESTORABLE_SCREENS.includes(s.screen))return FRESH_OPEN?{...s,screen:"home"}:s;}catch{}
   return null;
 };
 
@@ -9477,6 +9479,8 @@ export default function App() {
   },[]);
 
   const selectEvent=(ev)=>{
+    // כניסה לאירוע מהרשימה תמיד למסך הראשי (שחזור המסך האחרון הוא רק לרענון דף)
+    if(ev)try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:"home",view:readLastScreen(ev.id)?.view||"map"}));}catch{}
     setEvent(ev);
     if(ev)localStorage.setItem("sidor_event_id",ev.id);
     else localStorage.removeItem("sidor_event_id");
