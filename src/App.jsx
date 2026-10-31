@@ -892,9 +892,9 @@ function VenuePage({ onBack, onOpenAuth }) {
         {[
           {icon:"🪑",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע  -  ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
           {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"שליחת הזמנות דיגיטליות ואישורי הגעה בוואטסאפ ו-SMS לכל האורחים."},
-          {icon:"💳",title:"מתנות באשראי",desc:"מערכת תשלומים דיגיטלית לקבלת מתנות מהאורחים  -  מאובטח ומהיר."},
-          {icon:"📊",title:"לוח בקרה לאולמות",desc:"ניהול אירועים מרובים במקביל מלוח בקרה מרכזי אחד  -  חיסכון בזמן ובכסף."},
-          {icon:"🏷️",title:"White Label",desc:"המערכת תופיע תחת המותג שלך  -  הלוגו, הצבעים והשם שלך."},
+          {icon:"📟",title:"כניסה בלי תורים",desc:"עמדת טאבלט שבה האורח מקליד את השם ומקבל פתק שולחן, או צוות הושבה מקצועי ביום האירוע."},
+          {icon:"📊",title:"כמה אירועים במקביל",desc:"מפיקים מנהלים את כל האירועים שלהם מחשבון אחד."},
+          {icon:"🏷️",title:"המותג שלכם בהזמנה",desc:"הלוגו, השם והטלפון שלכם מופיעים בדף ההזמנה של כל האורחים."},
         ].map((item,i)=>(
           <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12,display:"flex",gap:14,alignItems:"flex-start"}}>
             <div style={{width:44,height:44,borderRadius:12,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{item.icon}</div>
@@ -905,19 +905,32 @@ function VenuePage({ onBack, onOpenAuth }) {
           </div>
         ))}
 
+        {/* תוכנית שותפים: קישור הפניה אישי */}
+        <div style={{fontSize:18,fontWeight:800,color:C.text,margin:"24px 0 6px"}}>🤝 תוכנית שותפים</div>
+        <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:14}}>ממליצים על Sidor-IL לזוגות ולמשפחות שסוגרים אצלכם, ומקבלים תגמול על כל לקוח שמגיע דרככם.</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:10,marginBottom:20}}>
+          {[["1","מקבלים קישור אישי","קישור עם הקוד שלכם, למשל sidoril.com/?ref=השם-שלכם"],["2","שולחים ללקוחות","בוואטסאפ, במייל אחרי סגירת האירוע, או כ-QR על דלפק הקבלה"],["3","מקבלים תגמול","כל לקוח שנרשם דרך הקישור נרשם על שמכם, והתגמול לפי מה שנסכם איתכם"]].map(([n,t,d])=>(
+            <div key={n} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 16px"}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14,marginBottom:8}}>{n}</div>
+              <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:4}}>{t}</div>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{d}</div>
+            </div>
+          ))}
+        </div>
+
         {/* צור קשר */}
         <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:20,padding:"24px 20px",marginTop:8,position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
           <div style={{position:"relative",zIndex:1}}>
             <div style={{fontSize:18,fontWeight:800,color:"#fff",marginBottom:6}}>מעוניינים בשיתוף פעולה?</div>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.75)",marginBottom:20,lineHeight:1.6}}>צרו איתנו קשר ונשמח לספר לכם על החבילות המיוחדות לאולמות ומפיקי אירועים.</div>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.75)",marginBottom:20,lineHeight:1.6}}>צרו איתנו קשר: נפתח לכם קישור שותף, ונספר על התגמול ועל החבילות לאולמות ולמפיקים.</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <a href="https://wa.me/972526817102?text=שלום, אני מעוניין לשמוע על שיתוף פעולה עם Sidor-IL" target="_blank" rel="noopener"
                 style={{background:"#25D366",color:"#fff",borderRadius:12,padding:"13px 20px",fontSize:15,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:10,justifyContent:"center"}}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 שלח הודעה בוואטסאפ
               </a>
-              <a href="mailto:info@sidor-il.co.il?subject=שיתוף פעולה עם Sidor-IL"
+              <a href="mailto:sidoril2026@gmail.com?subject=שיתוף פעולה עם Sidor-IL"
                 style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"2px solid rgba(255,255,255,.3)",borderRadius:12,padding:"12px 20px",fontSize:15,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:10,justifyContent:"center"}}>
                 ✉️ שלח מייל
               </a>
@@ -2709,6 +2722,36 @@ function TasksScreen({ event }) {
     </div>
   );
 }
+// אחרי האירוע (עד 30 יום): הודעת תודה מוכנה לאורחים, רישום מתנות והמלצה
+const thankYouText=event=>{
+  const ew=eventWords(event);
+  return ew.type==="business"
+    ?`תודה רבה שהגעתם ל${ew.name}! 🙏\nהיה לנו כבוד לארח אתכם, ונשמח להיפגש שוב בקרוב.${ew.hosts?`\n${ew.hosts}`:""}`
+    :`תודה ענקית שבאתם לשמוח איתנו ב${ew.name}! ${ew.emoji}\nהנוכחות שלכם עשתה לנו את הערב, ואנחנו מודים על כל ברכה, חיבוק ומתנה ❤️${ew.hosts?`\n\nבאהבה,\n${ew.hosts}`:""}`;
+};
+function PostEventCard({ event, onGo, style }) {
+  const [copied,setCopied]=useState(false);
+  const d=event.date?new Date(event.date):null;
+  const since=d&&!isNaN(d)?Math.floor((Date.now()-d.getTime())/864e5):null;
+  if(since===null||since<1||since>30)return null;
+  const text=thankYouText(event),biz=eventWords(event).type==="business";
+  const copy=()=>{navigator.clipboard?.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);}).catch(()=>{});};
+  const btn={background:"#fff",color:"#3A2464",border:"1.5px solid #E9DDF7",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,textDecoration:"none"};
+  return(
+    <div style={{background:"linear-gradient(135deg,#FFF7FB,#F6F0FF)",border:"1.5px solid #E9DDF7",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)",...style}}>
+      <div style={{fontSize:16,fontWeight:900,color:"#2B1D3F",marginBottom:2}}>{biz?"🙏 האירוע הסתיים! מה עכשיו":"🙏 מזל טוב! מה עושים אחרי האירוע"}</div>
+      <div style={{fontSize:12,color:"#888",marginBottom:12}}>הודעת תודה מוכנה לאורחים. אפשר לשלוח אותה בוואטסאפ לקבוצות או לסטטוס.</div>
+      <div style={{background:"#fff",borderRadius:12,padding:"10px 12px",fontSize:13,color:"#3E3555",lineHeight:1.7,whiteSpace:"pre-line",marginBottom:10,border:"1px solid #F0E8F8"}}>{text}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8}}>
+        <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer" style={{...btn,background:"#25D366",color:"#fff",border:"none"}}><WaIcon size={15}/> שליחה בוואטסאפ</a>
+        <button onClick={copy} style={btn}>{copied?"✓ הועתק":"📋 העתקת הנוסח"}</button>
+        {!biz&&<button onClick={()=>onGo("gifts")} style={btn}>🎁 רישום מתנות</button>}
+        <button onClick={()=>onGo("user_settings")} style={btn}>⭐ ספרו לנו איך היה</button>
+      </div>
+    </div>
+  );
+}
+
 // כרטיס "המשימות הקרובות" למסך הבית
 function UpcomingTasks({ event, onOpen, style }) {
   // אחרי האירוע: לא מציגים את המשימות שלפניו (עבר תאריך החתונה)
@@ -3253,6 +3296,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
   };
   const [userPackages,setUserPackages]=useState([]);
+  // מדריך הצעדים הראשונים במסך הבית: כל צעד פותח את המסך שלו, והצעד הבא מודגש
+  const setupSteps=allG=>[
+    {label:"יצירת אירוע",done:true},
+    {label:"הוספת מוזמנים",go:mobile?"add":"import",done:allG.length>0},
+    {label:"שליחת הזמנה לאורחים",go:"invite",done:allG.some(g=>g.rsvp==="confirmed"||g.rsvp==="declined")},
+    {label:"בניית מפת האולם",go:"seating",done:tables.length>0},
+    {label:"הושבת האורחים",go:"seating",done:tables.some(t=>(t.guests||[]).length>0)},
+    {label:"בחירת חבילה",go:"packages",done:userPackages.length>0},
+  ];
   const [trialExpired] = useState(false);
   const [trialHours] = useState(0);
   const [editTableData,setEditTableData]=useState(null);
@@ -3519,12 +3571,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       const eventDate=event.date?new Date(event.date):null;
       const daysLeft=eventDate?Math.ceil((eventDate-new Date())/(1000*60*60*24)):null;
       // checklist
-      const checks=[
-        {label:"יצירת אירוע",done:true},
-        {label:"בחירת חבילה",done:userPackages.length>0},
-        {label:"הוספת מוזמנים",done:allG.length>0},
-        {label:"יצירת תזמון הודעות",done:false},
-      ];
+      const checks=setupSteps(allG);
+      const nextStep=checks.find(c=>!c.done);
       const checksDone=checks.filter(c=>c.done).length;
       const checksPct=Math.round(checksDone/checks.length*100);
 
@@ -3570,17 +3618,19 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {checks.map((c,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,background:c.done?"#F0FFF4":"#FAFAFA",border:`1px solid ${c.done?"#9AE6B4":"#E2E8F0"}`}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:c.done?"#25D366":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
-                  {c.done?"✓":""}
+            {checks.map((c,i)=>{const nx=c===nextStep;return(
+              <div key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} role={c.done?undefined:"button"}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,cursor:c.done?"default":"pointer",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
+                <div style={{width:22,height:22,borderRadius:"50%",background:c.done?"#25D366":nx?"#9147D6":"#E2E8F0",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
+                  {c.done?"✓":nx?"←":""}
                 </div>
-                <span style={{fontSize:12,fontWeight:700,color:c.done?"#276749":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
-              </div>
-            ))}
+                <span style={{fontSize:12,fontWeight:nx?900:700,color:c.done?"#276749":nx?"#3A2464":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
+              </div>);})}
           </div>
+          {nextStep&&<button onClick={()=>setScreen(nextStep.go)} className="sx-btn" style={{width:"100%",marginTop:12,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>הצעד הבא: {nextStep.label} ←</button>}
         </div>
 
+        <PostEventCard event={event} onGo={setScreen} style={{margin:"0 14px 12px"}}/>
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
 
         {/* ─── התקדמות אישורי הגעה ─── */}
@@ -3916,12 +3966,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           const inviteUrl=`${window.location.origin}/#/invite/${event.invite_code||""}`;
           const eventDate=event.date?new Date(event.date):null;
           const daysLeft=eventDate?Math.ceil((eventDate-new Date())/(1000*60*60*24)):null;
-          const checks=[
-            {label:"יצירת אירוע",done:true},
-            {label:"בחירת חבילה",done:userPackages.length>0},
-            {label:"הוספת מוזמנים",done:allG.length>0},
-            {label:"יצירת תזמון הודעות",done:false},
-          ];
+          const checks=setupSteps(allG);
+          const nextStep=checks.find(c=>!c.done);
           const checksDone=checks.filter(c=>c.done).length;
           const checksPct=Math.round(checksDone/checks.length*100);
           return(
@@ -3982,18 +4028,20 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    {checks.map((c,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:12,background:c.done?"#F0FFF4":"#FAFAFA",border:`1px solid ${c.done?"#9AE6B4":"#E2E8F0"}`}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:c.done?"#25D366":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0,color:"#fff"}}>
-                          {c.done?"✓":""}
+                    {checks.map((c,i)=>{const nx=c===nextStep;return(
+                      <div key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} role={c.done?undefined:"button"}
+                        style={{display:"flex",alignItems:"center",gap:10,padding:"9px 14px",borderRadius:12,cursor:c.done?"default":"pointer",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
+                        <div style={{width:24,height:24,borderRadius:"50%",background:c.done?"#25D366":nx?"#9147D6":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0,color:"#fff"}}>
+                          {c.done?"✓":nx?"←":""}
                         </div>
-                        <span style={{fontSize:13,fontWeight:700,color:c.done?"#276749":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
-                      </div>
-                    ))}
+                        <span style={{flex:1,fontSize:13,fontWeight:nx?900:700,color:c.done?"#276749":nx?"#3A2464":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
+                        {nx&&<span style={{fontSize:12,fontWeight:800,color:"#9147D6"}}>להתחיל ←</span>}
+                      </div>);})}
                   </div>
                 </div>
               </div>
 
+              <PostEventCard event={event} onGo={setScreen} style={{marginBottom:20,padding:"22px 24px"}}/>
               <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{marginBottom:20,padding:"22px 24px"}}/>
 
               {/* ─── שורה אמצעית: אישורי הגעה + קישור + פעולות אחרונות ─── */}
@@ -9278,6 +9326,31 @@ const GUIDES=[
     {h:"איך מעריכים מראש",p:"מחלקים את הרשימה לקבוצות לפי קרבה ומעריכים לכל קבוצה בנפרד. נהוג להניח שמשפחה וחברים קרובים יגיעו כמעט כולם, ושבקבוצות הרחוקות יותר יגיעו פחות. זו הערכה בלבד, ולכן אישורי הגעה הם מה שקובע בסוף."},
     {h:"מתי סוגרים מספר",p:"בדרך כלל כשבועיים לפני האירוע, לפי מי שאישר הגעה, ועוד מרווח קטן למי שיגיע בלי לאשר. כדאי לשאול את האולם מה המרווח שהם מאפשרים לשנות ברגע האחרון."},
     {h:"לראות את המספרים בזמן אמת",p:"ב-Sidor-IL רואים כל רגע כמה אישרו, כמה לא מגיעים וכמה עוד לא ענו, בספירת אנשים (לא רק רשומות). ביום האירוע, סריקת ה-QR בכניסה מראה כמה הגיעו בפועל."},
+  ]},
+  {slug:"wedding-invitation-wording",icon:"✍️",title:"נוסח הזמנה לחתונה: 6 דוגמאות מוכנות להעתקה",desc:"נוסחים להזמנה לחתונה, מרשמי ועד קליל, להזמנה מודפסת ולהודעת וואטסאפ, ומה חייב להופיע בכל הזמנה.",sections:[
+    {h:"מה חייב להופיע בהזמנה",p:"• שמות החתן והכלה (ולפעמים גם של ההורים)\n• יום בשבוע ותאריך, לועזי ועברי אם רוצים\n• שעת קבלת פנים ושעת חופה\n• שם האולם וכתובת מלאה\n• דרך לאשר הגעה: קישור, טלפון או QR"},
+    {h:"נוסח מסורתי",p:"\"בשמחה ובהודיה לה' יתברך, אנו שמחים להזמינכם לחתונת ילדינו [שם החתן] ו[שם הכלה], שתתקיים אי\"ה ביום [יום], [תאריך], ב[שם האולם]. קבלת פנים בשעה [שעה], חופה וקידושין בשעה [שעה]. משפחות [שם] ו[שם]\""},
+    {h:"נוסח מודרני",p:"\"אחרי [מספר] שנים ביחד, החלטנו שהגיע הזמן לחגוג! [שם] ו[שם] מתחתנים ומזמינים אתכם לחגוג איתנו ביום [יום], [תאריך], ב[מקום]. נתחיל ב-[שעה] ונמשיך עד שהרגליים יכאבו.\""},
+    {h:"נוסח קצר לוואטסאפ",p:"\"היי [שם]! 💍 אנחנו מתחתנים ונשמח מאוד לראות אתכם. יום [יום], [תאריך], ב[מקום]. כל הפרטים ואישור הגעה בקישור: [קישור]\"\n\nבהודעה בוואטסאפ עדיף קצר: האורח לוחץ על הקישור ורואה שם את כל השאר."},
+    {h:"נוסח מההורים",p:"\"[שמות ההורים] שמחים להזמינכם לחגוג עמנו את נישואי ילדנו [שם] עם [שם], בת/בן [שמות ההורים]. השמחה תתקיים ביום [יום], [תאריך], ב[מקום].\""},
+    {h:"תזכורת למי שלא ענה",p:"\"היי [שם], רק מזכירים שהחתונה שלנו מתקרבת 🙂 נשמח לדעת אם אתם מגיעים, זה לוקח 10 שניות: [קישור]\"\n\nתזכורת עדינה ואישית עם השם של האורח מקבלת הרבה יותר תשובות."},
+    {h:"לשלוח לכל אורח בשמו",p:"ב-Sidor-IL כותבים את הנוסח פעם אחת עם {שם}, וכל אורח מקבל הודעה עם השם שלו וקישור אישי לאישור הגעה. התשובות נכנסות לרשימה מיד."},
+  ]},
+  {slug:"thank-you-message",icon:"🙏",title:"נוסח הודעת תודה לאורחים אחרי החתונה או האירוע",desc:"דוגמאות להודעת תודה לאורחים אחרי חתונה, בר/בת מצווה וברית, מתי לשלוח, ואיך לשלוח לכולם בלי לשבת על זה ערב שלם.",sections:[
+    {h:"מתי שולחים",p:"הכי טוב יום או יומיים אחרי האירוע, כשהחוויה עוד טרייה. גם שבוע אחרי זה בסדר גמור. העיקר לשלוח."},
+    {h:"תודה כללית לכל האורחים",p:"\"תודה ענקית שבאתם לשמוח איתנו! הנוכחות שלכם עשתה לנו את הערב, ואנחנו מודים על כל ברכה, חיבוק ומתנה ❤️ באהבה, [שמות]\""},
+    {h:"תודה אישית למשפחה וחברים קרובים",p:"\"[שם], רצינו להגיד תודה מיוחדת. היה לנו כל כך חשוב שתהיו שם, ובזכותכם הערב היה מושלם. אוהבים מאוד, [שמות]\""},
+    {h:"תודה אחרי בר/בת מצווה",p:"\"תודה רבה שבאתם לחגוג איתנו את שמחת המצווה של [שם]! היה מרגש לראות את כולכם, ותודה על המתנות והברכות. משפחת [שם]\""},
+    {h:"תודה אחרי ברית",p:"\"תודה לכל מי שבא לשמוח איתנו בברית של [שם]. השמחה שלנו גדלה בזכותכם 💙 משפחת [שם]\""},
+    {h:"לשלוח לכולם בקלות",p:"ב-Sidor-IL, יום אחרי האירוע מופיעה במסך הבית הודעת תודה מוכנה עם השמות שלכם, ואפשר לשלוח אותה בוואטסאפ בלחיצה. שם גם רושמים את המתנות שקיבלתם."},
+  ]},
+  {slug:"bar-mitzvah-planning",icon:"✡️",title:"איך לתכנן בר מצווה או בת מצווה: המדריך המלא",desc:"לוח זמנים לתכנון בר/בת מצווה: אולם, עלייה לתורה, הזמנות, הושבה של ילדים ומבוגרים, ומה לא לשכוח.",sections:[
+    {h:"שנה עד חצי שנה לפני",p:"• בוחרים סוג אירוע: ערב באולם, אירוע בוקר, טיול משפחתי או שילוב\n• סוגרים מקום ותאריך\n• לבר מצווה: מתאמים עלייה לתורה ומורה לקריאה"},
+    {h:"3 חודשים לפני",p:"סוגרים צלם, DJ ותוכן לערב. זה הזמן להחליט על ברכות, מצגת או סרטון, ולבנות רשימת מוזמנים ראשונה: משפחה, חברים של ההורים וחברים של הילד."},
+    {h:"חודש וחצי לפני",p:"שולחים הזמנות. בבר/בת מצווה יש שני קהלים: מבוגרים וילדים, וכדאי לדעת מראש כמה מכל אחד, כי זה משפיע על מנות ועל ההושבה."},
+    {h:"ההושבה: ילדים ומבוגרים",p:"החברים מהכיתה יושבים ביחד בשולחן או שניים קרוב לרחבה. משפחה קרובה ליד ההורים, וחברים של ההורים לפי מעגלים (עבודה, שכונה, צבא). שולחן אבירים ארוך עובד מצוין לחברים של הילד."},
+    {h:"שבוע לפני",p:"מספר מנות סופי לאולם, סידור הושבה סופי, והודעה לאורחים עם השעה והכתובת. ביום האירוע: כל אורח מקבל את מספר השולחן שלו."},
+    {h:"לעשות את זה פשוט",p:"ב-Sidor-IL פותחים אירוע בר/בת מצווה, מייבאים את הרשימה, שולחים הזמנה עם קישור לאישור הגעה, ומושיבים על מפת האולם. ההושבה האוטומטית יודעת להפריד בין קבוצות, כמו ילדים ומבוגרים."},
   ]},
 ];
 function GuidesPage({ slug }) {
