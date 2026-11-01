@@ -2765,6 +2765,45 @@ function PostEventCard({ event, onGo, style }) {
   );
 }
 
+// קישורי מתנה (Bit / Paybox) גם במסך הבית — אותם שדות כמו בפרטי האירוע
+function GiftLinksCard({ event, style }) {
+  const [bit,setBit]=useState(event.bit_link||""),[pb,setPb]=useState(event.paybox_link||"");
+  const [edit,setEdit]=useState(!event.bit_link&&!event.paybox_link);
+  const [saving,setSaving]=useState(false),[err,setErr]=useState("");
+  if(eventWords(event).type==="business")return null;
+  const save=async()=>{
+    setSaving(true);setErr("");
+    const data={bit_link:bit.trim()||null,paybox_link:pb.trim()||null};
+    const{error}=await sb.from("events").update(data).eq("id",event.id);
+    setSaving(false);
+    if(error){setErr(error.message);return;}
+    Object.assign(event,data);
+    setEdit(!data.bit_link&&!data.paybox_link);
+  };
+  const line=giftLine({bit_link:bit,paybox_link:pb});
+  const inp={width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"};
+  const lbl=(bg,ic,t)=><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:24,height:24,borderRadius:7,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>{ic}</div><div style={{fontSize:13,fontWeight:700,color:"#1A202C"}}>{t}</div></div>;
+  return(
+    <div style={{background:"#fff",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)",...style}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:4}}>
+        <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>💝 קישורי מתנה דיגיטלית</div>
+        {!edit&&<button onClick={()=>setEdit(true)} style={{background:"none",border:"none",color:"#9147D6",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>עריכה</button>}
+      </div>
+      {edit?(<>
+        <div style={{fontSize:12,color:"#888",marginBottom:12}}>הוסיפו Bit או Paybox: יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית ושורת "💝 למתנה" בהודעות.</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
+          <div>{lbl("#1DB954","💚","Bit")}<input value={bit} onChange={e=>setBit(e.target.value)} placeholder="https://bit.ly/... או מספר הטלפון" style={inp}/></div>
+          <div>{lbl("#6B46C1","💜","Paybox")}<input value={pb} onChange={e=>setPb(e.target.value)} placeholder="https://payboxapp.com/..." style={inp}/></div>
+        </div>
+        {err&&<div style={{marginTop:10,fontSize:12,color:"#C53030"}}>שגיאה בשמירה: {err}</div>}
+        <button onClick={save} disabled={saving} className="sx-btn" style={{width:"100%",marginTop:12,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{saving?"שומר...":"שמירה"}</button>
+      </>):(
+        <div style={{marginTop:8,background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#276749",wordBreak:"break-all"}}>✅ {line}</div>
+      )}
+    </div>
+  );
+}
+
 // כרטיס "המשימות הקרובות" למסך הבית
 function UpcomingTasks({ event, onOpen, style }) {
   // אחרי האירוע: לא מציגים את המשימות שלפניו (עבר תאריך החתונה)
@@ -3645,6 +3684,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
         <PostEventCard event={event} onGo={setScreen} style={{margin:"0 14px 12px"}}/>
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
+        <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
 
         {/* ─── התקדמות אישורי הגעה ─── */}
         <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
@@ -4056,6 +4096,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
               <PostEventCard event={event} onGo={setScreen} style={{marginBottom:20,padding:"22px 24px"}}/>
               <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{marginBottom:20,padding:"22px 24px"}}/>
+              <GiftLinksCard key={event.id} event={event} style={{marginBottom:20,padding:"22px 24px"}}/>
 
               {/* ─── שורה אמצעית: אישורי הגעה + קישור + פעולות אחרונות ─── */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:20,marginBottom:20}}>
