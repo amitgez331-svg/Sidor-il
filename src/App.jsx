@@ -67,6 +67,8 @@ const shareInviteWA=(event,url)=>window.open(waShareUrl(inviteShareText(event,ur
 // קודי הפניה: sidoril.com/?ref=<קוד> (אולם, שותף, חבר מביא חבר, דף הזמנה) נשמר במכשיר ל-60 יום
 // ונרשם פעם אחת על משתמש חדש. האדמין רואה מי הגיע דרך איזה קוד
 const REF_KEY="sidor_ref";
+// נכנסו דרך "כניסת מפיקים" (בלשונית הזו): פותחים את לוח המפיק ולא את האירוע האחרון
+const PRODUCER_ENTRY_KEY="sidor_producer_entry";
 const captureRef=()=>{try{const r=new URLSearchParams(window.location.search).get("ref");if(r&&/^[\w-]{2,40}$/.test(r))localStorage.setItem(REF_KEY,JSON.stringify({ref:r.toLowerCase(),at:Date.now()}));}catch{}};
 const myRefCode=u=>u?.id?u.id.replace(/-/g,"").slice(0,8):"";
 const applyRef=async u=>{
@@ -883,6 +885,7 @@ function VenuePage({ onBack, onOpenAuth }) {
           <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"7px 14px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",marginBottom:16}}>← חזרה</button>
           <h1 style={{fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>🏢 אולמות ומפיקים</h1>
           <p style={{fontSize:14,color:"rgba(255,255,255,.75)"}}>שיתוף פעולה עם Sidor-IL</p>
+          {onOpenAuth&&<button onClick={()=>onOpenAuth("producer")} style={{marginTop:14,background:"#fff",color:C.blue,border:"none",borderRadius:10,padding:"9px 16px",cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit"}}>🎬 כניסת מפיקים ←</button>}
         </div>
       </div>
 
@@ -1431,6 +1434,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           ))}
         </div>
         <div style={{flex:1}}/>
+        <button className="lp-nav-link lp-hide-sm" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>🎬 כניסת מפיקים</button>
         <button className="lp-btn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>{loggedIn?"האירועים שלי":"כניסה"}</button>
         <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14}}>התחילו להושיב</button>
       </nav>
@@ -1472,6 +1476,9 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                 <span style={{width:26,height:26,borderRadius:"50%",background:"#FFEFF5",color:LP.rose,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10}}>▶</span>
                 איך זה עובד
               </a>
+            </div>
+            <div style={{marginTop:-26,marginBottom:34,fontSize:14,color:LP.muted}}>
+              🎬 מפיקי אירועים? <button onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",padding:0,color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>כניסת מפיקים ←</button>
             </div>
 
             <div className="lp-hero-cta" style={{display:"flex",gap:22,flexWrap:"wrap"}}>
@@ -1669,7 +1676,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             <nav aria-label="מפת אתר" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
               {[
                 ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
-                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
+                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"כניסת מפיקים",()=>onOpenAuth("producer")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
                 ["לפי אירוע",EVENT_LANDINGS.map(x=>[`/events/${x.slug}`,x.nav])],
                 ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"]]],
               ].map(([head,links])=>(
@@ -1740,7 +1747,9 @@ const authServerUp=async()=>{
 };
 
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
-  const [mode,setMode]=useState(initMode);
+  // "producer" = כניסת מפיקים: אותה כניסה, עם כותרת משלה (אחריה נפתח לוח המפיק)
+  const producer=initMode==="producer";
+  const [mode,setMode]=useState(producer?"login":initMode);
   const [email,setEmail]=useState("");
   const [pass,setPass]=useState("");
   const [err,setErr]=useState("");
@@ -1786,9 +1795,9 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
     <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}>
       <div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/>
       <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>🪑</div>
-        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
-        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
+        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>{producer?"🎬":"🪑"}</div>
+        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{producer?"כניסת מפיקים":mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
+        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
       </div>
 
       {/* שחזור סיסמה */}
@@ -8225,23 +8234,29 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
   const [stats,setStats]=useState({}),[balances,setBalances]=useState({}),[isProducer,setIsProducer]=useState(false);
   const [view,setView]=useState(()=>{try{return localStorage.getItem("sidor_events_view")||"";}catch{return "";}});
   const [range,setRange]=useState("upcoming"),[q,setQ]=useState("");
+  // נכנסו דרך "כניסת מפיקים": אם החשבון עוד לא מפיק מציגים איך מצטרפים. הדגל נמחק כדי שרענון בתוך אירוע ישחזר אותו כרגיל
+  const [producerEntry,setProducerEntry]=useState(()=>{try{const v=!!sessionStorage.getItem(PRODUCER_ENTRY_KEY);sessionStorage.removeItem(PRODUCER_ENTRY_KEY);return v;}catch{return false;}});
+  const [statsReady,setStatsReady]=useState(false);
   useEffect(()=>{try{if(view)localStorage.setItem("sidor_events_view",view);}catch{}},[view]);
   useEffect(()=>{
     loadMyEvents(user,"created_at",false)
       .then(async data=>{
         const evs=data||[];
         setEvents(evs);
-        if(evs.length===0)setShowForm(true);
+        if(evs.length===0&&!producerEntry)setShowForm(true);
         setLoading(false);
         const ids=evs.map(e=>e.id);
-        const [{data:g},{data:b},{data:p}]=await Promise.all([
+        const [{data:g},{data:b},{data:p},{data:t}]=await Promise.all([
           ids.length?sb.from("guests").select("event_id,rsvp,guest_count,table_id").in("event_id",ids):{data:[]},
           ids.length?sb.from("sms_balance").select("event_id,balance").in("event_id",ids):{data:[]},
           sb.from("user_packages").select("package_id").eq("user_id",user.id),
+          ids.length?sb.from("tables").select("event_id").in("event_id",ids):{data:[]},
         ]);
-        const st={};(g||[]).forEach(x=>{const s=st[x.event_id]||={rows:0,people:0,confirmed:0,pending:0,seated:0};const n=x.guest_count||1;s.rows++;s.people+=n;if(x.rsvp==="confirmed")s.confirmed+=n;else if(x.rsvp!=="declined")s.pending+=n;if(x.table_id)s.seated++;});
+        const st={};(g||[]).forEach(x=>{const s=st[x.event_id]||={rows:0,people:0,confirmed:0,declined:0,pending:0,seated:0,unseated:0,tables:0};const n=x.guest_count||1;s.rows++;s.people+=n;if(x.rsvp==="confirmed"){s.confirmed+=n;if(!x.table_id)s.unseated++;}else if(x.rsvp==="declined")s.declined+=n;else s.pending+=n;if(x.table_id)s.seated++;});
+        (t||[]).forEach(x=>{(st[x.event_id]||={rows:0,people:0,confirmed:0,declined:0,pending:0,seated:0,unseated:0,tables:0}).tables++;});
         setStats(st);setBalances(Object.fromEntries((b||[]).map(x=>[x.event_id,x.balance])));
         setIsProducer((p||[]).some(x=>x.package_id==="producer"));
+        setStatsReady(true);
       });
   },[]);
 
@@ -8286,10 +8301,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
         <div className="ev-hero" style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:24,padding:"32px 40px",marginBottom:36,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 32px rgba(155,107,255,.25)",animation:"fadeUp .5s ease both"}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{background:"rgba(255,255,255,.15)",borderRadius:100,padding:"4px 12px",fontSize:12,color:"rgba(255,255,255,.9)",fontWeight:600}}>⚙️ ניהול האירועים</span>
+              <span style={{background:"rgba(255,255,255,.15)",borderRadius:100,padding:"4px 12px",fontSize:12,color:"rgba(255,255,255,.9)",fontWeight:600}}>{isProducer?"🎬 חשבון מפיק":"⚙️ ניהול האירועים"}</span>
             </div>
-            <h1 style={{fontSize:"clamp(26px,3.5vw,40px)",fontWeight:900,color:"#fff",marginBottom:8,lineHeight:1.1}}>האירועים שלי</h1>
-            <p style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>צרו ונהלו את כל האירועים שלכם במקום אחד</p>
+            <h1 style={{fontSize:"clamp(26px,3.5vw,40px)",fontWeight:900,color:"#fff",marginBottom:8,lineHeight:1.1}}>{isProducer?"לוח המפיק":"האירועים שלי"}</h1>
+            <p style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>{isProducer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":"צרו ונהלו את כל האירועים שלכם במקום אחד"}</p>
           </div>
           <button onClick={()=>setShowForm(true)}
             style={{background:"#fff",color:"#9147D6",border:"none",borderRadius:14,padding:"14px 28px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 16px rgba(0,0,0,.15)",flexShrink:0}}>
@@ -8310,10 +8325,66 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
           </div>
         )}
 
+        {/* נכנסו דרך "כניסת מפיקים" אבל החשבון עוד לא מפיק */}
+        {producerEntry&&statsReady&&!isProducer&&(
+          <div style={{background:"#fff",border:"1.5px solid #BAE6FD",borderRadius:20,padding:"20px 22px",marginBottom:24,boxShadow:"0 2px 12px rgba(14,116,144,.08)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"flex-start"}}>
+              <div style={{fontSize:17,fontWeight:900,color:"#0E7490",marginBottom:6}}>🎬 החשבון עוד לא מוגדר כחשבון מפיק</div>
+              <button onClick={()=>setProducerEntry(false)} aria-label="סגירה" style={{background:"none",border:"none",fontSize:20,color:"#999",cursor:"pointer",lineHeight:1}}>×</button>
+            </div>
+            <div style={{fontSize:13,color:"#555",lineHeight:1.7,marginBottom:14}}>חשבון מפיק מציג לוח בקרה לכל האירועים שלכם: כמה אישרו, מה ממתין ואיזה אירוע דורש טיפול, עם כניסה מהירה לכל אירוע והמיתוג שלכם בהזמנה לאורחים. דברו איתנו ונפעיל לכם אותו.</div>
+            <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מפיק אירועים ומעוניין בחשבון מפיק ב-Sidor-IL")}`} target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",borderRadius:12,padding:"10px 18px",fontSize:14,fontWeight:800,textDecoration:"none"}}><WaIcon size={16}/> לפתיחת חשבון מפיק</a>
+          </div>
+        )}
+
+        {/* מפיק: סיכום כל האירועים + מה דורש טיפול */}
+        {isProducer&&events.length>0&&(()=>{
+          const t0=new Date();t0.setHours(0,0,0,0);
+          const dl=e=>e.date?Math.round((new Date(e.date+"T00:00:00")-t0)/864e5):null;
+          const up=events.filter(e=>{const d=dl(e);return d===null||d>=0;});
+          const sum=k=>up.reduce((n,e)=>n+((stats[e.id]||{})[k]||0),0);
+          const people=sum("people"),conf=sum("confirmed");
+          const attn=[];
+          up.forEach(e=>{
+            const d=dl(e);if(d===null||d>30)return;
+            const s=stats[e.id]||{},cp=s.people?Math.round(s.confirmed/s.people*100):0,issues=[];
+            if(!s.rows)issues.push("אין עדיין מוזמנים");
+            else if(d<=21&&s.pending&&cp<50)issues.push(`${s.pending} ממתינים לתשובה (${cp}% אישרו)`);
+            if(s.rows&&d<=10&&!s.tables)issues.push("אין מפת אולם");
+            if(d<=7&&s.unseated)issues.push(`${s.unseated} שאישרו עוד לא הושבו`);
+            if(issues.length)attn.push({e,d,issues});
+          });
+          attn.sort((a,b)=>a.d-b.d);
+          const tiles=[["📅",up.length,"אירועים קרובים"],["⏳",up.filter(e=>{const d=dl(e);return d!==null&&d<=30;}).length,"ב-30 הימים הקרובים"],["👥",people.toLocaleString("he-IL"),"מוזמנים (קרובים)"],["✅",`${people?Math.round(conf/people*100):0}%`,`אישרו · ${conf.toLocaleString("he-IL")}`],["✉️",sum("pending").toLocaleString("he-IL"),"ממתינים לתשובה"],["⚠️",attn.length,"דורשים טיפול"]];
+          return(<>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12,marginBottom:16}}>
+              {tiles.map(([ic,v,l])=>(
+                <div key={l} style={{background:"#fff",borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
+                  <div style={{fontSize:12,color:"#888",fontWeight:700,marginBottom:4}}>{ic} {l}</div>
+                  <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F"}}>{statsReady?v:"…"}</div>
+                </div>
+              ))}
+            </div>
+            {statsReady&&attn.length>0&&(
+              <div style={{background:"#FFF8F1",border:"1.5px solid #FBD38D",borderRadius:16,padding:"14px 16px",marginBottom:20}}>
+                <div style={{fontSize:14,fontWeight:900,color:"#9C4221",marginBottom:8}}>⚠️ דורשים טיפול ב-30 הימים הקרובים</div>
+                {attn.map(({e,d,issues})=>(
+                  <div key={e.id} onClick={()=>onSelect(e)} role="button" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:10,cursor:"pointer",background:"#fff",marginBottom:6,border:"1px solid #FEEBC8"}}>
+                    <span style={{fontSize:12,fontWeight:900,color:d<=7?"#C53030":"#9C4221",minWidth:58}}>{d===0?"היום":`עוד ${d} ימים`}</span>
+                    <span style={{fontSize:13,fontWeight:800,color:"#2B1D3F"}}>{eventTypeEmoji(e.event_type)} {e.name}</span>
+                    <span style={{flex:1,fontSize:12,color:"#744210"}}>{issues.join(" · ")}</span>
+                    <span style={{fontSize:12,fontWeight:800,color:"#9147D6",whiteSpace:"nowrap"}}>לאירוע ←</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>);
+        })()}
+
         {/* מפיק: לוח בקרה בטבלה (אפשר לעבור לכרטיסים) */}
         {isProducer&&events.length>0&&(
           <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
-            <span style={{background:"#E0F2FE",color:"#0E7490",borderRadius:100,padding:"5px 12px",fontSize:12,fontWeight:900}}>🎬 חשבון מפיק</span>
             {[["table","📋 טבלה"],["cards","🗂️ כרטיסים"]].map(([k,l])=>(
               <button key={k} onClick={()=>setView(k)} aria-pressed={(view||"table")===k} style={{background:(view||"table")===k?"#2B1D3F":"#fff",color:(view||"table")===k?"#fff":"#2B1D3F",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"7px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
             ))}
@@ -8335,13 +8406,20 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
                 <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש אירוע, אולם או שם" style={{flex:"1 1 200px",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"7px 12px",fontSize:13,fontFamily:"inherit",outline:"none"}}/>
               </div>
               <div style={{overflowX:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:720}}>
-                  <thead><tr style={{background:"#F7F3FB",textAlign:"right"}}>{["אירוע","תאריך","עוד","מוזמנים","אישרו","ממתינים","הושבו","SMS"].map(h=><th key={h} style={{padding:"9px 10px",fontWeight:900,color:"#4A3D66",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:820}}>
+                  <thead><tr style={{background:"#F7F3FB",textAlign:"right"}}>{["אירוע","תאריך","עוד","התקדמות","מוזמנים","אישרו","ממתינים","הושבו","SMS"].map(h=><th key={h} style={{padding:"9px 10px",fontWeight:900,color:"#4A3D66",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
                   <tbody>{list.map(e=>{const s=stats[e.id]||{},d=dl(e),conf=s.people?Math.round(s.confirmed/s.people*100):0,seat=s.rows?Math.round(s.seated/s.rows*100):0;return(
                     <tr key={e.id} onClick={()=>onSelect(e)} style={{borderTop:"1px solid #F0EAF7",cursor:"pointer"}} onMouseEnter={x=>x.currentTarget.style.background="#FBF8FE"} onMouseLeave={x=>x.currentTarget.style.background=""}>
                       <td style={{padding:"10px",fontWeight:800,color:"#2B1D3F"}}>{eventTypeEmoji(e.event_type)} {e.name}{e._shared&&<span style={{fontSize:10,color:"#0E7490",marginRight:6}}>משותף</span>}<div style={{fontSize:11,color:"#999",fontWeight:500}}>{e.venue||""}</div></td>
                       <td style={{padding:"10px",whiteSpace:"nowrap"}}>{e.date?new Date(e.date+"T00:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—"}</td>
                       <td style={{padding:"10px",whiteSpace:"nowrap",fontWeight:800,color:d!==null&&d>=0&&d<=14?"#C53030":"#666"}}>{d===null?"—":d<0?"עבר":d===0?"היום":`${d} ימים`}</td>
+                      <td style={{padding:"10px",whiteSpace:"nowrap"}}>{(()=>{
+                        // אותם שלבים כמו "השלמו את האירוע" במסך הראשי של האירוע
+                        const steps=[["הוספת מוזמנים",s.rows>0],["שליחת הזמנה",(s.confirmed||0)+(s.declined||0)>0],["מפת אולם",s.tables>0],["הושבה",s.seated>0]];
+                        const done=steps.filter(x=>x[1]).length,next=steps.find(x=>!x[1]);
+                        return(<><div style={{display:"flex",gap:3,marginBottom:3}}>{steps.map(([l,ok])=><span key={l} title={l} style={{width:14,height:6,borderRadius:3,background:ok?"#25D366":"#E2E8F0"}}/>)}</div>
+                          <div style={{fontSize:11,fontWeight:700,color:next?"#9147D6":"#276749"}}>{next?`הבא: ${next[0]}`:"✓ הכל מוכן"}</div></>);
+                      })()}</td>
                       <td style={{padding:"10px"}}>{s.people||0}</td>
                       <td style={{padding:"10px",minWidth:110}}>{pctCell(conf,"#25D366")}</td>
                       <td style={{padding:"10px",color:s.pending?"#B45309":"#999",fontWeight:700}}>{s.pending||0}</td>
@@ -9622,7 +9700,8 @@ export default function App() {
       applyRef(u);
       // שחזור האירוע האחרון אחרי רענון דף
       const savedId=localStorage.getItem("sidor_event_id");
-      if(u&&savedId){
+      let producerEntry=false;try{producerEntry=!!sessionStorage.getItem(PRODUCER_ENTRY_KEY);}catch{}
+      if(u&&savedId&&!producerEntry){
         // RLS מחזיר רק אירוע שלי או אירוע ששותף איתי
         const{data:ev}=await sb.from("events").select("*").eq("id",savedId).maybeSingle();
         if(ev)setEvent(ev);
@@ -9734,7 +9813,12 @@ export default function App() {
 
   if(!user||showLanding) return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
     {/* משתמש מחובר שחזר לדף הבית: כפתורי הכניסה מחזירים אותו ישר למערכת */}
-    <LandingPage onOpenAuth={mode=>{setShowLanding(false);if(!user)setAuthMode(mode);}} onLogout={user?logout:null} loggedIn={!!user}/>
+    <LandingPage onOpenAuth={mode=>{
+      setShowLanding(false);
+      // כניסת מפיקים: תמיד ללוח האירועים (לא לאירוע האחרון), גם אחרי חזרה מכניסה עם גוגל
+      if(mode==="producer"){try{sessionStorage.setItem(PRODUCER_ENTRY_KEY,"1");}catch{}selectEvent(null);}
+      if(!user)setAuthMode(mode);
+    }} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
     <AccessibilityWidget/>
   </>);
