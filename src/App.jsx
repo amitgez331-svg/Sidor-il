@@ -210,7 +210,8 @@ const SMS_MAX=200;
 const SHORT_LINK_HOST="sidoril.com/i/";
 const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; // כמויות מהירות באדמין
 // רכישת SMS לפי כמות חופשית: מחיר להודעה × כמות.
-// רכישה ראשונה (אין עדיין חבילה בסיסית ומעלה) מוסיפה את מחיר החבילה הבסיסית — SMS דורש אותה
+// הודעות נקנות בנפרד. BASIC_PRICE = פתיחת הושבה מעל FREE_SEATING_LIMIT מוזמנים.
+// hasBasicPkg כולל גם חבילות ישנות (sms / auto) שנרכשו כשהן כללו את הבסיסית
 const SMS_UNIT_PRICE=0.5, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000, BASIC_PRICE=100;
 const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p?.package_id??p));
 const smsTotal=(q,base=0,unit=SMS_UNIT_PRICE)=>Math.round(q*unit*100)/100+base;
@@ -243,7 +244,7 @@ function SmsQuantityPicker({ value, onChange, color=C.blue, baseFee=0, unitPrice
         onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:color,cursor:"pointer",direction:"ltr"}}/>
       <div style={{display:"flex",justifyContent:"space-between",fontSize:10.5,color:C.muted,fontWeight:700,direction:"ltr"}}><span>{SMS_BUY_MIN}</span><span>{SMS_BUY_SLIDER_MAX.toLocaleString()}+</span></div>
       {/* החבילה הבסיסית: ✓ מסומן אוטומטית ומוסיף ₪100 (אלא אם כבר נרכשה) */}
-      {onBaseOn&&<div style={{marginTop:10,background:baseOwned?"#F0FFF4":baseOn?"#F4EEFC":"#fff",border:`1.5px solid ${baseOwned?"#9AE6B4":baseOn?C.blueL:C.border}`,borderRadius:12,padding:"10px 12px"}}>
+      {onBaseOn&&baseFee>0&&<div style={{marginTop:10,background:baseOwned?"#F0FFF4":baseOn?"#F4EEFC":"#fff",border:`1.5px solid ${baseOwned?"#9AE6B4":baseOn?C.blueL:C.border}`,borderRadius:12,padding:"10px 12px"}}>
         {/* חובה: אם הבסיסית עוד לא נרכשה היא נוספת (₪100) ואי אפשר לבטל; אם כבר נרכשה — לא מחויבים */}
         <label style={{display:"flex",alignItems:"center",gap:8,cursor:"default",fontSize:13,fontWeight:800,color:C.text}}>
           <input type="checkbox" checked disabled readOnly style={{width:18,height:18,accentColor:baseOwned?C.success:C.blueM}}/>
@@ -1591,12 +1592,13 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── PRICING ─────────────────────────────────────────────── */}
       <section id="pricing" style={{padding:"100px 6vw",background:"linear-gradient(180deg,#FFFBF7,#FFF3F7 50%,#FFFBF7)"}}>
         <div style={{maxWidth:1020,margin:"0 auto"}}>
-          {sectionTitle("מחירים","מחירים","שקופים","מחיר אחד לאירוע, ומוסיפים הודעות SMS ו-WhatsApp כשצריך.")}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
+          {sectionTitle("מחירים","מחירים","שקופים",`חינם עד ${FREE_SEATING_LIMIT} מוזמנים, ₪${BASIC_PRICE} לאירוע גדול יותר, והודעות SMS ו-WhatsApp לפי כמות, כשצריך.`)}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
-              {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","תודה אחרי האירוע"],cta:"לפרטים",highlight:false,c:LP.mint},
-              {name:"בסיסית",price:"₪100",desc:"לאירוע",features:["סידורי הושבה מלאים ומפת אולם","הושבה אוטומטית ומספרי שולחנות","אישורי הגעה עם קישור אישי","שליחה ידנית דרך קישור","הדפסת סידור ההושבה"],cta:"אני רוצה את הבסיסית",highlight:true,c:LP.rose},
-              {name:"SMS",price:"₪0.5",desc:"להודעה",features:["בוחרים כמות בדיוק לפי הצורך","הזמנה, תזכורת, מספר שולחן ותודה","📞 תוספת מוקד מתקשר: ₪0.8 לרשומה"],cta:"לפרטים",highlight:false,c:LP.gold},
+              {name:"חינם",price:"₪0",desc:`עד ${FREE_SEATING_LIMIT} מוזמנים`,features:["כל הכלים פתוחים מההרשמה","אישורי הגעה עם קישור אישי","הזמנה דיגיטלית ושליחה דרך קישור",`סידורי הושבה ומפת אולם עד ${FREE_SEATING_LIMIT} מוזמנים`,"תקציב, משימות ומתנות"],cta:"מתחילים בחינם",highlight:false,c:LP.mint},
+              {name:"פתיחת הושבה",price:`₪${BASIC_PRICE}`,desc:"לאירוע",features:[`סידורי הושבה מעל ${FREE_SEATING_LIMIT} מוזמנים`,"מפת אולם, גרירה והושבה אוטומטית","מספרי שולחנות והדפסת סידור ההושבה","תשלום חד-פעמי, בלי מנוי"],cta:"מתחילים להושיב",highlight:true,c:LP.rose},
+              {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","בלי צורך בחבילה"],cta:"לפרטים",highlight:false,c:LP.violet},
+              {name:"SMS",price:"₪0.5",desc:"להודעה",features:["בוחרים כמות בדיוק לפי הצורך","הזמנה, תזכורת, מספר שולחן ותודה","📞 תוספת מוקד מתקשר: ₪0.8 לרשומה","בלי צורך בחבילה"],cta:"לפרטים",highlight:false,c:LP.gold},
             ].map((pkg,i)=>(
               <div key={pkg.name} className="lp-card fu"
                 style={{transitionDelay:`${i*.1}s`,borderRadius:28,padding:"38px 30px",display:"flex",flexDirection:"column",overflow:"visible",
@@ -2030,14 +2032,12 @@ function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
-  const hasSeating=userPackages.some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p.package_id??p));
-  const hasRsvp=userPackages.some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p.package_id??p));
-  const isFreePlan=userPackages.length===0;
+  // totalGuests = מספר המוזמנים (סכום guest_count): הושבה חינם עד FREE_SEATING_LIMIT
   const items=[
     {id:"home",icon:"🏠",label:"ראשי"},
-    {id:"seating",icon:"🪑",label:"הושבה",locked:!hasSeating},
-    {id:"rsvp",icon:"✅",label:"הגעה",locked:!hasRsvp},
-    {id:"add",icon:"➕",label:"הוסף",locked:isFreePlan&&totalGuests>=50},
+    {id:"seating",icon:"🪑",label:"הושבה",locked:screenLocked("seating",userPackages,totalGuests)},
+    {id:"rsvp",icon:"✅",label:"הגעה"},
+    {id:"add",icon:"➕",label:"הוסף"},
     {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
   return(
@@ -2045,8 +2045,8 @@ function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpi
       {items.map(item=>(
         <button key={item.id} onClick={()=>{
           if(item.locked){
-            if(item.id==="seating") alert("🔒 סידורי הושבה זמינים בחבילה הבסיסית (₪100)");
-            else if(item.id==="add") alert("🔒 בלי חבילה אפשר להוסיף עד 50 אורחים. החבילה הבסיסית (₪100) פותחת הוספה ללא הגבלה.");
+            alert(`🔒 סידורי הושבה בחינם עד ${FREE_SEATING_LIMIT} מוזמנים. לאירוע גדול יותר: פתיחה חד-פעמית של ₪${BASIC_PRICE}.`);
+            onChange("packages");
             return;
           }
           onChange(item.id);
@@ -3097,14 +3097,12 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
 
 // מסכים שזוג עם גישה מוגבלת לא רואה (הודעות וחבילות נשארות אצל בעל האירוע / המפיק)
 const COUPLE_HIDDEN=["sms","whatsapp","packages"];
-// מסך שדורש חבילה (כמו בתפריט הצד)
-const screenLocked=(id,userPackages)=>{
-  const has=list=>userPackages.some(p=>list.includes(p.package_id??p));
-  if(id==="rsvp"||id==="checkin"||id==="gifts")return !has(["basic","seating","sms","auto","vip","staff","producer"]);
-  if(id==="seating")return !has(["basic","seating","sms","auto","vip","staff","producer"]); // הבסיסית (₪100) כוללת סידורי הושבה
-  if(id==="sms")return !has(["sms","auto","vip"]);
-  if(id==="whatsapp")return !has(["auto","vip","whatsapp"]); // whatsapp = מזהה ישן מהאדמין
-  if(id==="ai"||id==="budget"||id==="import")return userPackages.length===0;
+// כל הכלים פתוחים בהרשמה. רק סידורי הושבה (והושבת AI) מעל FREE_SEATING_LIMIT מוזמנים דורשים את הבסיסית (₪100).
+// הודעות SMS / WhatsApp נקנות בנפרד לפי כמות, בלי קשר לחבילה
+const FREE_SEATING_LIMIT=50;
+const guestPeople=list=>(list||[]).reduce((n,g)=>n+(g.guest_count||1),0);
+const screenLocked=(id,userPackages,people=0)=>{
+  if(id==="seating"||id==="ai")return people>FREE_SEATING_LIMIT&&!hasBasicPkg(userPackages);
   return false;
 };
 // המסך האחרון (ותצוגת ההושבה) נשמר בדפדפן כדי שרענון יחזיר לאותו מקום באותו אירוע
@@ -3366,7 +3364,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {label:"שליחת הזמנה לאורחים",go:"invite",done:allG.some(g=>g.rsvp==="confirmed"||g.rsvp==="declined")},
     {label:"בניית מפת האולם",go:"seating",done:tables.length>0},
     {label:"הושבת האורחים",go:"seating",done:tables.some(t=>(t.guests||[]).length>0)},
-    {label:"בחירת חבילה",go:"packages",done:userPackages.length>0},
+    // פתיחת הושבה נדרשת רק לאירוע מעל FREE_SEATING_LIMIT מוזמנים
+    ...(guestPeople(allG)>FREE_SEATING_LIMIT?[{label:`פתיחת הושבה (מעל ${FREE_SEATING_LIMIT})`,go:"packages",done:hasBasicPkg(userPackages)}]:[]),
   ];
   const [trialExpired] = useState(false);
   const [trialHours] = useState(0);
@@ -3379,7 +3378,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     sb.from("event_members").select("role").eq("event_id",event.id).eq("email",String(user.email||"").toLowerCase()).maybeSingle().then(({data})=>setMemberRole(data?.role||"editor"));
   },[event.id]);
   const couple=memberRole==="couple";
-  const lockedFor=id=>screenLocked(id,userPackages)||(couple&&COUPLE_HIDDEN.includes(id));
+  const lockedFor=id=>screenLocked(id,userPackages,guestPeople([...guests,...tables.flatMap(t=>t.guests||[])]))||(couple&&COUPLE_HIDDEN.includes(id));
 
   useEffect(()=>{
     const last=readLastScreen(event.id);
@@ -3391,8 +3390,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   },[event.id]);
   // שמירת המסך הנוכחי לרענון הבא
   useEffect(()=>{try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));}catch{}},[event.id,screen,view]);
-  // מסך שנשמר אבל נעול (למשל החבילה הסתיימה) — חוזרים לראשי
-  useEffect(()=>{if(!loading&&lockedFor(screen))setScreen("home");},[loading,userPackages,memberRole]);
+  // מסך נעול (למשל הושבה כשעברו את מגבלת המוזמנים בחינם): להושבה — למסך החבילות, לשאר — לראשי
+  useEffect(()=>{if(!loading&&lockedFor(screen))setScreen(screen==="seating"||screen==="ai"?"packages":"home");},[loading,userPackages,memberRole,screen,guests,tables]);
   const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),event.user_id&&event.user_id!==user.id
     // אירוע ששותף איתי: החבילות של בעל האירוע
     ?sb.rpc("event_packages",{p_event:event.id}).then(r=>({data:(r.data||[]).map(p=>({package_id:p}))}))
@@ -3824,16 +3823,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             </button>
           </div>
         )}
-        {modal==="addGuest"&&(userPackages.length===0&&total>=50
-          ?<div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setModal(null)}>
-            <div style={{background:"#fff",borderRadius:20,padding:24,maxWidth:360,width:"100%",direction:"rtl",textAlign:"center"}}>
-              <div style={{fontSize:48,marginBottom:12}}>🔒</div>
-              <div style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>הגעת למגבלת 50 אורחים</div>
-              <div style={{fontSize:13,color:"#666",marginBottom:20,lineHeight:1.6}}>בלי חבילה ניתן להוסיף עד 50 אורחים. החבילה הבסיסית (₪100) פותחת הוספה ללא הגבלה, סידורי הושבה ואישורי הגעה.</div>
-              <button onClick={()=>{setModal(null);setScreen("packages");}} style={{width:"100%",background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📦 שדרג חבילה</button>
-            </div>
-          </div>
-          :<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
+        {modal==="addGuest"&&(<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
         )}
         {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")}/>}
         {screen==="import"&&(
@@ -3872,8 +3862,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               <div style={{width:40,height:4,borderRadius:2,background:"#E5E7EB",margin:"0 auto 20px"}}/>
               <div style={{textAlign:"center",marginBottom:20}}>
                 <div style={{fontSize:48,marginBottom:8}}>🔒</div>
-                <div style={{fontSize:18,fontWeight:900,color:C.text,marginBottom:6}}>פיצ'ר פרימיום</div>
-                <div style={{fontSize:14,color:C.muted,lineHeight:1.7}}>פיצ'ר זה זמין בחבילות בתשלום.<br/>שדרג עכשיו וקבל גישה מלאה.</div>
+                <div style={{fontSize:18,fontWeight:900,color:C.text,marginBottom:6}}>סידורי הושבה מעל {FREE_SEATING_LIMIT} מוזמנים</div>
+                <div style={{fontSize:14,color:C.muted,lineHeight:1.7}}>סידורי הושבה בחינם עד {FREE_SEATING_LIMIT} מוזמנים.<br/>לאירוע גדול יותר: פתיחה חד-פעמית של ₪{BASIC_PRICE}, בלי הגבלת מוזמנים.</div>
               </div>
               <button onClick={()=>{setModal(null);setScreen("packages");}}
                 style={{width:"100%",background:`linear-gradient(135deg,#B45309,#D97706)`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
@@ -3896,7 +3886,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
         {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
       </div>
-      <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={total} trialExpired={trialExpired}/>
+      <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} trialExpired={trialExpired}/>
       {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
       {autoSeatModal}{templatesModal}
@@ -6000,10 +5990,9 @@ function ContactsScreen({ event, onAdd }) {
 
 // ─── PACKAGES SCREEN ──────────────────────────────────────────────────────────
 function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
-  // החבילה הבסיסית: נוספת אוטומטית (₪100) רק אם עוד לא נרכשה
+  // הודעות נקנות בנפרד, בלי חבילה בסיסית. הבסיסית (₪100) פותחת רק הושבה מעל FREE_SEATING_LIMIT מוזמנים
   const baseOwned=hasBasicPkg(userPackages);
-  const baseOn=!baseOwned, setBaseOn=()=>{}; // תמיד: ₪100 רק אם הבסיסית עוד לא נרכשה
-  const smsBase=baseOwned?0:BASIC_PRICE;
+  const smsBase=0;
   const waDefault=Math.max(50,Math.ceil((recordCount||100)/10)*10); // ברירת מחדל: מספר הרשומות באירוע
   // תוספת מוקד מתקשר לכל חבילה (sms / auto) + מספר הרשומות למוקד ב-SMS
   const [callOn,setCallOn]=useState({}), [callRecs,setCallRecs]=useState(waDefault);
@@ -6017,26 +6006,31 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
 
   const packages=[
     {
-      id:"basic", name:"בסיסית", price:100, priceLabel:"₪100", color:C.blue, icon:"🪑",
-      badge:"פופולרי", featured:true,
-      desc:"סידורי הושבה + אישורי הגעה · שליחה ידנית דרך קישור",
-      features:["✅ סידורי הושבה מלאים: מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ אישורי הגעה עם קישור אישי לכל אורח","✅ שליחה ידנית של ההזמנה דרך קישור (בוואטסאפ האישי או בהעתקה)","✅ עדכון בזמן אמת","✅ הזמנה דיגיטלית יפה"],
+      id:"free", name:"חינם", price:0, priceLabel:"₪0", color:"#276749", icon:"🎁",
+      badge:`עד ${FREE_SEATING_LIMIT} מוזמנים`, featured:false,
+      desc:"כל הכלים פתוחים מההרשמה",
+      features:["✅ אישורי הגעה עם קישור אישי לכל אורח","✅ הזמנה דיגיטלית יפה ושליחה דרך קישור","✅ רשימת מוזמנים ללא הגבלה, ייבוא מאקסל ואנשי קשר","✅ תקציב, משימות, מתנות וכניסה לאולם",`✅ סידורי הושבה ומפת אולם עד ${FREE_SEATING_LIMIT} מוזמנים`],
+    },
+    {
+      id:"basic", name:"פתיחת הושבה", price:BASIC_PRICE, priceLabel:fmtShekel(BASIC_PRICE), color:C.blue, icon:"🪑",
+      badge:"לאירוע", featured:true,
+      desc:`סידורי הושבה מעל ${FREE_SEATING_LIMIT} מוזמנים · תשלום חד-פעמי`,
+      features:["✅ סידורי הושבה ללא הגבלת מוזמנים","✅ מפת אולם, גרירה והושבה אוטומטית","✅ מספרי שולחנות והדפסת סידור ההושבה","✅ כל מה שבחבילה החינמית"],
     },
     {
       id:"sms", name:"SMS", price:null, priceLabel:`${fmtShekel(SMS_UNIT_PRICE)} להודעה`, color:"#059669", icon:"📱",
-      badge:"תוספת", featured:false,
-      desc:"תוספת לחבילה הבסיסית · בוחרים כמות",
-      note:"דורש את החבילה הבסיסית (₪100).",
+      badge:"לפי כמות", featured:false,
+      desc:"בוחרים כמות · בלי חבילה",
       smsPicker:true,
-      features:["✅ כל מה שבבסיסית","✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע",`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
+      features:["✅ שליחת SMS לכל האורחים","✅ תזכורות לפני האירוע","✅ מספר שולחן ב-SMS ביום האירוע","✅ הודעת תודה אחרי האירוע",`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
     },
     {
       id:"auto", name:"הודעות WhatsApp", price:null, priceLabel:`${fmtShekel(WA_RECORD_PRICE)} לרשומה`, color:"#25D366", icon:"💬",
       badge:"4 סבבים", featured:false,
       desc:"4 הודעות WhatsApp אוטומטיות לכל רשומה",
-      note:"דורש את החבילה הבסיסית (₪100). רשומה = אורח או משפחה עם מספר טלפון אחד.",
+      note:"רשומה = אורח או משפחה עם מספר טלפון אחד.",
       waPicker:true,
-      features:["✅ כל מה שבבסיסית",...WA_ROUNDS.map(r=>"💬 "+r),`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
+      features:[...WA_ROUNDS.map(r=>"💬 "+r),`📞 אפשר להוסיף מוקד מתקשר (+${fmtShekel(CALL_RECORD_PRICE)} לרשומה)`],
     },
     {
       id:"staff", name:"צוות הושבה", price:1800, priceLabel:"החל מ ₪1,800", color:"#7C3AED", icon:"👥",
@@ -6086,7 +6080,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                 transition:"all .2s"}}>
 
               {/* ראש כרטיס */}
-              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);setBaseOn(!baseOwned);}}
+              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}
                 style={{padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:46,height:46,borderRadius:13,background:pkg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
                   {pkg.icon}
@@ -6144,7 +6138,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   {/* הודעות WhatsApp: מד + כמות רשומות × 1.8, 4 סבבים */}
                   {pkg.waPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
+                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
                         callOn={!!callOn.auto} onCallOn={v=>setCallOn(c=>({...c,auto:v}))}
                         onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
                     </div>
@@ -6152,15 +6146,15 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
                   {pkg.smsPicker&&(
                     <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} baseOn={baseOn} onBaseOn={setBaseOn} baseOwned={baseOwned} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
+                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
                         callOn={!!callOn.sms} onCallOn={v=>setCallOn(c=>({...c,sms:v}))} callRecords={callRecs} onCallRecords={setCallRecs}/>
                     </div>
                   )}
 
                   {/* כפתור */}
-                  {pkg.id==="free"?(
+                  {pkg.id==="free"||(pkg.id==="basic"&&baseOwned)?(
                     <div style={{background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#276749",fontWeight:700}}>
-                      ✅ אתה משתמש בחבילה זו כעת
+                      {pkg.id==="free"?"✅ פתוחה לכל חשבון":"✅ כבר ברשותך"}
                     </div>
                   ):(
                     <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}}
@@ -6363,10 +6357,10 @@ function RecipientPicker({ withPhone, value, onChange }) {
 }
 
 function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
-  // החבילה הבסיסית: נוספת אוטומטית (₪100) רק אם עוד לא נרכשה
+  // הודעות נקנות בנפרד, בלי החבילה הבסיסית (היא פותחת רק הושבה מעל FREE_SEATING_LIMIT מוזמנים)
   const baseOwned=hasBasicPkg(userPackages);
-  const baseOn=!baseOwned, setBaseOn=()=>{}; // תמיד: ₪100 רק אם הבסיסית עוד לא נרכשה
-  const smsBase=baseOwned?0:BASIC_PRICE;
+  const baseOn=false, setBaseOn=()=>{};
+  const smsBase=0;
   const ew=eventWords(event);
   const groomName = String(event.groom_name||"").trim();
   const brideName = String(event.bride_name||"").trim();
@@ -6755,8 +6749,8 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
 // ─── WHATSAPP SCREEN ──────────────────────────────────────────────────────────
 function WhatsAppScreen({ event, guests, userPackages=[] }) {
-  // חבילה: כמות רשומות × ₪1.8 + מוקד אופציונלי + ₪100 בסיסית רק אם עוד לא נרכשה (כמו בדף החבילות)
-  const baseOwned=hasBasicPkg(userPackages), baseOn=!baseOwned, setBaseOn=()=>{}, smsBase=baseOwned?0:BASIC_PRICE;
+  // חבילה: כמות רשומות × ₪1.8 + מוקד אופציונלי. נקנית בנפרד, בלי החבילה הבסיסית
+  const baseOwned=hasBasicPkg(userPackages), baseOn=false, setBaseOn=()=>{}, smsBase=0;
   const [waQty,setWaQty]=useState(Math.max(50,Math.ceil((guests.length||100)/10)*10)), [waCall,setWaCall]=useState(false);
   const waSum=pickerTotal({value:waQty,baseFee:smsBase,unitPrice:WA_RECORD_PRICE,callOn:waCall});
   const ew=eventWords(event);
