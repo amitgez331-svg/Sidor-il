@@ -100,22 +100,23 @@ const TABLE_TYPES = {
 // שולחן עגול ≈ 160 יחידות. "ענק" (xl) הוא התקרה: האולם לא נפתח מעבר לזה
 const HALL_SIZES={s:[1400,880],m:[1800,1120],l:[2300,1420],xl:[2900,1800]};
 const HALL_SIZE_ORDER=["s","m","l","xl"];
-const HALL_SIZE_LABELS={auto:"אוטומטי",s:"קטן · עד ~20 שולחנות",m:"בינוני · עד ~35",l:"גדול · עד ~60",xl:"ענק · עד ~100"};
 const HALL_MARGIN=40;
-// bg/fg/border: עיצוב האלמנט במפה. w/h: גודל התחלתי
+// עיצוב כמו מפת האולם המאוירת בדף הבית (SeatingPlanDemo): במה ושולחן חתן-כלה כגלולה ורודה-סגולה,
+// רחבה בפרקט, ושאר האלמנטים כרטיס לבן עם אריח אייקון בצבע (tile). w/h: גודל התחלתי
 const HALL_ITEM_KINDS={
-  stage:   {label:"במה",           icon:"🎤",w:340,h:84, bg:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",fg:"#fff"},
-  dance:   {label:"רחבת ריקודים",  icon:"💃",w:380,h:280,bg:"repeating-conic-gradient(#F7E7D6 0 25%,#EFD6BC 0 50%) 0 0/48px 48px",fg:"#7A4E22",border:"#E2C29E"},
-  bar:     {label:"בר",            icon:"🥂",w:170,h:64, bg:"#fff",fg:"#3A2464",border:"#EADFF3"},
-  entrance:{label:"כניסה",         icon:"🚪",w:180,h:44, bg:"#fff",fg:"#6E6585",border:"#EADFF3"},
-  dj:      {label:"עמדת DJ",       icon:"🎧",w:140,h:70, bg:"#2B1D3F",fg:"#fff"},
-  chuppah: {label:"חופה",          icon:"💐",w:170,h:170,bg:"radial-gradient(circle,#FFF 0 55%,#FDE7F0 100%)",fg:"#B03A8C",border:"#F7B7D3"},
-  buffet:  {label:"מזנון / בופה",  icon:"🍽️",w:260,h:70, bg:"#FFF8EC",fg:"#8A5A00",border:"#F3D9A4"},
-  photo:   {label:"פינת צילום",    icon:"📸",w:150,h:110,bg:"#F1F7FF",fg:"#2B6CB0",border:"#C6DDF7"},
-  kids:    {label:"פינת ילדים",    icon:"🧸",w:190,h:150,bg:"#F0FFF7",fg:"#276749",border:"#B7EBCF"},
-  gifts:   {label:"עמדת מתנות",    icon:"🎁",w:140,h:64, bg:"#FFF0F6",fg:"#B03A8C",border:"#F7C6DD"},
-  wc:      {label:"שירותים",       icon:"🚻",w:140,h:64, bg:"#F7F7FA",fg:"#4A5568",border:"#E2E8F0"},
-  text:    {label:"טקסט חופשי",    icon:"🏷️",w:180,h:56, bg:"#fff",fg:"#2B1D3F",border:"#E2E8F0"},
+  stage:   {label:"במה",              icon:"🎤",w:340,h:64, pill:true},
+  head:    {label:"שולחן חתן וכלה",   icon:"💍",w:300,h:54, pill:true,chairs:true},
+  dance:   {label:"רחבת ריקודים",     icon:"✨",w:300,h:340,dance:true},
+  bar:     {label:"בר",               icon:"🥂",w:170,h:64, tile:"#FFF0F6"},
+  entrance:{label:"כניסה",            icon:"🚪",w:180,h:50, tile:"#F1EAFF"},
+  dj:      {label:"עמדת DJ",          icon:"🎧",w:150,h:64, tile:"#EEF5FF"},
+  chuppah: {label:"חופה",             icon:"💐",w:170,h:170,tile:"#FFF0F6",round:true},
+  buffet:  {label:"מזנון / בופה",     icon:"🍽️",w:260,h:64, tile:"#FFF6E2"},
+  photo:   {label:"פינת צילום",       icon:"📸",w:160,h:100,tile:"#EEF5FF"},
+  kids:    {label:"פינת ילדים",       icon:"🧸",w:190,h:140,tile:"#E9FBF4"},
+  gifts:   {label:"עמדת מתנות",       icon:"🎁",w:160,h:64, tile:"#FFF0F6"},
+  wc:      {label:"שירותים",          icon:"🚻",w:150,h:64, tile:"#F3F1F7"},
+  text:    {label:"טקסט חופשי",       icon:"🏷️",w:180,h:56, tile:"#F1EAFF"},
 };
 
 const RELATION_COLORS = {
@@ -658,7 +659,6 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     <circle cx={cx} cy={cy} r={R+5} fill="none" stroke="#F1EAF8" strokeWidth={3.5}/>
     <circle cx={cx} cy={cy} r={R+5} fill="none" stroke={ring} strokeWidth={3.5} strokeLinecap="round"
       strokeDasharray={`${circ*Math.min(occupied/total,1)} ${circ}`} transform={`rotate(-90 ${cx} ${cy})`} style={{transition:"stroke-dasharray .4s"}}/>
-    <circle cx={cx} cy={cy} r={R-9} fill="none" stroke={accent} strokeOpacity=".3" strokeDasharray="3 5"/>
     <Flowers x={cx} y={cy-29} s={.85}/>
   </>,labelBox({inset:0,paddingTop:12},22));
 }
@@ -3165,8 +3165,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     if(fixDefRef.current)return fixDefRef.current;
     let items;
     if(!tables.length&&!h.stage){
-      const [W]=HALL_SIZES.m;
-      items=[{id:"stage",kind:"stage",x:W/2-170,y:40,w:340,h:84},{id:"dance",kind:"dance",x:W/2-190,y:150,w:380,h:280},{id:"bar",kind:"bar",x:W-230,y:40,w:170,h:64},{id:"entrance",kind:"entrance",x:W/2-90,y:HALL_SIZES.m[1]-70,w:180,h:44}];
+      // אולם חדש: כמו ההדגמה בדף הבית — במה, שולחן חתן-כלה, רחבה, בר וכניסה
+      const [W,H]=HALL_SIZES.m,K=HALL_ITEM_KINDS;
+      items=[{id:"stage",kind:"stage",x:W/2-K.stage.w/2,y:40,w:K.stage.w,h:K.stage.h},{id:"head",kind:"head",x:W/2-K.head.w/2,y:134,w:K.head.w,h:K.head.h},
+        {id:"dance",kind:"dance",x:W/2-K.dance.w/2,y:232,w:K.dance.w,h:K.dance.h},{id:"bar",kind:"bar",x:W-230,y:40,w:K.bar.w,h:K.bar.h},{id:"entrance",kind:"entrance",x:W/2-K.entrance.w/2,y:H-80,w:K.entrance.w,h:K.entrance.h}];
     }else{
       const bs=tables.map(tableBox);
       const [x0,y0,x1,y1]=bs.length?[Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))]:[0,120,800,420];
@@ -3194,7 +3196,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const fit=HALL_SIZE_ORDER.map(k=>HALL_SIZES[k]).find(([w,h])=>w>=need[0]&&h>=need[1]);
     return fit||[Math.max(need[0],HALL_SIZES.xl[0]),Math.max(need[1],HALL_SIZES.xl[1])]; // אירוע ישן שחורג — לא חותכים
   };
-  const hallRect=()=>{const [W,H]=hallDims();return [0,0,W,H];};
+  // מה שרואים: השולחנות והאלמנטים + שוליים, מורחב ליחס של המסך — בזום "כל האולם" זה ממלא את כל המפה.
+  // עוד שולחנות = שטח גדול יותר = זום קטן יותר. עם מעט שולחנות הזום לא עולה על 1 (לא ענק)
+  // שוליים: מקום לכפתורי הזום (משמאל למעלה) ולכותרת (מימין למטה) בלי לכסות שולחנות
+  const HALL_PAD=90;
+  const hallRect=()=>{
+    const el=mapBoxRef.current,cw=el?.clientWidth||1000,ch=Math.max(el?.clientHeight||600,1);
+    const [x0,y0,x1,y1]=contentBox();
+    let w=Math.max(x1-x0+2*HALL_PAD,cw),h=Math.max(y1-y0+2*HALL_PAD,ch);
+    if(w/h<cw/ch)w=h*cw/ch;else h=w*ch/cw;
+    const cx=(x0+x1)/2,cy=(y0+y1)/2;
+    return [cx-w/2,cy-h/2,cx+w/2,cy+h/2];
+  };
   // גרירה בתוך האולם: off = גבולות הצורה ביחס לנקודת המיקום
   const clampIn=(x,y,off,r=hallRect())=>({x:Math.round(Math.min(r[2]-off[2],Math.max(r[0]-off[0],x))),y:Math.round(Math.min(r[3]-off[3],Math.max(r[1]-off[1],y)))});
   const tableOff=type=>tableBox({x:0,y:0,type});
@@ -3205,16 +3218,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start;const want=len<=size?(size-len)/2:Math.min(0,Math.max(size-len,a));return start+(want-a);};
     return {x:Math.round(ax(x0,x1,el.clientWidth,p.x)),y:Math.round(ax(y0,y1,el.clientHeight,p.y))};
   };
-  // הזום הכי רחוק = כל האולם על המסך (עם שוליים קטנים)
+  // הזום הכי רחוק = כל האולם ממלא את המפה
   const minZoom=()=>{
     const el=mapBoxRef.current;if(!el)return ZMIN;
-    const [W,H]=hallDims();
-    return +Math.min(1.3,(el.clientWidth-16)/W,(el.clientHeight-16)/H).toFixed(4);
+    const [x0,,x1]=hallRect();
+    return +(el.clientWidth/(x1-x0)).toFixed(4);
   };
   // מצייר את המצלמה ישר על ה-DOM (חלק בזמן גרירה), ושומר ל-state בסוף
   const paintCam=(p=panRef.current,z=zoomRef.current)=>{
     if(hallLayerRef.current)hallLayerRef.current.style.transform=`translate(${p.x}px,${p.y}px) scale(${z})`;
-    const el=mapBoxRef.current;if(el){el.style.backgroundPosition=`${p.x}px ${p.y}px,0 0`;el.style.backgroundSize=`${22*z}px ${22*z}px,100% 100%`;}
   };
   const setCam=(p,z=zoomRef.current)=>{p=clampCam(p,z);panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
   // התאמה למסך: כל האולם ממלא את המפה (זה גם המצב האוטומטי — מתעדכן כשמוסיפים/מוחקים שולחן או משנים גודל חלון)
@@ -3222,7 +3234,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const fitZoom=()=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
-    setCam({x:0,y:0},minZoom()); // clampCam ממרכז
+    const [x0,y0]=hallRect(),z=minZoom();
+    setCam({x:-x0*z,y:-y0*z},z);
   };
   // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
   const zoomAt=(factor,cx,cy)=>{
@@ -3252,11 +3265,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש הזיז/הגדיל בעצמו)
     const ro=new ResizeObserver(()=>{setBoxTick(t=>t+1);if(!manualZoomRef.current)fitZoom();});
     ro.observe(el);
-    // גלגלת (וצביטה במשטח מגע): זום סביב הסמן. Shift+גלגלת: הזזה
+    // גלגלת / משטח מגע: הזזת המפה. Ctrl+גלגלת (או צביטה): זום סביב הסמן
     const wheel=e=>{
       e.preventDefault();
-      if(e.shiftKey)panBy(-(e.deltaX||e.deltaY),0);
-      else{const r=el.getBoundingClientRect(),d=Math.max(-120,Math.min(120,e.deltaMode===1?e.deltaY*33:e.deltaY));zoomAt(Math.exp(-d*.0022),e.clientX-r.left,e.clientY-r.top);}
+      if(e.ctrlKey||e.metaKey){const r=el.getBoundingClientRect(),d=Math.max(-120,Math.min(120,e.deltaMode===1?e.deltaY*33:e.deltaY));zoomAt(Math.exp(-d*.0025),e.clientX-r.left,e.clientY-r.top);}
+      else{const k=e.deltaMode===1?33:1;panBy(-(e.shiftKey?e.deltaY:e.deltaX)*k,-(e.shiftKey?0:e.deltaY)*k);}
     };
     el.addEventListener("wheel",wheel,{passive:false});
     // טאבלט/מסך מגע: אצבע אחת על הרקע מזיזה, שתי אצבעות (צביטה) מגדילות ומקטינות
@@ -3359,13 +3372,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const renameItem=id=>{const it=hallItems().find(i=>i.id===id);if(!it)return;const v=window.prompt("שם האלמנט במפה",itemLabel(it));if(v==null)return;updateItem(id,{label:v.trim().slice(0,30)||undefined},"שינוי שם");};
   // מקום פנוי באולם למלבן w×h (לא על שולחן או אלמנט אחר). off = גבולות הצורה ביחס לנקודת המיקום
   // near=true: המקום הפנוי הכי קרוב לרחבה (או לבמה) — ככה שולחנות חדשים מתקבצים סביבה ולא בפינה
-  const findFree=(off,[W,H],near=false)=>{
+  // r = המלבן לחיפוש [x0,y0,x1,y1]
+  const findFree=(off,r,near=false)=>{
     const tw=off[2]-off[0],th=off[3]-off[1],items=hallItems();
     const bs=[...tables.map(tableBox),...items.map(itemBox)];
     const f=near&&(items.find(i=>i.kind==="dance")||items.find(i=>i.kind==="stage"));
     const fx=f?f.x+f.w/2:0,fy=f?f.y+f.h/2:0;
     let best=null,bd=Infinity;
-    for(let y=HALL_MARGIN;y+th<=H-HALL_MARGIN/2;y+=30)for(let x=HALL_MARGIN;x+tw<=W-HALL_MARGIN/2;x+=30){
+    for(let y=r[1]+HALL_MARGIN;y+th<=r[3]-HALL_MARGIN/2;y+=30)for(let x=r[0]+HALL_MARGIN;x+tw<=r[2]-HALL_MARGIN/2;x+=30){
       const nb=[x,y,x+tw,y+th];
       if(bs.some(b=>nb[0]<b[2]+24&&nb[2]+24>b[0]&&nb[1]<b[3]+24&&nb[3]+24>b[1]))continue;
       if(!f)return {x:x-off[0],y:y-off[1]};
@@ -3377,24 +3391,16 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [addItemOpen,setAddItemOpen]=useState(false);
   const addItem=kind=>{
     setAddItemOpen(false);
-    const K=HALL_ITEM_KINDS[kind],dims=hallDims(),id=kind+"_"+Date.now().toString(36);
-    // קודם המקום הקלאסי (רחבה מול הבמה, כניסה למטה...), ואם הוא תפוס — המקום הפנוי הראשון
+    const K=HALL_ITEM_KINDS[kind],r=hallRect(),id=kind+"_"+Date.now().toString(36);
+    // קודם המקום הקלאסי באולם שעל המסך (רחבה מול הבמה, כניסה למטה...), ואם הוא תפוס — המקום הפנוי הראשון
     const draft={id,kind,x:0,y:0,w:K.w,h:K.h};
-    const classic=classicItems([...hallItems().filter(i=>i.kind!==kind),draft],dims).find(i=>i.id===id);
+    const c0=classicItems([...hallItems().filter(i=>i.kind!==kind).map(i=>({...i,x:i.x-r[0],y:i.y-r[1]})),draft],[r[2]-r[0],r[3]-r[1]]).find(i=>i.id===id);
+    const classic={...c0,x:Math.round(c0.x+r[0]),y:Math.round(c0.y+r[1])};
     const others=[...tables.map(tableBox),...hallItems().map(itemBox)],cb=itemBox(classic);
     const p=!others.some(b=>cb[0]<b[2]+16&&cb[2]+16>b[0]&&cb[1]<b[3]+16&&cb[3]+16>b[1])?classic
-      :findFree([0,0,K.w,K.h],dims)||{x:Math.round(dims[0]/2-K.w/2),y:Math.round(dims[1]/2-K.h/2)};
+      :findFree([0,0,K.w,K.h],r)||{x:Math.round((r[0]+r[2])/2-K.w/2),y:Math.round((r[1]+r[3])/2-K.h/2)};
     saveItems([...hallItems(),{id,kind,x:p.x,y:p.y,w:K.w,h:K.h}],`הוספת ${K.label}`);
     setSelItem(id);setSelected(null);
-  };
-  // החלפת גודל אולם. אם משהו נשאר מחוץ לגבולות — מסדרים מחדש בתוך הגודל החדש
-  const setHallSize=k=>{
-    const [W,H]=HALL_SIZES[k],[,,x1,y1]=contentBox();
-    if(x1>W||y1>H){
-      if(!window.confirm(`חלק מהשולחנות או האלמנטים לא נכנסים באולם ${HALL_SIZE_LABELS[k].split(" ·")[0]}. לסדר את הכל מחדש בתוך הגודל הזה?`))return;
-      perfectLayout(k);return;
-    }
-    saveItems(hallItems(),"שינוי גודל האולם",{size:k});
   };
   // פריסה קלאסית של האלמנטים באולם W×H: במה במרכז למעלה, DJ לידה, רחבה מול הבמה, בר בפינה, כניסה במרכז למטה,
   // חופה בפינה השנייה. שאר האלמנטים נשארים באותו מקום יחסי. [W0,H0] = גודל האולם הקודם
@@ -3410,7 +3416,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       if(i.locked){out.push(i);return;} // נעול: נשאר בדיוק במקום
       if(i===by.stage){x=W/2-i.w/2;y=M;}
       else if(i===by.dj){x=st?W/2+st.w/2+30:W/2-i.w/2;y=st?M+(st.h-i.h)/2:M;}
-      else if(i===by.dance){x=W/2-i.w/2;y=st?M+st.h+46:Math.max(M,H*.3-i.h/2);}
+      else if(i===by.head){x=W/2-i.w/2;y=st?M+st.h+30:M;}
+      else if(i===by.dance){
+        // מתחת לשולחן חתן-כלה (ולכיסאות שלו), או מתחת לבמה
+        const headY=st?M+st.h+30:M;
+        y=by.head?headY+by.head.h+44:st?M+st.h+46:Math.max(M,H*.3-i.h/2);x=W/2-i.w/2;
+      }
       else if(i===by.bar){x=W-M-i.w;y=M;}
       else if(i===by.entrance){x=W/2-i.w/2;y=H-M/2-i.h;}
       else if(i===by.chuppah){x=M;y=M;}
@@ -3749,15 +3760,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     setSaving(false);
   };
   const addTable=async()=>{setModal("addTable");};
-  // שולחן חדש: המקום הפנוי הראשון באולם (לא על שולחן או אלמנט). אין מקום — האולם גדל לגודל הבא (עד ענק)
+  // שולחן חדש: המקום הפנוי הכי קרוב לרחבה (לא על שולחן או אלמנט). אין מקום על המסך — מרחיבים את השטח (המפה תתכווץ)
   const freeSpot=type=>{
-    const off=tableOff(type),cur=sizeKey();
-    for(const k of HALL_SIZE_ORDER.slice(HALL_SIZE_ORDER.indexOf(cur))){
-      const p=findFree(off,k===cur?hallDims():HALL_SIZES[k],true);
-      if(p){if(k!==cur)saveItems(hallItems(),null,{size:k});return p;}
+    const off=tableOff(type),r=hallRect();
+    for(let g=0;g<=6;g++){
+      const e=g*220,p=findFree(off,[r[0]-e,r[1],r[2]+e,r[3]+e*.7],true);
+      if(p)return p;
     }
-    alert("האולם מלא (גודל ענק). השולחן נוסף בפינה. אפשר ללחוץ \"✨ סידור מושלם\" כדי לסדר את כל השולחנות מחדש.");
-    return {x:HALL_MARGIN-off[0],y:HALL_MARGIN-off[1]};
+    const [,,,y1]=contentBox();
+    return {x:Math.round(r[0]+HALL_MARGIN-off[0]),y:Math.round(y1+40-off[1])};
   };
   const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:spot.x,y:spot.y,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
   // ─── תבניות אולם: שמירת מפת השולחנות (וגם במה/בר/כניסה) וטעינה לאירוע אחר באותו אולם ───
@@ -4602,11 +4613,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     </div>
                   </>}
                 </div>
-                {/* גודל האולם (ענק = התקרה) */}
-                <select value={sizeKey()} disabled={mapLocked} onChange={e=>setHallSize(e.target.value)} aria-label="גודל האולם" title="גודל האולם"
-                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"6px 8px",fontSize:12,fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>
-                  {HALL_SIZE_ORDER.map(k=><option key={k} value={k}>📏 אולם {HALL_SIZE_LABELS[k]}</option>)}
-                </select>
                 {undoBtn()}
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
                   <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
@@ -4637,8 +4643,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             onMouseDown={startPan}
             ref={mapBoxRef} dir="ltr"
             style={{flex:1,minHeight:0,overflow:"hidden",position:"relative",cursor:"grab",touchAction:"none",
-              backgroundColor:"#FFFDFB",backgroundImage:"radial-gradient(circle,#E9DEF2 1.2px,transparent 1.4px),linear-gradient(180deg,rgba(255,230,240,.55),rgba(255,253,251,0) 45%)",
-              backgroundSize:`${22*zoom}px ${22*zoom}px,100% 100%`,backgroundPosition:`${pan.x}px ${pan.y}px,0 0`}}>
+              // רקע כמו ה-Hero בדף הבית: שמנת חמה עם הילה ורודה-סגולה
+              backgroundColor:"#FFFBF7",backgroundImage:"radial-gradient(circle at 60% 35%,rgba(240,96,158,.16),transparent 55%),radial-gradient(circle at 30% 75%,rgba(155,107,255,.14),transparent 55%),linear-gradient(180deg,#FFF4EE,#FFF7FB 45%,#FFFBF7)",
+              backgroundSize:"100% 100%,100% 100%,100% 100%"}}>
             {(()=>{
               // שכבת האולם: מיקומים בקואורדינטות של האולם; המצלמה (הזזה+זום) מוחלת עליה
               const [hx0,hy0,hx1,hy1]=hallRect();
@@ -4647,8 +4654,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               return(
                 <>
                 <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
-                  {/* רצפת האולם: הקירות של המפה. שום דבר לא יוצא מהם */}
-                  <div aria-hidden="true" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,background:"#FFFDFB",backgroundImage:"radial-gradient(circle,#EDE3F4 1.6px,transparent 1.8px)",backgroundSize:"30px 30px",border:"3px solid #E6D9F2",boxShadow:"inset 0 0 0 10px rgba(246,240,248,.9),0 30px 80px -40px rgba(91,60,140,.35)",pointerEvents:"none"}}/>
+                  {/* רצפת האולם — כמו כרטיס המפה בדף הבית: לבן, נקודות עדינות, מסגרת וצל רך */}
+                  <div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,background:"#fff",backgroundImage:"radial-gradient(circle,#E9E1F5 1.4px,transparent 1.6px)",backgroundSize:"18px 18px",backgroundPosition:"2px 2px",border:"1px solid #EFE8F7",boxShadow:"0 50px 100px -40px rgba(91,60,140,.45),0 0 0 8px rgba(255,255,255,.6)",pointerEvents:"none"}}/>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
                   <div className="sx-anim" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,pointerEvents:"none",overflow:"hidden"}}>
@@ -4682,19 +4689,31 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         if(n.x!==it.x||n.y!==it.y||n.w!==it.w||n.h!==it.h)updateItem(it.id,{x:n.x,y:n.y,w:n.w,h:n.h},`${mode==="move"?"הזזת":"שינוי גודל"} ${label}`);};
                       window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
                     };
-                    const big=it.w>=150&&it.h>=90,fs=Math.max(12,Math.min(22,Math.min(it.w/9,it.h/2.6)));
+                    const big=it.w>=150&&it.h>=90,fs=Math.max(12,Math.min(20,Math.min(it.w/10,it.h/2.8)));
                     const hBtn={width:30,height:30,borderRadius:9,border:"none",background:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px -4px rgba(43,29,63,.35)"};
+                    // הסגנון של ההדגמה בדף הבית
+                    const look=K.pill?{background:"linear-gradient(90deg,#FFE3EE,#EEE4FF)",border:"1.5px solid #F3B6CF",borderRadius:Math.min(it.h,it.w)/2,color:"#B13B72"}
+                      :K.dance?{background:"repeating-conic-gradient(#F6E7CC 0 25%,#FBF3E4 0 50%) 0 0/20px 20px",border:"1.5px solid #EBCB8F",borderRadius:18,color:"#A87A22"}
+                      :{background:"#fff",border:"1px solid #EFE8F7",borderRadius:K.round?"50%":16,color:LP.ink};
                     return(
                       <div key={it.id} data-item={it.id} onMouseDown={e=>startItem(e,"move")} title={mapLocked||it.locked?`${label}${it.locked?" · נעול":""}`:`${label} · גררו להזזה`}
                         className={mapLocked||it.locked?"":"sx-fixture"}
-                        style={{position:"absolute",left:it.x,top:it.y,width:it.w,height:it.h,zIndex:sel?9:it.kind==="dance"?1:2,userSelect:"none",cursor:mapLocked||it.locked?"default":"grab",
-                          background:K.bg,color:K.fg,border:K.border?`2px solid ${K.border}`:"none",borderRadius:it.kind==="chuppah"?"50%":it.kind==="dance"?22:16,
-                          boxShadow:it.kind==="stage"?"0 14px 30px -10px rgba(240,96,158,.6)":"0 10px 24px -14px rgba(91,60,140,.4)",
+                        style={{position:"absolute",left:it.x,top:it.y,width:it.w,height:it.h,zIndex:sel?9:K.dance?1:2,userSelect:"none",cursor:mapLocked||it.locked?"default":"grab",
+                          ...look,boxShadow:"0 3px 8px rgba(91,60,140,.16)",
                           outline:sel?"3px solid #9B6BFF":undefined,outlineOffset:3,
-                          display:"flex",flexDirection:big?"column":"row",alignItems:"center",justifyContent:"center",gap:big?4:6,textAlign:"center",padding:4,boxSizing:"border-box"}}>
-                        {it.kind==="dance"&&<div style={{position:"absolute",inset:10,border:"2px dashed rgba(122,78,34,.25)",borderRadius:14,pointerEvents:"none"}}/>}
-                        <span style={{fontSize:big?fs*1.6:fs*1.1,lineHeight:1,pointerEvents:"none"}}>{K.icon}</span>
-                        <span style={{fontSize:fs,fontWeight:900,lineHeight:1.15,pointerEvents:"none",letterSpacing:it.kind==="stage"?1:0,background:it.kind==="dance"?"rgba(255,255,255,.75)":"none",borderRadius:8,padding:it.kind==="dance"?"2px 8px":0}}>{label}</span>
+                          display:"flex",flexDirection:K.dance||(big&&!K.pill)?"column":"row",alignItems:"center",justifyContent:"center",gap:K.dance?2:big?6:8,textAlign:"center",padding:4,boxSizing:"border-box"}}>
+                        {K.pill||K.dance?<>
+                          {!K.dance&&<span style={{fontSize:fs*1.05,lineHeight:1,pointerEvents:"none"}}>{K.icon}</span>}
+                          <span style={{fontSize:fs,fontWeight:900,lineHeight:1.15,pointerEvents:"none"}}>{label}</span>
+                          {K.dance&&<span style={{fontSize:fs*1.4,lineHeight:1,pointerEvents:"none"}}>{K.icon}</span>}
+                        </>:<>
+                          <span style={{width:Math.min(40,it.h*.62),height:Math.min(40,it.h*.62),borderRadius:12,background:K.tile,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:Math.min(22,it.h*.36),flexShrink:0,pointerEvents:"none"}}>{K.icon}</span>
+                          <span style={{fontSize:fs,fontWeight:900,lineHeight:1.15,pointerEvents:"none"}}>{label}</span>
+                        </>}
+                        {/* שולחן חתן-כלה: שורת כיסאות ורודים מתחת, כמו בהדגמה */}
+                        {K.chairs&&<div style={{position:"absolute",top:"100%",left:"8%",right:"8%",marginTop:5,display:"flex",justifyContent:"space-around",pointerEvents:"none"}}>
+                          {Array.from({length:Math.max(2,Math.min(12,Math.round(it.w/42)))}).map((_,i)=><span key={i} style={{width:16,height:10,borderRadius:4,background:LP.rose,opacity:.85}}/>)}
+                        </div>}
                         {it.locked&&!sel&&<span aria-label="נעול" style={{position:"absolute",top:-10,left:-10,width:24,height:24,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,pointerEvents:"none"}}>🔒</span>}
                         {sel&&!mapLocked&&<>
                           {/* כפתורי עריכה מעל האלמנט */}
@@ -4767,6 +4786,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     );
                   })}
                 </div>
+                {/* כותרת המפה — כמו בהדגמה בדף הבית */}
+                <div dir="rtl" style={{position:"absolute",right:26,bottom:22,zIndex:15,pointerEvents:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.82)",backdropFilter:"blur(6px)",borderRadius:16,padding:"8px 14px",border:"1px solid #EFE8F7",boxShadow:"0 10px 24px -16px rgba(91,60,140,.4)"}}>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:900,color:LP.ink,lineHeight:1.2}}>מפת האולם</div>
+                    <div style={{fontSize:11,color:LP.muted,fontWeight:600}}>{event.name} · {guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} אורחים</div>
+                  </div>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#E9FBF4",color:"#1F8F6C",borderRadius:100,padding:"3px 10px",fontSize:11,fontWeight:800}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
+                </div>
                 {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
                 <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
                   {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom()]].map(([ic,l,fn])=>(
@@ -4779,7 +4806,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
           <div style={{padding:"7px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:14,fontSize:11,color:C.muted,flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
             {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
-            <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · גלגלת = זום · גרירת הרקע = הזזה</span>
+            <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · גלגלת או גרירת הרקע = הזזה · Ctrl+גלגלת או ＋ − = זום</span>
           </div>
           {celebrate&&(
             <div className="sx-anim" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:600,overflow:"hidden"}}>
