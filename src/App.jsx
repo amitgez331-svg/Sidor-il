@@ -1199,6 +1199,42 @@ const LANDING_CSS=`
   .fu{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
   @media(max-width:960px){.lp-hero{flex-direction:column!important;text-align:center}.lp-hero p{margin-inline:auto}.lp-hero-cta{justify-content:center}.lp-plan{transform:scale(.88);margin:-24px 0}.lp-hide-sm{display:none!important}.lp-steps{grid-template-columns:1fr!important}.lp-feat{grid-template-columns:1fr 1fr!important}}
   @media(max-width:600px){.lp-feat{grid-template-columns:1fr!important}.lp-plan{transform:scale(.7);margin:-66px -60px}}
+  /* נגישות ונייד (בדיקת UI/UX): דילוג לתוכן, אזורי לחיצה של 44px, תוויות קצרות בנייד, שאלות נפוצות */
+  .lp-skip{position:absolute;right:12px;top:-70px;z-index:300;background:#2B1D3F;color:#fff!important;padding:12px 18px;border-radius:14px;font-weight:800;text-decoration:none;transition:top .2s}
+  .lp-skip:focus{top:12px}
+  .lp-sm{display:none}
+  .lp-faq{background:#fff;border:1px solid #EFE8F7;border-radius:20px;box-shadow:0 6px 24px -14px rgba(91,60,140,.18);transition:box-shadow .3s,border-color .3s}
+  .lp-faq[open]{border-color:#F3C6DA;box-shadow:0 18px 40px -22px rgba(240,96,158,.45)}
+  .lp-faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:14px;padding:18px 22px;min-height:44px;font-size:16px;font-weight:800;color:#2B1D3F}
+  .lp-faq summary::-webkit-details-marker{display:none}
+  .lp-faq summary:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px;border-radius:20px}
+  .lp-faq-ic{margin-right:auto;width:30px;height:30px;border-radius:50%;background:#FFEFF5;color:#C2397A;display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;transition:transform .25s,background .25s}
+  .lp-faq[open] .lp-faq-ic{transform:rotate(45deg);background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF);color:#fff}
+  .lp-faq p{padding:0 22px 20px;color:#6E6585;font-size:15px;line-height:1.8}
+  .lp-foot a,.lp-foot button{display:inline-flex;align-items:center;gap:8px;min-height:32px}
+  @media(max-width:600px){.lp-lg{display:none}.lp-sm{display:inline}.lp-navbtn{padding:9px 14px!important;white-space:nowrap}.lp-foot a,.lp-foot button{min-height:44px}}
+  /* ─── שדרוג עיצוב (ui-ux-pro-max): Hero, בנטו וליטוש ─── */
+  .lp h1,.lp h2{text-wrap:balance}
+  .lp-num{font-variant-numeric:tabular-nums}
+  .lp-progress{position:fixed;top:0;right:0;left:0;height:3px;z-index:120;transform:scaleX(0);transform-origin:right;background:linear-gradient(90deg,#9B6BFF,#F0609E,#FF8A65);pointer-events:none}
+  .lp-plan-tilt{transform:perspective(1600px) rotateY(8deg) rotateX(4deg);transition:transform .7s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+  .lp-plan-tilt:hover{transform:perspective(1600px) rotateY(0) rotateX(0)}
+  .lp-glass{background:rgba(255,255,255,.66);backdrop-filter:blur(14px) saturate(1.3);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 40px -22px rgba(91,60,140,.35),inset 0 1px 0 #fff}
+  .lp-bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(220px,auto);gap:18px}
+  .lp-b-a{grid-column:span 2;grid-row:span 2}
+  .lp-b-w{grid-column:span 2}
+  .lp-bento .lp-card{padding:26px;display:flex;flex-direction:column;border-radius:28px}
+  .lp-bento .lp-card:hover{transform:translateY(-6px) scale(1.015)}
+  .lp-bart{flex:1;min-height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border-radius:20px;position:relative;overflow:hidden}
+  @media(max-width:960px){.lp-bento{grid-template-columns:repeat(2,1fr)}.lp-plan-tilt,.lp-plan-tilt:hover{transform:none}}
+  @media(max-width:600px){.lp-bento{grid-template-columns:1fr;grid-auto-rows:auto}.lp-b-a,.lp-b-w{grid-column:auto;grid-row:auto}}
+  .lp-sticky{display:none}
+  @media(max-width:768px){
+    .lp-ba{grid-template-columns:1fr!important}
+    .lp-sticky{display:flex;position:fixed;right:12px;left:76px;bottom:12px;z-index:98;align-items:center;gap:10px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border:1px solid #EFE8F7;border-radius:20px;padding:8px 8px 8px 14px;box-shadow:0 18px 40px -14px rgba(91,60,140,.45);transform:translateY(160%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+    .lp-sticky.on{transform:none}
+    .lp{padding-bottom:84px}
+  }
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.fu{opacity:1!important;transform:none!important}}
 `;
 
@@ -1210,6 +1246,9 @@ const LP_ICONS={
   check:<><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></>,
   msg:<><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></>,
   print:<><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></>,
+  phone:<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></>,
+  mail:<><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></>,
+  pin:<><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></>,
 };
 const LpIcon=({name,color,size=26})=>(
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{LP_ICONS[name]}</svg>
@@ -1406,10 +1445,18 @@ const StepArt=({kind})=>{
 
 function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   const [scrolled,setScrolled]=useState(false);
+  // בנייד: כפתור הרשמה דביק בתחתית, רק אחרי שגוללים מעבר לפתיחה (כפתור ה-Hero כבר לא נראה)
+  const [pastHero,setPastHero]=useState(false);
+  const progRef=useRef(null);
   const [venuePage,setVenuePage]=useState(false);
 
   useEffect(()=>{
-    const fn=()=>setScrolled(window.scrollY>40);
+    const fn=()=>{
+      setScrolled(window.scrollY>40);setPastHero(window.scrollY>window.innerHeight*.85);
+      // פס התקדמות הגלילה: מעדכנים ישירות את ה-DOM (בלי רינדור בכל גלילה)
+      const max=document.documentElement.scrollHeight-window.innerHeight;
+      if(progRef.current)progRef.current.style.transform=`scaleX(${max>0?Math.min(1,window.scrollY/max):0})`;
+    };
     window.addEventListener("scroll",fn);
     return()=>window.removeEventListener("scroll",fn);
   },[]);
@@ -1437,6 +1484,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   return(
     <div className="lp" dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
       <style>{LANDING_CSS}</style>
+      <a href="#top" className="lp-skip">דלג לתוכן הראשי</a>
+      <div ref={progRef} className="lp-progress" aria-hidden="true"/>
 
       {/* ─── NAV ─────────────────────────────────────────────────── */}
       <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,
@@ -1458,8 +1507,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
         <div style={{flex:1}}/>
         <button className="lp-nav-link lp-hide-sm" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>🎬 כניסת מפיקים</button>
-        <button className="lp-btn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14}}>{loggedIn?"האירועים שלי":"כניסה"}</button>
-        <button className="lp-btn lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14}}>התחילו להושיב</button>
+        <button className="lp-btn lp-ghost lp-navbtn" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>{loggedIn?<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>:"כניסה"}</button>
+        <button className="lp-btn lp-primary lp-navbtn" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
       </nav>
 
       {/* ─── HERO ────────────────────────────────────────────────── */}
@@ -1500,24 +1549,32 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                 איך זה עובד
               </a>
             </div>
-            <div style={{marginTop:-26,marginBottom:34,fontSize:14,color:LP.muted}}>
-              🎬 מפיקי אירועים? <button onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",padding:0,color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>כניסת מפיקים ←</button>
+            {/* הבטחה קצרה מתחת לכפתור — מסירה חששות לפני ההרשמה */}
+            <div style={{marginTop:-24,marginBottom:10,display:"flex",gap:"6px 16px",flexWrap:"wrap",fontSize:13.5,color:LP.muted,fontWeight:700}}>
+              {[`חינם עד ${FREE_SEATING_LIMIT} מוזמנים`,"בלי כרטיס אשראי","מתחילים תוך 2 דקות"].map(t=>(
+                <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6}}><LpIcon name="check" color={LP.mint} size={16}/>{t}</span>
+              ))}
+            </div>
+            <div style={{marginBottom:26,fontSize:14,color:LP.muted}}>
+              🎬 מפיקי אירועים? <button onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",padding:"12px 4px",color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>כניסת מפיקים ←</button>
             </div>
 
-            <div className="lp-hero-cta" style={{display:"flex",gap:22,flexWrap:"wrap"}}>
-              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","0 ₪","להתחלה",LP.mint,"#E9FBF4"],["users","עברית","מותאם לאירועים בישראל",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg])=>(
-                <div key={small} style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:44,height:44,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name={ic} color={c} size={22}/></div>
+            {/* פס זכוכית עם שלוש עובדות */}
+            <div className="lp-glass lp-hero-cta" style={{display:"inline-flex",gap:4,flexWrap:"wrap",borderRadius:22,padding:8}}>
+              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","₪0","להתחלה",LP.mint,"#E9FBF4"],["users","עברית","מותאם לאירועים בישראל",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg],i)=>(
+                <div key={small} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderInlineStart:i?"1px solid #EFE6F5":"none"}}>
+                  <div style={{width:40,height:40,borderRadius:13,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name={ic} color={c} size={20}/></div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:16,fontWeight:900}}>{big}</div>
-                    <div style={{fontSize:12,color:LP.muted}}>{small}</div>
+                    <div className="lp-num" style={{fontSize:17,fontWeight:900,lineHeight:1.1}}>{big}</div>
+                    <div style={{fontSize:12,color:LP.muted,fontWeight:600}}>{small}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <SeatingPlanDemo/>
+          {/* ההדגמה בהטיה תלת-ממדית עדינה, מתיישרת במעבר עכבר */}
+          <div className="lp-plan-tilt"><SeatingPlanDemo/></div>
         </div>
       </section>
 
@@ -1529,6 +1586,46 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           ))}
         </div>
       </div>
+
+      {/* ─── לפני / אחרי (דפוס Before-After: הבעיה באפור, הפתרון בצבע) ─── */}
+      <section id="why" style={{padding:"100px 6vw 10px"}}>
+        <div style={{maxWidth:1060,margin:"0 auto"}}>
+          {sectionTitle("למה Sidor-IL","סידור הושבה","בלי כאב ראש","ככה זה נראה בלי מערכת, וככה זה נראה איתה.")}
+          <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:22,alignItems:"stretch"}}>
+            {/* לפני — מושתק */}
+            <div className="fu" style={{background:"#F6F3F8",border:"1px solid #E9E3EF",borderRadius:28,padding:"30px 28px",color:"#7A7189"}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,background:"#ECE7F1",borderRadius:100,padding:"6px 14px",marginBottom:18}}>✕ בלי מערכת</div>
+              {[
+                ["אקסל של 300 שורות","שמות כפולים, טלפונים חסרים, וגרסה אחרת אצל כל אחד מבני המשפחה"],
+                ["טלפונים לכל אורח","\"אתם מגיעים? כמה תהיו?\" ואז לעדכן הכל ידנית"],
+                ["ויכוחים על מי ליד מי","מזיזים פתקים על שולחן במשך ערבים שלמים"],
+                ["תור בכניסה לאולם","האורחים מחכים ושואלים איפה הם יושבים"],
+              ].map(([t,d])=>(
+                <div key={t} style={{display:"flex",gap:14,padding:"12px 0",borderTop:"1px solid #E9E3EF"}}>
+                  <span aria-hidden="true" style={{width:28,height:28,borderRadius:"50%",background:"#E4DEEA",color:"#9A90A8",display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:900,flexShrink:0}}>✕</span>
+                  <div><div style={{fontSize:16,fontWeight:800,color:"#6E6585",marginBottom:2}}>{t}</div><div style={{fontSize:14,lineHeight:1.65}}>{d}</div></div>
+                </div>
+              ))}
+            </div>
+            {/* אחרי — בצבעי המותג */}
+            <div className="lp-card fu" style={{padding:"30px 28px",transitionDelay:".12s",border:"1.5px solid #F3C6DA",background:"linear-gradient(170deg,#fff,#FFF5FA)",boxShadow:"0 34px 80px -34px rgba(240,96,158,.5)"}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,color:"#fff",background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:100,padding:"6px 14px",marginBottom:18}}>✓ עם Sidor-IL</div>
+              {[
+                ["רשימה אחת מסודרת","מייבאים מאקסל או מאנשי הקשר, וכל בני המשפחה עובדים על אותה רשימה"],
+                ["אישורי הגעה בלחיצה","כל אורח מקבל קישור אישי, והתשובה מופיעה אצלכם מיד"],
+                ["הושבה אוטומטית","גוררים על מפת האולם, או נותנים למערכת לסדר לפי משפחות וחברים"],
+                ["כניסה בלי תורים","כל אורח מקבל את מספר השולחן שלו מראש, ובכניסה מוצאים אותו בשנייה"],
+              ].map(([t,d])=>(
+                <div key={t} style={{display:"flex",gap:14,padding:"12px 0",borderTop:"1px solid #F6E1EC"}}>
+                  <span aria-hidden="true" style={{width:28,height:28,borderRadius:"50%",background:"#E9FBF4",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><LpIcon name="check" color={LP.mint} size={18}/></span>
+                  <div><div style={{fontSize:16,fontWeight:800,color:LP.ink,marginBottom:2}}>{t}</div><div style={{fontSize:14,color:LP.muted,lineHeight:1.65}}>{d}</div></div>
+                </div>
+              ))}
+              <button onClick={()=>onOpenAuth("register")} className="lp-btn lp-primary" style={{width:"100%",padding:"15px",fontSize:16,marginTop:14}}>מתחילים בחינם ←</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ─── HOW ─────────────────────────────────────────────────── */}
       <section id="how" style={{padding:"110px 6vw",position:"relative"}}>
@@ -1560,26 +1657,89 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         <Sparkles items={[["8%","10%",16,0,LP.violet],["14%","86%",14,.6,LP.gold],["88%","50%",12,1,LP.rose]]}/>
         <div style={{maxWidth:1120,margin:"0 auto",position:"relative"}}>
           {sectionTitle("היכולות","כל מה שצריך להושבה","מושלמת","כלים שנבנו במיוחד לחתונות, בר מצוות ואירועים גדולים.")}
-          <div className="lp-feat" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:22}}>
-            {[
-              {icon:"map",c:LP.rose,title:"מפת אולם אינטראקטיבית",desc:"שולחנות עגולים, מרובעים ושולחן אבירים. גוררים, מזיזים ורואים בזמן אמת כמה מקומות נשארו.",tag:"הכי פופולרי"},
-              {icon:"ai",c:LP.violet,title:"סידור הושבה ב-AI",desc:"כותבים העדפות בשפה חופשית  -  \"סבתא ליד הרחבה, החברים מהעבודה ביחד\"  -  וה-AI מסדר את כולם.",tag:"חדש"},
-              {icon:"users",c:LP.sky,title:"קבוצות וצבעים",desc:"כל קבוצת אורחים בצבע משלה, כך שרואים במבט אחד שמשפחה יושבת יחד וחברים ליד חברים."},
-              {icon:"check",c:LP.mint,title:"אישורי הגעה מחוברים להושבה",desc:"מי שאישר נכנס לסידור, מי שביטל משחרר מקום. ההושבה תמיד מעודכנת למספרים האמיתיים."},
-              {icon:"msg",c:LP.coral,title:"מספר שולחן לכל אורח",desc:"הודעה אישית ב-SMS או WhatsApp עם שם האורח ומספר השולחן שלו. בלי תורים בכניסה."},
-              {icon:"print",c:LP.gold,title:"כרטיסי הושבה וקבלה",desc:"מפיקים רשימות לכל שולחן וכרטיסי הושבה להדפסה, מוכנים לעמדת הקבלה באולם."},
-            ].map((f,i)=>(
-              <div key={f.title} className="lp-card fu" style={{padding:"30px 26px",transitionDelay:`${i*.07}s`}}>
-                <div style={{position:"absolute",top:-40,left:-40,width:140,height:140,borderRadius:"50%",background:`radial-gradient(circle,${f.c}22,transparent 70%)`,pointerEvents:"none"}}/>
-                {f.tag&&<span style={{position:"absolute",top:20,left:20,background:f.c+"18",border:`1px solid ${f.c}55`,color:f.c,fontSize:11,fontWeight:900,borderRadius:100,padding:"3px 11px"}}>{f.tag}</span>}
-                <div className="lp-ic" style={{width:58,height:58,borderRadius:18,background:`linear-gradient(135deg,${f.c}26,${f.c}0D)`,border:`1px solid ${f.c}33`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20}}>
-                  <LpIcon name={f.icon} color={f.c} size={28}/>
-                </div>
-                <div style={{fontSize:18,fontWeight:900,marginBottom:10}}>{f.title}</div>
-                <div style={{fontSize:14.5,color:LP.muted,lineHeight:1.75}}>{f.desc}</div>
+          {/* בנטו: כרטיסים בגדלים שונים, ובכל אחד איור קטן של מה שהיכולת עושה בפועל */}
+          {(()=>{
+            const chair=(x,y,d,c)=><rect key={`${x}${y}`} x="-6" y="-4.5" width="12" height="9" rx="4" transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${d})`} fill={c}/>;
+            const table=(cx,cy,c,n,fill)=>(<g key={n}>
+              {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return chair(cx+34*Math.sin(a),cy-34*Math.cos(a),d,i<fill?c:"#ECE6F5");})}
+              <circle cx={cx} cy={cy} r="23" fill="#fff" stroke={c} strokeOpacity=".5" strokeWidth="1.5"/>
+              <text x={cx} y={cy+5} textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">{n}</text>
+            </g>);
+            const head=(icon,c,title,desc,tag)=>(<>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                <div className="lp-ic" style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${c}26,${c}0D)`,border:`1px solid ${c}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><LpIcon name={icon} color={c} size={22}/></div>
+                <div style={{fontSize:18,fontWeight:900,flex:1}}>{title}</div>
+                {tag&&<span style={{background:c+"18",border:`1px solid ${c}55`,color:c,fontSize:11,fontWeight:900,borderRadius:100,padding:"3px 11px",whiteSpace:"nowrap"}}>{tag}</span>}
               </div>
-            ))}
-          </div>
+              <div style={{fontSize:14.5,color:LP.muted,lineHeight:1.7}}>{desc}</div>
+            </>);
+            return(
+              <div className="lp-bento">
+                {/* מפת אולם — הכרטיס הגדול */}
+                <div className="lp-card fu lp-b-a">
+                  <div className="lp-bart" style={{background:"radial-gradient(circle at 50% 40%,#FFF1F7,#F7F1FF 70%)",minHeight:240}}>
+                    <svg viewBox="0 0 320 220" width="100%" height="100%" style={{maxWidth:420}} aria-hidden="true">
+                      <rect x="110" y="14" width="100" height="22" rx="11" fill="#FFE3EE" stroke="#F3B6CF"/>
+                      <text x="160" y="29" textAnchor="middle" fontSize="10" fontWeight="900" fill="#B13B72" fontFamily="Heebo">במה</text>
+                      <rect x="125" y="72" width="70" height="80" rx="12" fill="#FBF3E4" stroke="#EBCB8F"/>
+                      <text x="160" y="116" textAnchor="middle" fontSize="9" fontWeight="900" fill="#A87A22" fontFamily="Heebo">רחבה</text>
+                      {table(62,80,LP.rose,"1",7)}{table(62,170,LP.sky,"2",5)}{table(258,80,LP.mint,"3",8)}{table(258,170,LP.gold,"4",3)}
+                    </svg>
+                  </div>
+                  {head("map",LP.rose,"מפת אולם אינטראקטיבית","שולחנות עגולים, מרובעים ושולחן אבירים, במה, רחבה ובר. גוררים, מזיזים ורואים בזמן אמת כמה מקומות נשארו.","הכי פופולרי")}
+                </div>
+                {/* AI — כרטיס רחב */}
+                <div className="lp-card fu lp-b-w" style={{transitionDelay:".06s"}}>
+                  <div className="lp-bart" style={{background:"linear-gradient(135deg,#F4EEFF,#FFF1F7)",flexDirection:"column",gap:8,padding:14,alignItems:"stretch"}}>
+                    <div style={{alignSelf:"flex-start",background:"#fff",border:"1px solid #E6DAFF",borderRadius:"16px 16px 16px 4px",padding:"9px 13px",fontSize:13,fontWeight:700,color:LP.ink,boxShadow:"0 8px 20px -12px rgba(155,107,255,.5)"}}>"סבתא ליד הרחבה, החברים מהעבודה ביחד"</div>
+                    <div style={{alignSelf:"flex-end",display:"inline-flex",alignItems:"center",gap:7,background:"linear-gradient(120deg,#9B6BFF,#F0609E)",color:"#fff",borderRadius:"16px 16px 4px 16px",padding:"8px 13px",fontSize:13,fontWeight:800}}><LpIcon name="ai" color="#fff" size={15}/>סודר! 214 אורחים ב-22 שולחנות</div>
+                  </div>
+                  {head("ai",LP.violet,"סידור הושבה ב-AI","כותבים העדפות בשפה חופשית, וה-AI מסדר את כולם לפי משפחות, חברים והפרדות.","חדש")}
+                </div>
+                {/* קבוצות וצבעים */}
+                <div className="lp-card fu" style={{transitionDelay:".12s"}}>
+                  <div className="lp-bart" style={{background:"#F3F8FF",flexWrap:"wrap",gap:6,padding:12,alignContent:"center"}}>
+                    {[["משפחה",LP.rose],["חברים",LP.sky],["עבודה",LP.mint],["שכנים",LP.gold]].map(([l,c])=>(
+                      <span key={l} style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${c}55`,borderRadius:100,padding:"5px 11px",fontSize:12,fontWeight:800,color:LP.ink}}><span style={{width:9,height:9,borderRadius:"50%",background:c}}/>{l}</span>
+                    ))}
+                  </div>
+                  {head("users",LP.sky,"קבוצות וצבעים","כל קבוצה בצבע משלה, ורואים במבט אחד מי יושב עם מי.")}
+                </div>
+                {/* אישורי הגעה */}
+                <div className="lp-card fu" style={{transitionDelay:".18s"}}>
+                  <div className="lp-bart" style={{background:"#F0FCF7",gap:12}}>
+                    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#DDF4EA" strokeWidth="7"/><circle cx="32" cy="32" r="26" fill="none" stroke={LP.mint} strokeWidth="7" strokeLinecap="round" strokeDasharray="163" strokeDashoffset="41" transform="rotate(-90 32 32)"/><text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">75%</text></svg>
+                    <div style={{fontSize:12,fontWeight:800,color:"#1F8F6C",lineHeight:1.6}}>✓ 168 מגיעים<br/><span style={{color:LP.muted}}>⏳ 46 ממתינים</span></div>
+                  </div>
+                  {head("check",LP.mint,"אישורי הגעה מחוברים","מי שאישר נכנס לסידור, ומי שביטל משחרר מקום.")}
+                </div>
+                {/* מספר שולחן בהודעה */}
+                <div className="lp-card fu lp-b-w" style={{transitionDelay:".06s"}}>
+                  <div className="lp-bart" style={{background:"linear-gradient(135deg,#EAF8EF,#FFF6EE)",padding:14}}>
+                    <div style={{background:"#fff",borderRadius:"18px 18px 4px 18px",padding:"11px 15px",maxWidth:300,boxShadow:"0 10px 26px -14px rgba(31,168,85,.6)",border:"1px solid #CFEFDB",fontSize:13.5,lineHeight:1.6,color:LP.ink}}>
+                      <div style={{fontSize:11,fontWeight:900,color:"#1FA855",marginBottom:2}}>Sidor-IL · WhatsApp</div>
+                      שלום דנה! 🎉 מחכים לך הערב.<br/><b>השולחן שלך: מספר 7</b> · משפחת הכלה
+                      <div style={{fontSize:10,color:"#9AA3A0",textAlign:"left",marginTop:2}}>19:02 ✓✓</div>
+                    </div>
+                  </div>
+                  {head("msg",LP.coral,"מספר שולחן לכל אורח","הודעה אישית ב-SMS או WhatsApp עם שם האורח ומספר השולחן שלו. בלי תורים בכניסה.")}
+                </div>
+                {/* כרטיסי הושבה */}
+                <div className="lp-card fu lp-b-w" style={{transitionDelay:".12s"}}>
+                  <div className="lp-bart" style={{background:"#FFF9EE",gap:14}}>
+                    {[["7","משפחת הכלה",LP.rose,-6],["12","חברים מהצבא",LP.sky,5]].map(([n,l,c,r])=>(
+                      <div key={n} style={{width:118,background:"#fff",borderRadius:14,padding:"12px 10px",textAlign:"center",border:"1px solid #F3E6C8",boxShadow:"0 12px 24px -14px rgba(232,176,74,.7)",transform:`rotate(${r}deg)`}}>
+                        <div style={{fontSize:10,fontWeight:800,color:LP.muted}}>שולחן</div>
+                        <div className="lp-num" style={{fontSize:30,fontWeight:900,color:c,lineHeight:1.1}}>{n}</div>
+                        <div style={{fontSize:11,fontWeight:800,color:LP.ink}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {head("print",LP.gold,"כרטיסי הושבה וקבלה","רשימות לכל שולחן וכרטיסים מוכנים להדפסה, לעמדת הקבלה באולם.")}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -1650,6 +1810,45 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── המלצות לקוחות (רק מאושרות, מוסתר כשאין) ─── */}
       <LandingTestimonials/>
 
+      {/* ─── שאלות נפוצות (מה שזוגות שואלים לפני שנרשמים) ─── */}
+      <section id="faq" style={{padding:"90px 6vw 20px"}}>
+        <div style={{maxWidth:820,margin:"0 auto"}}>
+          {sectionTitle("שאלות נפוצות","יש שאלות?","יש תשובות.","כל מה שכדאי לדעת לפני שמתחילים לסדר את האולם.")}
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {[
+              ["כמה זה עולה?",`ההרשמה וכל הכלים חינם: אישורי הגעה, הזמנה דיגיטלית, תקציב ומשימות. סידורי הושבה בחינם עד ${FREE_SEATING_LIMIT} מוזמנים, ולאירוע גדול יותר פתיחה חד-פעמית של ₪${BASIC_PRICE}. הודעות SMS ו-WhatsApp נקנות לפי כמות, רק אם צריך.`],
+              ["צריך להתקין משהו?","לא. Sidor-IL עובד בדפדפן במחשב, בטאבלט ובטלפון. אפשר גם להוסיף אותו למסך הבית בטלפון ולפתוח כמו אפליקציה."],
+              ["איך האורחים מאשרים הגעה?","כל אורח מקבל קישור אישי להזמנה הדיגיטלית, בוואטסאפ או ב-SMS. הוא מאשר בלחיצה, בוחר כמה מגיעים, והתשובה מופיעה אצלכם מיד."],
+              ["אפשר לעבוד על זה יחד עם בן/בת הזוג או ההורים?","כן. משתפים את האירוע לפי כתובת מייל, וכולם רואים ומעדכנים את אותה רשימה ואת אותה מפת אולם בזמן אמת."],
+              ["מה קורה ביום האירוע?","בכניסה לאולם אפשר לחפש אורח לפי שם או לסרוק QR, לראות את מספר השולחן שלו ולסמן שהגיע. אפשר גם להזמין צוות הושבה או עמדת טאבלט."],
+              ["הפרטים של האורחים שלנו שמורים?","כן. הפרטים מוצפנים בדרך, נשמרים בשרתים מאובטחים, ורק אתם ומי ששיתפתם רואים אותם. אנחנו לא משתמשים בהם לשיווק. הפרטים המלאים במדיניות הפרטיות."],
+            ].map(([q,a],i)=>(
+              <details key={q} className="lp-faq fu" style={{transitionDelay:`${i*.05}s`}}>
+                <summary>{q}<span className="lp-faq-ic" aria-hidden="true">+</span></summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── נקודות אמון לפני הכפתור האחרון (עובדות בלבד, בלי מספרים מומצאים) ─── */}
+      <section aria-label="למה לסמוך עלינו" style={{padding:"60px 6vw 0"}}>
+        <div style={{maxWidth:1060,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:14}}>
+          {[
+            ["check",LP.mint,"#E9FBF4","₪0 להתחלה",`בלי כרטיס אשראי · הושבה חינם עד ${FREE_SEATING_LIMIT} מוזמנים`],
+            ["users",LP.rose,"#FFEFF5","בנוי לאירועים בישראל","עברית מלאה, חתונות, בריתות ובר/בת מצווה"],
+            ["msg","#1FA855","#E9FBF0","תמיכה בוואטסאפ","שואלים ומקבלים תשובה מאדם אמיתי"],
+            ["map",LP.violet,"#F1EAFF","הפרטים שלכם מוגנים","תקשורת מוצפנת, ורק אתם רואים את האורחים"],
+          ].map(([ic,c,bg,t,d],i)=>(
+            <div key={t} className="lp-card fu" style={{padding:"20px 20px",display:"flex",gap:14,alignItems:"flex-start",transitionDelay:`${i*.06}s`}}>
+              <span className="lp-ic" style={{width:44,height:44,borderRadius:14,background:bg,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><LpIcon name={ic} color={c} size={22}/></span>
+              <div><div style={{fontSize:16,fontWeight:900,color:LP.ink,marginBottom:3}}>{t}</div><div style={{fontSize:14,color:LP.muted,lineHeight:1.6}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ─── CTA ─────────────────────────────────────────────────── */}
       <section id="contact" style={{padding:"70px 6vw 110px"}}>
         <div className="fu" style={{maxWidth:1060,margin:"0 auto",borderRadius:36,padding:"70px 30px",textAlign:"center",position:"relative",overflow:"hidden",
@@ -1697,7 +1896,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               <p style={{fontSize:14,color:LP.muted,lineHeight:1.8}}>פלטפורמה ישראלית לסידורי הושבה חכמים, אישורי הגעה והזמנות דיגיטליות. בנויה עבור זוגות, משפחות ומפיקי אירועים.</p>
             </div>
             {/* מפת אתר */}
-            <nav aria-label="מפת אתר" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
+            <nav aria-label="מפת אתר" className="lp-foot" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
               {[
                 ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
                 ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"כניסת מפיקים",()=>onOpenAuth("producer")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
@@ -1718,17 +1917,17 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               <div>
                 <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
                 <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
-                  <div>📍 השושנים 30, נוף הגליל</div>
-                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}>💬 WhatsApp</a>
-                  <a href="tel:0526817102" style={{textDecoration:"none"}}>📞 052-681-7102</a>
-                  <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}>📧 sidoril2026@gmail.com</a>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}><LpIcon name="pin" color={LP.rose} size={18}/>השושנים 30, נוף הגליל</div>
+                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#1FA855" size={18}/>WhatsApp</a>
+                  <a href="tel:0526817102" style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>052-681-7102</a>
+                  <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}><LpIcon name="mail" color={LP.coral} size={18}/>sidoril2026@gmail.com</a>
                 </div>
               </div>
             </nav>
           </div>
           <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
             <span>© {new Date().getFullYear()} Sidor-IL · עוסק מורשה 203887450 · כל הזכויות שמורות</span>
-            <span style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+            <span className="lp-foot" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               <a href="#/terms" style={{textDecoration:"none"}}>תנאי שימוש</a>
               <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
               <a href="#/accessibility" style={{textDecoration:"none"}}>הצהרת נגישות</a>
@@ -1738,6 +1937,15 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           </div>
         </div>
       </footer>
+
+      {/* כפתור הרשמה דביק — נייד בלבד, אחרי הפתיחה */}
+      <div className={`lp-sticky${pastHero?" on":""}`} aria-hidden={!pastHero}>
+        <div style={{flex:1,minWidth:0,lineHeight:1.25}}>
+          <div style={{fontSize:14,fontWeight:900,color:LP.ink}}>חינם עד {FREE_SEATING_LIMIT} מוזמנים</div>
+          <div style={{fontSize:12,color:LP.muted,fontWeight:600}}>בלי כרטיס אשראי</div>
+        </div>
+        <button className="lp-btn lp-primary" tabIndex={pastHero?0:-1} onClick={()=>onOpenAuth("register")} style={{padding:"12px 18px",fontSize:15,minHeight:44,whiteSpace:"nowrap"}}>התחילו בחינם ←</button>
+      </div>
 
       {/* WhatsApp FAB */}
       <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
