@@ -1591,7 +1591,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── PRICING ─────────────────────────────────────────────── */}
       <section id="pricing" style={{padding:"100px 6vw",background:"linear-gradient(180deg,#FFFBF7,#FFF3F7 50%,#FFFBF7)"}}>
         <div style={{maxWidth:1020,margin:"0 auto"}}>
-          {sectionTitle("מחירים","מחירים","שקופים","מחיר אחד לאירוע, ומוסיפים הודעות WhatsApp כשצריך.")}
+          {sectionTitle("מחירים","מחירים","שקופים","מחיר אחד לאירוע, ומוסיפים הודעות SMS ו-WhatsApp כשצריך.")}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:22,alignItems:"stretch"}}>
             {[
               {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","תודה אחרי האירוע"],cta:"לפרטים",highlight:false,c:LP.mint},
