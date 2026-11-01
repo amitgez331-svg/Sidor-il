@@ -4930,9 +4930,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               🏛️ תבניות אולם
             </button>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
-            {tablesNum.map(t=>(
-              <Card key={t.id} style={{padding:16,border:`1.5px solid ${selected===t.id?C.blueL:C.border}`}}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
+            {tablesNum.map(t=>{
+              // השולחן עצמו מצויר כמו במפה (עגול / מרובע / אבירים, כיסאות בצבע הקבוצה); גודל האזור לפי הצורה
+              const [sw,sh,ox,oy]=t.type==="knight"?[212,92,16,16]:t.type==="rect"?[146,116,18,18]:[158,158,0,0];
+              return(
+              <Card key={t.id} style={{padding:16,borderRadius:24,border:`1.5px solid ${selected===t.id?C.blueL:"#EFE8F7"}`,boxShadow:"0 10px 30px -18px rgba(91,60,140,.35)"}}
                 onDragOver={e=>e.preventDefault()}
                 onDrop={e=>{e.preventDefault();const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}>
                 {/* כותרת שולחן */}
@@ -4945,8 +4948,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   </div>
                   <span style={{background:sColor(t)+"22",color:sColor(t),borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px"}}>{(t.guests||[]).length}/{t.seats}</span>
                 </div>
-                <div style={{height:4,background:C.blueXL,borderRadius:2,overflow:"hidden",marginBottom:10}}>
-                  <div style={{height:"100%",width:`${pct(t)}%`,background:`linear-gradient(90deg,${C.blueM},${C.blueL})`,transition:"width .4s"}}/>
+                {/* השולחן המצויר: גוררים אליו אורחים כמו במפה */}
+                <div style={{position:"relative",height:sh+18,display:"flex",justifyContent:"center",margin:"4px 0 8px",background:"radial-gradient(circle at 50% 50%,#FFF7FB,transparent 70%)"}}>
+                  <div style={{position:"relative",width:sw,height:sh,marginTop:9}}>
+                    <TableNode table={{...t,x:ox,y:oy}} selected={false} locked onMouseDown={()=>{}}
+                      onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
+                  </div>
                 </div>
                 {/* אורחים עם צבעי קטגוריה */}
                 <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
@@ -4979,7 +4986,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   </div>
                 )}
               </Card>
-            ))}
+            );})}
           </div>
         </div>}
         {view==="guests"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
