@@ -3152,12 +3152,30 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const bs=[...list.map(tableBox),...Object.keys(FIX_SIZE).map(k=>{const p=fixPos(k);return [p.x,p.y,p.x+FIX_SIZE[k][0],p.y+FIX_SIZE[k][1]];})];
     return [Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))];
   };
+  // גבולות האולם: שולחנות, במה, בר וכניסה נגררים רק בתוך HALL_W×HALL_H (כדי שהמפה לא תתפזר למרחקים)
+  const HALL_W=2400,HALL_H=1600;
+  const clampPos=(x,y,w=160,h=160)=>({x:Math.min(HALL_W-w,Math.max(0,x)),y:Math.min(HALL_H-h,Math.max(0,y))});
+  // המצלמה תחומה: האולם תמיד נשאר על המסך (שוליים CAM_PAD). קטן מהמסך — נשאר בתוכו; גדול — אי אפשר לגלול מעבר לקצוות
+  const CAM_PAD=60;
+  const clampCam=(p,z=zoomRef.current)=>{
+    const el=mapBoxRef.current;if(!el)return p;
+    const [x0,y0,x1,y1]=contentBox();
+    const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start,e=size-CAM_PAD-len,mn=Math.min(CAM_PAD,e),mx=Math.max(CAM_PAD,e);return start+(Math.min(mx,Math.max(mn,a))-a);};
+    return {x:Math.round(ax(x0,x1,el.clientWidth,p.x)),y:Math.round(ax(y0,y1,el.clientHeight,p.y))};
+  };
+  // הזום הכי רחוק: כל האולם על המסך (לא מקטינים מעבר לזה, כדי שהמפה לא תהיה זעירה בתוך משטח ריק)
+  const minZoom=()=>{
+    const el=mapBoxRef.current;if(!el)return ZMIN;
+    const [x0,y0,x1,y1]=contentBox();
+    const zAll=Math.min((el.clientWidth-2*CAM_PAD)/Math.max(x1-x0,320),(el.clientHeight-2*CAM_PAD)/Math.max(y1-y0,240));
+    return Math.max(ZMIN,Math.min(1,+zAll.toFixed(3)));
+  };
   // מצייר את המצלמה ישר על ה-DOM (חלק בזמן גרירה), ושומר ל-state בסוף
   const paintCam=(p=panRef.current,z=zoomRef.current)=>{
     if(hallLayerRef.current)hallLayerRef.current.style.transform=`translate(${p.x}px,${p.y}px) scale(${z})`;
     const el=mapBoxRef.current;if(el){el.style.backgroundPosition=`${p.x}px ${p.y}px,0 0`;el.style.backgroundSize=`${22*z}px ${22*z}px,100% 100%`;}
   };
-  const setCam=(p,z=zoomRef.current)=>{panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
+  const setCam=(p,z=zoomRef.current)=>{p=clampCam(p,z);panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
   // התאמה למסך: כל השולחנות גדולים ככל האפשר ובמרכז. יותר שולחנות = זום קטן יותר.
   // בהתאמה האוטומטית הזום לא יורד מתחת ל-FIT_MIN כדי שהשולחנות יישארו קריאים (מה שבחוץ — מזיזים בחיצים/גרירה);
   // "⤢ הכל" (all=true) מראה את כל האולם בכל גודל
@@ -3178,7 +3196,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=true;
     if(cx==null){cx=el.clientWidth/2;cy=el.clientHeight/2;}
-    const z0=zoomRef.current,z=Math.min(ZMAX,Math.max(ZMIN,z0*factor)),p=panRef.current;
+    const z0=zoomRef.current,z=+Math.min(ZMAX,Math.max(minZoom(),z0*factor)).toFixed(3),p=panRef.current;
+    if(z===z0&&factor<1)return; // כבר בזום הכי רחוק
     setCam({x:cx-(cx-p.x)*z/z0,y:cy-(cy-p.y)*z/z0},z);
   };
   const zoomBy=d=>zoomAt(d>0?1.15:1/1.15);
@@ -3188,7 +3207,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     if(e.button!==0)return;
     const el=mapBoxRef.current,sx=e.clientX,sy=e.clientY,p0=panRef.current;let moved=false,raf=0,p=p0;
     el.style.cursor="grabbing";
-    const mv=me=>{const dx=me.clientX-sx,dy=me.clientY-sy;if(!moved&&Math.abs(dx)+Math.abs(dy)<4)return;moved=true;p={x:p0.x+dx,y:p0.y+dy};panRef.current=p;if(!raf)raf=requestAnimationFrame(()=>{raf=0;paintCam(p);});};
+    const mv=me=>{const dx=me.clientX-sx,dy=me.clientY-sy;if(!moved&&Math.abs(dx)+Math.abs(dy)<4)return;moved=true;p=clampCam({x:p0.x+dx,y:p0.y+dy});panRef.current=p;if(!raf)raf=requestAnimationFrame(()=>{raf=0;paintCam(p);});};
     const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);el.style.cursor="";
       if(moved){manualZoomRef.current=true;setPan(p);}else setSelected(null);};
     window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
@@ -3200,13 +3219,37 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש הזיז/הגדיל בעצמו)
     const ro=new ResizeObserver(()=>{setBoxTick(t=>t+1);if(!manualZoomRef.current)fitZoom();});
     ro.observe(el);
-    // גלגלת/משטח מגע: הזזה; Ctrl+גלגלת (או צביטה): זום סביב הסמן
+    // גלגלת (וצביטה במשטח מגע): זום סביב הסמן. Shift+גלגלת: הזזה
     const wheel=e=>{
       e.preventDefault();
-      if(e.ctrlKey||e.metaKey){const r=el.getBoundingClientRect();zoomAt(Math.exp(-e.deltaY*.0025),e.clientX-r.left,e.clientY-r.top);}
-      else panBy(-e.deltaX,-e.deltaY);
+      if(e.shiftKey)panBy(-(e.deltaX||e.deltaY),0);
+      else{const r=el.getBoundingClientRect(),d=Math.max(-120,Math.min(120,e.deltaMode===1?e.deltaY*33:e.deltaY));zoomAt(Math.exp(-d*.0022),e.clientX-r.left,e.clientY-r.top);}
     };
     el.addEventListener("wheel",wheel,{passive:false});
+    // טאבלט/מסך מגע: אצבע אחת על הרקע מזיזה, שתי אצבעות (צביטה) מגדילות ומקטינות
+    let tch=null;
+    const tPts=e=>[...e.touches].map(t=>({x:t.clientX,y:t.clientY}));
+    const tStart=e=>{
+      if(e.touches.length===1&&e.target.closest("[data-tid],.sx-fixture"))return; // גרירת שולחן — לא הזזת מפה
+      const pts=tPts(e);tch={pts,p0:panRef.current,z0:zoomRef.current};
+    };
+    const tMove=e=>{
+      if(!tch)return;e.preventDefault();
+      const pts=tPts(e),r=el.getBoundingClientRect();
+      if(pts.length>=2&&tch.pts.length>=2){
+        const dist=a=>Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),mid=a=>({x:(a[0].x+a[1].x)/2-r.left,y:(a[0].y+a[1].y)/2-r.top});
+        const m0=mid(tch.pts),m=mid(pts),z=Math.min(ZMAX,Math.max(minZoom(),tch.z0*dist(pts)/Math.max(dist(tch.pts),1)));
+        manualZoomRef.current=true;
+        setCam({x:m.x-(m0.x-tch.p0.x)*z/tch.z0,y:m.y-(m0.y-tch.p0.y)*z/tch.z0},+z.toFixed(3));
+      }else if(pts.length===1){
+        manualZoomRef.current=true;
+        setCam({x:tch.p0.x+pts[0].x-tch.pts[0].x,y:tch.p0.y+pts[0].y-tch.pts[0].y});
+      }
+    };
+    const tEnd=e=>{tch=e.touches.length?{pts:tPts(e),p0:panRef.current,z0:zoomRef.current}:null;};
+    el.addEventListener("touchstart",tStart,{passive:true});
+    el.addEventListener("touchmove",tMove,{passive:false});
+    el.addEventListener("touchend",tEnd);
     // חיצים במקלדת מזיזים את המפה (לא בתוך שדה טקסט)
     const key=e=>{
       if(/input|textarea|select/i.test(e.target.tagName)||e.ctrlKey||e.metaKey)return;
@@ -3214,7 +3257,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       if(d){e.preventDefault();panBy(d[0],d[1]);}
     };
     window.addEventListener("keydown",key);
-    return()=>{ro.disconnect();el.removeEventListener("wheel",wheel);window.removeEventListener("keydown",key);};
+    return()=>{ro.disconnect();el.removeEventListener("wheel",wheel);el.removeEventListener("touchstart",tStart);el.removeEventListener("touchmove",tMove);el.removeEventListener("touchend",tEnd);window.removeEventListener("keydown",key);};
   },[screen,view,sidebarOpen,tables.length,loading]);
   // חגיגה כשכל האורחים הושבו: קונפטי והודעה (רק במעבר ל-100%, לא בכל טעינה)
   const [celebrate,setCelebrate]=useState(false);
@@ -4369,7 +4412,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             onDrop={e=>{if(e.defaultPrevented)return;e.preventDefault();}}
             onMouseDown={startPan}
             ref={mapBoxRef} dir="ltr"
-            style={{flex:1,minHeight:0,overflow:"hidden",position:"relative",cursor:"grab",
+            style={{flex:1,minHeight:0,overflow:"hidden",position:"relative",cursor:"grab",touchAction:"none",
               backgroundColor:"#FFFDFB",backgroundImage:"radial-gradient(circle,#E9DEF2 1.2px,transparent 1.4px),linear-gradient(180deg,rgba(255,230,240,.55),rgba(255,253,251,0) 45%)",
               backgroundSize:`${22*zoom}px ${22*zoom}px,100% 100%`,backgroundPosition:`${pan.x}px ${pan.y}px,0 0`}}>
             {(()=>{
@@ -4378,7 +4421,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               const MAP_W=Math.max(cx1+200,1000),MAP_H=Math.max(cy1+200,700);
               const q=mapFind.trim().toLowerCase();
               return(
+                <>
                 <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
+                  {/* רצפת האולם: מסמנת את גבולות המפה (השולחנות והבמה + שוליים) */}
+                  <div aria-hidden="true" style={{position:"absolute",left:cx0-40,top:cy0-40,width:cx1-cx0+80,height:cy1-cy0+80,borderRadius:32,background:"rgba(255,255,255,.75)",border:"2px dashed #E6D9F2",boxShadow:"0 20px 60px -30px rgba(91,60,140,.25)",pointerEvents:"none"}}/>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
                   <div className="sx-anim" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
@@ -4404,7 +4450,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       e.stopPropagation();e.preventDefault();
                       const node=e.currentTarget,s=posOf(k),sx=e.clientX,sy=e.clientY,z=zoomRef.current;let nx=s.x,ny=s.y,raf=0;
                       const mv=me=>{
-                        nx=Math.round(s.x+(me.clientX-sx)/z);ny=Math.round(s.y+(me.clientY-sy)/z);
+                        ({x:nx,y:ny}=clampPos(Math.round(s.x+(me.clientX-sx)/z),Math.round(s.y+(me.clientY-sy)/z),FIX[k].w,FIX[k].h));
                         if(!raf)raf=requestAnimationFrame(()=>{raf=0;node.style.left=nx+"px";node.style.top=ny+"px";});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
@@ -4462,7 +4508,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       const node=e.currentTarget.closest("[data-tid]");
                       const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current;let posX=bx,posY=by,raf=0;
                       const mv=me=>{
-                        posX=Math.round(bx+(me.clientX-sx)/z);posY=Math.round(by+(me.clientY-sy)/z);
+                        ({x:posX,y:posY}=clampPos(Math.round(bx+(me.clientX-sx)/z),Math.round(by+(me.clientY-sy)/z),t.type==="knight"?196:160,t.type==="knight"?76:160));
                         if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
@@ -4491,12 +4537,19 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     );
                   })}
                 </div>
+                {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
+                <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
+                  {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","התאמה למסך",()=>fitZoom()],["🗺","כל האולם",()=>fitZoom(tables,true)]].map(([ic,l,fn])=>(
+                    <button key={l} onClick={fn} title={l} aria-label={l} style={{width:40,height:40,borderRadius:10,border:"none",background:ic==="+"||ic==="−"?"#F4EEFC":"#fff",color:C.blue,fontSize:ic==="+"||ic==="−"?22:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{ic}</button>
+                  ))}
+                </div>
+                </>
               );
             })()}
           </div>
           <div style={{padding:"7px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:14,fontSize:11,color:C.muted,flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
             {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
-            <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · עמדו על שולחן לראות מי יושב בו</span>
+            <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · גלגלת = זום · גרירת הרקע = הזזה</span>
           </div>
           {celebrate&&(
             <div className="sx-anim" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:600,overflow:"hidden"}}>
