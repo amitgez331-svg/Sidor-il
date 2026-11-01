@@ -3229,13 +3229,16 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     if(hallLayerRef.current)hallLayerRef.current.style.transform=`translate(${p.x}px,${p.y}px) scale(${z})`;
   };
   const setCam=(p,z=zoomRef.current)=>{p=clampCam(p,z);panRef.current=p;zoomRef.current=z;paintCam(p,z);setPan(p);setZoom(z);};
-  // התאמה למסך: כל האולם ממלא את המפה (זה גם המצב האוטומטי — מתעדכן כשמוסיפים/מוחקים שולחן או משנים גודל חלון)
+  // המצב האוטומטי (פתיחה, הוספת/מחיקת שולחן, שינוי גודל חלון): כל האולם על המסך — אבל לא פחות מ-OPEN_ZOOM,
+  // כי מתחת לזה השולחנות קטנים מדי. אז מראים את החלק העליון של האולם (במה ורחבה) במרכז, והשאר בהזזה.
+  // all=true (כפתור ⤢): כל האולם על המסך בכל גודל
+  const OPEN_ZOOM=.65;
   const manualZoomRef=useRef(false);
-  const fitZoom=()=>{
+  const fitZoom=(all=false)=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
-    const [x0,y0]=hallRect(),z=minZoom();
-    setCam({x:-x0*z,y:-y0*z},z);
+    const [x0,y0,x1]=hallRect(),zFit=minZoom(),z=all?zFit:+Math.max(zFit,Math.min(OPEN_ZOOM,ZMAX)).toFixed(4);
+    setCam({x:el.clientWidth/2-(x0+x1)/2*z,y:-y0*z},z);
   };
   // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
   const zoomAt=(factor,cx,cy)=>{
@@ -4618,7 +4621,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
                   <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
                   <button style={zBtn} onClick={()=>zoomBy(.1)} aria-label="הגדל">+</button>
-                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom()} title="כל האולם על המסך">⤢ כל האולם</button>
+                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom(true)} title="כל האולם על המסך">⤢ כל האולם</button>
                 </div>
                 {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
                 <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
@@ -4796,7 +4799,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 </div>
                 {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
                 <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
-                  {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom()]].map(([ic,l,fn])=>(
+                  {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom(true)]].map(([ic,l,fn])=>(
                     <button key={l} onClick={fn} title={l} aria-label={l} style={{width:40,height:40,borderRadius:10,border:"none",background:ic==="+"||ic==="−"?"#F4EEFC":"#fff",color:C.blue,fontSize:ic==="+"||ic==="−"?22:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{ic}</button>
                   ))}
                 </div>
