@@ -96,6 +96,28 @@ const TABLE_TYPES = {
   knight: { label:"שולחן אבירים", icon:"👑", defaultSeats:20 },
 };
 
+// ─── מפת האולם: גדלים (ביחידות המפה) ואלמנטים שאפשר להוסיף ───
+// שולחן עגול ≈ 160 יחידות. "ענק" (xl) הוא התקרה: האולם לא נפתח מעבר לזה
+const HALL_SIZES={s:[1400,880],m:[1800,1120],l:[2300,1420],xl:[2900,1800]};
+const HALL_SIZE_ORDER=["s","m","l","xl"];
+const HALL_SIZE_LABELS={auto:"אוטומטי",s:"קטן · עד ~20 שולחנות",m:"בינוני · עד ~35",l:"גדול · עד ~60",xl:"ענק · עד ~100"};
+const HALL_MARGIN=40;
+// bg/fg/border: עיצוב האלמנט במפה. w/h: גודל התחלתי
+const HALL_ITEM_KINDS={
+  stage:   {label:"במה",           icon:"🎤",w:340,h:84, bg:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",fg:"#fff"},
+  dance:   {label:"רחבת ריקודים",  icon:"💃",w:380,h:280,bg:"repeating-conic-gradient(#F7E7D6 0 25%,#EFD6BC 0 50%) 0 0/48px 48px",fg:"#7A4E22",border:"#E2C29E"},
+  bar:     {label:"בר",            icon:"🥂",w:170,h:64, bg:"#fff",fg:"#3A2464",border:"#EADFF3"},
+  entrance:{label:"כניסה",         icon:"🚪",w:180,h:44, bg:"#fff",fg:"#6E6585",border:"#EADFF3"},
+  dj:      {label:"עמדת DJ",       icon:"🎧",w:140,h:70, bg:"#2B1D3F",fg:"#fff"},
+  chuppah: {label:"חופה",          icon:"💐",w:170,h:170,bg:"radial-gradient(circle,#FFF 0 55%,#FDE7F0 100%)",fg:"#B03A8C",border:"#F7B7D3"},
+  buffet:  {label:"מזנון / בופה",  icon:"🍽️",w:260,h:70, bg:"#FFF8EC",fg:"#8A5A00",border:"#F3D9A4"},
+  photo:   {label:"פינת צילום",    icon:"📸",w:150,h:110,bg:"#F1F7FF",fg:"#2B6CB0",border:"#C6DDF7"},
+  kids:    {label:"פינת ילדים",    icon:"🧸",w:190,h:150,bg:"#F0FFF7",fg:"#276749",border:"#B7EBCF"},
+  gifts:   {label:"עמדת מתנות",    icon:"🎁",w:140,h:64, bg:"#FFF0F6",fg:"#B03A8C",border:"#F7C6DD"},
+  wc:      {label:"שירותים",       icon:"🚻",w:140,h:64, bg:"#F7F7FA",fg:"#4A5568",border:"#E2E8F0"},
+  text:    {label:"טקסט חופשי",    icon:"🏷️",w:180,h:56, bg:"#fff",fg:"#2B1D3F",border:"#E2E8F0"},
+};
+
 const RELATION_COLORS = {
   "משפחה קרובה":   "#F0609E",
   "משפחה מורחבת":  "#FF8A65",
@@ -3132,53 +3154,62 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const ZMIN=.3,ZMAX=1.8;
   // גבולות כל שולחן ביחס לנקודת המיקום שלו (כמו שהוא מצויר ב-TableNode)
   const tableBox=t=>t.type==="knight"?[t.x-16,t.y-16,t.x+196,t.y+76]:t.type==="rect"?[t.x-18,t.y-18,t.x+128,t.y+98]:[t.x,t.y,t.x+158,t.y+158];
-  const FIX_SIZE={stage:[300,70],bar:[130,56],entrance:[150,34]};
-  // מיקום ברירת מחדל לבמה/בר/כניסה (כשלא הוזזו ידנית) נקבע לפי השולחנות — ומתעדכן רק כשמוסיפים/מוחקים שולחן,
-  // לא כשגוררים שולחן (כדי שהבמה לא תקפוץ בזמן הזזה)
+  // ─── אלמנטים באולם (במה, רחבה, בר, כניסה...) — settings_json.hall.items ───
+  // אירוע ישן בלי items: במה/בר/כניסה במיקום שנשמר (hall.stage/bar/entrance) או ליד השולחנות.
+  // אולם חדש (בלי שולחנות): במה, רחבה, בר וכניסה במקום קבוע
   const fixDefRef=useRef(null);
   useEffect(()=>{fixDefRef.current=null;},[event.id,tables.length]);
-  const fixDefaults=()=>{
+  const hallItems=()=>{
+    const h=hallRef.current||{};
+    if(Array.isArray(h.items))return h.items;
     if(fixDefRef.current)return fixDefRef.current;
-    const bs=tables.map(tableBox);
-    const [x0,y0,x1,y1]=bs.length?[Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))]:[0,120,800,420];
-    const cx=(x0+x1)/2;
-    const d={stage:{x:Math.round(cx-150),y:Math.round(y0-92)},bar:{x:Math.round(cx+190),y:Math.round(y0-86)},entrance:{x:Math.round(cx-75),y:Math.round(y1+22)}};
-    if(!loading)fixDefRef.current=d;
-    return d;
+    let items;
+    if(!tables.length&&!h.stage){
+      const [W]=HALL_SIZES.m;
+      items=[{id:"stage",kind:"stage",x:W/2-170,y:40,w:340,h:84},{id:"dance",kind:"dance",x:W/2-190,y:150,w:380,h:280},{id:"bar",kind:"bar",x:W-230,y:40,w:170,h:64},{id:"entrance",kind:"entrance",x:W/2-90,y:HALL_SIZES.m[1]-70,w:180,h:44}];
+    }else{
+      const bs=tables.map(tableBox);
+      const [x0,y0,x1,y1]=bs.length?[Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))]:[0,120,800,420];
+      const cx=(x0+x1)/2,at=(k,dx,dy)=>h[k]&&typeof h[k].x==="number"?h[k]:{x:Math.round(cx+dx),y:Math.round(dy)};
+      const s=at("stage",-150,y0-92),b=at("bar",190,y0-86),e=at("entrance",-75,y1+22);
+      items=[{id:"stage",kind:"stage",x:s.x,y:s.y,w:300,h:70},{id:"bar",kind:"bar",x:b.x,y:b.y,w:130,h:56},{id:"entrance",kind:"entrance",x:e.x,y:e.y,w:150,h:34}];
+    }
+    if(!loading)fixDefRef.current=items;
+    return items;
   };
-  const fixPos=k=>{const p=(hallRef.current||{})[k];return p&&typeof p.x==="number"?{x:p.x,y:p.y}:fixDefaults()[k];};
-  // המלבן שמכיל את כל השולחנות + במה/בר/כניסה
-  const contentBox=(list=tables)=>{
-    const bs=[...list.map(tableBox),...Object.keys(FIX_SIZE).map(k=>{const p=fixPos(k);return [p.x,p.y,p.x+FIX_SIZE[k][0],p.y+FIX_SIZE[k][1]];})];
+  const itemBox=i=>[i.x,i.y,i.x+i.w,i.y+i.h];
+  // המלבן שמכיל את כל השולחנות והאלמנטים
+  const contentBox=(list=tables,items=hallItems())=>{
+    const bs=[...list.map(tableBox),...items.map(itemBox)];
+    if(!bs.length)return [0,0,0,0];
     return [Math.min(...bs.map(b=>b[0])),Math.min(...bs.map(b=>b[1])),Math.max(...bs.map(b=>b[2])),Math.max(...bs.map(b=>b[3]))];
   };
-  // ─── האולם = כל שטח המפה על המסך ───
-  // מלבן האולם: השולחנות + במה/בר/כניסה + שוליים, מורחב ליחס של המסך. בזום "התאמה" הוא ממלא בדיוק את המפה.
-  // עוד שולחנות = אולם גדול יותר = זום קטן יותר (השולחנות מתכווצים, הכל נשאר על המסך).
-  // עם מעט שולחנות הזום לא עולה על FIT_MAX (האולם לא נהיה ענק)
-  const HALL_PAD=50,FIT_MAX=1;
-  const hallRect=()=>{
-    const el=mapBoxRef.current,cw=el?.clientWidth||1000,ch=Math.max(el?.clientHeight||600,1);
-    const [x0,y0,x1,y1]=contentBox();
-    let w=Math.max(x1-x0+2*HALL_PAD,cw/FIT_MAX),h=Math.max(y1-y0+2*HALL_PAD,ch/FIT_MAX);
-    if(w/h<cw/ch)w=h*cw/ch;else h=w*ch/cw;
-    const cx=(x0+x1)/2,cy=(y0+y1)/2;
-    return [cx-w/2,cy-h/2,cx+w/2,cy+h/2];
+  // ─── גודל האולם: קבוע, עם תקרה (ענק). "אוטומטי" = הגודל הקטן שמכיל את כל מה שבאולם ───
+  // הכל נמצא בתוך [0,0,W,H]; שולחנות ואלמנטים לא נגררים החוצה, והמצלמה לא יוצאת מהאולם
+  const hallDims=(size=(hallRef.current||{}).size||"auto")=>{
+    const [,,x1,y1]=contentBox();
+    // גודל קבוע. (אירוע ישן שחורג ממנו — מגדילים כדי לא להסתיר שולחנות; גרירה רגילה לא יכולה לחרוג)
+    if(HALL_SIZES[size])return [Math.max(HALL_SIZES[size][0],x1+HALL_MARGIN/2),Math.max(HALL_SIZES[size][1],y1+HALL_MARGIN/2)];
+    const need=[x1+HALL_MARGIN/2,y1+HALL_MARGIN/2];
+    const fit=HALL_SIZE_ORDER.map(k=>HALL_SIZES[k]).find(([w,h])=>w>=need[0]&&h>=need[1]);
+    return fit||[Math.max(need[0],HALL_SIZES.xl[0]),Math.max(need[1],HALL_SIZES.xl[1])]; // אירוע ישן שחורג — לא חותכים
   };
-  // גרירת שולחן / במה / בר / כניסה: רק בתוך האולם
-  const clampPos=(x,y,w=160,h=160,r=hallRect())=>({x:Math.round(Math.min(r[2]-w,Math.max(r[0],x))),y:Math.round(Math.min(r[3]-h,Math.max(r[1],y)))});
-  // המצלמה תחומה לאולם: אי אפשר לגלול אל מחוץ לו (בזום התאמה הוא ממלא את המסך ולא זז)
+  const hallRect=()=>{const [W,H]=hallDims();return [0,0,W,H];};
+  // גרירה בתוך האולם: off = גבולות הצורה ביחס לנקודת המיקום
+  const clampIn=(x,y,off,r=hallRect())=>({x:Math.round(Math.min(r[2]-off[2],Math.max(r[0]-off[0],x))),y:Math.round(Math.min(r[3]-off[3],Math.max(r[1]-off[1],y)))});
+  const tableOff=type=>tableBox({x:0,y:0,type});
+  // המצלמה תחומה לאולם: קטן מהמסך — במרכז; גדול — אי אפשר לגלול מעבר לקירות
   const clampCam=(p,z=zoomRef.current)=>{
     const el=mapBoxRef.current;if(!el)return p;
     const [x0,y0,x1,y1]=hallRect();
-    const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start,e=size-len,mn=Math.min(0,e),mx=Math.max(0,e);return start+(Math.min(mx,Math.max(mn,a))-a);};
+    const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start;const want=len<=size?(size-len)/2:Math.min(0,Math.max(size-len,a));return start+(want-a);};
     return {x:Math.round(ax(x0,x1,el.clientWidth,p.x)),y:Math.round(ax(y0,y1,el.clientHeight,p.y))};
   };
-  // הזום הכי רחוק = כל האולם על המסך
+  // הזום הכי רחוק = כל האולם על המסך (עם שוליים קטנים)
   const minZoom=()=>{
     const el=mapBoxRef.current;if(!el)return ZMIN;
-    const [x0,,x1]=hallRect();
-    return +(el.clientWidth/(x1-x0)).toFixed(4);
+    const [W,H]=hallDims();
+    return +Math.min(1.3,(el.clientWidth-16)/W,(el.clientHeight-16)/H).toFixed(4);
   };
   // מצייר את המצלמה ישר על ה-DOM (חלק בזמן גרירה), ושומר ל-state בסוף
   const paintCam=(p=panRef.current,z=zoomRef.current)=>{
@@ -3191,8 +3222,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const fitZoom=()=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
-    const [x0,y0]=hallRect(),z=minZoom();
-    setCam({x:-x0*z,y:-y0*z},z);
+    setCam({x:0,y:0},minZoom()); // clampCam ממרכז
   };
   // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
   const zoomAt=(factor,cx,cy)=>{
@@ -3212,7 +3242,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     el.style.cursor="grabbing";
     const mv=me=>{const dx=me.clientX-sx,dy=me.clientY-sy;if(!moved&&Math.abs(dx)+Math.abs(dy)<4)return;moved=true;p=clampCam({x:p0.x+dx,y:p0.y+dy});panRef.current=p;if(!raf)raf=requestAnimationFrame(()=>{raf=0;paintCam(p);});};
     const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);el.style.cursor="";
-      if(moved){manualZoomRef.current=true;setPan(p);}else setSelected(null);};
+      if(moved){manualZoomRef.current=true;setPan(p);}else{setSelected(null);setSelItem(null);}};
     window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
   };
   useEffect(()=>{
@@ -3297,13 +3327,174 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // שולחן/במה הוזזו או נוספו (גם יישור ותבנית): האולם משתנה — מתאימים שוב, אלא אם המשתמש עשה זום ידני
   const layoutKey=tables.map(t=>`${t.x},${t.y}`).join("|")+JSON.stringify({...hall,locked:0});
   useEffect(()=>{if(screen==="seating"&&view==="map"&&!manualZoomRef.current)fitZoom();},[layoutKey]);
-  const saveHall=async next=>{
-    setHall(next);
+  const saveHall=async(next,silent=false)=>{
+    setHall(next);hallRef.current=next;
     const settings={...(event.settings_json||{}),hall:next};
     event.settings_json=settings;
     const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
-    if(error)alert("❌ פריסת האולם לא נשמרה: "+error.message);
+    if(error&&!silent)alert("❌ פריסת האולם לא נשמרה: "+error.message);
   };
+  // ─── עריכת האולם: גודל ואלמנטים ───
+  const [selItem,setSelItem]=useState(null);
+  const sizeKey=()=>{const s=(hallRef.current||{}).size;if(HALL_SIZES[s])return s;const [W,H]=hallDims("auto");return HALL_SIZE_ORDER.find(k=>HALL_SIZES[k][0]>=W&&HALL_SIZES[k][1]>=H)||"xl";};
+  // שמירת אלמנטים (תמיד בפורמט החדש, עם גודל אולם קבוע) + ביטול
+  const saveItems=(items,label,extra={})=>{
+    const prev=hallRef.current||{};
+    const {stage,bar,entrance,...rest}=prev;
+    saveHall({...rest,size:sizeKey(),...extra,items});
+    if(label)pushUndo(label,()=>saveHall(prev));
+  };
+  const itemLabel=it=>it.label||HALL_ITEM_KINDS[it.kind]?.label||"אלמנט";
+  const updateItem=(id,patch,label)=>saveItems(hallItems().map(i=>i.id===id?{...i,...patch}:i),label);
+  // נעילה של אלמנט / שולחן בודד: לא זז (גם לא בסידור מושלם וביישור). שולחן נעול עדיין מקבל אורחים
+  const lockedTables=new Set(hall.lockedTables||[]);
+  const toggleItemLock=id=>{const it=hallItems().find(i=>i.id===id);if(it)updateItem(id,{locked:!it.locked},`${it.locked?"שחרור":"נעילת"} ${itemLabel(it)}`);};
+  const toggleTableLock=id=>{
+    const prev=hallRef.current||{},cur=new Set(prev.lockedTables||[]);
+    cur.has(id)?cur.delete(id):cur.add(id);
+    saveHall({...prev,lockedTables:[...cur]});
+    pushUndo(cur.has(id)?"נעילת שולחן":"שחרור שולחן",()=>saveHall(prev));
+  };
+  const deleteItem=id=>{const it=hallItems().find(i=>i.id===id);if(!it||it.locked)return;saveItems(hallItems().filter(i=>i.id!==id),`מחיקת ${itemLabel(it)}`);setSelItem(null);};
+  const renameItem=id=>{const it=hallItems().find(i=>i.id===id);if(!it)return;const v=window.prompt("שם האלמנט במפה",itemLabel(it));if(v==null)return;updateItem(id,{label:v.trim().slice(0,30)||undefined},"שינוי שם");};
+  // מקום פנוי באולם למלבן w×h (לא על שולחן או אלמנט אחר). off = גבולות הצורה ביחס לנקודת המיקום
+  // near=true: המקום הפנוי הכי קרוב לרחבה (או לבמה) — ככה שולחנות חדשים מתקבצים סביבה ולא בפינה
+  const findFree=(off,[W,H],near=false)=>{
+    const tw=off[2]-off[0],th=off[3]-off[1],items=hallItems();
+    const bs=[...tables.map(tableBox),...items.map(itemBox)];
+    const f=near&&(items.find(i=>i.kind==="dance")||items.find(i=>i.kind==="stage"));
+    const fx=f?f.x+f.w/2:0,fy=f?f.y+f.h/2:0;
+    let best=null,bd=Infinity;
+    for(let y=HALL_MARGIN;y+th<=H-HALL_MARGIN/2;y+=30)for(let x=HALL_MARGIN;x+tw<=W-HALL_MARGIN/2;x+=30){
+      const nb=[x,y,x+tw,y+th];
+      if(bs.some(b=>nb[0]<b[2]+24&&nb[2]+24>b[0]&&nb[1]<b[3]+24&&nb[3]+24>b[1]))continue;
+      if(!f)return {x:x-off[0],y:y-off[1]};
+      const d=Math.hypot(x+tw/2-fx,(y+th/2-fy)*1.25);
+      if(d<bd){bd=d;best={x:x-off[0],y:y-off[1]};}
+    }
+    return best;
+  };
+  const [addItemOpen,setAddItemOpen]=useState(false);
+  const addItem=kind=>{
+    setAddItemOpen(false);
+    const K=HALL_ITEM_KINDS[kind],dims=hallDims(),id=kind+"_"+Date.now().toString(36);
+    // קודם המקום הקלאסי (רחבה מול הבמה, כניסה למטה...), ואם הוא תפוס — המקום הפנוי הראשון
+    const draft={id,kind,x:0,y:0,w:K.w,h:K.h};
+    const classic=classicItems([...hallItems().filter(i=>i.kind!==kind),draft],dims).find(i=>i.id===id);
+    const others=[...tables.map(tableBox),...hallItems().map(itemBox)],cb=itemBox(classic);
+    const p=!others.some(b=>cb[0]<b[2]+16&&cb[2]+16>b[0]&&cb[1]<b[3]+16&&cb[3]+16>b[1])?classic
+      :findFree([0,0,K.w,K.h],dims)||{x:Math.round(dims[0]/2-K.w/2),y:Math.round(dims[1]/2-K.h/2)};
+    saveItems([...hallItems(),{id,kind,x:p.x,y:p.y,w:K.w,h:K.h}],`הוספת ${K.label}`);
+    setSelItem(id);setSelected(null);
+  };
+  // החלפת גודל אולם. אם משהו נשאר מחוץ לגבולות — מסדרים מחדש בתוך הגודל החדש
+  const setHallSize=k=>{
+    const [W,H]=HALL_SIZES[k],[,,x1,y1]=contentBox();
+    if(x1>W||y1>H){
+      if(!window.confirm(`חלק מהשולחנות או האלמנטים לא נכנסים באולם ${HALL_SIZE_LABELS[k].split(" ·")[0]}. לסדר את הכל מחדש בתוך הגודל הזה?`))return;
+      perfectLayout(k);return;
+    }
+    saveItems(hallItems(),"שינוי גודל האולם",{size:k});
+  };
+  // פריסה קלאסית של האלמנטים באולם W×H: במה במרכז למעלה, DJ לידה, רחבה מול הבמה, בר בפינה, כניסה במרכז למטה,
+  // חופה בפינה השנייה. שאר האלמנטים נשארים באותו מקום יחסי. [W0,H0] = גודל האולם הקודם
+  const classicItems=(items,[W,H],[W0,H0]=[W,H],resize=false)=>{
+    const M=HALL_MARGIN,by={};
+    // resize: במה ורחבה גדלות עם האולם (באולם ענק רחבה קטנה נראית אבודה)
+    const f=W/HALL_SIZES.s[0];
+    items=items.map(i=>resize&&!i.locked&&(i.kind==="stage"||i.kind==="dance")?{...i,w:Math.round(HALL_ITEM_KINDS[i.kind].w*f),h:Math.round(HALL_ITEM_KINDS[i.kind].h*(i.kind==="dance"?f:Math.sqrt(f)))}:i);
+    items.forEach(i=>{by[i.kind]=by[i.kind]||i;});
+    const st=by.stage,out=[];
+    items.forEach(i=>{
+      let x,y;
+      if(i.locked){out.push(i);return;} // נעול: נשאר בדיוק במקום
+      if(i===by.stage){x=W/2-i.w/2;y=M;}
+      else if(i===by.dj){x=st?W/2+st.w/2+30:W/2-i.w/2;y=st?M+(st.h-i.h)/2:M;}
+      else if(i===by.dance){x=W/2-i.w/2;y=st?M+st.h+46:Math.max(M,H*.3-i.h/2);}
+      else if(i===by.bar){x=W-M-i.w;y=M;}
+      else if(i===by.entrance){x=W/2-i.w/2;y=H-M/2-i.h;}
+      else if(i===by.chuppah){x=M;y=M;}
+      else{x=(i.x+i.w/2)*W/W0-i.w/2;y=(i.y+i.h/2)*H/H0-i.h/2;}
+      out.push({...i,x:Math.round(Math.min(W-i.w,Math.max(0,x))),y:Math.round(Math.min(H-i.h,Math.max(0,y)))});
+    });
+    return out;
+  };
+  // ✨ סידור מושלם: האלמנטים בפריסה קלאסית, והשולחנות על רשת של עמודות ישרות (כמו באולם אמיתי) מסביב לרחבה ולבמה.
+  // מספור מימין לשמאל ומלמעלה למטה. האולם: הקטן ביותר שהשולחנות נכנסים בו בריווח נוח (ככה הם הכי גדולים על המסך).
+  // לא נכנס? ריווח קטן יותר, ואז אולם גדול יותר (עד ענק)
+  const perfectLayout=async(startSize="s")=>{
+    if(!tables.length){alert("אין עדיין שולחנות לסדר");return;}
+    // שולחנות נעולים נשארים במקום, והשאר מסתדרים מסביבם
+    const fixedT=tables.filter(t=>lockedTables.has(t.id)).map(tableBox);
+    const sorted=tables.filter(t=>!lockedTables.has(t.id)).sort((a,b)=>(numOf(a)||999)-(numOf(b)||999));
+    if(!sorted.length){alert("כל השולחנות נעולים. שחררו שולחן כדי שאפשר יהיה לסדר אותו.");return;}
+    const [W0,H0]=HALL_SIZES[sizeKey()];
+    const offs=sorted.map(t=>tableOff(t.type));
+    const cw0=Math.max(...offs.map(o=>o[2]-o[0])),ch0=Math.max(...offs.map(o=>o[3]-o[1]));
+    const pack=(W,H,gap,items)=>{
+      const M=HALL_MARGIN,cw=cw0+gap,ch=ch0+gap;
+      const cols=Math.floor((W-2*M+gap)/cw),rows=Math.floor((H-2*M+gap)/ch);
+      const x0=(W-(cols*cw-gap))/2,y0=M;
+      const blocks=[...items.map(i=>[i.x-22,i.y-22,i.x+i.w+22,i.y+i.h+22]),...fixedT.map(b=>[b[0]-gap/2,b[1]-gap/2,b[2]+gap/2,b[3]+gap/2])];
+      const cells=[];
+      for(let r=0;r<rows;r++)for(let c=cols-1;c>=0;c--){ // מימין לשמאל
+        const b=[x0+c*cw,y0+r*ch,x0+c*cw+cw0,y0+r*ch+ch0];
+        if(!blocks.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))cells.push(b);
+      }
+      if(cells.length<sorted.length)return null;
+      // התאים הכי קרובים לרחבה (או לבמה / למרכז), ואז לפי סדר קריאה: שורה אחר שורה, מימין לשמאל
+      const f=items.find(i=>i.kind==="dance")||items.find(i=>i.kind==="stage");
+      const fx=f?f.x+f.w/2:W/2,fy=f?f.y+f.h/2:H/2;
+      const near=[...cells].sort((a,b)=>Math.hypot((a[0]+a[2])/2-fx,((a[1]+a[3])/2-fy)*1.25)-Math.hypot((b[0]+b[2])/2-fx,((b[1]+b[3])/2-fy)*1.25)).slice(0,sorted.length);
+      near.sort((a,b)=>a[1]-b[1]||b[0]-a[0]);
+      const pos={};
+      sorted.forEach((t,i)=>{const b=near[i],o=offs[i],tw=o[2]-o[0],th=o[3]-o[1];pos[t.id]={x:Math.round(b[0]+(cw0-tw)/2-o[0]),y:Math.round(b[1]+(ch0-th)/2-o[1])};});
+      return pos;
+    };
+    const order=HALL_SIZE_ORDER.slice(HALL_SIZE_ORDER.indexOf(startSize));
+    let res=null,size=null,itemsAt=null;
+    for(const k of order){
+      const dims=HALL_SIZES[k],items=classicItems(hallItems(),dims,[W0,H0],true);
+      for(const gap of [60,44,30]){res=pack(dims[0],dims[1],gap,items);if(res)break;}
+      if(res){size=k;itemsAt=items;break;}
+    }
+    if(!res){alert("יש יותר מדי שולחנות גם לאולם בגודל ענק. אפשר להחליף חלק לשולחנות אבירים או להקטין את מספר השולחנות.");return;}
+    const before=tables.map(t=>({id:t.id,x:t.x,y:t.y})),prevHall=hallRef.current||{};
+    setTables(ts=>ts.map(t=>res[t.id]?{...t,...res[t.id]}:t));
+    const {stage,bar,entrance,...rest}=prevHall;
+    await Promise.all([...sorted.map(t=>saveTablePos(t.id,res[t.id].x,res[t.id].y)),saveHall({...rest,size,items:itemsAt})]);
+    pushUndo("סידור מושלם",async()=>{await restoreTablePos(before);await saveHall(prevHall);});
+    setTimeout(()=>fitZoom(),50);
+  };
+  // Delete / Backspace מוחק את האלמנט הנבחר; Esc מבטל בחירה
+  useEffect(()=>{
+    if(!selItem)return;
+    const k=e=>{
+      if(/input|textarea|select/i.test(e.target.tagName))return;
+      if((e.key==="Delete"||e.key==="Backspace")&&!hallRef.current?.locked){e.preventDefault();deleteItem(selItem);}
+      else if(e.key==="Escape")setSelItem(null);
+    };
+    window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);
+  },[selItem]);
+  // אירוע ישן: שומרים פעם אחת את גודל האולם והאלמנטים בפורמט החדש, ומזיזים פנימה מה שנמצא מחוץ לאולם (קואורדינטות שליליות)
+  useEffect(()=>{
+    if(loading||screen!=="seating")return;
+    const h=hallRef.current||{};
+    const [x0,y0]=contentBox();
+    const dx=x0<0?HALL_MARGIN-Math.floor(x0):0,dy=y0<0?HALL_MARGIN-Math.floor(y0):0;
+    if(!dx&&!dy&&Array.isArray(h.items)&&HALL_SIZES[h.size])return;
+    if(dx||dy){
+      setTables(ts=>ts.map(t=>({...t,x:t.x+dx,y:t.y+dy})));
+      tables.forEach(t=>saveTablePos(t.id,t.x+dx,t.y+dy));
+    }
+    const items=hallItems().map(i=>({...i,x:i.x+dx,y:i.y+dy}));
+    const {stage,bar,entrance,...rest}=h;
+    fixDefRef.current=null;
+    // הגודל: הקטן שמכיל את הכל אחרי ההזזה
+    const [,,x1,y1]=contentBox(tables.map(t=>({...t,x:t.x+dx,y:t.y+dy})),items);
+    const size=HALL_SIZES[h.size]?h.size:(HALL_SIZE_ORDER.find(k=>HALL_SIZES[k][0]>=x1+HALL_MARGIN/2&&HALL_SIZES[k][1]>=y1+HALL_MARGIN/2)||"xl");
+    saveHall({...rest,size,items},true);
+  },[loading,screen,event.id]);
   // ─── מספרי שולחנות: נשמרים באירוע (settings_json.table_nums = {tableId: מספר}) ───
   // שולחן בלי מספר מקבל אחד אוטומטית: המספר שבתחילת השם (אם פנוי), אחרת המספר הפנוי הקטן ביותר
   const [tableNums,setTableNums]=useState(()=>event.settings_json?.table_nums||{});
@@ -3491,7 +3682,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const rows=[];
     sorted.forEach(t=>{const r=rows[rows.length-1];if(r&&t.y-r[0].y<100)r.push(t);else rows.push([t]);});
     const next={};let prevY=-Infinity;
+    tables.forEach(t=>{if(lockedTables.has(t.id))next[t.id]={x:t.x,y:t.y};});
     rows.forEach(r=>{
+      if(r.some(t=>lockedTables.has(t.id))){r.forEach(t=>{next[t.id]={x:t.x,y:t.y};});prevY=Math.max(prevY,...r.map(t=>t.y));return;} // שורה עם שולחן נעול — לא נוגעים בה
       const y=Math.max(snap(r.reduce((s,t)=>s+t.y,0)/r.length),prevY+180);prevY=y;
       let prevX=-Infinity,prevW=0;
       [...r].sort((a,b)=>a.x-b.x).forEach(t=>{const x=Math.max(snap(t.x),prevX+prevW);next[t.id]={x,y};prevX=x;prevW=wOf(t);});
@@ -3556,16 +3749,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     setSaving(false);
   };
   const addTable=async()=>{setModal("addTable");};
-  // שולחן חדש נכנס למקום הפנוי הראשון ברשת שליד השולחנות הקיימים (לא על שולחן אחר)
+  // שולחן חדש: המקום הפנוי הראשון באולם (לא על שולחן או אלמנט). אין מקום — האולם גדל לגודל הבא (עד ענק)
   const freeSpot=type=>{
-    const bs=tables.map(tableBox);
-    const x0=bs.length?Math.min(...bs.map(b=>b[0])):80,y0=bs.length?Math.min(...bs.map(b=>b[1])):140;
-    const cols=Math.max(4,Math.ceil(Math.sqrt(tables.length+1))+1),w=type==="knight"?240:200;
-    for(let r=0;r<60;r++)for(let c=0;c<cols;c++){
-      const x=x0+c*200,y=y0+r*190,nb=tableBox({x,y,type});
-      if(!bs.some(b=>nb[0]<b[2]+20&&nb[2]+20>b[0]&&nb[1]<b[3]+20&&nb[3]+20>b[1]))return {x,y};
+    const off=tableOff(type),cur=sizeKey();
+    for(const k of HALL_SIZE_ORDER.slice(HALL_SIZE_ORDER.indexOf(cur))){
+      const p=findFree(off,k===cur?hallDims():HALL_SIZES[k],true);
+      if(p){if(k!==cur)saveItems(hallItems(),null,{size:k});return p;}
     }
-    return {x:x0,y:y0+bs.length*40};
+    alert("האולם מלא (גודל ענק). השולחן נוסף בפינה. אפשר ללחוץ \"✨ סידור מושלם\" כדי לסדר את כל השולחנות מחדש.");
+    return {x:HALL_MARGIN-off[0],y:HALL_MARGIN-off[1]};
   };
   const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:spot.x,y:spot.y,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
   // ─── תבניות אולם: שמירת מפת השולחנות (וגם במה/בר/כניסה) וטעינה לאירוע אחר באותו אולם ───
@@ -4382,11 +4574,39 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   style={{background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                   {mapLocked?"🔒 המפה נעולה":"🔓 נעל מפה"}
                 </button>
+                <button disabled={mapLocked} onClick={()=>perfectLayout()} className="sx-btn sx-btn-primary"
+                  title={mapLocked?"המפה נעולה":"מסדר את כל השולחנות בשורות מושלמות לפי המספר, מסביב לבמה, לרחבה ולשאר האלמנטים"}
+                  style={{background:GRAD,border:"none",color:"#fff",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
+                  ✨ סידור מושלם
+                </button>
                 <button disabled={mapLocked} onClick={alignTables} className="sx-btn"
                   title={mapLocked?"המפה נעולה":"מיישר את השולחנות לשורות ועמודות ישרות, קרוב למקום שבו הנחתם אותם"}
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1}}>
-                  📐 יישר שולחנות
+                  📐 יישר
                 </button>
+                {/* הוספת אלמנט לאולם */}
+                <div style={{position:"relative"}}>
+                  <button disabled={mapLocked} onClick={()=>setAddItemOpen(o=>!o)} className="sx-btn" aria-expanded={addItemOpen}
+                    style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
+                    ➕ הוסף לאולם
+                  </button>
+                  {addItemOpen&&<>
+                    <div onClick={()=>setAddItemOpen(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
+                    <div role="menu" style={{position:"absolute",top:"calc(100% + 6px)",right:0,zIndex:41,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,boxShadow:"0 18px 40px -16px rgba(43,29,63,.35)",padding:8,display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,width:300}}>
+                      {Object.entries(HALL_ITEM_KINDS).map(([k,K])=>(
+                        <button key={k} role="menuitem" onClick={()=>addItem(k)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",borderRadius:10,padding:"8px 10px",fontSize:13,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"inherit",textAlign:"right"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#F6F0FF"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                          <span style={{fontSize:18}}>{K.icon}</span>{K.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>}
+                </div>
+                {/* גודל האולם (ענק = התקרה) */}
+                <select value={sizeKey()} disabled={mapLocked} onChange={e=>setHallSize(e.target.value)} aria-label="גודל האולם" title="גודל האולם"
+                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"6px 8px",fontSize:12,fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>
+                  {HALL_SIZE_ORDER.map(k=><option key={k} value={k}>📏 אולם {HALL_SIZE_LABELS[k]}</option>)}
+                </select>
                 {undoBtn()}
                 <div style={{display:"flex",alignItems:"center",gap:4}}>
                   <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
@@ -4427,11 +4647,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               return(
                 <>
                 <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
-                  {/* רצפת האולם: גבולות המפה. בזום "כל האולם" היא ממלאת את כל שטח המפה */}
-                  <div aria-hidden="true" style={{position:"absolute",left:hx0+6,top:hy0+6,width:hx1-hx0-12,height:hy1-hy0-12,borderRadius:24,background:"rgba(255,255,255,.7)",border:"2px dashed #E6D9F2",pointerEvents:"none"}}/>
+                  {/* רצפת האולם: הקירות של המפה. שום דבר לא יוצא מהם */}
+                  <div aria-hidden="true" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,background:"#FFFDFB",backgroundImage:"radial-gradient(circle,#EDE3F4 1.6px,transparent 1.8px)",backgroundSize:"30px 30px",border:"3px solid #E6D9F2",boxShadow:"inset 0 0 0 10px rgba(246,240,248,.9),0 30px 80px -40px rgba(91,60,140,.35)",pointerEvents:"none"}}/>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
-                  <div className="sx-anim" style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+                  <div className="sx-anim" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,pointerEvents:"none",overflow:"hidden"}}>
                     <div style={{position:"absolute",top:"18%",left:"-6%",width:360,height:360,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.13),transparent 65%)",animation:"sxBlob 18s ease-in-out infinite"}}/>
                     <div style={{position:"absolute",bottom:"-10%",right:"-4%",width:420,height:420,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.13),transparent 65%)",animation:"sxBlob 22s ease-in-out 3s infinite"}}/>
                     <div style={{position:"absolute",top:"45%",left:"42%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.10),transparent 65%)",animation:"sxBlob 20s ease-in-out 6s infinite"}}/>
@@ -4442,55 +4662,53 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     ))}
                   </div>
 
-                  {/* ─── במה, בר וכניסה  -  ניתנים לגרירה (אלא אם המפה נעולה); המיקום נשמר באירוע ─── */}
-                  {(()=>{
-                    const FIX={stage:{w:300,h:70},bar:{w:130,h:56},entrance:{w:150,h:34}};
-                    // מיקום קבוע: נשמר באירוע, או ברירת מחדל שנקבעה פעם אחת (לא זז כשמזיזים שולחנות)
-                    const posOf=fixPos;
-                    const radius=(k,p,r)=>`${r}px`;
-                    // גרירה חלקה: מזיזים את האלמנט ישירות ושומרים רק בסוף
-                    const startDrag=(k,e)=>{
-                      if(mapLocked||e.button!==0)return;
+                  {/* ─── אלמנטים באולם: במה, רחבה, בר, כניסה... לחיצה בוחרת; גרירה מזיזה; הפינה משנה גודל ─── */}
+                  {hallItems().map(it=>{
+                    const K=HALL_ITEM_KINDS[it.kind]||HALL_ITEM_KINDS.text,sel=selItem===it.id,label=itemLabel(it);
+                    // גרירה חלקה (הזזה או שינוי גודל): מעדכנים את ה-DOM ישירות ושומרים בסוף, בתוך קירות האולם
+                    const startItem=(e,mode)=>{
+                      if(e.button!==0)return;
                       e.stopPropagation();e.preventDefault();
-                      const node=e.currentTarget,s=posOf(k),sx=e.clientX,sy=e.clientY,z=zoomRef.current;let nx=s.x,ny=s.y,raf=0;
+                      setSelItem(it.id);setSelected(null);
+                      if(mapLocked||it.locked)return;
+                      const node=e.currentTarget.closest("[data-item]"),sx=e.clientX,sy=e.clientY,z=zoomRef.current,r=hallRect();let n={...it},raf=0;
                       const mv=me=>{
-                        ({x:nx,y:ny}=clampPos(Math.round(s.x+(me.clientX-sx)/z),Math.round(s.y+(me.clientY-sy)/z),FIX[k].w,FIX[k].h));
-                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;node.style.left=nx+"px";node.style.top=ny+"px";});
+                        const dx=(me.clientX-sx)/z,dy=(me.clientY-sy)/z;
+                        n=mode==="move"?{...it,...clampIn(it.x+dx,it.y+dy,[0,0,it.w,it.h],r)}
+                          :{...it,w:Math.round(Math.max(60,Math.min(r[2]-it.x,it.w+dx))),h:Math.round(Math.max(36,Math.min(r[3]-it.y,it.h+dy)))};
+                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;Object.assign(node.style,{left:n.x+"px",top:n.y+"px",width:n.w+"px",height:n.h+"px"});});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
-                        if(nx!==s.x||ny!==s.y){const prev=hallRef.current[k];saveHall({...hallRef.current,[k]:{x:nx,y:ny}});
-                          pushUndo(`הזזת ${k==="stage"?"הבמה":k==="bar"?"הבר":"הכניסה"}`,()=>saveHall({...hallRef.current,[k]:prev??s}));}};
+                        if(n.x!==it.x||n.y!==it.y||n.w!==it.w||n.h!==it.h)updateItem(it.id,{x:n.x,y:n.y,w:n.w,h:n.h},`${mode==="move"?"הזזת":"שינוי גודל"} ${label}`);};
                       window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
                     };
-                    const common=k=>{const p=posOf(k);return {
-                      onMouseDown:e=>startDrag(k,e),
-                      title:mapLocked?undefined:"גררו כדי להזיז",
-                      className:mapLocked?"":"sx-fixture",
-                      style:{position:"absolute",left:p.x,top:p.y,width:FIX[k].w,height:FIX[k].h,zIndex:5,userSelect:"none",cursor:mapLocked?"default":"grab"},
-                    };};
-                    const st=posOf("stage"),br=posOf("bar"),en=posOf("entrance");
-                    return(<>
-                      <div {...common("stage")} style={{...common("stage").style,background:"linear-gradient(120deg,#FF8A65,#F0609E 50%,#9B6BFF)",borderRadius:radius("stage",st,26),
-                        boxShadow:"0 14px 30px -10px rgba(240,96,158,.6)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <div style={{position:"absolute",top:7,left:24,right:24,display:"flex",justifyContent:"space-between",pointerEvents:"none"}}>
-                          {[0,1,2,3,4,5,6].map(i=>{const c=["#FFF3C4","#FFD3E6","#E6DAFF"][i%3];return <span key={i} className="sx-anim" style={{width:7,height:7,borderRadius:"50%",background:c,boxShadow:`0 0 10px ${c}`,animation:`sxTwinkle ${1.4+(i%3)*.5}s ease-in-out ${i*.18}s infinite`}}/>;})}
-                        </div>
-                        <div style={{textAlign:"center",marginTop:12,color:"#fff",pointerEvents:"none"}}>
-                          <div style={{fontSize:15,fontWeight:900,letterSpacing:1}}>🎤 במה</div>
-                          <div style={{fontSize:10,opacity:.85,fontWeight:700}}>חתן · כלה · להקה</div>
-                        </div>
+                    const big=it.w>=150&&it.h>=90,fs=Math.max(12,Math.min(22,Math.min(it.w/9,it.h/2.6)));
+                    const hBtn={width:30,height:30,borderRadius:9,border:"none",background:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px -4px rgba(43,29,63,.35)"};
+                    return(
+                      <div key={it.id} data-item={it.id} onMouseDown={e=>startItem(e,"move")} title={mapLocked||it.locked?`${label}${it.locked?" · נעול":""}`:`${label} · גררו להזזה`}
+                        className={mapLocked||it.locked?"":"sx-fixture"}
+                        style={{position:"absolute",left:it.x,top:it.y,width:it.w,height:it.h,zIndex:sel?9:it.kind==="dance"?1:2,userSelect:"none",cursor:mapLocked||it.locked?"default":"grab",
+                          background:K.bg,color:K.fg,border:K.border?`2px solid ${K.border}`:"none",borderRadius:it.kind==="chuppah"?"50%":it.kind==="dance"?22:16,
+                          boxShadow:it.kind==="stage"?"0 14px 30px -10px rgba(240,96,158,.6)":"0 10px 24px -14px rgba(91,60,140,.4)",
+                          outline:sel?"3px solid #9B6BFF":undefined,outlineOffset:3,
+                          display:"flex",flexDirection:big?"column":"row",alignItems:"center",justifyContent:"center",gap:big?4:6,textAlign:"center",padding:4,boxSizing:"border-box"}}>
+                        {it.kind==="dance"&&<div style={{position:"absolute",inset:10,border:"2px dashed rgba(122,78,34,.25)",borderRadius:14,pointerEvents:"none"}}/>}
+                        <span style={{fontSize:big?fs*1.6:fs*1.1,lineHeight:1,pointerEvents:"none"}}>{K.icon}</span>
+                        <span style={{fontSize:fs,fontWeight:900,lineHeight:1.15,pointerEvents:"none",letterSpacing:it.kind==="stage"?1:0,background:it.kind==="dance"?"rgba(255,255,255,.75)":"none",borderRadius:8,padding:it.kind==="dance"?"2px 8px":0}}>{label}</span>
+                        {it.locked&&!sel&&<span aria-label="נעול" style={{position:"absolute",top:-10,left:-10,width:24,height:24,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,pointerEvents:"none"}}>🔒</span>}
+                        {sel&&!mapLocked&&<>
+                          {/* כפתורי עריכה מעל האלמנט */}
+                          <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",top:-42,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:12}}>
+                            <button onClick={()=>toggleItemLock(it.id)} title={it.locked?"שחרור: אפשר להזיז שוב":"נעילה: לא יזוז, גם לא בסידור מושלם"} aria-pressed={!!it.locked} aria-label={`${it.locked?"שחרור":"נעילת"} ${label}`} style={{...hBtn,background:it.locked?"#FFF4E0":"#fff"}}>{it.locked?"🔒":"🔓"}</button>
+                            <button onClick={()=>renameItem(it.id)} title="שינוי שם" aria-label={`שינוי שם ל${label}`} style={hBtn}>✏️</button>
+                            {!it.locked&&<button onClick={()=>deleteItem(it.id)} title="מחיקה מהמפה" aria-label={`מחיקת ${label}`} style={{...hBtn,background:"#FFF0F0"}}>🗑</button>}
+                          </div>
+                          {/* ידית שינוי גודל */}
+                          {!it.locked&&<div onMouseDown={e=>startItem(e,"resize")} title="גררו לשינוי גודל" style={{position:"absolute",right:-9,bottom:-9,width:20,height:20,borderRadius:6,background:"#9B6BFF",border:"3px solid #fff",cursor:"nwse-resize",boxShadow:"0 2px 8px rgba(0,0,0,.25)",zIndex:12}}/>}
+                        </>}
                       </div>
-                      <div {...common("bar")} style={{...common("bar").style,background:"#fff",border:"1.5px solid #EADFF3",borderRadius:radius("bar",br,18),
-                        boxShadow:"0 10px 24px -14px rgba(91,60,140,.4)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <span style={{fontSize:18,pointerEvents:"none"}}>🥂</span>
-                        <span style={{fontSize:12,fontWeight:900,color:C.blue,pointerEvents:"none"}}>בר</span>
-                      </div>
-                      <div {...common("entrance")} style={{...common("entrance").style,background:"#fff",border:"1.5px solid #EADFF3",borderRadius:radius("entrance",en,16),
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <span style={{fontSize:12,fontWeight:900,color:C.muted,pointerEvents:"none"}}>🚪 כניסה</span>
-                      </div>
-                    </>);
-                  })()}
+                    );
+                  })}
                   {mapLocked&&<div style={{position:"absolute",top:10,left:10,zIndex:6,background:"rgba(255,244,224,.95)",border:`1px solid ${C.gold}`,color:"#8A5A00",borderRadius:100,padding:"4px 12px",fontSize:12,fontWeight:900,pointerEvents:"none"}}>🔒 המפה נעולה · גרירת אורחים פעילה</div>}
 
                   {tables.length===0&&(
@@ -4506,13 +4724,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     const hmd=e=>{
                       if(e.button!==0)return;
                       e.stopPropagation();
-                      setSelected(t.id);
-                      if(mapLocked)return; // מפה נעולה: אפשר לבחור שולחן, לא להזיז
+                      setSelected(t.id);setSelItem(null);
+                      if(mapLocked||lockedTables.has(t.id))return; // מפה / שולחן נעולים: אפשר לבחור, לא להזיז
                       // גרירה חלקה: מזיזים את העוטף ישירות (בלי לרנדר את כל המסך בכל תזוזה) ושומרים בסוף
                       const node=e.currentTarget.closest("[data-tid]");
-                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current;let posX=bx,posY=by,raf=0;
+                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current,hr=hallRect();let posX=bx,posY=by,raf=0;
                       const mv=me=>{
-                        ({x:posX,y:posY}=clampPos(Math.round(bx+(me.clientX-sx)/z),Math.round(by+(me.clientY-sy)/z),t.type==="knight"?196:160,t.type==="knight"?76:160));
+                        ({x:posX,y:posY}=clampIn(bx+(me.clientX-sx)/z,by+(me.clientY-sy)/z,tableOff(t.type),hr));
                         if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
@@ -4529,6 +4747,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         <TableNode table={{...t,x:0,y:0,num:numOf(t)}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
                           onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
                         </div>
+                        {lockedTables.has(t.id)&&selected!==t.id&&<span aria-label="שולחן נעול" style={{position:"absolute",top:-8,left:-8,zIndex:30,width:22,height:22,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,pointerEvents:"none"}}>🔒</span>}
+                        {selected===t.id&&!mapLocked&&(
+                          <button onMouseDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();toggleTableLock(t.id);}}
+                            title={lockedTables.has(t.id)?"שחרור: אפשר להזיז שוב":"נעילה: השולחן לא יזוז (גם לא בסידור מושלם). אורחים עדיין אפשר להושיב"}
+                            aria-pressed={lockedTables.has(t.id)} aria-label={lockedTables.has(t.id)?"שחרור השולחן":"נעילת השולחן"}
+                            style={{position:"absolute",top:-14,left:-14,zIndex:30,width:28,height:28,borderRadius:"50%",background:lockedTables.has(t.id)?"#FFF4E0":"#fff",border:`2px solid ${lockedTables.has(t.id)?C.gold:"#fff"}`,
+                              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,boxShadow:"0 6px 14px -4px rgba(43,29,63,.4)"}}>{lockedTables.has(t.id)?"🔒":"🔓"}</button>
+                        )}
                         {selected===t.id&&(
                           <button onMouseDown={e=>e.stopPropagation()}
                             onClick={e=>{e.stopPropagation();setEditTableData(t);}} title="עריכת שולחן"
