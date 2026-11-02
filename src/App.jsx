@@ -1524,7 +1524,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <div style={{flex:1,minWidth:280,animation:"fadeUp .9s ease both"}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #F0E3EF",borderRadius:100,padding:"7px 16px 7px 10px",marginBottom:26,boxShadow:"0 6px 20px -8px rgba(240,96,158,.35)"}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:LP.mint,display:"inline-block",animation:"pulse 2s infinite"}}/>
-              <span style={{fontSize:13,color:"#5A5070",fontWeight:700}}>🪑 מערכת סידורי ההושבה החכמה לאירועים</span>
+              <span style={{fontSize:13,color:"#5A5070",fontWeight:700}}>🪑 מערכת סידורי הושבה ואישורי הגעה חכמה לאירועים</span>
             </div>
 
             <h1 style={{fontSize:"clamp(44px,6vw,84px)",fontWeight:900,lineHeight:1.04,letterSpacing:"-.035em",marginBottom:26,color:LP.ink}}>
@@ -1561,7 +1561,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
             {/* פס זכוכית עם שלוש עובדות */}
             <div className="lp-glass lp-hero-cta" style={{display:"inline-flex",gap:4,flexWrap:"wrap",borderRadius:22,padding:8}}>
-              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","₪0","להתחלה",LP.mint,"#E9FBF4"],["users","עברית","מותאם לאירועים בישראל",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg],i)=>(
+              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","₪0","להתחלה",LP.mint,"#E9FBF4"],["users","כל השפות","עריכה ושליחה בכל שפה",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg],i)=>(
                 <div key={small} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderInlineStart:i?"1px solid #EFE6F5":"none"}}>
                   <div style={{width:40,height:40,borderRadius:13,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name={ic} color={c} size={20}/></div>
                   <div style={{textAlign:"right"}}>
@@ -1926,7 +1926,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             </nav>
           </div>
           <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
-            <span>© {new Date().getFullYear()} Sidor-IL · עוסק מורשה 203887450 · כל הזכויות שמורות</span>
+            <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
             <span className="lp-foot" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               <a href="#/terms" style={{textDecoration:"none"}}>תנאי שימוש</a>
               <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
