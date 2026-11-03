@@ -372,7 +372,8 @@ const parseSheetRow = r => {
   const keys=Object.keys(r);
   const k=re=>keys.find(x=>re.test(String(x).trim()));
   const phoneKey=keys.find(x=>/טלפון|פלאפון|נייד|סלולרי|phone|mobile|tel|cell/i.test(String(x).trim())&&!/label|type|סוג/i.test(String(x)));
-  const fullKey=k(/^(שם מלא|שם|name|full ?name|guest)$/i)||k(/שם מלא|full ?name/i);
+  const fullKey=k(/^(שם מלא|שם|name|full ?name|guest)$/i)||k(/שם מלא|full ?name/i)
+    ||keys.find(x=>/שם|name|אורח|מוזמן|איש קשר|contact/i.test(String(x))&&!/פרטי|משפחה|first|last|given|family|middle|user|file|אירוע|אולם/i.test(String(x)));
   const firstKey=k(/^(שם פרטי|first ?name|given ?name)$/i)||k(/שם פרטי|first|given/i);
   const middleKey=k(/^(middle ?name|additional ?name)$/i);
   const lastKey=k(/^(שם משפחה|last ?name|family ?name|surname)$/i)||k(/שם משפחה|משפחה|last|surname|family/i);
@@ -387,6 +388,11 @@ const parseSheetRow = r => {
     // הטלפון נכתב בתוך עמודת השם  -  מפרידים
     const p=parseGuestLine(name); if(p.phone){name=p.name;phone=p.phone;}
   }
+  if(name&&!phone){
+    // עמודת הטלפון בשם לא מוכר ("מספר", "Mobile 2"...)  -  מחפשים תא שכולו מספר טלפון
+    for(const x of keys){if(x===countKey)continue;const v=String(r[x]??"").trim();
+      if(/^[\d\s\-+().]{9,}$/.test(v)){const p=parseGuestLine(v);if(p.phone){phone=p.phone;break;}}}
+  }
   if(!name){
     // בלי כותרות מוכרות: מחברים את כל התאים ומפרידים לבד
     const p=parseGuestLine(keys.map(x=>r[x]).join(" "));
@@ -395,10 +401,31 @@ const parseSheetRow = r => {
   return {name:String(name).trim(),phone,count};
 };
 // קריאת קובץ אקסל/CSV לשורות. CSV נקרא כטקסט UTF-8 (קובץ Google Contacts בלי BOM — אחרת העברית משתבשת)
+// כל קובץ: שורת הכותרות יכולה להיות אחרי שורת כותרת/ריקות, או שאין כותרות בכלל (אז כל שורה היא אורח),
+// והרשימה יכולה להיות בכל גיליון  -  נבחר הגיליון עם הכי הרבה שורות של אורחים
+// כותרת ודאית (מילה מוכרת, או "שם ..."/"מס' ...") מול רמז חלש (מכיל טלפון/אורחים...); "שמעון" לא נחשב כותרת
+const SHEET_HEADER_RE=/^(#|מס'?|מספר|שם|שם מלא|name|טלפון|פלאפון|נייד|סלולרי|phone|mobile|tel|cell|כמות|מוזמנים|אורחים|count|guests|qty|צד|קרבה|הערות?|notes?|e-?mail|מייל|אימייל|כתובת|שולחן|table)$|^(שם|מס'?|מספר)\s|name|phone|mobile/i;
+const SHEET_HINT_RE=/טלפון|פלאפון|נייד|אורח|מוזמן|משפחה|פרטי|כמות|קשר|first|last/i;
+const sheetToGuestRows = rows => {
+  rows=rows.filter(r=>r.some(c=>String(c).trim()));
+  const isHeader=r=>{const cells=r.map(c=>String(c).trim()).filter(Boolean);
+    if(!cells.length||cells.some(c=>parseGuestLine(c).phone))return false;
+    return cells.some(c=>SHEET_HEADER_RE.test(c))||cells.filter(c=>SHEET_HINT_RE.test(c)).length>=2;};
+  const h=rows.slice(0,15).findIndex(isHeader);
+  if(h<0)return rows.map(r=>Object.fromEntries(r.map((c,i)=>["__col"+i,c])));
+  const head=rows[h].map((c,i)=>String(c).trim()||"__col"+i);
+  return rows.slice(h+1).map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]??""])));
+};
 const readSheetRows = async file => {
   const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
   const wb=/\.csv$/i.test(file.name)?read((await file.text()).replace(/^﻿/,""),{type:"string"}):read(await file.arrayBuffer());
-  return utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+  let best=[],bestN=0;
+  for(const n of wb.SheetNames){
+    const rows=sheetToGuestRows(utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""}));
+    const good=rows.map(parseSheetRow).filter(p=>p.name&&p.name.length>=2).length;
+    if(good>bestN){best=rows;bestN=good;}
+  }
+  return best;
 };
 // כרטיס ייבוא מ-Google Contacts: הוראות ייצוא + בחירת הקובץ
 function GoogleContactsImport({ onFile }) {
@@ -901,11 +928,16 @@ function VenuePage({ onBack, onOpenAuth }) {
   return(
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,minHeight:"100vh"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+      {/* בר עליון קבוע: חזרה לדף הבית נשארת תמיד למעלה */}
+      <header style={{position:"sticky",top:0,zIndex:100,background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #EFE6F5",padding:"12px 20px",display:"flex",alignItems:"center",gap:12}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",padding:0}}>→ חזרה לדף הבית</button>
+        <span style={{color:"#ccc"}} aria-hidden="true">|</span>
+        <span style={{fontWeight:900,color:"#2B1D3F",fontSize:15}}>Sidor-IL</span>
+      </header>
       {/* Header */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
         <div style={{position:"relative",zIndex:1}}>
-          <button onClick={onBack} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:10,padding:"7px 14px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",marginBottom:16}}>← חזרה</button>
           <h1 style={{fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>🏢 אולמות ומפיקים</h1>
           <p style={{fontSize:14,color:"rgba(255,255,255,.75)"}}>שיתוף פעולה עם Sidor-IL</p>
           {onOpenAuth&&<button onClick={()=>onOpenAuth("producer")} style={{marginTop:14,background:"#fff",color:C.blue,border:"none",borderRadius:10,padding:"9px 16px",cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit"}}>🎬 כניסת מפיקים ←</button>}
@@ -1093,14 +1125,19 @@ function AccessibilityWidget() {
   return(
     <>
       {/* כפתור צף */}
-      <button onClick={()=>setOpen(o=>!o)} aria-label="תפריט נגישות"
-        style={{position:"fixed",bottom:24,left:24,zIndex:9999,width:52,height:52,borderRadius:"50%",background:"#3A2464",color:"#fff",border:"3px solid #fff",boxShadow:"0 4px 20px rgba(91,60,140,.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
-        ♿
+      {/* קליל: עיגול לבן קטן עם אייקון קווי (סמל הנגישות האוניברסלי), שקוף מעט עד שעוברים עליו */}
+      <button onClick={()=>setOpen(o=>!o)} aria-label="תפריט נגישות" title="נגישות" className="sx-a11y-fab"
+        style={{position:"fixed",bottom:20,left:20,zIndex:9999,width:44,height:44,borderRadius:"50%",background:"rgba(255,255,255,.92)",color:"#6B4FA0",border:"1.5px solid #E4DAF3",boxShadow:"0 2px 10px rgba(91,60,140,.14)",backdropFilter:"blur(6px)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,opacity:open?1:.85,transition:"opacity .2s, transform .2s"}}>
+        <style>{`.sx-a11y-fab:hover,.sx-a11y-fab:focus-visible{opacity:1!important;transform:scale(1.06)}`}</style>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/>
+          <path d="M7.5 9.5 12 10.5l4.5-1M12 10.5v3.5m0 0-2.5 4.5M12 14l2.5 4.5"/>
+        </svg>
       </button>
 
       {/* פאנל */}
       {open&&(
-        <div style={{position:"fixed",bottom:86,left:24,zIndex:9998,background:"#fff",borderRadius:18,boxShadow:"0 8px 40px rgba(0,0,0,.18)",width:280,direction:"rtl",overflow:"hidden",border:"2px solid #E2E8F0"}}>
+        <div style={{position:"fixed",bottom:74,left:20,zIndex:9998,background:"#fff",borderRadius:18,boxShadow:"0 8px 40px rgba(0,0,0,.18)",width:280,direction:"rtl",overflow:"hidden",border:"2px solid #E2E8F0"}}>
           {/* כותרת */}
           <div style={{background:"#3A2464",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
@@ -4362,7 +4399,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="invite"&&<InviteSettings event={event} onUpdate={e=>setScreen("home")}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
-        {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
+        {screen==="gifts"&&<GiftsScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
@@ -5276,7 +5313,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="whatsapp"&&<WhatsAppScreen event={event} userPackages={userPackages} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
-        {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
+        {screen==="gifts"&&<GiftsScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
@@ -6750,7 +6787,8 @@ const SCHEDULE_DEFAULTS=[
 const SCHEDULE_TO={invite:"כל האורחים",reminder:"ממתינים לאישור",table:"מגיעים ששובצו לשולחן",thanks:"מגיעים"};
 const SCHEDULE_LATE_HOURS=12;
 // defaultOn: תזמוני ברירת המחדל מופעלים כל עוד המשתמש לא שינה אותם (בוואטסאפ: 4 הסבבים שבחבילה)
-function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false }) {
+// lockDefaults: 4 הסבבים תמיד דלוקים (בוואטסאפ הם חלק מהרשומה שנקנתה)  -  בלי מתג כיבוי, אפשר רק לשנות מועד
+function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false, lockDefaults=false }) {
   const eventD=event.date?new Date(event.date):null;
   // סטטוס שליחה אוטומטית לכל תזמון
   const [runs,setRuns]=useState({});
@@ -6780,7 +6818,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   const build=()=>{
     const saved=event.settings_json?.[storeKey]||[];
     const byId=Object.fromEntries(saved.map(s=>[s.id,s]));
-    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:defaultOn,...(byId[d.id]||{})}));
+    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:defaultOn,...(byId[d.id]||{}),...(lockDefaults?{enabled:true}:{})}));
     const extra=saved.filter(s=>s.custom);
     return [...base,...extra];
   };
@@ -6846,10 +6884,12 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
                 </div>
                 {!editing&&s.enabled&&<div style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>{disp} · {s.time}</div>}
                 {editing&&s.custom&&<button onClick={()=>remove(s.id)} title="מחיקת תזמון" style={{background:"#FFF2F4",border:"1px solid #F4C7CD",color:C.danger,borderRadius:8,padding:"3px 8px",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>מחק</button>}
-                <div role="switch" aria-checked={s.enabled} tabIndex={0} onClick={()=>toggle(s.id)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle(s.id);}}}
+                {lockDefaults&&!s.custom
+                  ?<span style={{fontSize:10,fontWeight:800,color:"#fff",background:accent,borderRadius:100,padding:"3px 9px",whiteSpace:"nowrap"}}>✓ דלוק</span>
+                  :<div role="switch" aria-checked={s.enabled} tabIndex={0} onClick={()=>toggle(s.id)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle(s.id);}}}
                   style={{width:38,height:22,borderRadius:11,background:s.enabled?accent:"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:s.enabled?18:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
-                </div>
+                </div>}
               </div>
               {s.enabled&&<>
                 <div style={{background:"#F4EEFC",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#4A3D66",lineHeight:1.5,marginBottom:editing?8:0}}>
@@ -6884,10 +6924,47 @@ const RECIPIENT_GROUPS=[
   {v:"confirmed",l:"מגיעים",    c:"#276749", match:g=>g.rsvp==="confirmed"},
   {v:"declined", l:"לא מגיעים", c:"#C53030", match:g=>g.rsvp==="declined"},
 ];
-const pickRecipients=(withPhone,sel)=>{
+// tid: נוסח התזכורת נשלח רק לממתינים, גם אם סומנו "כולם"/"מגיעים" (כמו recipientsFor בשרת)
+const pickRecipients=(withPhone,sel,tid)=>{
   const groups=RECIPIENT_GROUPS.filter(f=>sel.includes(f.v));
-  return groups.length?withPhone.filter(g=>groups.some(f=>f.match(g))):[];
+  const list=groups.length?withPhone.filter(g=>groups.some(f=>f.match(g))):[];
+  return tid==="reminder"?list.filter(RECIPIENT_GROUPS[1].match):list;
 };
+// נוסח שהמשתמש שמר לכל סבב: settings_json.sms_texts / wa_texts ({invite:"...",reminder:"..."}).
+// השמור מחליף את ברירת המחדל במסך ובשליחה האוטומטית (sms-scheduler קורא את sms_texts)
+const useSavedTexts=(event,storeKey,base)=>{
+  const [saved,setSaved]=useState(event.settings_json?.[storeKey]||{});
+  useEffect(()=>{setSaved(event.settings_json?.[storeKey]||{});},[event.id]);
+  const templates=base.map(t=>({...t,def:t.text,custom:!!saved[t.id]?.trim(),text:saved[t.id]?.trim()||t.text}));
+  const save=async(id,text)=>{
+    const next={...saved};
+    if(text.trim()&&text.trim()!==base.find(t=>t.id===id)?.text.trim())next[id]=text;else delete next[id];
+    const settings={...(event.settings_json||{}),[storeKey]:next};
+    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    if(error){alert("❌ הנוסח לא נשמר: "+error.message);return false;}
+    event.settings_json=settings;setSaved(next);return true;
+  };
+  return [templates,save];
+};
+// כפתורי שמירה/איפוס מתחת לתיבת הנוסח
+function TemplateTextBar({ tpl, text, onSave, onReset, accent, autoNote }) {
+  const [st,setSt]=useState("");
+  if(!tpl)return null;
+  const dirty=text!==tpl.text;
+  const b={border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:8}}>
+      <button disabled={!dirty||st==="saving"} onClick={async()=>{setSt("saving");setSt(await onSave(text)?"saved":"");setTimeout(()=>setSt(s=>s==="saved"?"":s),2200);}}
+        className="sx-btn" style={{...b,background:dirty?accent:"#E9E4EF",color:dirty?"#fff":C.muted,cursor:dirty?"pointer":"default"}}>
+        {st==="saving"?"שומר…":`💾 שמירת הנוסח ל"${tpl.label.replace(/^\S+\s/,"")}"`}
+      </button>
+      {(tpl.custom||dirty)&&<button onClick={onReset} style={{...b,background:"#F7F1FD",color:C.blue}}>↺ נוסח מקורי</button>}
+      {st==="saved"&&<span style={{fontSize:12,color:C.success,fontWeight:800}}>✓ נשמר{autoNote?" · ישמש גם בשליחה האוטומטית":""}</span>}
+      {!st&&dirty&&<span style={{fontSize:11,color:"#8A5A00"}}>יש שינויים שלא נשמרו</span>}
+      {!st&&!dirty&&tpl.custom&&<span style={{fontSize:11,color:C.muted}}>✏️ נוסח אישי שלך</span>}
+    </div>
+  );
+}
 // "כולם" מחליף את כל השאר; קבוצה ספציפית מבטלת את "כולם"
 const toggleRecipient=(sel,v)=>sel.includes(v)?sel.filter(x=>x!==v):v==="all"?["all"]:[...sel.filter(x=>x!=="all"),v];
 function RecipientPicker({ withPhone, value, onChange }) {
@@ -6932,7 +7009,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
   const smsInviteText=giftAdd(event.welcome_text?.trim()||defaultSmsInviteText);
 
-  const TEMPLATES = [
+  const BASE_TEMPLATES = [
     {
       id:"invite",
       label:"💌 הזמנה לאירוע",
@@ -6954,6 +7031,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
       text:`שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
     },
   ];
+  const [TEMPLATES,saveText]=useSavedTexts(event,"sms_texts",BASE_TEMPLATES);
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
@@ -6971,7 +7049,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
   useEffect(()=>{
     if(selectedTemplate==="invite"){
-      setMsgText(smsInviteText);
+      setMsgText(TEMPLATES[0].text);
     }
   },[event.welcome_text]);
 
@@ -6994,7 +7072,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   },[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=pickRecipients(withPhone,sendTo);
+  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
   const tableOf=id=>{const t=tables.find(t=>t.id===id);return t?tableLabel(event.settings_json?.table_nums?.[id],t.name):"—";};
 
   // אותה החלפה כמו בשרת השליחה (קישור קצר אישי)
@@ -7179,7 +7257,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
                 <code key={v} style={{background:C.blueXL,padding:"1px 6px",borderRadius:4,marginLeft:4,fontSize:11}}>{v}</code>
               ))}
             </div>
-            <textarea value={msgText} onChange={e=>setMsgText(e.target.value)}
+            <textarea id="sms-text" value={msgText} onChange={e=>setMsgText(e.target.value)}
               style={{width:"100%",minHeight:140,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
                 boxSizing:"border-box",direction:"rtl",color:C.text}}/>
@@ -7189,6 +7267,9 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
               <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ בתוך המגבלה"}</span>
             </div>
             <div style={{fontSize:10,color:C.muted,marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
+            <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={C.blueM} autoNote
+              onSave={t=>tooLong?(alert(`ההודעה ארוכה מ-${SMS_MAX} תווים. קצרו לפני השמירה.`),false):saveText(selectedTemplate,t)}
+              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>
           </div>
 
           {/* פילטר */}
@@ -7197,11 +7278,12 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
             <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
             <div style={{fontSize:11,color:C.muted,margin:"8px 0 12px"}}>
               {sendTo.length?`${toSend.length} אורחים · ${totalSmsNeeded} SMS`:"לא נבחרו נמענים  -  לא יישלח כלום"}
+              {selectedTemplate==="reminder"&&<div style={{color:"#8A5A00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
             </div>
 
           {/* תזמון שליחה SMS  -  נשמר באירוע */}
           <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM} auto
-            onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");}}/>
+            onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("sms-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
 
           </div>
 
@@ -7326,7 +7408,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const defaultInviteText=`שלום {שם}! 💌\n\nמוזמנים ל${eventName}! ${eventEmoji}\n\nנרגשים להזמין אותך ${greeting} ונשמח מאוד לראותך!\n\n📅 תאריך: ${eventDate}\n📍 מקום: ${event.venue||"יפורסם בקרוב"}\n\n👇 לאישור הגעה לחץ כאן:\n{קישור}\n\nבאהבה,\n${coupleRef} ${eventEmoji}`;
   const inviteText=giftAdd(event.welcome_text?.trim()||defaultInviteText);
 
-  const TEMPLATES = [
+  const BASE_TEMPLATES = [
     {
       id:"invite",
       label:"💌 הזמנה לאירוע",
@@ -7348,6 +7430,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
       text:`שלום {שם}! 💙\n\nתודה רבה שהגעת ל${eventName}!\nשמחנו כל כך לחגוג איתך את היום המיוחד הזה 🥰\n\nבאהבה רבה,\n${coupleRef} ${eventEmoji}`,
     },
   ];
+  const [TEMPLATES,saveText]=useSavedTexts(event,"wa_texts",BASE_TEMPLATES);
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
@@ -7360,7 +7443,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
   useEffect(()=>{
     if(selectedTemplate==="invite"){
-      setMsgText(inviteText);
+      setMsgText(TEMPLATES[0].text);
     }
   },[event.welcome_text]);
 
@@ -7369,7 +7452,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   },[guests]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=pickRecipients(withPhone,sendTo);
+  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
 
   const buildPreview=(g)=>{
     if(!g)return msgText;
@@ -7562,10 +7645,12 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
                 <code key={v} style={{background:C.blueXL,padding:"1px 6px",borderRadius:4,marginLeft:4,fontSize:11}}>{v}</code>
               ))}
             </div>
-            <textarea value={msgText} onChange={e=>setMsgText(e.target.value)}
+            <textarea id="wa-text" value={msgText} onChange={e=>setMsgText(e.target.value)}
               style={{width:"100%",minHeight:180,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
                 boxSizing:"border-box",direction:"rtl",color:C.text}}/>
+            <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={WA_GREEN} onSave={t=>saveText(selectedTemplate,t)}
+              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>
           </div>
 
           {/* פילטר */}
@@ -7574,12 +7659,13 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
             <div style={{fontSize:11,color:C.muted,marginTop:8}}>
               {sendTo.length?`${toSend.length} אורחים`:"לא נבחרו נמענים  -  לא יישלח כלום"}
+              {selectedTemplate==="reminder"&&<div style={{color:"#8A5A00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
             </div>
           </div>
 
           {/* תזמון שליחה וואטסאפ  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn
-            onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");}}/>
+          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn lockDefaults
+            onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("wa-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
 
           {/* כפתור שליחה */}
           <button onClick={sendAll} disabled={sending||toSend.length===0}
@@ -8309,7 +8395,7 @@ function VendorReviews({ user, reviews, onAdded, ui }) {
 }
 
 // ─── מעקב מתנות: סכום והערה לכל אורח (guests.gift / gift_note) ───
-function GiftsScreen({ guests, onReload }) {
+function GiftsScreen({ event, guests, onReload }) {
   const [list,setList]=useState(guests);
   useEffect(()=>{setList(guests);},[guests]);
   const [q,setQ]=useState(""),[only,setOnly]=useState("all");
@@ -8322,10 +8408,24 @@ function GiftsScreen({ guests, onReload }) {
   const sum=gave.reduce((n,g)=>n+Number(g.gift),0);
   const shown=list.filter(g=>(!q.trim()||g.name?.includes(q.trim()))&&(only==="all"||(only==="gave"?Number(g.gift)>0:only==="came"?g.arrived_at||g.rsvp==="confirmed":!(Number(g.gift)>0)&&(g.arrived_at||g.rsvp==="confirmed"))))
     .sort((a,b)=>a.name.localeCompare(b.name,"he"));
-  const exportCsv=()=>{
-    const rows=[["שם","טלפון","סכום","הערה"],...list.filter(g=>Number(g.gift)>0||g.gift_note).map(g=>[g.name,g.phone||"",g.gift||"",g.gift_note||""])];
-    const csv="﻿"+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="מתנות.csv";a.click();
+  // קובץ xlsx אמיתי (מימין לשמאל) עם כל האורחים ושורת סה"כ. אם הספרייה לא נטענת  -  CSV שאקסל פותח
+  const exportXlsx=async()=>{
+    const sorted=[...list].sort((a,b)=>(Number(b.gift)||0)-(Number(a.gift)||0)||a.name.localeCompare(b.name,"he"));
+    const rows=[["שם","טלפון","מוזמנים","הגיע/אישר","סכום מתנה","הערה"],
+      ...sorted.map(g=>[g.name,g.phone||"",g.guest_count||1,g.arrived_at?"הגיע":g.rsvp==="confirmed"?"אישר":"",Number(g.gift)||"",g.gift_note||""]),
+      [],["סה״כ","","","",sum,`${gave.length} נתנו מתנה`]];
+    const name=`מתנות - ${event?.name||"אירוע"}`.replace(/[\\/:*?"<>|]/g,"");
+    let blob,ext="xlsx";
+    try{
+      const{utils,write}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
+      const ws=utils.aoa_to_sheet(rows);ws["!cols"]=[{wch:22},{wch:14},{wch:9},{wch:10},{wch:11},{wch:30}];
+      const wb=utils.book_new();wb.Workbook={Views:[{RTL:true}]};utils.book_append_sheet(wb,ws,"מתנות");
+      blob=new Blob([write(wb,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    }catch{
+      ext="csv";blob=new Blob(["﻿"+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});
+    }
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${name}.${ext}`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   };
   return(
     <div style={{direction:"rtl",maxWidth:720,margin:"0 auto",padding:16}}>
@@ -8340,7 +8440,7 @@ function GiftsScreen({ guests, onReload }) {
         <select value={only} onChange={e=>setOnly(e.target.value)} style={{padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,fontFamily:"inherit",background:C.surface}}>
           <option value="all">כל האורחים</option><option value="came">הגיעו / אישרו</option><option value="gave">נתנו מתנה</option><option value="missing">הגיעו ועוד לא נרשמה מתנה</option>
         </select>
-        <button onClick={exportCsv} disabled={!gave.length} style={{background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:800,cursor:gave.length?"pointer":"default",fontFamily:"inherit",opacity:gave.length?1:.5}}>⬇️ ייצוא לאקסל</button>
+        <button onClick={exportXlsx} disabled={!list.length} style={{background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:800,cursor:list.length?"pointer":"default",fontFamily:"inherit",opacity:list.length?1:.5}}>⬇️ ייצוא לאקסל</button>
       </div>
       {shown.map(g=>(
         <Card key={g.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",marginBottom:6,flexWrap:"wrap"}}>
@@ -10351,7 +10451,7 @@ function LegalPage({ kind }) {
   const linkify=t=>t.split(/(https?:\/\/\S+|[\w.+-]+@[\w-]+\.[\w.]+)/g).map((p,i)=>/^https?:\/\//.test(p)?<a key={i} href={p} target="_blank" rel="noopener noreferrer" style={{color:C.blue}}>{p}</a>:/@/.test(p)&&/^[\w.+-]+@/.test(p)?<a key={i} href={"mailto:"+p} style={{color:C.blue}}>{p}</a>:p);
   return(
     <div dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
-      <header style={{background:"#fff",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+      <header style={{background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",position:"sticky",top:0,zIndex:100}}>
         <a href="#" onClick={e=>{e.preventDefault();window.location.hash="";}} style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700}}>→ חזרה לדף הבית</a>
         <span style={{color:"#ccc"}} aria-hidden="true">|</span>
         <span style={{fontWeight:800,color:"#1a1a1a",fontSize:15}}>Sidor-IL</span>
@@ -10528,7 +10628,7 @@ const EVENT_LANDINGS=[
 ];
 function SeoHeader() {
   return(
-    <header style={{background:"#fff",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+    <header style={{background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",position:"sticky",top:0,zIndex:100}}>
       <a href="/" style={{fontWeight:900,fontSize:18,color:"#2B1D3F",textDecoration:"none"}}>◈ Sidor-IL</a>
       <span style={{color:"#ccc"}} aria-hidden="true">|</span>
       <a href="/guides" style={{color:C.muted,fontWeight:700,fontSize:14,textDecoration:"none"}}>מדריכים</a>
