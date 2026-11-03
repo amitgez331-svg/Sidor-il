@@ -48,11 +48,11 @@ begin
   select percentile_cont(0.5) within group (order by price), count(*) into med,n
     from plate_prices where venue_key=lower(regexp_replace(btrim(new.venue_name),'\s+',' ','g')) and not hidden;
   if n>=2 and abs(new.price-med)/med>0.4 then
-    new.flagged:=true; new.flag_reason:=format('שונה מאוד מ-%s הדיווחים האחרים על האולם (חציון ₪%s)',n,round(med));
+    new.flagged:=true; new.flag_reason:=format('שונה מאוד מ-%s הדיווחים האחרים על האולם (מחיר מקובל ₪%s)',n,round(med));
   else
     select percentile_cont(0.5) within group (order by price), count(*) into allmed,alln from plate_prices where not hidden;
     if alln>=5 and (new.price>allmed*2.5 or new.price<allmed*0.4) then
-      new.flagged:=true; new.flag_reason:=format('רחוק מאוד מהחציון הכללי (₪%s)',round(allmed));
+      new.flagged:=true; new.flag_reason:=format('רחוק מאוד מהמחיר המקובל (₪%s)',round(allmed));
     elsif new.price<40 or new.price>2000 then
       new.flagged:=true; new.flag_reason:='מחיר למנה לא סביר';
     end if;
