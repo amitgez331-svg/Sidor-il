@@ -3337,7 +3337,7 @@ const screenLocked=(id,userPackages,people=0)=>{
 };
 // המסך האחרון (ותצוגת ההושבה) נשמר בדפדפן כדי שרענון יחזיר לאותו מקום באותו אירוע
 const LAST_SCREEN_KEY="sidor_last_screen";
-const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts","tasks"];
+const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts","tasks","vendors"];
 // פתיחה חדשה של האתר/האפליקציה (לא רענון באותה לשונית) מתחילה במסך הראשי
 const FRESH_OPEN=(()=>{try{const f=!sessionStorage.getItem("sidor_tab");sessionStorage.setItem("sidor_tab","1");return f;}catch{return false;}})();
 const readLastScreen=eventId=>{
@@ -4224,6 +4224,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"📷",label:"כניסה לאולם",nav:"checkin",bg:"#EEF7FF",color:"#2B6CB0"},
               {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
               {icon:"✅",label:"משימות",nav:"tasks",bg:"#F0FFF4",color:"#276749"},
+              {icon:"💡",label:"ספקים ומחירים",nav:"vendors",bg:"#F4EEFF",color:"#7C3AED"},
               {icon:"📋",label:"פרטי האירוע",nav:"settings",bg:"#F4EEFC",color:"#5B3C8C"},
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
             ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
@@ -4343,6 +4344,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
+        {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
         {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
@@ -4367,6 +4369,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {id:"checkin",icon:"📷",label:"כניסה לאולם"},
     {id:"gifts",icon:"🎁",label:"מתנות"},
     {id:"tasks",icon:"✅",label:"משימות"},
+    {id:"vendors",icon:"💡",label:"ספקים ומחירים"},
     {id:"user_settings",icon:"⚙️",label:"הגדרות"},
   ];
 
@@ -5255,6 +5258,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
+        {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={()=>setScreen("home")}/>}
         {screen==="add"&&<div style={{direction:"rtl"}}><button onClick={()=>setModal("addGuest")} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>➕ הוסף אורח חדש</button>{guests.slice(-10).reverse().map(g=>(<Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",marginBottom:8}}><div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800}}>{g.name[0]}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{g.name}</div>{g.phone&&<div style={{fontSize:11,color:C.muted}}>{g.phone}</div>}</div><RsvpBadge rsvp={g.rsvp}/></Card>))}</div>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
@@ -8003,6 +8007,217 @@ function CheckinScreen({ event, guests, tables, onReload }) {
   );
 }
 
+// ─── ספקים ומחירים: המלצות על ספקים + דיווחי מחיר למנה (vendor_reviews / plate_prices) ───
+// מתפרסם מיד. דיווח שחורג מאוד מהשאר מסומן בשרת (trigger) כ"בבדיקה" ומגיע לאישור בלוח הניהול
+const VENDOR_CATS=[["venue","🏛️","אולם / גן"],["catering","🍽️","קייטרינג"],["dj","🎧","DJ"],["band","🎷","להקה"],["photo","📸","צלם / וידאו"],["design","💐","עיצוב ופרחים"],["makeup","💄","איפור ושיער"],["attraction","🎡","אטרקציות"],["other","✨","אחר"]];
+const VENDOR_CAT=Object.fromEntries(VENDOR_CATS.map(([k,i,l])=>[k,{icon:i,label:l}]));
+const normName=s=>String(s||"").trim().replace(/\s+/g," ").toLowerCase();
+const medianOf=a=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+const HEB_DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const EVENT_TYPE_LABELS={wedding:"💍 חתונה",bar_mitzvah:"✡️ בר/בת מצווה",brit:"👶 ברית",business:"💼 אירוע עסקי",other:"🎉 אחר"};
+// קבוצות ימים שמשפיעות על המחיר באולמות
+const dayGroup=d=>{const w=new Date(d+"T12:00:00").getDay();return w===4?"חמישי":w===5?"שישי":w===6?"מוצ״ש":"א׳–ד׳";};
+const flagNote=r=>r.flagged&&<div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:6,background:"#FFF6E2",border:"1px solid #F3D9A4",color:"#8A5A00",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:700}}>⚠️ בבדיקה: {r.flag_reason||"שונה מהותית מהדיווחים האחרים"}</div>;
+
+function VendorsScreen({ user, event, mobile }) {
+  const [tab,setTab]=useState("prices");
+  const [prices,setPrices]=useState(null),[reviews,setReviews]=useState(null),[err,setErr]=useState("");
+  const load=async()=>{
+    const [p,r]=await Promise.all([sb.from("plate_prices").select("*").order("created_at",{ascending:false}).limit(3000),sb.from("vendor_reviews").select("*").order("created_at",{ascending:false}).limit(3000)]);
+    if(p.error||r.error)setErr((p.error||r.error).message);
+    setPrices((p.data||[]).filter(x=>!x.hidden));setReviews((r.data||[]).filter(x=>!x.hidden));
+  };
+  useEffect(()=>{load();},[]);
+  const card={background:"#fff",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)",border:"1px solid #F0E8F8"};
+  const inp={width:"100%",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#fff"};
+  const lbl=t=><div style={{fontSize:12,fontWeight:800,color:"#6E6585",marginBottom:5}}>{t}</div>;
+  const btn={background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"11px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+  return(
+    <div dir="rtl" style={{padding:mobile?14:24,maxWidth:1000,margin:"0 auto",fontFamily:"'Heebo',sans-serif",paddingBottom:90}}>
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:22,fontWeight:900,color:"#2B1D3F"}}>💡 ספקים ומחירים</div>
+        <div style={{fontSize:13,color:"#888",marginTop:2}}>מה שילמו זוגות אחרים, והמלצות על ספקים — מהקהילה של Sidor-IL. עוזר להשוות ולהתמקח.</div>
+      </div>
+      <div role="tablist" style={{display:"flex",gap:8,marginBottom:16}}>
+        {[["prices","🍽️ מחירי מנות"],["reviews","⭐ המלצות על ספקים"]].map(([k,l])=>(
+          <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{flex:mobile?1:"none",background:tab===k?"#2B1D3F":"#fff",color:tab===k?"#fff":"#2B1D3F",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"10px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",minHeight:44}}>{l}</button>
+        ))}
+      </div>
+      {err&&<div role="alert" style={{...card,color:"#C53030",marginBottom:12}}>⚠️ {err}</div>}
+      {prices===null?<div style={{textAlign:"center",padding:40}}><Spinner size={32}/></div>
+        :tab==="prices"?<PlatePrices user={user} event={event} prices={prices} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>
+        :<VendorReviews user={user} reviews={reviews} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>}
+    </div>
+  );
+}
+
+function PlatePrices({ user, event, prices, onAdded, ui }) {
+  const {card,inp,lbl,btn,mobile}=ui;
+  const [q,setQ]=useState(event.venue||""),[quote,setQuote]=useState(""),[open,setOpen]=useState(false),[msg,setMsg]=useState(null),[busy,setBusy]=useState(false);
+  const [f,setF]=useState({venue_name:event.venue||"",city:"",event_date:event.date||"",guests:"",price:"",event_type:EVENT_TYPE_LABELS[event.event_type]?event.event_type:"wedding",includes:""});
+  const venues=[...new Set(prices.map(p=>p.venue_name))];
+  const nq=normName(q);
+  const list=nq?prices.filter(p=>normName(p.venue_name).includes(nq)||normName(p.city).includes(nq)):prices;
+  // הסטטיסטיקה בלי דיווחים "בבדיקה" — חריג לא מזיז את החציון עד שאושר
+  const ok=list.filter(p=>!p.flagged);
+  const vals=ok.map(p=>Number(p.price));
+  const med=medianOf(vals);
+  const groups=["א׳–ד׳","חמישי","שישי","מוצ״ש"].map(g=>{const v=ok.filter(p=>dayGroup(p.event_date)===g).map(p=>Number(p.price));return [g,medianOf(v),v.length];}).filter(x=>x[2]);
+  const qv=Number(quote);
+  const diff=med&&qv>0?Math.round((qv-med)/med*100):null;
+  const submit=async()=>{
+    const price=Number(f.price),guests=Number(f.guests);
+    if(normName(f.venue_name).length<2||!f.event_date||!(price>0)||!(guests>0)){setMsg({err:true,t:"מלאו שם אולם, תאריך, מספר אורחים ומחיר למנה"});return;}
+    setBusy(true);setMsg(null);
+    const{data,error}=await sb.from("plate_prices").insert({venue_name:f.venue_name.trim(),city:f.city.trim()||null,event_date:f.event_date,guests,price,event_type:f.event_type,includes:f.includes.trim()||null,user_id:user.id}).select().single();
+    setBusy(false);
+    if(error){setMsg({err:true,t:"השמירה נכשלה: "+error.message});return;}
+    setMsg({err:false,t:data?.flagged?"✅ פורסם. המחיר שונה מהותית מהדיווחים האחרים, אז הוא מסומן \"בבדיקה\" עד שנעבור עליו.":"✅ תודה! המחיר פורסם ויעזור לזוגות אחרים."});
+    setOpen(false);setQ(f.venue_name.trim());onAdded();
+  };
+  return(<>
+    {/* השוואה */}
+    <div style={{...card,marginBottom:14}}>
+      <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"2fr 1fr",gap:12}}>
+        <div>{lbl("אולם או עיר")}<input value={q} onChange={e=>setQ(e.target.value)} list="pp-venues" placeholder="למשל: אולמי הגן, חיפה..." style={inp}/>
+          <datalist id="pp-venues">{venues.map(v=><option key={v} value={v}/>)}</datalist></div>
+        <div>{lbl("ההצעה שקיבלתם (₪ למנה)")}<input value={quote} onChange={e=>setQuote(e.target.value.replace(/[^\d.]/g,""))} inputMode="decimal" placeholder="למשל 320" style={inp}/></div>
+      </div>
+      {ok.length?(<>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}>
+          {[["חציון",`₪${Math.round(med)}`],["טווח",`₪${Math.round(Math.min(...vals))}–${Math.round(Math.max(...vals))}`],["דיווחים",ok.length]].map(([l,v])=>(
+            <div key={l} style={{flex:"1 1 120px",background:"#FBF8FD",borderRadius:14,padding:"10px 14px"}}><div style={{fontSize:12,color:"#888",fontWeight:700}}>{l}</div><div style={{fontSize:20,fontWeight:900,color:"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{v}</div></div>
+          ))}
+        </div>
+        {groups.length>1&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
+          {groups.map(([g,m,n])=><span key={g} style={{background:"#F4EEFF",color:"#5B3C8C",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:800}}>{g}: ₪{Math.round(m)} <span style={{fontWeight:600,color:"#8A7AA8"}}>({n})</span></span>)}
+        </div>}
+        {diff!==null&&<div style={{marginTop:12,borderRadius:14,padding:"12px 14px",fontSize:14,lineHeight:1.7,background:diff>8?"#FFF5F5":diff<-8?"#F0FFF4":"#F7F7FB",border:`1px solid ${diff>8?"#FED7D7":diff<-8?"#9AE6B4":"#E2E8F0"}`,color:"#2B1D3F"}}>
+          {diff>8?<><b>ההצעה שלכם גבוהה ב-{diff}%</b> מהחציון של {ok.length} דיווחים. 💡 טיפ למשא ומתן: ציינו שבאירועים דומים שילמו כ-₪{Math.round(med)} למנה{groups.length>1?", ובדקו אם יום אחר בשבוע זול יותר":""}.</>
+            :diff<-8?<><b>ההצעה שלכם נמוכה ב-{-diff}%</b> מהחציון. נשמע כמו מחיר טוב 👍 ודאו מה כלול במנה.</>
+            :<>ההצעה שלכם <b>קרובה לחציון</b> (₪{Math.round(med)}). אפשר לנסות לבקש תוספת בלי תשלום, כמו בר או קבלת פנים מורחבת.</>}
+        </div>}
+      </>):<div style={{marginTop:14,color:"#888",fontSize:14}}>{prices.length?"אין עדיין דיווחים שמתאימים לחיפוש. אפשר לחפש לפי עיר, או להיות הראשונים לשתף.":"עוד אין דיווחים. היו הראשונים לשתף מחיר 🙏"}</div>}
+    </div>
+
+    {/* שיתוף מחיר */}
+    {!open?<button onClick={()=>{setOpen(true);setMsg(null);}} style={{...btn,width:"100%",marginBottom:14,minHeight:48}}>➕ שתפו כמה שילמתם למנה (אנונימי)</button>
+    :<div style={{...card,marginBottom:14,border:"1.5px solid #E9D8FD"}}>
+      <div style={{fontSize:16,fontWeight:900,marginBottom:4}}>שיתוף מחיר מנה</div>
+      <div style={{fontSize:12,color:"#888",marginBottom:12}}>הדיווח אנונימי — לא מוצג שם או פרטים שלכם. עוזר לזוגות אחרים להתמקח.</div>
+      <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:10}}>
+        <div>{lbl("שם האולם *")}<input value={f.venue_name} onChange={e=>setF(x=>({...x,venue_name:e.target.value}))} list="pp-venues" style={inp}/></div>
+        <div>{lbl("עיר")}<input value={f.city} onChange={e=>setF(x=>({...x,city:e.target.value}))} style={inp}/></div>
+        <div>{lbl("תאריך האירוע *")}<input type="date" value={f.event_date} onChange={e=>setF(x=>({...x,event_date:e.target.value}))} style={inp}/>
+          {f.event_date&&<div style={{fontSize:11,color:"#888",marginTop:3}}>יום {HEB_DAYS[new Date(f.event_date+"T12:00:00").getDay()]}</div>}</div>
+        <div>{lbl("מספר אורחים *")}<input value={f.guests} onChange={e=>setF(x=>({...x,guests:e.target.value.replace(/\D/g,"")}))} inputMode="numeric" style={inp}/></div>
+        <div>{lbl("מחיר למנה (₪) *")}<input value={f.price} onChange={e=>setF(x=>({...x,price:e.target.value.replace(/[^\d.]/g,"")}))} inputMode="decimal" style={inp}/></div>
+        <div>{lbl("סוג האירוע")}<select value={f.event_type} onChange={e=>setF(x=>({...x,event_type:e.target.value}))} style={inp}>{Object.entries(EVENT_TYPE_LABELS).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
+        <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("מה כלול במחיר")}<input value={f.includes} onChange={e=>setF(x=>({...x,includes:e.target.value}))} maxLength={200} placeholder="למשל: בר פתוח, קבלת פנים, ללא עיצוב" style={inp}/></div>
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:12}}>
+        <button onClick={submit} disabled={busy} style={{...btn,flex:1,minHeight:44}}>{busy?"שומר...":"פרסום"}</button>
+        <button onClick={()=>setOpen(false)} style={{...btn,background:"#fff",color:"#5B3C8C",border:"1.5px solid #E2E8F0"}}>ביטול</button>
+      </div>
+    </div>}
+    {msg&&<div role="status" style={{...card,marginBottom:14,fontSize:14,fontWeight:700,color:msg.err?"#C53030":"#276749"}}>{msg.t}</div>}
+
+    {/* הדיווחים */}
+    {list.length>0&&<div style={card}>
+      <div style={{fontSize:15,fontWeight:900,marginBottom:10}}>הדיווחים ({list.length})</div>
+      {list.slice(0,100).map(p=>(
+        <div key={p.id} style={{padding:"11px 0",borderTop:"1px solid #F3EEF8"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
+            <b style={{fontSize:15,color:"#2B1D3F"}}>{p.venue_name}</b>{p.city&&<span style={{fontSize:12,color:"#888"}}>{p.city}</span>}
+            <span style={{marginRight:"auto",fontSize:18,fontWeight:900,color:"#9147D6",fontVariantNumeric:"tabular-nums"}}>₪{Math.round(p.price)}</span>
+          </div>
+          <div style={{fontSize:12.5,color:"#6E6585",marginTop:2}}>
+            {new Date(p.event_date+"T12:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})} · יום {HEB_DAYS[new Date(p.event_date+"T12:00:00").getDay()]} · {p.guests} אורחים{EVENT_TYPE_LABELS[p.event_type]?` · ${EVENT_TYPE_LABELS[p.event_type]}`:""}{p.includes?` · ${p.includes}`:""}
+          </div>
+          {flagNote(p)}
+        </div>
+      ))}
+    </div>}
+  </>);
+}
+
+function VendorReviews({ user, reviews, onAdded, ui }) {
+  const {card,inp,lbl,btn,mobile}=ui;
+  const [cat,setCat]=useState("all"),[q,setQ]=useState(""),[open,setOpen]=useState(false),[openV,setOpenV]=useState(null),[msg,setMsg]=useState(null),[busy,setBusy]=useState(false);
+  const [f,setF]=useState({category:"venue",vendor_name:"",city:"",rating:5,body:"",author_name:String(user?.user_metadata?.full_name||"").split(" ")[0]||""});
+  const nq=normName(q);
+  const shown=reviews.filter(r=>(cat==="all"||r.category===cat)&&(!nq||normName(r.vendor_name).includes(nq)||normName(r.city).includes(nq)));
+  // קיבוץ לפי ספק (קטגוריה + שם)
+  const vendors=Object.values(shown.reduce((m,r)=>{const k=r.category+"|"+normName(r.vendor_name);(m[k]||={key:k,name:r.vendor_name,category:r.category,city:r.city,list:[]}).list.push(r);return m;},{}))
+    .map(v=>({...v,avg:v.list.reduce((s,r)=>s+r.rating,0)/v.list.length})).sort((a,b)=>b.list.length-a.list.length||b.avg-a.avg);
+  const submit=async()=>{
+    if(normName(f.vendor_name).length<2){setMsg({err:true,t:"כתבו את שם הספק"});return;}
+    setBusy(true);setMsg(null);
+    const{data,error}=await sb.from("vendor_reviews").insert({category:f.category,vendor_name:f.vendor_name.trim(),city:f.city.trim()||null,rating:f.rating,body:f.body.trim()||null,author_name:f.author_name.trim().slice(0,30)||null,user_id:user.id}).select().single();
+    setBusy(false);
+    if(error){setMsg({err:true,t:"השמירה נכשלה: "+error.message});return;}
+    setMsg({err:false,t:data?.flagged?"✅ פורסם. הדירוג שונה מאוד משאר הדירוגים של הספק, אז הוא מסומן \"בבדיקה\" עד שנעבור עליו.":"✅ תודה! ההמלצה פורסמה."});
+    setOpen(false);setCat(f.category);setQ(f.vendor_name.trim());onAdded();
+  };
+  return(<>
+    <div style={{...card,marginBottom:14}}>
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש לפי שם ספק או עיר" style={{...inp,marginBottom:10}}/>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {[["all","🔎","הכל"],...VENDOR_CATS].map(([k,i,l])=>(
+          <button key={k} onClick={()=>setCat(k)} aria-pressed={cat===k} style={{background:cat===k?"#9147D6":"#fff",color:cat===k?"#fff":"#5B3C8C",border:"1.5px solid #E9D8FD",borderRadius:100,padding:"7px 13px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",minHeight:36}}>{i} {l}</button>
+        ))}
+      </div>
+    </div>
+
+    {!open?<button onClick={()=>{setOpen(true);setMsg(null);}} style={{...btn,width:"100%",marginBottom:14,minHeight:48}}>➕ המליצו על ספק שעבדתם איתו</button>
+    :<div style={{...card,marginBottom:14,border:"1.5px solid #E9D8FD"}}>
+      <div style={{fontSize:16,fontWeight:900,marginBottom:12}}>המלצה על ספק</div>
+      <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:10}}>
+        <div>{lbl("סוג הספק")}<select value={f.category} onChange={e=>setF(x=>({...x,category:e.target.value}))} style={inp}>{VENDOR_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select></div>
+        <div>{lbl("שם הספק *")}<input value={f.vendor_name} onChange={e=>setF(x=>({...x,vendor_name:e.target.value}))} maxLength={80} style={inp}/></div>
+        <div>{lbl("עיר / אזור")}<input value={f.city} onChange={e=>setF(x=>({...x,city:e.target.value}))} maxLength={40} style={inp}/></div>
+        <div>{lbl("השם שיוצג (שם פרטי)")}<input value={f.author_name} onChange={e=>setF(x=>({...x,author_name:e.target.value}))} maxLength={30} placeholder="אפשר להשאיר ריק" style={inp}/></div>
+        <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("דירוג")}<Stars value={f.rating} onChange={n=>setF(x=>({...x,rating:n}))} size={30}/></div>
+        <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("איך היה?")}<textarea value={f.body} onChange={e=>setF(x=>({...x,body:e.target.value}))} maxLength={800} rows={3} placeholder="מה היה טוב, מה פחות, האם הייתם ממליצים..." style={{...inp,resize:"vertical"}}/></div>
+      </div>
+      <div style={{fontSize:11,color:"#888",marginTop:8}}>כתבו רק על חוויה אישית ובאופן הוגן. ביקורת פוגענית או לא אמיתית תוסר.</div>
+      <div style={{display:"flex",gap:8,marginTop:12}}>
+        <button onClick={submit} disabled={busy} style={{...btn,flex:1,minHeight:44}}>{busy?"שומר...":"פרסום"}</button>
+        <button onClick={()=>setOpen(false)} style={{...btn,background:"#fff",color:"#5B3C8C",border:"1.5px solid #E2E8F0"}}>ביטול</button>
+      </div>
+    </div>}
+    {msg&&<div role="status" style={{...card,marginBottom:14,fontSize:14,fontWeight:700,color:msg.err?"#C53030":"#276749"}}>{msg.t}</div>}
+
+    {vendors.length===0?<div style={{...card,color:"#888",fontSize:14}}>{reviews.length?"אין ספקים שמתאימים לחיפוש.":"עוד אין המלצות. היו הראשונים להמליץ 🙏"}</div>
+    :<div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:12}}>
+      {vendors.map(v=>{const exp=openV===v.key;return(
+        <div key={v.key} style={{...card,padding:"16px 18px"}}>
+          <button onClick={()=>setOpenV(exp?null:v.key)} aria-expanded={exp} style={{all:"unset",cursor:"pointer",display:"block",width:"100%"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{width:40,height:40,borderRadius:12,background:"#FFF4F8",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{VENDOR_CAT[v.category]?.icon||"✨"}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>{v.name}</div>
+                <div style={{fontSize:12,color:"#888"}}>{VENDOR_CAT[v.category]?.label}{v.city?` · ${v.city}`:""}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:18,fontWeight:900,color:"#B07A12"}}>★ {v.avg.toFixed(1)}</div>
+                <div style={{fontSize:11,color:"#888"}}>{v.list.length} המלצות</div>
+              </div>
+            </div>
+          </button>
+          {exp&&v.list.map(r=>(
+            <div key={r.id} style={{marginTop:10,paddingTop:10,borderTop:"1px solid #F3EEF8"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><Stars value={r.rating} size={14}/><span style={{fontSize:12,fontWeight:800,color:"#2B1D3F"}}>{r.author_name||"אנונימי"}</span><span style={{fontSize:11,color:"#999"}}>{new Date(r.created_at).toLocaleDateString("he-IL")}</span></div>
+              {r.body&&<div style={{fontSize:13.5,color:"#4A4060",lineHeight:1.7,marginTop:4,whiteSpace:"pre-line"}}>{r.body}</div>}
+              {flagNote(r)}
+            </div>
+          ))}
+        </div>
+      );})}
+    </div>}
+  </>);
+}
+
 // ─── מעקב מתנות: סכום והערה לכל אורח (guests.gift / gift_note) ───
 function GiftsScreen({ guests, onReload }) {
   const [list,setList]=useState(guests);
@@ -9245,6 +9460,47 @@ function AdminCustomerCard({ user, stats, balances, pkgs, onOpenEvent, onClose }
   );
 }
 // הפניות: מי נרשם דרך איזה קוד (אולם/שותף, חבר מביא חבר, דף הזמנה) + יצירת קישור לשותף
+// אדמין: דיווחי מחיר והמלצות על ספקים. "בבדיקה" (flagged) = חריג מהשאר — מאשרים (תקין), מסתירים או מוחקים
+function AdminVendorData({ card }) {
+  const [rows,setRows]=useState(null),[show,setShow]=useState("flagged"),[err,setErr]=useState("");
+  const load=async()=>{
+    const [p,r]=await Promise.all([sb.from("plate_prices").select("*").order("created_at",{ascending:false}).limit(1000),sb.from("vendor_reviews").select("*").order("created_at",{ascending:false}).limit(1000)]);
+    if(p.error||r.error)setErr((p.error||r.error).message);
+    setRows([...(p.data||[]).map(x=>({...x,_t:"plate_prices"})),...(r.data||[]).map(x=>({...x,_t:"vendor_reviews"}))].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))));
+  };
+  useEffect(()=>{load();},[]);
+  const upd=async(x,patch)=>{const{error}=await sb.from(x._t).update(patch).eq("id",x.id);if(error)setErr(error.message);else load();};
+  const del=async x=>{if(!confirm("למחוק לצמיתות?"))return;const{error}=await sb.from(x._t).delete().eq("id",x.id);if(error)setErr(error.message);else load();};
+  if(!rows)return <div style={card}><Spinner/></div>;
+  const list=rows.filter(x=>show==="all"||(show==="flagged"?x.flagged&&!x.hidden:x.hidden));
+  const b={border:"none",borderRadius:9,padding:"7px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+  return(
+    <div style={card}>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        {[["flagged",`⚠️ בבדיקה (${rows.filter(x=>x.flagged&&!x.hidden).length})`],["hidden",`🙈 מוסתרים (${rows.filter(x=>x.hidden).length})`],["all",`הכל (${rows.length})`]].map(([k,l])=>(
+          <button key={k} onClick={()=>setShow(k)} style={{...b,background:show===k?"#2B1D3F":"#F4EEFC",color:show===k?"#fff":"#2B1D3F"}}>{l}</button>
+        ))}
+      </div>
+      {err&&<div style={{color:"#C53030",fontSize:13,marginBottom:8}}>⚠️ {err}</div>}
+      {!list.length&&<div style={{color:"#888",fontSize:14}}>אין פריטים כאן.</div>}
+      {list.map(x=>(
+        <div key={x._t+x.id} style={{borderTop:"1px solid #F0EAF7",padding:"10px 0"}}>
+          <div style={{fontSize:14,fontWeight:800}}>
+            {x._t==="plate_prices"?<>🍽️ {x.venue_name} · ₪{x.price} למנה · {x.guests} אורחים · {x.event_date}</>:<>⭐ {VENDOR_CAT[x.category]?.label}: {x.vendor_name} · {x.rating}/5</>}
+          </div>
+          {x.body&&<div style={{fontSize:13,color:"#555",marginTop:3}}>{x.body}</div>}
+          {x.flag_reason&&<div style={{fontSize:12,color:"#8A5A00",marginTop:3}}>סיבה: {x.flag_reason}</div>}
+          <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
+            {x.flagged&&<button onClick={()=>upd(x,{flagged:false,flag_reason:null})} style={{...b,background:"#E9FBF4",color:"#1F8F6C"}}>✓ תקין</button>}
+            <button onClick={()=>upd(x,{hidden:!x.hidden})} style={{...b,background:"#FFF6E2",color:"#8A5A00"}}>{x.hidden?"👁 החזר":"🙈 הסתר"}</button>
+            <button onClick={()=>del(x)} style={{...b,background:"#FFF0F0",color:"#C53030"}}>🗑 מחק</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdminReferrals({ card, refs, users, packages, onCustomer }) {
   const [name,setName]=useState(""),[copied,setCopied]=useState("");
   const code=name.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^\w-]/g,"").slice(0,40);
@@ -9609,7 +9865,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["vendordata","💡 ספקים ומחירים",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -9826,6 +10082,8 @@ function AdminDashboard({ user, onLogout }) {
           <AdminReferrals card={card} refs={refs} users={users} packages={packages} onCustomer={setCustFor}/>
         ):tab==="reviews"?(
           <AdminTestimonials card={card}/>
+        ):tab==="vendordata"?(
+          <AdminVendorData card={card}/>
         ):(
           <div style={{...card,padding:"8px 16px"}}>
             {txs.length===0&&<div style={{padding:30,textAlign:"center",color:C.muted}}>אין עדיין תנועות SMS</div>}
