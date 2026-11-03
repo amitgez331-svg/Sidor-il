@@ -3427,10 +3427,12 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
   const [search,setSearch]=useState("");
   const filtered=allGuests.filter(g=>!search||g.name?.includes(search)||g.phone?.includes(search));
 
-  const updateRsvp=async(g,rsvp)=>{
-    await sb.from("guests").update({rsvp}).eq("id",g.id);
-    setGuests(gs=>gs.map(x=>x.id===g.id?{...x,rsvp}:x));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp}:x)})));
+  const updateRsvp=async(g,stage)=>{
+    const patch=stagePatch(stage);
+    const{error}=await sb.from("guests").update(patch).eq("id",g.id);
+    if(error){alert("❌ לא נשמר: "+error.message);return;}
+    setGuests(gs=>gs.map(x=>x.id===g.id?{...x,...patch}:x));
+    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,...patch}:x)})));
     setStatusModal(null);
   };
 
@@ -3515,9 +3517,9 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
             <button onClick={()=>setStatusModal(null)} style={{width:30,height:30,borderRadius:"50%",border:"1px solid #eee",background:"#f5f5f5",cursor:"pointer",fontSize:16}}>×</button>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {[["confirmed","✓ מגיעים"],["declined","✗ לא מגיעים"],["pending","? אולי מגיעים"],["no_answer","📞 לא ענו"],["sent","✈️ נשלחה הודעה"],["not_shown","🕐 לא הוצגה הזמנה"]].map(([val,label])=>(
-              <button key={val} onClick={()=>updateRsvp(statusModal,val)} style={{background:statusModal.rsvp===val?"#3D5475":"#f5f5f5",color:statusModal.rsvp===val?"#fff":"#333",border:"1.5px solid #e5e5e5",borderRadius:50,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{label}</button>
-            ))}
+            {RSVP_STAGES.map(([val,label])=>{const on=stageOf(statusModal)===val;return(
+              <button key={val} onClick={()=>updateRsvp(statusModal,val)} aria-pressed={on} style={{background:on?"#3A2464":"#f5f5f5",color:on?"#fff":"#333",border:"1.5px solid #e5e5e5",borderRadius:50,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{label}</button>
+            );})}
           </div>
         </div>
       </div>}
@@ -6085,10 +6087,12 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     .filter(g=>g.name.toLowerCase().includes(search.toLowerCase())||(g.phone&&g.phone.includes(search)))
     .filter(g=>filterRsvp==="all"||g.rsvp===filterRsvp||(filterRsvp==="pending"&&(!g.rsvp||g.rsvp==="pending")));
 
-  const updateRsvp=async(g,rsvp)=>{
-    await sb.from("guests").update({rsvp}).eq("id",g.id);
-    setGuests(gs=>gs.map(x=>x.id===g.id?{...x,rsvp}:x));
-    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,rsvp}:x)})));
+  const updateRsvp=async(g,stage)=>{
+    const patch=stagePatch(stage);
+    const{error}=await sb.from("guests").update(patch).eq("id",g.id);
+    if(error){alert("❌ לא נשמר: "+error.message);return;}
+    setGuests(gs=>gs.map(x=>x.id===g.id?{...x,...patch}:x));
+    setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(x=>x.id===g.id?{...x,...patch}:x)})));
   };
   // עריכה מהירה של שדה אחד מתוך הטבלה
   const quickSave=async(g,field,raw)=>{
@@ -6365,13 +6369,12 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                 <td style={{padding:"11px 6px",borderRight:"1px solid #E2E8F0"}}>
                   {/* מצב: לא הופצה → נשלחה הזמנה → נשלחה תזכורת → מגיע / לא מגיע (guests.last_msg) */}
                   {(()=>{const st=rsvpStage(g);return(
-                  <select value={g.rsvp||"pending"} onChange={async e=>await updateRsvp(g,e.target.value)}
+                  <select value={stageOf(g)} onChange={async e=>{if(e.target.value)await updateRsvp(g,e.target.value);}}
                     title={g.last_msg_at&&(!g.rsvp||g.rsvp==="pending")?`נשלח ${new Date(g.last_msg_at).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`:undefined}
                     style={{border:`1.5px solid ${st.b}`,background:st.bg,color:st.c,
                       borderRadius:6,padding:"4px 3px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",outline:"none",width:"100%"}}>
-                    <option value="pending">{g.rsvp==="confirmed"||g.rsvp==="declined"?"ממתין לתשובה":st.t}</option>
-                    <option value="confirmed">מגיע ✓</option>
-                    <option value="declined">לא מגיע ✗</option>
+                    {!stageOf(g)&&<option value="" disabled>לא הופצה</option>}
+                    {RSVP_STAGES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
                   </select>);})()}
                 </td>
                 <td style={{padding:"11px 6px"}}>
@@ -7262,11 +7265,16 @@ const markSent=async(ids,tid)=>{
   await sb.from("guests").update({last_msg:tid,last_msg_at:new Date().toISOString()}).in("id",ids).then(()=>{},()=>{});
 };
 // מצב ההגעה לתצוגה: תשובה, ואם אין — מה נשלח אחרון
-const rsvpStage=g=>g.rsvp==="confirmed"?{t:"מגיע ✓",c:"#276749",bg:"#F0FFF4",b:"#9AE6B4"}
-  :g.rsvp==="declined"?{t:"לא מגיע ✗",c:"#C53030",bg:"#FFF5F5",b:"#FEB2B2"}
-  :g.last_msg==="reminder"?{t:"🔔 נשלחה תזכורת",c:"#B45309",bg:"#FFF8E8",b:"#F5DDA6"}
-  :g.last_msg==="invite"?{t:"💌 נשלחה הזמנה",c:"#2B6CB0",bg:"#EBF8FF",b:"#BEE3F8"}
+const rsvpStage=g=>g.rsvp==="confirmed"?{t:"✓ מגיע",c:"#276749",bg:"#F0FFF4",b:"#9AE6B4"}
+  :g.rsvp==="declined"?{t:"✗ לא מגיע",c:"#C53030",bg:"#FFF5F5",b:"#FEB2B2"}
+  :g.last_msg==="reminder"?{t:"🔔 תזכורת",c:"#B45309",bg:"#FFF8E8",b:"#F5DDA6"}
+  :g.last_msg==="invite"?{t:"💌 הזמנה ראשונה",c:"#2B6CB0",bg:"#EBF8FF",b:"#BEE3F8"}
   :{t:"לא הופצה",c:"#718096",bg:"#F7FAFC",b:"#CBD5E0"};
+// 4 שלבים לבחירה באישורי הגעה: הזמנה ראשונה → תזכורת → מגיע / לא מגיע.
+// "הזמנה" ו"תזכורת" = עוד לא ענה (rsvp pending) + מה נשלח אחרון (last_msg); כך יודעים באיזה שלב האורח לא אישר
+const RSVP_STAGES=[["invite","💌 הזמנה ראשונה"],["reminder","🔔 תזכורת"],["confirmed","✓ מגיע"],["declined","✗ לא מגיע"]];
+const stageOf=g=>g.rsvp==="confirmed"||g.rsvp==="declined"?g.rsvp:g.last_msg==="reminder"||g.last_msg==="invite"?g.last_msg:"";
+const stagePatch=v=>v==="confirmed"||v==="declined"?{rsvp:v}:{rsvp:"pending",last_msg:v,last_msg_at:new Date().toISOString()};
 const pickRecipients=(withPhone,sel,tid)=>{
   const groups=RECIPIENT_GROUPS.filter(f=>sel.includes(f.v));
   const list=groups.length?withPhone.filter(g=>groups.some(f=>f.match(g))):[];
