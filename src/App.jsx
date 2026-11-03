@@ -1593,46 +1593,6 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </div>
 
-      {/* ─── לפני / אחרי (דפוס Before-After: הבעיה באפור, הפתרון בצבע) ─── */}
-      <section id="why" style={{padding:"100px 6vw 10px"}}>
-        <div style={{maxWidth:1060,margin:"0 auto"}}>
-          {sectionTitle("למה Sidor-IL","סידור הושבה","בלי כאב ראש","ככה זה נראה בלי מערכת, וככה זה נראה איתה.")}
-          <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:22,alignItems:"stretch"}}>
-            {/* לפני — מושתק */}
-            <div className="fu" style={{background:"#F6F3F8",border:"1px solid #E9E3EF",borderRadius:28,padding:"30px 28px",color:"#7A7189"}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,background:"#ECE7F1",borderRadius:100,padding:"6px 14px",marginBottom:18}}>✕ בלי מערכת</div>
-              {[
-                ["אקסל של 300 שורות","שמות כפולים, טלפונים חסרים, וגרסה אחרת אצל כל אחד מבני המשפחה"],
-                ["טלפונים לכל אורח","\"אתם מגיעים? כמה תהיו?\" ואז לעדכן הכל ידנית"],
-                ["ויכוחים על מי ליד מי","מזיזים פתקים על שולחן במשך ערבים שלמים"],
-                ["תור בכניסה לאולם","האורחים מחכים ושואלים איפה הם יושבים"],
-              ].map(([t,d])=>(
-                <div key={t} style={{display:"flex",gap:14,padding:"12px 0",borderTop:"1px solid #E9E3EF"}}>
-                  <span aria-hidden="true" style={{width:28,height:28,borderRadius:"50%",background:"#E4DEEA",color:"#9A90A8",display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:900,flexShrink:0}}>✕</span>
-                  <div><div style={{fontSize:16,fontWeight:800,color:"#6E6585",marginBottom:2}}>{t}</div><div style={{fontSize:14,lineHeight:1.65}}>{d}</div></div>
-                </div>
-              ))}
-            </div>
-            {/* אחרי — בצבעי המותג */}
-            <div className="lp-card fu" style={{padding:"30px 28px",transitionDelay:".12s",border:"1.5px solid #F3C6DA",background:"linear-gradient(170deg,#fff,#FFF5FA)",boxShadow:"0 34px 80px -34px rgba(240,96,158,.5)"}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,color:"#fff",background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:100,padding:"6px 14px",marginBottom:18}}>✓ עם Sidor-IL</div>
-              {[
-                ["רשימה אחת מסודרת","מייבאים מאקסל או מאנשי הקשר, וכל בני המשפחה עובדים על אותה רשימה"],
-                ["אישורי הגעה בלחיצה","כל אורח מקבל קישור אישי, והתשובה מופיעה אצלכם מיד"],
-                ["הושבה אוטומטית","גוררים על מפת האולם, או נותנים למערכת לסדר לפי משפחות וחברים"],
-                ["כניסה בלי תורים","כל אורח מקבל את מספר השולחן שלו מראש, ובכניסה מוצאים אותו בשנייה"],
-              ].map(([t,d])=>(
-                <div key={t} style={{display:"flex",gap:14,padding:"12px 0",borderTop:"1px solid #F6E1EC"}}>
-                  <span aria-hidden="true" style={{width:28,height:28,borderRadius:"50%",background:"#E9FBF4",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><LpIcon name="check" color={LP.mint} size={18}/></span>
-                  <div><div style={{fontSize:16,fontWeight:800,color:LP.ink,marginBottom:2}}>{t}</div><div style={{fontSize:14,color:LP.muted,lineHeight:1.65}}>{d}</div></div>
-                </div>
-              ))}
-              <button onClick={()=>onOpenAuth("register")} className="lp-btn lp-primary" style={{width:"100%",padding:"15px",fontSize:16,marginTop:14}}>מתחילים בחינם ←</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ─── HOW ─────────────────────────────────────────────────── */}
       <section id="how" style={{padding:"110px 6vw",position:"relative"}}>
         <div style={{maxWidth:1120,margin:"0 auto"}}>
@@ -1763,7 +1723,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               {/* איור להמחשה */}
               <div aria-label="דוגמה להשוואת מחיר" style={{background:"linear-gradient(170deg,#FFF7FB,#F7F1FF)",borderRadius:20,padding:16,border:"1px solid #F3E6F2"}}>
                 <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  {[["חציון","₪298"],["טווח","₪265–345"],["דיווחים","4"]].map(([l,v])=>(
+                  {[["מחיר","₪298"],["טווח","₪265–345"],["דיווחים","4"]].map(([l,v])=>(
                     <div key={l} style={{flex:1,background:"#fff",borderRadius:14,padding:"9px 11px",border:"1px solid #F0E8F8"}}><div style={{fontSize:11,color:LP.muted,fontWeight:700}}>{l}</div><div className="lp-num" style={{fontSize:18,fontWeight:900,color:LP.ink}}>{v}</div></div>
                   ))}
                 </div>
@@ -1771,7 +1731,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                   {[["א׳–ד׳","₪265"],["חמישי","₪285"],["שישי","₪345"]].map(([g,v])=><span key={g} style={{background:"#F4EEFF",color:"#5B3C8C",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:800}}>{g}: {v}</span>)}
                 </div>
                 <div style={{background:"#FFF5F5",border:"1px solid #FED7D7",borderRadius:14,padding:"11px 13px",fontSize:13.5,lineHeight:1.65,color:LP.ink}}>
-                  <b>ההצעה שלכם גבוהה ב-14%</b> מהחציון. 💡 ציינו שבאירועים דומים שילמו כ-₪298 למנה, ובדקו אם יום אחר זול יותר.
+                  <b>ההצעה שלכם גבוהה ב-14%</b> מהמחיר המקובל. 💡 ציינו שבאירועים דומים שילמו כ-₪298 למנה, ובדקו אם יום אחר זול יותר.
                 </div>
                 <div style={{fontSize:11,color:LP.muted,marginTop:8}}>* דוגמה להמחשה</div>
               </div>
@@ -8111,6 +8071,29 @@ function VendorsScreen({ user, event, mobile }) {
   );
 }
 
+// הערכת שוק למחיר מנה (אולם רגיל, עונת שיא) לפי מדריכי מחירים שפורסמו ברשת לשנת 2026.
+// מוצג בנפרד מדיווחי הקהילה, ומשמש להשוואה כשאין עדיין דיווחים
+const MARKET_PRICES={
+  north:{label:"צפון",lo:200,hi:330,places:"חיפה, הקריות, העמקים, הגליל"},
+  center:{label:"מרכז ושרון",lo:280,hi:450,places:"תל אביב, גוש דן, השרון"},
+  jerusalem:{label:"ירושלים",lo:240,hi:400,places:"ירושלים והסביבה"},
+  south:{label:"דרום",lo:200,hi:330,places:"באר שבע, אשדוד, אשקלון"},
+};
+const REGION_WORDS={
+  north:["חיפה","קריית","קרית","עפולה","נצרת","נוף הגליל","כרמיאל","טבריה","צפת","נהריה","עכו","יקנעם","עמק","גליל","טבעון","מגדל העמק","בית שאן","זכרון","זיכרון","חדרה","קיסריה","שפרעם","מעלות"],
+  south:["באר שבע","אשדוד","אשקלון","אילת","נתיבות","אופקים","שדרות","דימונה","ערד","קריית גת","קרית גת","קריית מלאכי","נגב","ירוחם","מצפה רמון"],
+  jerusalem:["ירושלים","בית שמש","מבשרת","מעלה אדומים","גוש עציון","אבו גוש"],
+};
+const guessRegion=s=>{const t=String(s||"");return Object.keys(REGION_WORDS).find(r=>REGION_WORDS[r].some(w=>t.includes(w)))||"center";};
+// מאגר שמתעדכן: מ-REGION_MIN_REPORTS דיווחים באזור, הטווח מחושב מהקהילה (רבעון תחתון–עליון) במקום הערכת השוק
+const REGION_MIN_REPORTS=5;
+const quantile=(a,p)=>{const s=[...a].sort((x,y)=>x-y),i=(s.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return s[lo]+(s[hi]-s[lo])*(i-lo);};
+const regionStats=prices=>Object.fromEntries(Object.entries(MARKET_PRICES).map(([k,m])=>{
+  const v=prices.filter(p=>!p.flagged&&guessRegion(`${p.city||""} ${p.venue_name||""}`)===k).map(p=>Number(p.price));
+  if(v.length<REGION_MIN_REPORTS)return [k,{...m,n:v.length,community:false}];
+  return [k,{...m,lo:Math.round(quantile(v,.25)),hi:Math.round(quantile(v,.75)),mid:Math.round(medianOf(v)),n:v.length,community:true}];
+}));
+
 // בחירה: לפרסם בעילום שם או עם השם הפרטי
 const firstNameOf=u=>String(u?.user_metadata?.full_name||u?.user_metadata?.name||"").trim().split(/\s+/)[0]||"";
 function NameChoice({ anon, name, onChange, inp }) {
@@ -8132,13 +8115,18 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
   const venues=[...new Set(prices.map(p=>p.venue_name))];
   const nq=normName(q);
   const list=nq?prices.filter(p=>normName(p.venue_name).includes(nq)||normName(p.city).includes(nq)):prices;
-  // הסטטיסטיקה בלי דיווחים "בבדיקה" — חריג לא מזיז את החציון עד שאושר
+  // הסטטיסטיקה בלי דיווחים "בבדיקה" — חריג לא מזיז את המחיר המקובל (חציון) עד שאושר
   const ok=list.filter(p=>!p.flagged);
   const vals=ok.map(p=>Number(p.price));
   const med=medianOf(vals);
   const groups=["א׳–ד׳","חמישי","שישי","מוצ״ש"].map(g=>{const v=ok.filter(p=>dayGroup(p.event_date)===g).map(p=>Number(p.price));return [g,medianOf(v),v.length];}).filter(x=>x[2]);
   const qv=Number(quote);
   const diff=med&&qv>0?Math.round((qv-med)/med*100):null;
+  // אזור להערכת השוק: לפי מה שחיפשו / כתובת האולם, ואפשר להחליף
+  const [regionPick,setRegionPick]=useState(null);
+  const region=regionPick||guessRegion(`${q} ${list[0]?.city||""} ${event.venue_address||""}`);
+  const regions=regionStats(prices);
+  const mk=regions[region];
   const submit=async()=>{
     const price=Number(f.price),guests=Number(f.guests);
     if(normName(f.venue_name).length<2||!f.event_date||!(price>0)||!(guests>0)){setMsg({err:true,t:"מלאו שם אולם, תאריך, מספר אורחים ומחיר למנה"});return;}
@@ -8159,7 +8147,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
       </div>
       {ok.length?(<>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}>
-          {[["חציון",`₪${Math.round(med)}`],["טווח",`₪${Math.round(Math.min(...vals))}–${Math.round(Math.max(...vals))}`],["דיווחים",ok.length]].map(([l,v])=>(
+          {[["מחיר",`₪${Math.round(med)}`],["טווח",`₪${Math.round(Math.min(...vals))}–${Math.round(Math.max(...vals))}`],["דיווחים",ok.length]].map(([l,v])=>(
             <div key={l} style={{flex:"1 1 120px",background:"#FBF8FD",borderRadius:14,padding:"10px 14px"}}><div style={{fontSize:12,color:"#888",fontWeight:700}}>{l}</div><div style={{fontSize:20,fontWeight:900,color:"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{v}</div></div>
           ))}
         </div>
@@ -8167,11 +8155,38 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
           {groups.map(([g,m,n])=><span key={g} style={{background:"#F4EEFF",color:"#5B3C8C",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:800}}>{g}: ₪{Math.round(m)} <span style={{fontWeight:600,color:"#8A7AA8"}}>({n})</span></span>)}
         </div>}
         {diff!==null&&<div style={{marginTop:12,borderRadius:14,padding:"12px 14px",fontSize:14,lineHeight:1.7,background:diff>8?"#FFF5F5":diff<-8?"#F0FFF4":"#F7F7FB",border:`1px solid ${diff>8?"#FED7D7":diff<-8?"#9AE6B4":"#E2E8F0"}`,color:"#2B1D3F"}}>
-          {diff>8?<><b>ההצעה שלכם גבוהה ב-{diff}%</b> מהחציון של {ok.length} דיווחים. 💡 טיפ למשא ומתן: ציינו שבאירועים דומים שילמו כ-₪{Math.round(med)} למנה{groups.length>1?", ובדקו אם יום אחר בשבוע זול יותר":""}.</>
-            :diff<-8?<><b>ההצעה שלכם נמוכה ב-{-diff}%</b> מהחציון. נשמע כמו מחיר טוב 👍 ודאו מה כלול במנה.</>
-            :<>ההצעה שלכם <b>קרובה לחציון</b> (₪{Math.round(med)}). אפשר לנסות לבקש תוספת בלי תשלום, כמו בר או קבלת פנים מורחבת.</>}
+          {diff>8?<><b>ההצעה שלכם גבוהה ב-{diff}%</b> מהמחיר המקובל לפי {ok.length} דיווחים. 💡 טיפ למשא ומתן: ציינו שבאירועים דומים שילמו כ-₪{Math.round(med)} למנה{groups.length>1?", ובדקו אם יום אחר בשבוע זול יותר":""}.</>
+            :diff<-8?<><b>ההצעה שלכם נמוכה ב-{-diff}%</b> מהמחיר המקובל. נשמע כמו מחיר טוב 👍 ודאו מה כלול במנה.</>
+            :<>ההצעה שלכם <b>קרובה למחיר המקובל</b> (₪{Math.round(med)}). אפשר לנסות לבקש תוספת בלי תשלום, כמו בר או קבלת פנים מורחבת.</>}
         </div>}
-      </>):<div style={{marginTop:14,color:"#888",fontSize:14}}>{prices.length?"אין עדיין דיווחים שמתאימים לחיפוש. אפשר לחפש לפי עיר, או להיות הראשונים לשתף.":"עוד אין דיווחים. היו הראשונים לשתף מחיר 🙏"}</div>}
+      </>):<div style={{marginTop:14,color:"#888",fontSize:14}}>{prices.length?"אין עדיין דיווחים מהקהילה שמתאימים לחיפוש. בינתיים אפשר להשוות להערכת השוק למטה.":"עוד אין דיווחים מהקהילה. בינתיים אפשר להשוות להערכת השוק למטה 👇"}</div>}
+    </div>
+
+    {/* הערכת שוק לפי אזור (מפרסומים ברשת) */}
+    <div style={{...card,marginBottom:14}}>
+      <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>📊 מחיר מנה מקובל לפי אזור</div>
+      <div style={{fontSize:12,color:"#888",marginBottom:10}}>מתעדכן מדיווחי הקהילה: באזור עם {REGION_MIN_REPORTS} דיווחים ומעלה — הטווח לפי מה שזוגות שילמו בפועל. עד אז — הערכת שוק 2026 ממדריכי מחירים ברשת (אולם רגיל, עונת שיא).</div>
+      <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:8}}>
+        {Object.entries(regions).map(([k,m])=>(
+          <button key={k} onClick={()=>setRegionPick(k)} aria-pressed={region===k} style={{textAlign:"right",background:region===k?"linear-gradient(135deg,#FFF1F7,#F4EEFF)":"#fff",border:`1.5px solid ${region===k?"#C9A7F5":"#EDE6F5"}`,borderRadius:14,padding:"10px 12px",cursor:"pointer",fontFamily:"inherit"}}>
+            <div style={{fontSize:13,fontWeight:900,color:"#2B1D3F"}}>{m.label}</div>
+            <div style={{fontSize:17,fontWeight:900,color:"#9147D6",fontVariantNumeric:"tabular-nums"}}>₪{m.lo}–{m.hi}</div>
+            <div style={{fontSize:10.5,fontWeight:800,color:m.community?"#1F8F6C":"#B07A12",marginTop:2}}>{m.community?`👥 לפי ${m.n} דיווחים`:`📊 הערכת שוק${m.n?` · ${m.n}/${REGION_MIN_REPORTS} דיווחים`:""}`}</div>
+            <div style={{fontSize:10.5,color:"#999",lineHeight:1.4}}>{m.places}</div>
+          </button>
+        ))}
+      </div>
+      {qv>0&&!ok.length&&<div style={{marginTop:12,borderRadius:14,padding:"12px 14px",fontSize:14,lineHeight:1.7,color:"#2B1D3F",background:qv>mk.hi?"#FFF5F5":qv<mk.lo?"#F0FFF4":"#F7F7FB",border:`1px solid ${qv>mk.hi?"#FED7D7":qv<mk.lo?"#9AE6B4":"#E2E8F0"}`}}>
+        {qv>mk.hi?<><b>₪{qv} גבוה מהטווח המקובל ב{mk.label}</b> (₪{mk.lo}–{mk.hi}), בכ-{Math.round((qv-mk.hi)/mk.hi*100)}%. 💡 שווה להתמקח, לבדוק יום אחר בשבוע, או לברר מה כלול במנה.</>
+          :qv<mk.lo?<><b>₪{qv} נמוך מהטווח המקובל ב{mk.label}</b> (₪{mk.lo}–{mk.hi}). נשמע כמו מחיר טוב 👍 ודאו מה כלול במנה.</>
+          :<><b>₪{qv} בתוך הטווח המקובל ב{mk.label}</b> (₪{mk.lo}–{mk.hi}). אפשר לנסות לבקש תוספת בלי תשלום, כמו בר או קבלת פנים מורחבת.</>}
+      </div>}
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
+        {["🗓️ א׳–ד׳ זול בדרך כלל ב-10%–25%","🔥 חמישי יקר יותר ב-15%–25%","❄️ בחורף (נובמבר–פברואר) הנחות של עד 20%–40%","🌳 גני אירועים ובוטיק — יקרים יותר"].map(t=>(
+          <span key={t} style={{background:"#FBF8FD",border:"1px solid #EFE8F7",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:700,color:"#5B3C8C"}}>{t}</span>
+        ))}
+      </div>
+      <div style={{fontSize:11,color:"#999",marginTop:8}}>* הטווח הוא הערכה. המחיר בפועל משתנה לפי האולם, התאריך ומה שכלול במנה. כל דיווח שלכם משפר את הדיוק לכולם 🙏</div>
     </div>
 
     {/* שיתוף מחיר */}
