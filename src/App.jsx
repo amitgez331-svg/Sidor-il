@@ -8051,10 +8051,24 @@ function VendorsScreen({ user, event, mobile }) {
   );
 }
 
+// בחירה: לפרסם בעילום שם או עם השם הפרטי
+const firstNameOf=u=>String(u?.user_metadata?.full_name||u?.user_metadata?.name||"").trim().split(/\s+/)[0]||"";
+function NameChoice({ anon, name, onChange, inp }) {
+  const pill=on=>({flex:1,background:on?"#2B1D3F":"#fff",color:on?"#fff":"#2B1D3F",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"9px 10px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",minHeight:44});
+  return(<div>
+    <div style={{fontSize:12,fontWeight:800,color:"#6E6585",marginBottom:5}}>איך לפרסם?</div>
+    <div role="radiogroup" aria-label="איך לפרסם" style={{display:"flex",gap:8}}>
+      <button type="button" role="radio" aria-checked={anon} onClick={()=>onChange({anon:true,name})} style={pill(anon)}>🕶️ בעילום שם</button>
+      <button type="button" role="radio" aria-checked={!anon} onClick={()=>onChange({anon:false,name})} style={pill(!anon)}>👤 עם השם שלי</button>
+    </div>
+    {!anon&&<input value={name} onChange={e=>onChange({anon,name:e.target.value})} maxLength={30} placeholder="השם שיוצג (למשל: נועה)" aria-label="השם שיוצג" style={{...inp,marginTop:8}}/>}
+  </div>);
+}
+
 function PlatePrices({ user, event, prices, onAdded, ui }) {
   const {card,inp,lbl,btn,mobile}=ui;
   const [q,setQ]=useState(event.venue||""),[quote,setQuote]=useState(""),[open,setOpen]=useState(false),[msg,setMsg]=useState(null),[busy,setBusy]=useState(false);
-  const [f,setF]=useState({venue_name:event.venue||"",city:"",event_date:event.date||"",guests:"",price:"",event_type:EVENT_TYPE_LABELS[event.event_type]?event.event_type:"wedding",includes:""});
+  const [f,setF]=useState({venue_name:event.venue||"",city:"",event_date:event.date||"",guests:"",price:"",event_type:EVENT_TYPE_LABELS[event.event_type]?event.event_type:"wedding",includes:"",anon:true,author_name:firstNameOf(user)});
   const venues=[...new Set(prices.map(p=>p.venue_name))];
   const nq=normName(q);
   const list=nq?prices.filter(p=>normName(p.venue_name).includes(nq)||normName(p.city).includes(nq)):prices;
@@ -8069,7 +8083,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
     const price=Number(f.price),guests=Number(f.guests);
     if(normName(f.venue_name).length<2||!f.event_date||!(price>0)||!(guests>0)){setMsg({err:true,t:"מלאו שם אולם, תאריך, מספר אורחים ומחיר למנה"});return;}
     setBusy(true);setMsg(null);
-    const{data,error}=await sb.from("plate_prices").insert({venue_name:f.venue_name.trim(),city:f.city.trim()||null,event_date:f.event_date,guests,price,event_type:f.event_type,includes:f.includes.trim()||null,user_id:user.id}).select().single();
+    const{data,error}=await sb.from("plate_prices").insert({venue_name:f.venue_name.trim(),city:f.city.trim()||null,event_date:f.event_date,guests,price,event_type:f.event_type,includes:f.includes.trim()||null,author_name:f.anon?null:(f.author_name.trim().slice(0,30)||null),user_id:user.id}).select().single();
     setBusy(false);
     if(error){setMsg({err:true,t:"השמירה נכשלה: "+error.message});return;}
     setMsg({err:false,t:data?.flagged?"✅ פורסם. המחיר שונה מהותית מהדיווחים האחרים, אז הוא מסומן \"בבדיקה\" עד שנעבור עליו.":"✅ תודה! המחיר פורסם ויעזור לזוגות אחרים."});
@@ -8104,7 +8118,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
     {!open?<button onClick={()=>{setOpen(true);setMsg(null);}} style={{...btn,width:"100%",marginBottom:14,minHeight:48}}>➕ שתפו כמה שילמתם למנה (אנונימי)</button>
     :<div style={{...card,marginBottom:14,border:"1.5px solid #E9D8FD"}}>
       <div style={{fontSize:16,fontWeight:900,marginBottom:4}}>שיתוף מחיר מנה</div>
-      <div style={{fontSize:12,color:"#888",marginBottom:12}}>הדיווח אנונימי — לא מוצג שם או פרטים שלכם. עוזר לזוגות אחרים להתמקח.</div>
+      <div style={{fontSize:12,color:"#888",marginBottom:12}}>עוזר לזוגות אחרים להתמקח. בחרו אם להציג את השם הפרטי שלכם או לפרסם בעילום שם.</div>
       <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:10}}>
         <div>{lbl("שם האולם *")}<input value={f.venue_name} onChange={e=>setF(x=>({...x,venue_name:e.target.value}))} list="pp-venues" style={inp}/></div>
         <div>{lbl("עיר")}<input value={f.city} onChange={e=>setF(x=>({...x,city:e.target.value}))} style={inp}/></div>
@@ -8114,6 +8128,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
         <div>{lbl("מחיר למנה (₪) *")}<input value={f.price} onChange={e=>setF(x=>({...x,price:e.target.value.replace(/[^\d.]/g,"")}))} inputMode="decimal" style={inp}/></div>
         <div>{lbl("סוג האירוע")}<select value={f.event_type} onChange={e=>setF(x=>({...x,event_type:e.target.value}))} style={inp}>{Object.entries(EVENT_TYPE_LABELS).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
         <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("מה כלול במחיר")}<input value={f.includes} onChange={e=>setF(x=>({...x,includes:e.target.value}))} maxLength={200} placeholder="למשל: בר פתוח, קבלת פנים, ללא עיצוב" style={inp}/></div>
+        <div style={{gridColumn:mobile?"auto":"1 / -1"}}><NameChoice anon={f.anon} name={f.author_name} inp={inp} onChange={({anon,name})=>setF(x=>({...x,anon,author_name:name}))}/></div>
       </div>
       <div style={{display:"flex",gap:8,marginTop:12}}>
         <button onClick={submit} disabled={busy} style={{...btn,flex:1,minHeight:44}}>{busy?"שומר...":"פרסום"}</button>
@@ -8132,7 +8147,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
             <span style={{marginRight:"auto",fontSize:18,fontWeight:900,color:"#9147D6",fontVariantNumeric:"tabular-nums"}}>₪{Math.round(p.price)}</span>
           </div>
           <div style={{fontSize:12.5,color:"#6E6585",marginTop:2}}>
-            {new Date(p.event_date+"T12:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})} · יום {HEB_DAYS[new Date(p.event_date+"T12:00:00").getDay()]} · {p.guests} אורחים{EVENT_TYPE_LABELS[p.event_type]?` · ${EVENT_TYPE_LABELS[p.event_type]}`:""}{p.includes?` · ${p.includes}`:""}
+            {new Date(p.event_date+"T12:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})} · יום {HEB_DAYS[new Date(p.event_date+"T12:00:00").getDay()]} · {p.guests} אורחים{EVENT_TYPE_LABELS[p.event_type]?` · ${EVENT_TYPE_LABELS[p.event_type]}`:""}{p.includes?` · ${p.includes}`:""} · {p.author_name?`דיווח/ה: ${p.author_name}`:"בעילום שם"}
           </div>
           {flagNote(p)}
         </div>
@@ -8144,7 +8159,7 @@ function PlatePrices({ user, event, prices, onAdded, ui }) {
 function VendorReviews({ user, reviews, onAdded, ui }) {
   const {card,inp,lbl,btn,mobile}=ui;
   const [cat,setCat]=useState("all"),[q,setQ]=useState(""),[open,setOpen]=useState(false),[openV,setOpenV]=useState(null),[msg,setMsg]=useState(null),[busy,setBusy]=useState(false);
-  const [f,setF]=useState({category:"venue",vendor_name:"",city:"",rating:5,body:"",author_name:String(user?.user_metadata?.full_name||"").split(" ")[0]||""});
+  const [f,setF]=useState({category:"venue",vendor_name:"",city:"",rating:5,body:"",anon:false,author_name:firstNameOf(user)});
   const nq=normName(q);
   const shown=reviews.filter(r=>(cat==="all"||r.category===cat)&&(!nq||normName(r.vendor_name).includes(nq)||normName(r.city).includes(nq)));
   // קיבוץ לפי ספק (קטגוריה + שם)
@@ -8153,7 +8168,7 @@ function VendorReviews({ user, reviews, onAdded, ui }) {
   const submit=async()=>{
     if(normName(f.vendor_name).length<2){setMsg({err:true,t:"כתבו את שם הספק"});return;}
     setBusy(true);setMsg(null);
-    const{data,error}=await sb.from("vendor_reviews").insert({category:f.category,vendor_name:f.vendor_name.trim(),city:f.city.trim()||null,rating:f.rating,body:f.body.trim()||null,author_name:f.author_name.trim().slice(0,30)||null,user_id:user.id}).select().single();
+    const{data,error}=await sb.from("vendor_reviews").insert({category:f.category,vendor_name:f.vendor_name.trim(),city:f.city.trim()||null,rating:f.rating,body:f.body.trim()||null,author_name:f.anon?null:(f.author_name.trim().slice(0,30)||null),user_id:user.id}).select().single();
     setBusy(false);
     if(error){setMsg({err:true,t:"השמירה נכשלה: "+error.message});return;}
     setMsg({err:false,t:data?.flagged?"✅ פורסם. הדירוג שונה מאוד משאר הדירוגים של הספק, אז הוא מסומן \"בבדיקה\" עד שנעבור עליו.":"✅ תודה! ההמלצה פורסמה."});
@@ -8176,7 +8191,7 @@ function VendorReviews({ user, reviews, onAdded, ui }) {
         <div>{lbl("סוג הספק")}<select value={f.category} onChange={e=>setF(x=>({...x,category:e.target.value}))} style={inp}>{VENDOR_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select></div>
         <div>{lbl("שם הספק *")}<input value={f.vendor_name} onChange={e=>setF(x=>({...x,vendor_name:e.target.value}))} maxLength={80} style={inp}/></div>
         <div>{lbl("עיר / אזור")}<input value={f.city} onChange={e=>setF(x=>({...x,city:e.target.value}))} maxLength={40} style={inp}/></div>
-        <div>{lbl("השם שיוצג (שם פרטי)")}<input value={f.author_name} onChange={e=>setF(x=>({...x,author_name:e.target.value}))} maxLength={30} placeholder="אפשר להשאיר ריק" style={inp}/></div>
+        <div><NameChoice anon={f.anon} name={f.author_name} inp={inp} onChange={({anon,name})=>setF(x=>({...x,anon,author_name:name}))}/></div>
         <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("דירוג")}<Stars value={f.rating} onChange={n=>setF(x=>({...x,rating:n}))} size={30}/></div>
         <div style={{gridColumn:mobile?"auto":"1 / -1"}}>{lbl("איך היה?")}<textarea value={f.body} onChange={e=>setF(x=>({...x,body:e.target.value}))} maxLength={800} rows={3} placeholder="מה היה טוב, מה פחות, האם הייתם ממליצים..." style={{...inp,resize:"vertical"}}/></div>
       </div>
@@ -8207,7 +8222,7 @@ function VendorReviews({ user, reviews, onAdded, ui }) {
           </button>
           {exp&&v.list.map(r=>(
             <div key={r.id} style={{marginTop:10,paddingTop:10,borderTop:"1px solid #F3EEF8"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><Stars value={r.rating} size={14}/><span style={{fontSize:12,fontWeight:800,color:"#2B1D3F"}}>{r.author_name||"אנונימי"}</span><span style={{fontSize:11,color:"#999"}}>{new Date(r.created_at).toLocaleDateString("he-IL")}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><Stars value={r.rating} size={14}/><span style={{fontSize:12,fontWeight:800,color:"#2B1D3F"}}>{r.author_name||"בעילום שם"}</span><span style={{fontSize:11,color:"#999"}}>{new Date(r.created_at).toLocaleDateString("he-IL")}</span></div>
               {r.body&&<div style={{fontSize:13.5,color:"#4A4060",lineHeight:1.7,marginTop:4,whiteSpace:"pre-line"}}>{r.body}</div>}
               {flagNote(r)}
             </div>
