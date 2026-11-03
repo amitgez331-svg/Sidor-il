@@ -2988,11 +2988,14 @@ const taskList=event=>{
   // "קביעת תאריך" מסומנת כבוצעה אם כבר יש תאריך לאירוע
   return (TASK_DEFAULTS[event?.event_type]||TASK_DEFAULTS.wedding).map(([o,t,c],i)=>({id:"d"+i,t,o,c,done:!!event?.date&&t.startsWith("קביעת תאריך")}));
 };
-// תאריך יעד: משימה עם תאריך (d) או ימים ביחס לאירוע (o)
+// תאריך יעד: ימים ביחס לאירוע (o) — זז עם תאריך האירוע. d (תאריך קבוע) רק למשימה שנוספה בלי תאריך אירוע
 const taskDue=(task,event)=>{
-  if(task.d)return new Date(task.d+"T00:00:00");
-  const ev=eventDay(event);return ev&&typeof task.o==="number"?new Date(ev.getTime()+task.o*DAY_MS):null;
+  const ev=eventDay(event);
+  if(ev&&typeof task.o==="number")return new Date(ev.getTime()+task.o*DAY_MS);
+  return task.d?new Date(task.d+"T00:00:00"):null;
 };
+// ימים בין תאריך (YYYY-MM-DD) לתאריך האירוע
+const taskOff=(d,event)=>{const ev=eventDay(event);return ev&&d?Math.round((new Date(d+"T00:00:00")-ev)/DAY_MS):null;};
 const today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
 // "באיחור" = עבר המועד אחרי שהאירוע נפתח. משימה שהמועד שלה עבר עוד לפני שהאירוע נפתח היא "להשלים בהקדם" (לא אדום)
 const eventOpened=event=>{const c=event?.created_at?new Date(event.created_at):null;if(!c||isNaN(c))return null;c.setHours(0,0,0,0);return c;};
@@ -3021,8 +3024,22 @@ function TasksScreen({ event }) {
   const toggle=id=>update(list.map(t=>t.id===id?{...t,done:!t.done}:t));
   const remove=id=>update(list.filter(t=>t.id!==id));
   const rename=(id,t)=>{t=t.trim();if(t)update(list.map(x=>x.id===id?{...x,t}:x));setEditId(null);};
-  const add=()=>{if(!title.trim())return;update([...list,{id:"c"+Date.now().toString(36),t:title.trim(),c:"plan",d:due||null,done:false,custom:true}]);setTitle("");setDue("");};
+  // משימה חדשה עם תאריך נשמרת גם כ-o (ימים ביחס לאירוע), כדי שתזוז כשתאריך האירוע משתנה
+  const add=()=>{if(!title.trim())return;const o=taskOff(due,event);update([...list,{id:"c"+Date.now().toString(36),t:title.trim(),c:"plan",d:due||null,...(o!=null?{o}:{}),done:false,custom:true}]);setTitle("");setDue("");};
   const ev=eventDay(event);
+  // איפוס זמנים: משימות ברירת המחדל חוזרות למועד הרגיל ביחס לתאריך האירוע; משימה שהוספתם עם תאריך קבוע (בלי o) מוצמדת לתאריך האירוע.
+  // סימון "בוצע", שמות ומשימות שנמחקו לא משתנים
+  const resetTimes=()=>{
+    if(!ev){alert("קודם צריך להגדיר תאריך אירוע בפרטי האירוע");return;}
+    if(!window.confirm(`לאפס את תאריכי היעד של המשימות לפי תאריך האירוע (${ev.toLocaleDateString("he-IL")})?\nמה שסימנתם כבוצע נשאר מסומן.`))return;
+    const defs=TASK_DEFAULTS[event?.event_type]||TASK_DEFAULTS.wedding;
+    update(list.map(t=>{
+      const m=/^d(\d+)$/.exec(t.id),def=m&&defs[+m[1]];
+      if(def&&!t.custom){const{d,...rest}=t;return{...rest,o:def[0]};}
+      if(typeof t.o!=="number"&&t.d){const o=taskOff(t.d,event);return Math.abs(o)>400?{...t,o:-7}:{...t,o};}
+      return t;
+    }));
+  };
   const done=list.filter(t=>t.done).length,late=list.filter(t=>taskLate(t,event)).length;
   const pct=list.length?Math.round(done/list.length*100):0;
   const shown=sortTasks(list,event).filter(t=>filter==="all"||(filter==="open"?!t.done:filter==="late"?taskLate(t,event):t.done));
@@ -3051,6 +3068,7 @@ function TasksScreen({ event }) {
         {[["all","הכל"],["open","פתוחות"],["late",`באיחור${late?` (${late})`:""}`],["done","הושלמו"]].map(([k,l])=>(
           <button key={k} onClick={()=>setFilter(k)} aria-pressed={filter===k} style={{background:filter===k?C.blue:"#fff",color:filter===k?"#fff":C.blue,border:`1.5px solid ${filter===k?C.blue:C.border}`,borderRadius:100,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
         ))}
+        <button onClick={resetTimes} title="החזרת תאריכי היעד למועדים הרגילים לפי תאריך האירוע" style={{marginInlineStart:"auto",background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:100,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>↺ איפוס זמנים</button>
       </div>
       <Card style={{padding:12,marginBottom:14,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
         <input value={title} onChange={e=>setTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="➕ משימה חדשה..." aria-label="משימה חדשה" style={{...inp,flex:"2 1 200px"}}/>
@@ -6922,6 +6940,18 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   };
   const remove=id=>{const next=items.filter(s=>s.id!==id);setItems(next);persist(next);};
   const save=async()=>{if(await persist(items))setEditing(false);};
+  // איפוס זמנים: 4 הסבבים חוזרים למועד ולשעה הרגילים לפי תאריך האירוע (ההפעלה/כיבוי נשארים).
+  // תזמון נוסף שהמועד שלו רחוק יותר מ-90 יום מהאירוע (תאריך ישן) עובר לשבוע לפני האירוע
+  const resetTimes=async()=>{
+    if(!eventD){alert("קודם צריך להגדיר תאריך אירוע בפרטי האירוע");return;}
+    if(!window.confirm(`לאפס את זמני השליחה לפי תאריך האירוע (${eventD.toLocaleDateString("he-IL")})?\n\n• שבוע וחצי לפני · 10:00\n• 4 ימים לפני · 10:00\n• ביום האירוע · 09:00\n• יומיים אחרי · 10:00\n\nתזמונים נוספים עם תאריך ישן יעברו לשבוע לפני האירוע.`))return;
+    const next=items.map(s=>{
+      const d=SCHEDULE_DEFAULTS.find(x=>x.id===s.id);
+      if(d)return{...s,date:calcDate(d.offset),time:d.time};
+      return !s.date||Math.abs(offOf(s.date))>90?{...s,date:calcDate(-7)}:s;
+    });
+    setItems(next);if(await persist(next))setEditing(false);
+  };
   const inp={width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"7px 8px",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#fff"};
 
   return(
@@ -6931,6 +6961,10 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {status==="saving"&&<span style={{fontSize:11,color:C.muted}}>שומר…</span>}
           {status==="saved"&&<span style={{fontSize:11,color:C.success,fontWeight:800}}>✓ נשמר</span>}
+          <button onClick={resetTimes} title="החזרת כל הזמנים למועדים הרגילים לפי תאריך האירוע" className="sx-btn"
+            style={{background:"#fff",color:C.blue,border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+            ↺ איפוס זמנים
+          </button>
           <button onClick={()=>editing?save():setEditing(true)} className="sx-btn"
             style={{background:editing?accent:"#F7F1FD",color:editing?"#fff":C.blue,border:`1px solid ${editing?accent:C.border}`,borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
             {editing?"💾 שמור תזמונים":"✏️ ערוך תזמונים"}
