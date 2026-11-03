@@ -82,6 +82,8 @@ export type Deps = {
   refund: (eventId: string, units: number, note: string) => Promise<void>;
   send: (items: { phone: string; text: string }[]) => Promise<{ ok: boolean; status?: unknown; message?: string }>;
   finish: (runId: string, patch: { status: string; recipients?: number; units?: number; error?: string | null }) => Promise<void>;
+  // סימון אצל האורחים מה נשלח (guests.last_msg) — לסטטוס באישורי הגעה. אופציונלי
+  markSent?: (guestIds: string[], templateId: string) => Promise<void>;
 };
 
 // שליחת תזמון אחד. כל שגיאה נרשמת בתזמון עצמו ולא עוצרת את השאר.
@@ -97,7 +99,7 @@ export async function runOne(c: Claim, deps: Deps) {
     const tableName = (id: string | null) => { const t = tables.find((t) => t.id === id); return t ? tableLabel(nums[t.id], t.name) : "—"; };
     const inviteUrl = ev.invite_code ? `https://www.sidoril.com/#/invite/${ev.invite_code}` : "";
     const valid = recipientsFor(c.template_id, guests)
-      .map((g) => ({ name: g.name, phone: normPhone(g.phone || ""), text: renderFor(text, g, tableName, inviteUrl) }))
+      .map((g) => ({ id: g.id, name: g.name, phone: normPhone(g.phone || ""), text: renderFor(text, g, tableName, inviteUrl) }))
       .filter((i) => i.phone);
     if (!valid.length) return await deps.finish(c.run_id, { status: "skipped", error: "אין נמענים עם נייד תקין" });
     if (valid.length > MAX_RECIPIENTS) return await deps.finish(c.run_id, { status: "failed", recipients: valid.length, error: `יותר מ-${MAX_RECIPIENTS} נמענים` });
@@ -114,6 +116,9 @@ export async function runOne(c: Claim, deps: Deps) {
       return await deps.finish(c.run_id, { status: "failed", recipients: valid.length, error: `ספק ה-SMS דחה את השליחה (${res.message || "שגיאה"}). היתרה הוחזרה.` });
     }
     await deps.finish(c.run_id, { status: "sent", recipients: valid.length, units, error: null });
+    if (deps.markSent && (c.template_id === "invite" || c.template_id === "reminder")) {
+      await deps.markSent(valid.map((i) => i.id), c.template_id).catch(() => {});
+    }
   } catch (e) {
     await deps.finish(c.run_id, { status: "failed", error: "שגיאה בשרת: " + String((e as Error)?.message || e) }).catch(() => {});
   }
