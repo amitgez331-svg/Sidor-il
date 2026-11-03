@@ -19,6 +19,8 @@ create table if not exists public.plate_prices(
   created_at timestamptz not null default now()
 );
 create index if not exists plate_prices_venue_idx on public.plate_prices(venue_key);
+-- המדווח בוחר: בעילום שם (null) או שם פרטי
+alter table public.plate_prices add column if not exists author_name text check (author_name is null or char_length(author_name)<=30);
 
 create table if not exists public.vendor_reviews(
   id uuid primary key default gen_random_uuid(),
