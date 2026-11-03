@@ -928,12 +928,7 @@ function VenuePage({ onBack, onOpenAuth }) {
   return(
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,minHeight:"100vh"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
-      {/* בר עליון קבוע: חזרה לדף הבית נשארת תמיד למעלה */}
-      <header style={{position:"sticky",top:0,zIndex:100,background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #EFE6F5",padding:"12px 20px",display:"flex",alignItems:"center",gap:12}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",padding:0}}>→ חזרה לדף הבית</button>
-        <span style={{color:"#ccc"}} aria-hidden="true">|</span>
-        <span style={{fontWeight:900,color:"#2B1D3F",fontSize:15}}>Sidor-IL</span>
-      </header>
+      <SiteNav/>
       {/* Header */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
@@ -1491,7 +1486,74 @@ const StepArt=({kind})=>{
   );
 };
 
+// תמיכה ועזרה מתוך האירוע: וואטסאפ או מייל, עם שם האירוע כבר בהודעה
+const SUPPORT_WA="972526817102", SUPPORT_MAIL="sidoril2026@gmail.com";
+function SupportMenu({ event }) {
+  // open = מיקום הכפתור במסך. התפריט ב-position:fixed כי הבאנר חותך (overflow:hidden)
+  const [open,setOpen]=useState(null);
+  const ref=useRef(null);
+  useEffect(()=>{if(!open)return;const close=e=>{if(!ref.current?.contains(e.target))setOpen(null);};const off=()=>setOpen(null);
+    document.addEventListener("pointerdown",close);window.addEventListener("scroll",off,true);window.addEventListener("resize",off);
+    return()=>{document.removeEventListener("pointerdown",close);window.removeEventListener("scroll",off,true);window.removeEventListener("resize",off);};},[open]);
+  const toggle=e=>{if(open){setOpen(null);return;}const r=e.currentTarget.getBoundingClientRect();setOpen({top:r.bottom+8,left:Math.max(8,Math.min(r.left,window.innerWidth-248))});};
+  const intro=`שלום, אני צריך/ה עזרה באירוע "${event?.name||""}"`;
+  const opt={display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:12,textDecoration:"none",color:C.text,fontSize:14,fontWeight:800};
+  return(
+    <div ref={ref} style={{position:"relative"}}>
+      <button onClick={toggle} aria-expanded={!!open} aria-haspopup="menu" className="sx-btn"
+        style={{background:"rgba(255,255,255,.22)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:100,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",backdropFilter:"blur(6px)"}}>
+        🛟 תמיכה ועזרה
+      </button>
+      {open&&(
+        <div role="menu" style={{position:"fixed",top:open.top,left:open.left,zIndex:400,background:"#fff",borderRadius:16,padding:6,width:240,boxShadow:"0 18px 40px -12px rgba(91,60,140,.45)",border:`1px solid ${C.border}`,direction:"rtl"}}>
+          <div style={{fontSize:11,color:C.muted,padding:"6px 10px 4px"}}>נשמח לעזור, בדרך כלל עונים תוך כמה שעות</div>
+          <a role="menuitem" href={`https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(intro+":\n")}`} target="_blank" rel="noopener noreferrer" onClick={()=>setOpen(null)} style={{...opt,background:"#F0FFF4"}}>
+            <WaIcon size={20}/> שליחה בוואטסאפ
+          </a>
+          <a role="menuitem" href={`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent("עזרה: "+(event?.name||"Sidor-IL"))}&body=${encodeURIComponent(intro+".\n\n")}`} onClick={()=>setOpen(null)} style={{...opt,marginTop:4}}>
+            <span style={{fontSize:18}}>✉️</span> שליחה במייל
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// הבר של דף הבית, קבוע למעלה, בדפים הפנימיים (מדיניות, מדריכים, סוגי אירועים, אולמות).
+// כל לחיצה חוזרת לדף הבית (גם למשתמש מחובר) ולמקטע שנבחר; כניסה/הרשמה נפתחות שם
+const LANDING_SECTIONS=[["how","איך זה עובד"],["features","יכולות"],["vendors","ספקים ומחירים"],["events","סוגי אירועים"],["pricing","מחירים"]];
+// טעינה מחדש תמיד (גם כשרק ה-# משתנה), כדי שהאפליקציה תקרא את sidor_landing ותציג את דף הבית
+const goLanding=(id,auth)=>{
+  try{sessionStorage.setItem("sidor_landing","1");if(auth)sessionStorage.setItem("sidor_open_auth",auth);}catch{}
+  const url="/"+(id?"#"+id:"");
+  if(window.location.pathname==="/"){history.replaceState(null,"",url);window.location.reload();}else window.location.href=url;
+};
+function SiteNav() {
+  const link=(id,l)=><a key={id} href={"/#"+id} className="lp-nav-link" onClick={e=>{e.preventDefault();goLanding(id);}}>{l}</a>;
+  return(<>
+    <style>{LANDING_CSS}</style>
+    <nav dir="rtl" style={{position:"sticky",top:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,fontFamily:"'Heebo',sans-serif",color:LP.ink,
+      background:"rgba(255,251,247,.9)",backdropFilter:"blur(18px) saturate(1.5)",borderBottom:"1px solid #F0E8F4",boxShadow:"0 6px 24px -14px rgba(91,60,140,.25)"}}>
+      <a href="/" onClick={e=>{e.preventDefault();goLanding();}} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:LP.ink}}>
+        <SidorLogo size={40} id="navLogo"/>
+        <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
+      </a>
+      <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>{LANDING_SECTIONS.map(([id,l])=>link(id,l))}</div>
+      <div style={{flex:1}}/>
+      <button className="lp-btn lp-ghost lp-navbtn" onClick={()=>goLanding(null,"login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
+      <button className="lp-btn lp-primary lp-navbtn" onClick={()=>goLanding(null,"register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+    </nav>
+  </>);
+}
+
 function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
+  // הגעה מהבר שבדפים הפנימיים: גלילה למקטע (#how...) ופתיחת כניסה/הרשמה אם נבחרה
+  useEffect(()=>{
+    let auth=null;try{auth=sessionStorage.getItem("sidor_open_auth");sessionStorage.removeItem("sidor_open_auth");}catch{}
+    if(auth){onOpenAuth(auth);return;}
+    const id=window.location.hash.slice(1);
+    if(/^[a-z]+$/.test(id))setTimeout(()=>document.getElementById(id)?.scrollIntoView(),120);
+  },[]);
   const [scrolled,setScrolled]=useState(false);
   // בנייד: כפתור הרשמה דביק בתחתית, רק אחרי שגוללים מעבר לפתיחה (כפתור ה-Hero כבר לא נראה)
   const [pastHero,setPastHero]=useState(false);
@@ -4164,8 +4226,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",margin:"12px 14px",borderRadius:20,padding:"22px 20px",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px rgba(155,107,255,.3)"}}>
           <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
           <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-          <div style={{position:"relative",zIndex:1}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600,marginBottom:4}}>סקירה כללית</div>
+          <div style={{position:"relative",zIndex:2}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:4}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600}}>סקירה כללית</div>
+              <SupportMenu event={event}/>
+            </div>
             <div style={{fontSize:22,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.2}}>
               {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
             </div>
@@ -4554,8 +4619,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px rgba(155,107,255,.25)"}}>
                   <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
                   <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-                  <div style={{position:"relative",zIndex:1}}>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:6}}>סקירה כללית</div>
+                  <div style={{position:"relative",zIndex:2}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:6}}>
+                      <div style={{fontSize:12,color:"rgba(255,255,255,.65)"}}>סקירה כללית</div>
+                      <SupportMenu event={event}/>
+                    </div>
                     <div style={{fontSize:28,fontWeight:900,color:"#fff",marginBottom:16,lineHeight:1.1}}>
                       {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
                     </div>
@@ -6814,24 +6882,30 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
     return{c:"#8A5A00",bg:"#FFF8E8",t:"⚠️ המועד עבר — לא יישלח אוטומטית. שנה מועד או שלח ידנית."};
   };
   const calcDate=off=>{if(!eventD)return "";const d=new Date(eventD);d.setDate(d.getDate()+off);return d.toISOString().split("T")[0];};
+  // כל תזמון נשמר גם כ-off (ימים ביחס לתאריך האירוע): כשתאריך האירוע משתנה, המועדים זזים איתו.
+  // השרת (claim_due_sms_schedules) מחשב את המועד מ-off באותה דרך
+  const offOf=date=>event.date&&date?Math.round((Date.parse(date)-Date.parse(String(event.date).slice(0,10)))/864e5):null;
+  // בלי off: מועד שרחוק יותר מ-90 יום מהאירוע הוא מתאריך ישן (האירוע הוזז)  -  חוזרים להפרש ברירת המחדל
+  const dateOf=(s,defOff)=>Number.isInteger(s.off)&&eventD?calcDate(s.off)
+    :defOff!=null&&eventD&&(!s.date||Math.abs(offOf(s.date))>90)?calcDate(defOff):s.date;
   // מיזוג: ברירות מחדל + מה שנשמר (שינויי זמן/הפעלה) + תזמונים נוספים
   const build=()=>{
     const saved=event.settings_json?.[storeKey]||[];
     const byId=Object.fromEntries(saved.map(s=>[s.id,s]));
-    const base=SCHEDULE_DEFAULTS.map(d=>({...d,date:calcDate(d.offset),enabled:defaultOn,...(byId[d.id]||{}),...(lockDefaults?{enabled:true}:{})}));
-    const extra=saved.filter(s=>s.custom);
+    const base=SCHEDULE_DEFAULTS.map(d=>{const sv=byId[d.id]||{};return {...d,enabled:defaultOn,...sv,date:dateOf(sv,d.offset),...(lockDefaults?{enabled:true}:{})};});
+    const extra=saved.filter(s=>s.custom).map(s=>({...s,date:dateOf(s)}));
     return [...base,...extra];
   };
   const [items,setItems]=useState(build);
   const [editing,setEditing]=useState(false);
   const [status,setStatus]=useState(""); // "", "saving", "saved", "error"
-  useEffect(()=>{setItems(build());},[event.id]);
+  useEffect(()=>{setItems(build());},[event.id,event.date]);
 
   const persist=async next=>{
     setStatus("saving");
     // שומרים רק את מה שצריך: מזהה, זמן, הפעלה, ולתזמונים נוספים גם תווית ותבנית
-    const payload=next.map(s=>s.custom?{id:s.id,custom:true,label:s.label,icon:s.icon,desc:s.desc,templateId:s.templateId,date:s.date,time:s.time,enabled:s.enabled}
-      :{id:s.id,templateId:s.templateId,date:s.date,time:s.time,enabled:s.enabled});
+    const payload=next.map(s=>s.custom?{id:s.id,custom:true,label:s.label,icon:s.icon,desc:s.desc,templateId:s.templateId,date:s.date,off:offOf(s.date),time:s.time,enabled:s.enabled}
+      :{id:s.id,templateId:s.templateId,date:s.date,off:offOf(s.date),time:s.time,enabled:s.enabled});
     const settings={...(event.settings_json||{}),[storeKey]:payload};
     const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
     if(error){setStatus("error");alert("❌ התזמונים לא נשמרו: "+error.message);return false;}
@@ -10061,11 +10135,31 @@ function AdminDashboard({ user, onLogout }) {
 
   // channel: "sms" או "wa" (רשומות WhatsApp). בקשה קובעת את הערוץ בעצמה
   const openAdd=(event,request=null,channel="sms")=>{const ch=request?.channel||channel;setAddFor({event,request,channel:ch});setAddAmount(request?.amount||(ch==="wa"?100:500));setAddNote(request?`אישור תשלום ₪${request.price??""}`:"");};
+  // משיכת SMS בחזרה (ביטול / החזר כספי): כמות חיובית שנשלחת כשלילית ל-admin_add_sms, עד גובה היתרה
+  const openPull=event=>{setAddFor({event,channel:"sms",pull:true});setAddAmount(balances[event.id]?.balance??0);setAddNote("");};
+  // מחיקת אירוע: יומן deleted_events_log שומר את פרטי האירוע והרכישות; האורחים נמחקים
+  const deleteEvent=async ev=>{
+    const n=guestCount[ev.id]||0;
+    if(!window.confirm(`למחוק את האירוע "${ev.name}"?\n${n} אורחים, השולחנות, היתרות והתזמונים יימחקו.\nאפשר לשחזר רק מגיבוי (עד 14 יום).`))return;
+    if(window.prompt(`לאישור סופי הקלידו את שם האירוע:\n${ev.name}`)?.trim()!==String(ev.name||"").trim()){flash("המחיקה בוטלה");return;}
+    setSaving("del-"+ev.id);
+    const{data,error}=await sb.rpc("admin_delete_event",{p_event:ev.id});
+    setSaving(null);
+    if(error){flash("❌ "+error.message);return;}
+    flash(`🗑 האירוע נמחק (${data.guests} אורחים, ${data.tables} שולחנות)`);loadData();
+  };
   // כמה חסר ב-019 כדי לכסות את מה שכבר נמכר + הכמות החדשה (0 = יש מספיק / לא ידוע)
   const providerShort=amt=>provider?.ok&&amt>0?Math.max(0,(provider.committed||0)+amt-(provider.provider_balance||0)):0;
   const doAdd=async()=>{
-    const amt=parseInt(addAmount,10);
+    let amt=parseInt(addAmount,10);
     if(!amt){flash("הזן כמות");return;}
+    if(addFor.pull){
+      const bal=balances[addFor.event.id]?.balance??0;
+      amt=Math.abs(amt);
+      if(amt>bal){flash(`אפשר למשוך עד ${bal} (היתרה)`);return;}
+      if(!window.confirm(`למשוך ${amt} SMS מ"${addFor.event.name}"?\nהיתרה תרד מ-${bal} ל-${bal-amt}.`))return;
+      amt=-amt;
+    }
     const wa=addFor.channel==="wa";
     const short=wa?0:providerShort(amt);
     if(short>0&&!window.confirm(`⚠️ בחשבון ה-019 חסרות ${short.toLocaleString()} הודעות כדי לכסות את כל מה שנמכר ללקוחות.\nמומלץ לטעון את חשבון ה-019 קודם.\n\nלהמשיך בכל זאת?`))return;
@@ -10273,7 +10367,10 @@ function AdminDashboard({ user, onLogout }) {
                     <div style={{fontSize:20,fontWeight:900,lineHeight:1}}>{(b?.balance??0).toLocaleString()}</div>
                     <div style={{fontSize:11,color:C.muted,fontWeight:700}}>יתרת SMS · נשלחו {b?.total_sent??0}</div>
                   </div>
-                  <button onClick={()=>openAdd(ev)} className="sx-btn sx-btn-primary" style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף SMS</button>
+                  <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                    <button onClick={()=>openAdd(ev)} className="sx-btn sx-btn-primary" style={{background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף SMS</button>
+                    {(b?.balance??0)>0&&<button onClick={()=>openPull(ev)} style={{background:"#fff",color:C.danger,border:"1.5px solid #F4C7CD",borderRadius:12,padding:"6px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>↩️ משיכת SMS</button>}
+                  </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10,background:"#F0FFF4",borderRadius:14,padding:"10px 12px"}}>
                   <div style={{fontSize:22}}>💬</div>
@@ -10283,6 +10380,7 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
                   <button onClick={()=>openAdd(ev,null,"wa")} className="sx-btn" style={{background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף WhatsApp</button>
                 </div>
+                <button onClick={()=>deleteEvent(ev)} disabled={saving==="del-"+ev.id} style={{alignSelf:"flex-start",background:"none",border:"none",color:C.danger,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",padding:"2px 0"}}>{saving==="del-"+ev.id?"מוחק…":"🗑 מחיקת האירוע"}</button>
               </div>
             );})}
             {fEvents.length===0&&<div style={{...card,padding:30,textAlign:"center",color:C.muted}}>לא נמצאו אירועים</div>}
@@ -10353,8 +10451,20 @@ function AdminDashboard({ user, onLogout }) {
       {addFor&&(
         <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setAddFor(null)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"22px",width:"100%",maxWidth:430,boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
-            <div style={{fontSize:19,fontWeight:900,marginBottom:2}}>{addFor.channel==="wa"?"💬":"📱"} {addFor.request?"אישור רכישה":addFor.channel==="wa"?"הוספת רשומות WhatsApp":"הוספת SMS"}</div>
+            <div style={{fontSize:19,fontWeight:900,marginBottom:2}}>{addFor.channel==="wa"?"💬":"📱"} {addFor.pull?"משיכת SMS בחזרה":addFor.request?"אישור רכישה":addFor.channel==="wa"?"הוספת רשומות WhatsApp":"הוספת SMS"}</div>
             <div style={{fontSize:13,color:C.muted,marginBottom:14}}>{addFor.event.name} · יתרה כרגע {addFor.channel==="wa"?`${waBalances[addFor.event.id]??0} רשומות WhatsApp`:balances[addFor.event.id]?.balance??0}</div>
+            {addFor.pull?<>
+              <div style={{fontSize:12,fontWeight:800,color:C.muted,margin:"4px 0 6px"}}>כמה SMS למשוך? (ברירת מחדל: כל היתרה)</div>
+              <input type="number" min="1" value={addAmount} onChange={e=>setAddAmount(e.target.value)} dir="ltr"
+                style={{width:"100%",boxSizing:"border-box",background:"#FFF5F5",border:"1.5px solid #F4C7CD",borderRadius:12,padding:"10px 12px",fontSize:18,fontWeight:900,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:10,textAlign:"center"}}/>
+              <input value={addNote} onChange={e=>setAddNote(e.target.value)} placeholder="סיבה (למשל: ביטול עסקה, הוחזר כסף)"
+                style={{width:"100%",boxSizing:"border-box",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit",marginBottom:14}}/>
+              <button onClick={doAdd} disabled={saving==="add"||!(+addAmount>0)} className="sx-btn"
+                style={{width:"100%",background:C.danger,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:6,opacity:saving==="add"||!(+addAmount>0)?.6:1}}>
+                {saving==="add"?"שומר...":`↩️ משיכת ${Math.abs(+addAmount||0).toLocaleString()} SMS`}
+              </button>
+              <button onClick={()=>setAddFor(null)} style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:6}}>ביטול</button>
+            </>:<>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
               {(addFor.channel==="wa"?[[100],[200],[300],[400],[500],[700]]:SMS_PACKS).map(([a])=>(
                 <button key={a} onClick={()=>setAddAmount(a)} style={{background:+addAmount===a?GRAD:C.blueXL,color:+addAmount===a?"#fff":C.text,border:"none",borderRadius:10,padding:"9px 0",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>{a}</button>
@@ -10375,6 +10485,7 @@ function AdminDashboard({ user, onLogout }) {
               {saving==="add"?"שומר...":(()=>{const u=addFor.channel==="wa"?"רשומות WhatsApp":"SMS";return +addAmount<0?`הורד ${Math.abs(+addAmount)} ${u}`:`טען ${(+addAmount||0).toLocaleString()} ${u}`;})()}
             </button>
             <button onClick={()=>setAddFor(null)} style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:6}}>ביטול</button>
+            </>}
           </div>
         </div>
       )}
@@ -10397,7 +10508,8 @@ const LEGAL_PAGES={
     {title:"4. ביטול עסקה והחזרים",text:`ביטול עסקה ייעשה בהתאם לחוק הגנת הצרכן, התשמ"א-1981 ולתקנות הגנת הצרכן (ביטול עסקה), התשע"א-2010:\n\n• ניתן לבטל רכישה בתוך 14 ימים ממועד העסקה (או ממועד קבלת פרטי העסקה, לפי המאוחר), ובלבד שהביטול נעשה לפחות 2 ימים שאינם ימי מנוחה לפני מועד מתן השירות (למשל לפני מועד האירוע שאליו הוזמנו צוות הושבה או עמדת טאבלט).\n• הודעת ביטול אפשר למסור בוואטסאפ, באימייל, בטלפון או דרך דף "ביטול עסקה" באתר: https://www.sidoril.com/#/cancel\n• בביטול יוחזר הסכום ששולם בתוך 14 ימים מקבלת הודעת הביטול, בניכוי דמי ביטול בשיעור 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יינתן החזר עבור חלק מהשירות שכבר ניתן או נוצל (למשל הודעות SMS שכבר נשלחו).\n• צרכן שהוא אדם עם מוגבלות, אזרח ותיק או עולה חדש, רשאי לבטל עסקה שנעשתה בשיחה טלפונית (לרבות שיחה עם נציג בוואטסאפ) בתוך 4 חודשים, בהתאם לחוק.`},
     {title:"5. אחריות המשתמש לתוכן ולפרטי האורחים",text:`• אתם אחראים לכל המידע שאתם מזינים לשירות, ובכלל זה שמות וטלפונים של אורחים.\n• אתם מצהירים כי יש לכם זכות להשתמש בפרטי האורחים לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו.\n• ההודעות לאורחים (SMS ו-WhatsApp) נשלחות בשמכם ולפי הוראותיכם. אתם השולחים, ואנו מספקים את הכלי הטכני בלבד.\n• השירות מיועד לשליחת הזמנות, תזכורות ועדכונים הנוגעים לאירוע בלבד. אין להשתמש בו לשליחת דבר פרסומת או הודעות שאינן קשורות לאירוע, ובכלל זה בניגוד לסעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982.\n• אין להעלות תוכן פוגעני, מטעה או מפר זכויות של אחרים, ובכלל זה תמונות שאין לכם זכות להשתמש בהן.\n• מפיק או בעל מקצוע שמנהל אירועים עבור לקוחות אחראי לקבל את הסכמת לקוחותיו להזנת פרטיהם ופרטי אורחיהם לשירות.`},
     {title:"5א. עיבוד פרטי האורחים עבורכם",text:`לגבי פרטי האורחים שאתם מזינים, אתם בעלי השליטה במידע ואנו מחזיקים ומעבדים אותו עבורכם בלבד: לצורך מתן השירות, לפי הוראותיכם, ובאמצעי אבטחה סבירים. איננו משתמשים בפרטים אלה לכל מטרה אחרת, ואיננו מוסרים אותם לאחרים מלבד הספקים הנדרשים להפעלת השירות (כמפורט במדיניות הפרטיות). עם מחיקת האירוע נמחקים פרטי האורחים שלו.`},
-    {title:"5ב. המלצות ודירוגים",text:`המלצה שאתם שולחים דרך האתר עשויה להתפרסם באתר עם השם שבחרתם להציג, לאחר אישורנו. אנו מפרסמים רק המלצות אמיתיות של לקוחות, ולא עורכים את תוכנן מלבד תיקון שגיאות כתיב. ניתן לבקש בכל עת להסיר המלצה.`},
+    {title:"5ב. תקופת שמירת המידע",text:`השירות נועד לניהול אירוע, ולא לאחסון קבוע של רשימות אנשי קשר. פרטי האורחים של כל אירוע נשמרים עד 12 חודשים מתאריך האירוע, ולאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים, בלי הודעה נוספת. חשבון שלא נעשה בו שימוש 24 חודשים עשוי להימחק לאחר הודעה מוקדמת באימייל. באחריותכם לייצא ולשמור עותק של מה שתרצו לפני כן (למשל ייצוא לאקסל). לא נהיה אחראים לאובדן מידע שנמחק בהתאם לסעיף זה. הפרטים המלאים במדיניות הפרטיות.`},
+    {title:"5ג. המלצות ודירוגים",text:`המלצה שאתם שולחים דרך האתר עשויה להתפרסם באתר עם השם שבחרתם להציג, לאחר אישורנו. אנו מפרסמים רק המלצות אמיתיות של לקוחות, ולא עורכים את תוכנן מלבד תיקון שגיאות כתיב. ניתן לבקש בכל עת להסיר המלצה.`},
     {title:"6. זמינות השירות",text:`אנו עושים מאמץ שהשירות יפעל באופן רציף ותקין, אך ייתכנו תקלות, הפסקות לצורך תחזוקה או עיכובים אצל ספקים חיצוניים (כגון ספקי SMS ו-WhatsApp). מומלץ לשמור עותק של רשימת האורחים וסידור ההושבה (למשל באמצעות כפתורי ההדפסה והייצוא) לקראת יום האירוע.`},
     {title:"7. הגבלת אחריות",text:`השירות ניתן כפי שהוא (AS IS). ככל שהדין מתיר, לא נהיה אחראים לנזק עקיף או תוצאתי הנובע מהשימוש בשירות או מחוסר היכולת להשתמש בו, ובכלל זה הודעה שלא נמסרה או עוכבה אצל ספק חיצוני. בכל מקרה, אחריותנו הכוללת לא תעלה על הסכום ששילמתם עבור השירות הרלוונטי. אין באמור כדי לגרוע מזכויות שאינן ניתנות להתניה על פי דין.`},
     {title:"8. קניין רוחני",text:`כל הזכויות באתר, בעיצובו, בקוד ובתכנים שלנו שמורות ל-Sidor-IL. התוכן שאתם מזינים (פרטי האירוע, האורחים, תמונות ונוסחים) נשאר שלכם, ואתם מעניקים לנו רשות להשתמש בו לצורך מתן השירות בלבד.`},
@@ -10411,7 +10523,7 @@ const LEGAL_PAGES={
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
     {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה, וטעינת הגופן של האתר (Google Fonts), שבמהלכה כתובת ה-IP של הדפדפן נחשפת ל-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל, בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
-    {title:"6. שמירת מידע ומחיקתו",text:`המידע נשמר כל עוד החשבון פעיל או כנדרש לצורך מתן השירות ועמידה בדין. מחיקת אירוע מוחקת את פרטי האורחים והשולחנות שלו. ניתן למחוק את החשבון ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה.`},
+    {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
     {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com. נשיב בתוך 30 ימים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
     {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage) ובעוגיות חיוניות בלבד, שבלעדיהם השירות לא יעבוד כראוי:\n\n• שמירת ההתחברות לחשבון.\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות).\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n• סימון שראיתם את הודעת העוגיות.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם כנדרש. ניתן למחוק את המידע השמור בכל עת דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
@@ -10451,11 +10563,9 @@ function LegalPage({ kind }) {
   const linkify=t=>t.split(/(https?:\/\/\S+|[\w.+-]+@[\w-]+\.[\w.]+)/g).map((p,i)=>/^https?:\/\//.test(p)?<a key={i} href={p} target="_blank" rel="noopener noreferrer" style={{color:C.blue}}>{p}</a>:/@/.test(p)&&/^[\w.+-]+@/.test(p)?<a key={i} href={"mailto:"+p} style={{color:C.blue}}>{p}</a>:p);
   return(
     <div dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
-      <header style={{background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #eee",padding:"16px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",position:"sticky",top:0,zIndex:100}}>
-        <a href="#" onClick={e=>{e.preventDefault();window.location.hash="";}} style={{color:C.blue,textDecoration:"none",fontSize:13,fontWeight:700}}>→ חזרה לדף הבית</a>
-        <span style={{color:"#ccc"}} aria-hidden="true">|</span>
-        <span style={{fontWeight:800,color:"#1a1a1a",fontSize:15}}>Sidor-IL</span>
-        <nav aria-label="מידע משפטי" style={{display:"flex",gap:14,marginInlineStart:"auto",fontSize:13,flexWrap:"wrap"}}>
+      <SiteNav/>
+      <header style={{background:"#fff",borderBottom:"1px solid #eee",padding:"12px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+        <nav aria-label="מידע משפטי" style={{display:"flex",gap:14,fontSize:13,flexWrap:"wrap"}}>
           {Object.entries(LEGAL_ROUTES).map(([h,k])=>(
             <a key={k} href={h} aria-current={k===kind?"page":undefined} style={{color:k===kind?"#1a1a1a":C.muted,fontWeight:k===kind?800:600,textDecoration:"none"}}>{LEGAL_PAGES[k].title}</a>
           ))}
@@ -10628,12 +10738,7 @@ const EVENT_LANDINGS=[
 ];
 function SeoHeader() {
   return(
-    <header style={{background:"rgba(255,255,255,.94)",backdropFilter:"blur(10px)",borderBottom:"1px solid #EFE6F5",padding:"14px 6vw",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",position:"sticky",top:0,zIndex:100}}>
-      <a href="/" style={{fontWeight:900,fontSize:18,color:"#2B1D3F",textDecoration:"none"}}>◈ Sidor-IL</a>
-      <span style={{color:"#ccc"}} aria-hidden="true">|</span>
-      <a href="/guides" style={{color:C.muted,fontWeight:700,fontSize:14,textDecoration:"none"}}>מדריכים</a>
-      <a href="/" style={{marginInlineStart:"auto",background:GRAD,color:"#fff",borderRadius:12,padding:"8px 16px",fontSize:14,fontWeight:800,textDecoration:"none"}}>התחילו בחינם</a>
-    </header>
+    <SiteNav/>
   );
 }
 function EventLandingPage({ slug }) {
