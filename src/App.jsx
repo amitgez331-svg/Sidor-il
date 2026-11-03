@@ -9591,6 +9591,64 @@ function AdminVendorData({ card }) {
   );
 }
 
+// גיבוי יומי בשרת (backup.snapshots, 14 ימים). שחזור אירוע: אורחים, שולחנות ומפה. לפני שחזור נלקח גיבוי של המצב הנוכחי
+function AdminBackups({ card, events }) {
+  const [list,setList]=useState(null),[taken,setTaken]=useState(""),[ev,setEv]=useState(""),[info,setInfo]=useState(null),[busy,setBusy]=useState(false),[msg,setMsg]=useState(""),[err,setErr]=useState("");
+  const load=async()=>{const{data,error}=await sb.rpc("admin_backup_list");if(error)setErr(error.message);setList(data||[]);};
+  useEffect(()=>{load();},[]);
+  useEffect(()=>{setInfo(null);setMsg("");if(!taken||!ev)return;
+    sb.rpc("admin_backup_event",{p_taken:taken,p_event:ev}).then(({data,error})=>{if(error)setErr(error.message);else setInfo(data);});},[taken,ev]);
+  const restore=async()=>{
+    if(!confirm(`לשחזר את "${events.find(e=>e.id===ev)?.name||"האירוע"}" לגיבוי מ-${fmt(taken)}?\nהאורחים והשולחנות הנוכחיים יוחלפו (המצב הנוכחי נשמר קודם כגיבוי).`))return;
+    setBusy(true);setErr("");
+    const{data,error}=await sb.rpc("admin_restore_event",{p_taken:taken,p_event:ev});
+    setBusy(false);
+    if(error)setErr(error.message);else{load();setInfo(null);setMsg(`✓ שוחזרו ${data.guests} אורחים ו-${data.tables} שולחנות. המצב שלפני השחזור נשמר כגיבוי חדש ברשימה.`);}
+  };
+  const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  if(!list)return <div style={card}><Spinner/></div>;
+  const sel={border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 12px",fontSize:14,fontFamily:"inherit",background:"#fff",flex:"1 1 220px"};
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:4}}>💾 גיבוי יומי אוטומטי</div>
+        <div style={{fontSize:12,color:C.muted}}>כל לילה בשעה 03:00–04:00 נשמר עותק של כל האירועים, האורחים והשולחנות. נשמרים 14 ימים אחורה.</div>
+      </div>
+      <div style={{...card,padding:16}}>
+        <div style={{fontWeight:900,fontSize:15,marginBottom:10}}>שחזור אירוע</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <select value={ev} onChange={e=>setEv(e.target.value)} style={sel}>
+            <option value="">בחרו אירוע…</option>
+            {events.map(e=><option key={e.id} value={e.id}>{e.name||"ללא שם"}{e.date?` · ${e.date}`:""}</option>)}
+          </select>
+          <select value={taken} onChange={e=>setTaken(e.target.value)} style={sel}>
+            <option value="">בחרו גיבוי…</option>
+            {list.map(b=><option key={b.taken_at} value={b.taken_at}>{fmt(b.taken_at)}</option>)}
+          </select>
+        </div>
+        {info&&(info.event
+          ?<div style={{marginTop:12,fontSize:14,lineHeight:1.8}}>
+              <div>בגיבוי: <b>{info.guests}</b> אורחים · <b>{info.tables}</b> שולחנות</div>
+              <div style={{color:C.muted}}>עכשיו: {info.now_guests} אורחים · {info.now_tables} שולחנות</div>
+              <button disabled={busy} onClick={restore} className="sx-btn" style={{marginTop:8,background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"9px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{busy?"משחזר…":"↩️ שחזור לגיבוי הזה"}</button>
+            </div>
+          :<div style={{marginTop:12,fontSize:13,color:C.muted}}>האירוע לא היה קיים בגיבוי הזה.</div>)}
+        {msg&&<div style={{marginTop:10,color:"#1F8F6C",fontWeight:800,fontSize:14}}>{msg}</div>}
+        {err&&<div style={{marginTop:10,color:"#C53030",fontSize:13}}>⚠️ {err}</div>}
+      </div>
+      <div style={{...card,padding:"8px 16px"}}>
+        {!list.length&&<div style={{padding:30,textAlign:"center",color:C.muted}}>עוד אין גיבויים. הראשון ייווצר הלילה.</div>}
+        {list.map(b=>(
+          <div key={b.taken_at} style={{display:"flex",justifyContent:"space-between",gap:10,padding:"9px 0",borderTop:`1px solid ${C.border}`,fontSize:14}}>
+            <b>{fmt(b.taken_at)}</b>
+            <span style={{color:C.muted}}>{b.events} אירועים · {b.guests} אורחים · {b.tables} שולחנות</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AdminReferrals({ card, refs, users, packages, onCustomer }) {
   const [name,setName]=useState(""),[copied,setCopied]=useState("");
   const code=name.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^\w-]/g,"").slice(0,40);
@@ -9955,7 +10013,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["vendordata","💡 ספקים ומחירים",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["vendordata","💡 ספקים ומחירים",null],["backups","💾 גיבויים",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -10174,6 +10232,8 @@ function AdminDashboard({ user, onLogout }) {
           <AdminTestimonials card={card}/>
         ):tab==="vendordata"?(
           <AdminVendorData card={card}/>
+        ):tab==="backups"?(
+          <AdminBackups card={card} events={events}/>
         ):(
           <div style={{...card,padding:"8px 16px"}}>
             {txs.length===0&&<div style={{padding:30,textAlign:"center",color:C.muted}}>אין עדיין תנועות SMS</div>}
