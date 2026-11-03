@@ -1182,7 +1182,8 @@ const LANDING_CSS=`
   .lp-primary::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shine 3.2s ease-in-out infinite}
   .lp-ghost{background:#fff;color:#2B1D3F;border:1.5px solid #E6DDF5;box-shadow:0 4px 14px rgba(43,29,63,.06)}
   .lp-ghost:hover{border-color:#F0609E;color:#C2397A;box-shadow:0 10px 26px rgba(240,96,158,.18)}
-  .lp-nav-link{color:#5A5070;text-decoration:none;font-size:14px;font-weight:700;padding:8px 14px;border-radius:10px;transition:all .2s}
+  .lp-nav-link{color:#5A5070;text-decoration:none;font-size:14px;font-weight:700;padding:8px 14px;border-radius:10px;transition:all .2s;white-space:nowrap}
+  @media(max-width:1240px){.lp-hide-md{display:none!important}.lp-nav-link{padding:8px 10px}}
   .lp-nav-link:hover{color:#C2397A;background:#FFEFF5}
   .lp-card{position:relative;background:#fff;border:1px solid #EFE8F7;border-radius:24px;box-shadow:0 6px 24px -10px rgba(91,60,140,.15);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .3s;overflow:hidden}
   .lp-card::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:linear-gradient(135deg,#FF8A65,#F0609E,#9B6BFF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s;pointer-events:none}
@@ -1501,12 +1502,12 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </a>
         <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>
-          {[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים"]].map(([h,l])=>(
+          {[["#how","איך זה עובד"],["#features","יכולות"],["#vendors","ספקים ומחירים"],["#events","סוגי אירועים"],["#pricing","מחירים"]].map(([h,l])=>(
             <a key={h} href={h} className="lp-nav-link">{l}</a>
           ))}
         </div>
         <div style={{flex:1}}/>
-        <button className="lp-nav-link lp-hide-sm" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>🎬 כניסת מפיקים</button>
+        <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>🎬 כניסת מפיקים</button>
         <button className="lp-btn lp-ghost lp-navbtn" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>{loggedIn?<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>:"כניסה"}</button>
         <button className="lp-btn lp-primary lp-navbtn" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
       </nav>
@@ -1740,6 +1741,57 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               </div>
             );
           })()}
+        </div>
+      </section>
+
+      {/* ─── ספקים ומחירים מהקהילה (פיצ'ר למשתמשים רשומים) ─── */}
+      <section id="vendors" style={{padding:"100px 6vw",position:"relative"}}>
+        <div style={{maxWidth:1120,margin:"0 auto"}}>
+          {sectionTitle("ספקים ומחירים","כמה שילמו","זוגות אחרים?","מחירי מנות אמיתיים באולמות, והמלצות על ספקים — מהקהילה של Sidor-IL. משווים, מתמקחים וחוסכים.")}
+          <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1.15fr 1fr",gap:22,alignItems:"stretch"}}>
+            {/* מחירי מנות */}
+            <div className="lp-card fu" style={{padding:"28px 26px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+                <div className="lp-ic" style={{width:48,height:48,borderRadius:15,background:"linear-gradient(135deg,#F0609E26,#F0609E0D)",border:"1px solid #F0609E33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🍽️</div>
+                <div><div style={{fontSize:19,fontWeight:900}}>מחירי מנות והשוואה</div><div style={{fontSize:13,color:LP.muted}}>לפי אולם, עיר ויום בשבוע</div></div>
+              </div>
+              {/* איור להמחשה */}
+              <div aria-label="דוגמה להשוואת מחיר" style={{background:"linear-gradient(170deg,#FFF7FB,#F7F1FF)",borderRadius:20,padding:16,border:"1px solid #F3E6F2"}}>
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  {[["חציון","₪298"],["טווח","₪265–345"],["דיווחים","4"]].map(([l,v])=>(
+                    <div key={l} style={{flex:1,background:"#fff",borderRadius:14,padding:"9px 11px",border:"1px solid #F0E8F8"}}><div style={{fontSize:11,color:LP.muted,fontWeight:700}}>{l}</div><div className="lp-num" style={{fontSize:18,fontWeight:900,color:LP.ink}}>{v}</div></div>
+                  ))}
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                  {[["א׳–ד׳","₪265"],["חמישי","₪285"],["שישי","₪345"]].map(([g,v])=><span key={g} style={{background:"#F4EEFF",color:"#5B3C8C",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:800}}>{g}: {v}</span>)}
+                </div>
+                <div style={{background:"#FFF5F5",border:"1px solid #FED7D7",borderRadius:14,padding:"11px 13px",fontSize:13.5,lineHeight:1.65,color:LP.ink}}>
+                  <b>ההצעה שלכם גבוהה ב-14%</b> מהחציון. 💡 ציינו שבאירועים דומים שילמו כ-₪298 למנה, ובדקו אם יום אחר זול יותר.
+                </div>
+                <div style={{fontSize:11,color:LP.muted,marginTop:8}}>* דוגמה להמחשה</div>
+              </div>
+            </div>
+            {/* המלצות על ספקים */}
+            <div className="lp-card fu" style={{padding:"28px 26px",transitionDelay:".1s",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+                <div className="lp-ic" style={{width:48,height:48,borderRadius:15,background:"linear-gradient(135deg,#E8B04A26,#E8B04A0D)",border:"1px solid #E8B04A33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>⭐</div>
+                <div><div style={{fontSize:19,fontWeight:900}}>המלצות על ספקים</div><div style={{fontSize:13,color:LP.muted}}>אולמות, DJ, צלמים, קייטרינג ועוד</div></div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10,flex:1}}>
+                {[["🎧","DJ","4.7","3","\"הרחבה לא התרוקנה לרגע\""],["📸","צלם / וידאו","5.0","1","\"קיבלנו אלבום תוך חודש\""],["🏛️","אולם / גן","4.0","1","\"אוכל טוב ושירות אדיב\""]].map(([ic,cat,avg,n,q])=>(
+                  <div key={cat} style={{display:"flex",alignItems:"center",gap:12,background:"#FFFBF3",border:"1px solid #F3E6C8",borderRadius:16,padding:"11px 13px"}}>
+                    <span style={{width:38,height:38,borderRadius:12,background:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{ic}</span>
+                    <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:900}}>{cat}</div><div style={{fontSize:12,color:LP.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{q}</div></div>
+                    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:"#B07A12"}}>★ {avg}</div><div style={{fontSize:11,color:LP.muted}}>{n} המלצות</div></div>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:11,color:LP.muted,margin:"8px 0 14px"}}>* דוגמה להמחשה · אפשר לפרסם עם שם או בעילום שם</div>
+              <button onClick={()=>onOpenAuth("vendors")} className="lp-btn lp-primary" style={{width:"100%",padding:"15px",fontSize:16}}>
+                {loggedIn?"לספקים ולמחירים ←":"נרשמים בחינם ומשווים ←"}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -3340,6 +3392,8 @@ const LAST_SCREEN_KEY="sidor_last_screen";
 const RESTORABLE_SCREENS=["home","settings","seating","rsvp","import","budget","packages","sms","whatsapp","user_settings","settings_event","invite","add","contacts","checkin","gifts","tasks","vendors"];
 // פתיחה חדשה של האתר/האפליקציה (לא רענון באותה לשונית) מתחילה במסך הראשי
 const FRESH_OPEN=(()=>{try{const f=!sessionStorage.getItem("sidor_tab");sessionStorage.setItem("sidor_tab","1");return f;}catch{return false;}})();
+// מסך לפתוח בכניסה הבאה לאירוע (למשל "לספקים ולמחירים" מדף הבית)
+let PENDING_SCREEN=null;
 const readLastScreen=eventId=>{
   try{const s=JSON.parse(localStorage.getItem(LAST_SCREEN_KEY)||"null");
     if(s&&s.eventId===eventId&&RESTORABLE_SCREENS.includes(s.screen))return FRESH_OPEN?{...s,screen:"home"}:s;}catch{}
@@ -3843,7 +3897,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
   useEffect(()=>{
     const last=readLastScreen(event.id);
-    setScreen(last?.screen||"home");if(last?.view)setView(last.view);
+    const pending=PENDING_SCREEN;PENDING_SCREEN=null;
+    setScreen(pending||last?.screen||"home");if(last?.view)setView(last.view);
     loadAll();
     const fn=()=>setMobile(isMobile());
     window.addEventListener("resize",fn);
@@ -10484,7 +10539,10 @@ function ShortLinkRedirect({ short }) {
 }
 
 export default function App() {
-  const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null),[showLanding,setShowLanding]=useState(false);
+  const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null);
+  // משתמש מחובר שעבר לדף הבית: רענון באותה לשונית נשאר בדף הבית (ולא קופץ לאירועים)
+  const [showLanding,setShowLanding]=useState(()=>{try{return sessionStorage.getItem("sidor_landing")==="1";}catch{return false;}});
+  useEffect(()=>{try{showLanding?sessionStorage.setItem("sidor_landing","1"):sessionStorage.removeItem("sidor_landing");}catch{}},[showLanding]);
   const [legal,setLegal]=useState(LEGAL_ROUTES[window.location.hash]||null);
   const [,setHashTick]=useState(0);
   const [showResetPw,setShowResetPw]=useState(false);
@@ -10636,6 +10694,12 @@ export default function App() {
       setShowLanding(false);
       // כניסת מפיקים: תמיד ללוח האירועים (לא לאירוע האחרון), גם אחרי חזרה מכניסה עם גוגל
       if(mode==="producer"){try{sessionStorage.setItem(PRODUCER_ENTRY_KEY,"1");}catch{}selectEvent(null);}
+      // "לספקים ולמחירים": מחובר עם אירוע פתוח — ישר למסך הספקים של האירוע; לא מחובר — הרשמה
+      if(mode==="vendors"){
+        if(user&&event)PENDING_SCREEN="vendors";
+        if(!user)setAuthMode("register");
+        return;
+      }
       if(!user)setAuthMode(mode);
     }} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
