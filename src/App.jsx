@@ -1151,6 +1151,16 @@ function AccessibilityWidget() {
   );
 }
 
+// הלוגו של Sidor-IL: עיגול בגרדיאנט עם שולחן ו-6 כיסאות (id ייחודי לכל שימוש, בגלל ה-gradient)
+const SidorLogo=({size=40,id="sidorLogo"})=>(
+  <svg width={size} height={size} viewBox="0 0 36 36" fill="none" aria-hidden="true" style={{flexShrink:0}}>
+    <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF8A65"/><stop offset="55%" stopColor="#F0609E"/><stop offset="100%" stopColor="#9B6BFF"/></linearGradient></defs>
+    <circle cx="18" cy="18" r="17" fill={`url(#${id})`}/>
+    <circle cx="18" cy="18" r="7.5" fill="rgba(255,255,255,.3)" stroke="#fff" strokeWidth="1.5"/>
+    {[0,60,120,180,240,300].map((deg,i)=>{const rad=deg*Math.PI/180;return <circle key={i} cx={18+12.5*Math.cos(rad)} cy={18+12.5*Math.sin(rad)} r="2.6" fill="#fff"/>;})}
+  </svg>
+);
+
 // ─── LANDING ─────────────────────────────────────────────────────────────────
 const LP={ink:"#2B1D3F",muted:"#6E6585",rose:"#F0609E",coral:"#FF8A65",violet:"#9B6BFF",gold:"#E8B04A",mint:"#3CC8A0",sky:"#5AA9FF",cream:"#FFFBF7",lav:"#F4EEFF"};
 const LANDING_CSS=`
@@ -1493,12 +1503,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         background:scrolled?"rgba(255,251,247,.85)":"transparent",backdropFilter:scrolled?"blur(18px) saturate(1.5)":"none",
         borderBottom:scrolled?"1px solid #F0E8F4":"1px solid transparent",boxShadow:scrolled?"0 6px 24px -14px rgba(91,60,140,.25)":"none",transition:"all .3s"}}>
         <a href="#top" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0}}>
-          <svg width="40" height="40" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-            <defs><linearGradient id="lpLogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF8A65"/><stop offset="55%" stopColor="#F0609E"/><stop offset="100%" stopColor="#9B6BFF"/></linearGradient></defs>
-            <circle cx="18" cy="18" r="17" fill="url(#lpLogo)"/>
-            <circle cx="18" cy="18" r="7.5" fill="rgba(255,255,255,.3)" stroke="#fff" strokeWidth="1.5"/>
-            {[0,60,120,180,240,300].map((deg,i)=>{const rad=deg*Math.PI/180;return <circle key={i} cx={18+12.5*Math.cos(rad)} cy={18+12.5*Math.sin(rad)} r="2.6" fill="#fff"/>;})}
-          </svg>
+          <SidorLogo size={40} id="lpLogo"/>
           <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </a>
         <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>
@@ -9098,8 +9103,8 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
             style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
             → דף הבית
           </button>}
-          <div style={{width:32,height:32,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#fff"}}>◈</div>
-          <span style={{fontWeight:900,fontSize:18,color:"#2B1D3F",whiteSpace:"nowrap"}}>Sidor-IL</span>
+          <SidorLogo size={34} id="evLogo"/>
+          <span style={{fontWeight:900,fontSize:19,color:"#2B1D3F",whiteSpace:"nowrap",letterSpacing:"-.02em"}}>Sidor-IL</span>
         </div>
         <button onClick={onLogout} title={user.email}
           style={{background:"#FFF0F0",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
