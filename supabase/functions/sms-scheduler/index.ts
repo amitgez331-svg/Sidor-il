@@ -55,6 +55,9 @@ Deno.serve(async (req) => {
       finish: async (runId, patch) => {
         await admin.from("sms_schedule_runs").update({ ...patch, finished_at: new Date().toISOString() }).eq("id", runId);
       },
+      markSent: async (ids, templateId) => {
+        await admin.from("guests").update({ last_msg: templateId, last_msg_at: new Date().toISOString() }).in("id", ids);
+      },
     });
     return json({ processed: count });
   } catch (err) {
