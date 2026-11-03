@@ -89,7 +89,9 @@ export async function runOne(c: Claim, deps: Deps) {
   try {
     const ev = await deps.loadEvent(c.event_id);
     if (!ev) return await deps.finish(c.run_id, { status: "skipped", error: "האירוע לא נמצא" });
-    const text = buildTemplates(ev)[c.template_id] ?? buildTemplates(ev).invite;
+    // נוסח שבעל האירוע שמר במסך ה-SMS (settings_json.sms_texts) קודם לנוסח ברירת המחדל
+    const custom = String(ev.settings_json?.sms_texts?.[c.template_id] ?? "").trim();
+    const text = custom || (buildTemplates(ev)[c.template_id] ?? buildTemplates(ev).invite);
     const [guests, tables] = await Promise.all([deps.loadGuests(c.event_id), deps.loadTables(c.event_id)]);
     const nums = ev.settings_json?.table_nums || {};
     const tableName = (id: string | null) => { const t = tables.find((t) => t.id === id); return t ? tableLabel(nums[t.id], t.name) : "—"; };
