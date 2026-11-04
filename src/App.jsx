@@ -3673,19 +3673,20 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const gridOn=()=>(hallRef.current||{}).grid!==false;
   const snapToGrid=(t,x,y,hr)=>{
     const o=tableOff(t.type),ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
-    const cx=x+ox,cy=y+oy,col=Math.floor((cx-hr[0])/GRID),row=Math.floor((cy-hr[1])/GRID);
+    // הרשת מעוגנת לנקודה 0,0 של המפה (לא לגבולות האולם שמשתנים בזום), כך שהריבועים זזים יחד עם השולחנות
+    const cx=x+ox,cy=y+oy,col=Math.floor(cx/GRID),row=Math.floor(cy/GRID);
     // ריבוע תפוס = השולחן שם היה נוגע בשולחן אחר (לפי הגודל האמיתי, גם שולחנות שהונחו לפני הרשת)
     const others=tables.filter(o2=>o2.id!==t.id).map(tableBox);
     const hits=(x0,y0)=>{const b=[x0+o[0]-6,y0+o[1]-6,x0+o[2]+6,y0+o[3]+6];return others.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);};
     let best=null,bd=Infinity;
     for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
-      const c=col+dc,r=row+dr;if(c<0||r<0)continue;
-      const px=hr[0]+c*GRID+GRID/2,py=hr[1]+r*GRID+GRID/2;
-      if(px>hr[2]||py>hr[3]||hits(px-ox,py-oy))continue;
+      const c=col+dc,r=row+dr;
+      const px=c*GRID+GRID/2,py=r*GRID+GRID/2;
+      if(px<hr[0]||py<hr[1]||px>hr[2]||py>hr[3]||hits(px-ox,py-oy))continue;
       const d=Math.hypot(px-cx,py-cy);if(d<bd){bd=d;best={px,py,c,r};}
     }
     if(!best)return {...clampIn(x,y,o,hr),cell:null};
-    return {...clampIn(best.px-ox,best.py-oy,o,hr),cell:[hr[0]+best.c*GRID,hr[1]+best.r*GRID]};
+    return {...clampIn(best.px-ox,best.py-oy,o,hr),cell:[best.c*GRID,best.r*GRID]};
   };
   const snapCellRef=useRef(null);
   // המצלמה תחומה לאולם: קטן מהמסך — במרכז; גדול — אי אפשר לגלול מעבר לקירות
@@ -5212,7 +5213,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   {/* רשת הריבועים (GRID) + הריבוע שאליו ייכנס השולחן בזמן גרירה */}
                   {gridOn()&&<div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,pointerEvents:"none",
                     backgroundImage:"linear-gradient(to right,rgba(155,107,255,.16) 1.5px,transparent 1.5px),linear-gradient(to bottom,rgba(155,107,255,.16) 1.5px,transparent 1.5px)",
-                    backgroundSize:`${GRID}px ${GRID}px`,backgroundPosition:"-14px -14px"}}/>}
+                    backgroundSize:`${GRID}px ${GRID}px`,backgroundPosition:`${(((-(hx0+14))%GRID)+GRID)%GRID}px ${(((-(hy0+14))%GRID)+GRID)%GRID}px`}}/>}
                   <div ref={snapCellRef} aria-hidden="true" style={{display:"none",position:"absolute",width:GRID,height:GRID,borderRadius:18,background:"rgba(155,107,255,.10)",border:"2px dashed rgba(155,107,255,.55)",pointerEvents:"none",transition:"left .08s,top .08s"}}/>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
