@@ -1176,7 +1176,7 @@ function AccessibilityWidget() {
       {/* כפתור צף */}
       {/* קליל: עיגול לבן קטן עם אייקון קווי (סמל הנגישות האוניברסלי), שקוף מעט עד שעוברים עליו */}
       <button onClick={()=>setOpen(o=>!o)} aria-label="תפריט נגישות" title="נגישות" className="sx-a11y-fab"
-        style={{position:"fixed",bottom:20,right:20,zIndex:9999,width:44,height:44,borderRadius:"50%",background:"rgba(255,255,255,.92)",color:"#6B4FA0",border:"1.5px solid #E4DAF3",boxShadow:"0 2px 10px rgba(91,60,140,.14)",backdropFilter:"blur(6px)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,opacity:open?1:.85,transition:"opacity .2s, transform .2s"}}>
+        style={{position:"fixed",bottom:20,right:20,zIndex:9999,width:44,height:44,borderRadius:"50%",background:"rgba(255,255,255,.92)",color:"#6B4FA0",border:"1.5px solid #E4DAF3",boxShadow:"0 2px 10px rgba(91,60,140,.14)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,opacity:open?1:.85,transition:"opacity .2s, transform .2s"}}>
         <style>{`.sx-a11y-fab:hover,.sx-a11y-fab:focus-visible{opacity:1!important;transform:scale(1.06)}`}</style>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/>
@@ -1273,7 +1273,8 @@ const LANDING_CSS=`
   .lp-btn:hover{transform:translateY(-3px)}
   .lp-btn:active{transform:translateY(0) scale(.98)}
   .lp-btn:focus-visible{outline:3px solid ${"#9B6BFF"};outline-offset:3px}
-  .lp-primary{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF 100%);background-size:200% 100%;color:#fff;box-shadow:0 12px 30px -8px rgba(240,96,158,.6),inset 0 1px 0 rgba(255,255,255,.35);animation:gradShift 6s ease infinite;text-shadow:0 1px 2px rgba(80,20,60,.2)}
+  .lp-primary{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF 100%);background-size:200% 100%;background-position:0% 50%;color:#fff;box-shadow:0 12px 30px -8px rgba(240,96,158,.6),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .2s,box-shadow .25s,background-position .6s ease;text-shadow:0 1px 2px rgba(80,20,60,.2)}
+  .lp-primary:hover{background-position:100% 50%}
   .lp-primary:hover{box-shadow:0 20px 44px -10px rgba(240,96,158,.75),0 0 0 5px rgba(240,96,158,.14)}
   .lp-primary::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shine 3.2s ease-in-out infinite}
   .lp-ghost{background:#fff;color:#2B1D3F;border:1.5px solid #E6DDF5;box-shadow:0 4px 14px rgba(43,29,63,.06)}
@@ -1290,7 +1291,7 @@ const LANDING_CSS=`
   .lp-ev{transition:transform .35s,box-shadow .35s}
   .lp-ev:hover img{transform:scale(1.08)}
   .lp-ev:hover{transform:translateY(-6px);box-shadow:0 26px 50px -20px rgba(240,96,158,.4)}
-  .lp-grad{background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF,#F0609E,#FF8A65);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 7s ease infinite}
+  .lp-grad{background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF,#F0609E,#FF8A65);background-size:300% 100%;background-position:30% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .lp-underline{position:relative;display:inline-block}
   .lp-underline svg{position:absolute;right:0;left:0;bottom:-10px;width:100%;height:16px}
   .fu{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
@@ -1316,7 +1317,8 @@ const LANDING_CSS=`
   .lp-progress{position:fixed;top:0;right:0;left:0;height:3px;z-index:120;transform:scaleX(0);transform-origin:right;background:linear-gradient(90deg,#9B6BFF,#F0609E,#FF8A65);pointer-events:none}
   .lp-plan-tilt{transform:perspective(1600px) rotateY(8deg) rotateX(4deg);transition:transform .7s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
   .lp-plan-tilt:hover{transform:perspective(1600px) rotateY(0) rotateX(0)}
-  .lp-glass{background:rgba(255,255,255,.66);backdrop-filter:blur(14px) saturate(1.3);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 40px -22px rgba(91,60,140,.35),inset 0 1px 0 #fff}
+  /* בלי backdrop-filter: טשטוש מעל רקע שזז מחושב מחדש בכל פריים, וזה מה שהאט מסכים גדולים */
+  .lp-glass{background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.95);box-shadow:0 18px 40px -22px rgba(91,60,140,.35),inset 0 1px 0 #fff}
   .lp-bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(220px,auto);gap:18px}
   .lp-b-a{grid-column:span 2;grid-row:span 2}
   .lp-b-w{grid-column:span 2}
@@ -1328,11 +1330,14 @@ const LANDING_CSS=`
   .lp-sticky{display:none}
   @media(max-width:768px){
     .lp-ba{grid-template-columns:1fr!important}
-    .lp-sticky{display:flex;position:fixed;right:72px;left:72px;bottom:12px;z-index:98;align-items:center;gap:10px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border:1px solid #EFE8F7;border-radius:20px;padding:8px 8px 8px 14px;box-shadow:0 18px 40px -14px rgba(91,60,140,.45);transform:translateY(160%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+    .lp-sticky{display:flex;position:fixed;right:72px;left:72px;bottom:12px;z-index:98;align-items:center;gap:10px;background:rgba(255,255,255,.97);border:1px solid #EFE8F7;border-radius:20px;padding:8px 8px 8px 14px;box-shadow:0 18px 40px -14px rgba(91,60,140,.45);transform:translateY(160%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
     .lp-sticky.on{transform:none}
     .lp{padding-bottom:84px}
   }
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.fu{opacity:1!important;transform:none!important}}
+  /* ביצועים: האנימציות של הפתיחה עוצרות כשגוללים ממנה, ומקטעים שמחוץ למסך לא מצוירים בכלל עד שמגיעים אליהם */
+  .lp-hero-off #top *{animation-play-state:paused!important}
+  .lp>section:not(#top),.lp>footer{content-visibility:auto;contain-intrinsic-size:auto 900px}
 `;
 
 // אייקונים בקו דק (בסגנון אחיד במקום אימוג'י)
@@ -1642,7 +1647,7 @@ function SiteNav() {
   return(<>
     <style>{LANDING_CSS}</style>
     <nav dir="rtl" style={{position:"sticky",top:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,fontFamily:"'Heebo',sans-serif",color:LP.ink,
-      background:"rgba(255,251,247,.9)",backdropFilter:"blur(18px) saturate(1.5)",borderBottom:"1px solid #F0E8F4",boxShadow:"0 6px 24px -14px rgba(91,60,140,.25)"}}>
+      background:"rgba(255,251,247,.97)",borderBottom:"1px solid #F0E8F4",boxShadow:"0 6px 24px -14px rgba(91,60,140,.25)"}}>
       <a href="/" onClick={e=>{e.preventDefault();goLanding();}} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:LP.ink}}>
         <SidorLogo size={40} id="navLogo"/>
         <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
@@ -1701,14 +1706,14 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   const marqueeItems=[["🪑","גרירה ושחרור לשולחנות",LP.rose],["✨","סידור הושבה ב-AI",LP.violet],["👨‍👩‍👧","קיבוץ לפי משפחות וחברים",LP.sky],["🚫","הפרדה בין אורחים",LP.coral],["🖨️","כרטיסי הושבה להדפסה",LP.gold],["✅","אישורי הגעה בזמן אמת",LP.mint],["📱","מספר שולחן ב-SMS ו-WhatsApp",LP.sky],["📊","ייבוא מאקסל",LP.mint]];
 
   return(
-    <div className="lp" dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
+    <div className={`lp${pastHero?" lp-hero-off":""}`} dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
       <style>{LANDING_CSS}</style>
       <a href="#top" className="lp-skip">דלג לתוכן הראשי</a>
       <div ref={progRef} className="lp-progress" aria-hidden="true"/>
 
       {/* ─── NAV ─────────────────────────────────────────────────── */}
       <nav style={{position:"fixed",top:0,right:0,left:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,
-        background:scrolled?"rgba(255,251,247,.85)":"transparent",backdropFilter:scrolled?"blur(18px) saturate(1.5)":"none",
+        background:scrolled?"rgba(255,251,247,.96)":"transparent",
         borderBottom:scrolled?"1px solid #F0E8F4":"1px solid transparent",boxShadow:scrolled?"0 6px 24px -14px rgba(91,60,140,.25)":"none",transition:"all .3s"}}>
         <a href="#top" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0}}>
           <SidorLogo size={40} id="lpLogo"/>
@@ -5284,11 +5289,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
                   <div className="sx-anim" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,pointerEvents:"none",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:"18%",left:"-6%",width:360,height:360,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.13),transparent 65%)",animation:"sxBlob 18s ease-in-out infinite"}}/>
-                    <div style={{position:"absolute",bottom:"-10%",right:"-4%",width:420,height:420,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.13),transparent 65%)",animation:"sxBlob 22s ease-in-out 3s infinite"}}/>
-                    <div style={{position:"absolute",top:"45%",left:"42%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.10),transparent 65%)",animation:"sxBlob 20s ease-in-out 6s infinite"}}/>
+                    {/* סטטיים (בלי אנימציה): הם בתוך שכבת הזום, ואנימציה כאן מאטה גרירה וזום במסכים גדולים */}
+                    <div style={{position:"absolute",top:"18%",left:"-6%",width:360,height:360,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.13),transparent 65%)"}}/>
+                    <div style={{position:"absolute",bottom:"-10%",right:"-4%",width:420,height:420,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.13),transparent 65%)"}}/>
+                    <div style={{position:"absolute",top:"45%",left:"42%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.10),transparent 65%)"}}/>
                     {[["12%","8%",14,0,"#E8B04A"],["70%","6%",11,.7,"#F0609E"],["24%","92%",13,1.2,"#9B6BFF"],["82%","88%",15,.4,"#FF8A65"],["55%","50%",10,1.6,"#9B6BFF"],["88%","40%",12,.9,"#E8B04A"]].map(([top,left,s,d,c],i)=>(
-                      <svg key={i} width={s} height={s} viewBox="0 0 20 20" style={{position:"absolute",top,left,animation:`sxTwinkle ${2.4+(i%3)*.7}s ease-in-out ${d}s infinite`}}>
+                      <svg key={i} width={s} height={s} viewBox="0 0 20 20" style={{position:"absolute",top,left,opacity:.7}}>
                         <path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill={c}/>
                       </svg>
                     ))}
@@ -5418,7 +5424,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   })}
                 </div>
                 {/* כותרת המפה — כמו בהדגמה בדף הבית */}
-                <div dir="rtl" style={{position:"absolute",right:26,bottom:22,zIndex:15,pointerEvents:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.82)",backdropFilter:"blur(6px)",borderRadius:16,padding:"8px 14px",border:"1px solid #EFE8F7",boxShadow:"0 10px 24px -16px rgba(91,60,140,.4)"}}>
+                <div dir="rtl" style={{position:"absolute",right:26,bottom:22,zIndex:15,pointerEvents:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.94)",borderRadius:16,padding:"8px 14px",border:"1px solid #EFE8F7",boxShadow:"0 10px 24px -16px rgba(91,60,140,.4)"}}>
                   <div>
                     <div style={{fontSize:15,fontWeight:900,color:LP.ink,lineHeight:1.2}}>מפת האולם</div>
                     <div style={{fontSize:11,color:LP.muted,fontWeight:600}}>{event.name} · {guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} אורחים</div>
@@ -5457,7 +5463,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           {/* במסך מלא: חלונית צפה  -  שולחן נבחר (העברה/הוצאה/עריכה של אורחים) או רשימת הממתינים */}
           {mapFull&&(()=>{
             const panel={position:"absolute",bottom:52,right:16,width:fullListOpen?270:"auto",maxHeight:"min(66vh, calc(100vh - 170px))",display:"flex",flexDirection:"column",
-              background:"rgba(255,255,255,.97)",backdropFilter:"blur(8px)",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 24px 50px -20px rgba(91,60,140,.45)",zIndex:20,overflow:"hidden"};
+              background:"rgba(255,255,255,.98)",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 24px 50px -20px rgba(91,60,140,.45)",zIndex:20,overflow:"hidden"};
             const avatar=g=>(<span style={{width:28,height:28,borderRadius:"50%",background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,flexShrink:0}}>{g.name[0]}</span>);
             const smallBtn={border:`1px solid ${C.border}`,background:C.blueXL,color:C.blue,borderRadius:8,padding:"4px 7px",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit",flexShrink:0};
             const dropTo=(tableId)=>({
@@ -9694,7 +9700,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(155,107,255,.18)!important;transform:translateY(-3px)!important;} @media(max-width:600px){.ev-top{padding:0 14px!important}.ev-wrap{padding:20px 14px!important}.ev-hero{flex-direction:column;align-items:stretch!important;gap:18px;padding:24px 20px!important}.ev-hero button{width:100%;justify-content:center}}`}</style>
 
       {/* TOP NAV */}
-      <header className="ev-top" style={{background:"rgba(255,255,255,.7)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
+      <header className="ev-top" style={{background:"rgba(255,255,255,.94)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {onBackToLanding&&<button onClick={onBackToLanding} className="sx-btn"
             style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
