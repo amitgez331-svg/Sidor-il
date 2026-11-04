@@ -3975,11 +3975,45 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       sorted.forEach((t,i)=>{const b=near[i],o=offs[i],tw=o[2]-o[0],th=o[3]-o[1];pos[t.id]={x:Math.round(b[0]+(cw0-tw)/2-o[0]),y:Math.round(b[1]+(ch0-th)/2-o[1])};});
       return pos;
     };
+    // ריבועים פעילים: מסדרים ישר על הריבועים (כל שולחן במרכז ריבוע), הכי קרוב לרחבה / לבמה, בלי חפיפה
+    // (שולחן אבירים רחב מריבוע, אז שני אבירים לא יוצאים צמודים). אחר כך מספור לפי סדר קריאה: מלמעלה למטה, מימין לשמאל
+    const gridPack=(W,H,items)=>{
+      const M=HALL_MARGIN;
+      const blocks=[...items.map(i=>[i.x-22,i.y-22,i.x+i.w+22,i.y+i.h+22]),...fixedT];
+      const f=items.find(i=>i.kind==="dance")||items.find(i=>i.kind==="stage");
+      const fx=f?f.x+f.w/2:W/2,fy=f?f.y+f.h/2:H/2;
+      const cells=[];
+      for(let r=0;(r+1)*GRID<=H;r++)for(let c=0;(c+1)*GRID<=W;c++)cells.push([c*GRID+GRID/2,r*GRID+GRID/2]);
+      cells.sort((a,b)=>Math.hypot(a[0]-fx,(a[1]-fy)*1.25)-Math.hypot(b[0]-fx,(b[1]-fy)*1.25));
+      const placed=[],byType={};
+      // שולחנות אבירים (ארוכים) נבחרים ראשונים, כדי שיקבלו מקומות רצופים ולא את מה שנשאר בשוליים
+      const idx=sorted.map((t,i)=>i).sort((a,b)=>(sorted[b].type==="knight")-(sorted[a].type==="knight")||a-b);
+      for(const i of idx){
+        const o=offs[i],ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
+        const cell=cells.find(([px,py])=>{
+          const x=px-ox,y=py-oy,b=[x+o[0]-6,y+o[1]-6,x+o[2]+6,y+o[3]+6];
+          if(b[0]<M/2||b[1]<M/2||b[2]>W-M/2||b[3]>H-M/2)return false;
+          return ![...blocks,...placed].some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);
+        });
+        if(!cell)return null;
+        const x=Math.round(cell[0]-ox),y=Math.round(cell[1]-oy);
+        placed.push([x+o[0],y+o[1],x+o[2],y+o[3]]);
+        (byType[sorted[i].type]||=[]).push({x,y});
+      }
+      // מספור: בכל סוג שולחן, הנמוך במספר מקבל את המקום הראשון בסדר הקריאה
+      const pos={};
+      Object.entries(byType).forEach(([type,spots])=>{
+        spots.sort((a,b)=>a.y-b.y||b.x-a.x);
+        sorted.filter(t=>t.type===type).forEach((t,i)=>{pos[t.id]=spots[i];});
+      });
+      return pos;
+    };
     const order=HALL_SIZE_ORDER.slice(HALL_SIZE_ORDER.indexOf(startSize));
     let res=null,size=null,itemsAt=null;
     for(const k of order){
       const dims=HALL_SIZES[k],items=classicItems(hallItems(),dims,[W0,H0],true);
-      for(const gap of [60,44,30]){res=pack(dims[0],dims[1],gap,items);if(res)break;}
+      if(gridOn())res=gridPack(dims[0],dims[1],items);
+      else for(const gap of [60,44,30]){res=pack(dims[0],dims[1],gap,items);if(res)break;}
       if(res){size=k;itemsAt=items;break;}
     }
     if(!res){alert("יש יותר מדי שולחנות גם לאולם בגודל ענק. אפשר להחליף חלק לשולחנות אבירים או להקטין את מספר השולחנות.");return;}
