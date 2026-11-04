@@ -3675,8 +3675,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const o=tableOff(t.type),ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
     // הרשת מעוגנת לנקודה 0,0 של המפה (לא לגבולות האולם שמשתנים בזום), כך שהריבועים זזים יחד עם השולחנות
     const cx=x+ox,cy=y+oy,col=Math.floor(cx/GRID),row=Math.floor(cy/GRID);
-    // ריבוע תפוס = השולחן שם היה נוגע בשולחן אחר (לפי הגודל האמיתי, גם שולחנות שהונחו לפני הרשת)
-    const others=tables.filter(o2=>o2.id!==t.id).map(tableBox);
+    // ריבוע תפוס = השולחן שם היה נוגע בשולחן אחר או בבמה/רחבה (לפי הגודל האמיתי)
+    const others=[...tables.filter(o2=>o2.id!==t.id).map(tableBox),...hallItems().map(itemBox)];
     const hits=(x0,y0)=>{const b=[x0+o[0]-6,y0+o[1]-6,x0+o[2]+6,y0+o[3]+6];return others.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);};
     let best=null,bd=Infinity;
     for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
@@ -3686,7 +3686,32 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       const d=Math.hypot(px-cx,py-cy);if(d<bd){bd=d;best={px,py,c,r};}
     }
     if(!best)return {...clampIn(x,y,o,hr),cell:null};
-    return {...clampIn(best.px-ox,best.py-oy,o,hr),cell:[best.c*GRID,best.r*GRID]};
+    // בלי clampIn: גבולות האולם על המסך משתנים בזום, והשולחן חייב להישאר בדיוק במרכז הריבוע
+    return {x:Math.round(best.px-ox),y:Math.round(best.py-oy),cell:[best.c*GRID,best.r*GRID]};
+  };
+  // שולחן "ברשת" = המרכז שלו בדיוק במרכז ריבוע
+  const onGrid=t=>{const o=tableOff(t.type),cx=t.x+(o[0]+o[2])/2,cy=t.y+(o[1]+o[3])/2,m=v=>((v%GRID)+GRID)%GRID;return Math.abs(m(cx)-GRID/2)<1&&Math.abs(m(cy)-GRID/2)<1;};
+  // כל השולחנות לריבועים: מה שכבר בריבוע נשאר, השאר עובר לריבוע הפנוי הקרוב (לא על שולחן אחר, במה או רחבה).
+  // שולחן נעול לא זז. מחזיר רק את מה שצריך להזיז: {id:{x,y}}
+  const gridLayout=()=>{
+    const placed=[...hallItems().map(itemBox),...tables.filter(t=>lockedTables.has(t.id)).map(tableBox)];
+    const free=tables.filter(t=>!lockedTables.has(t.id)).sort((a,b)=>(onGrid(b)?1:0)-(onGrid(a)?1:0));
+    const out={};
+    for(const t of free){
+      const o=tableOff(t.type),ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
+      const cx=t.x+ox,cy=t.y+oy,col=Math.floor(cx/GRID),row=Math.floor(cy/GRID);
+      let best=null,bd=Infinity;
+      for(let dr=-4;dr<=4;dr++)for(let dc=-4;dc<=4;dc++){
+        const c=col+dc,r=row+dr;if(c<0||r<0)continue;
+        const x=c*GRID+GRID/2-ox,y=r*GRID+GRID/2-oy,b=[x+o[0]-6,y+o[1]-6,x+o[2]+6,y+o[3]+6];
+        if(x+o[0]<0||y+o[1]<0||placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]))continue;
+        const d=Math.hypot(c*GRID+GRID/2-cx,r*GRID+GRID/2-cy);if(d<bd){bd=d;best={x:Math.round(x),y:Math.round(y)};}
+      }
+      if(!best){placed.push(tableBox(t));continue;}
+      placed.push(tableBox({...t,...best}));
+      if(best.x!==t.x||best.y!==t.y)out[t.id]=best;
+    }
+    return out;
   };
   const snapCellRef=useRef(null);
   // המצלמה תחומה לאולם: קטן מהמסך — במרכז; גדול — אי אפשר לגלול מעבר לקירות
@@ -3821,6 +3846,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // שולחן/במה הוזזו או נוספו (גם יישור ותבנית): האולם משתנה — מתאימים שוב, אלא אם המשתמש עשה זום ידני
   const layoutKey=tables.map(t=>`${t.x},${t.y}`).join("|")+JSON.stringify({...hall,locked:0});
   useEffect(()=>{if(screen==="seating"&&view==="map"&&!manualZoomRef.current)fitZoom();},[layoutKey]);
+  // ריבועים פעילים: אחרי כל שינוי במפה (פתיחה, סידור מושלם, תבנית, שולחן חדש) כל שולחן חוזר למרכז ריבוע
+  useEffect(()=>{
+    if(loading||!gridOn()||!tables.length||tables.every(t=>!t.x&&!t.y))return;
+    const fix=gridLayout(),ids=Object.keys(fix);if(!ids.length)return;
+    setTables(ts=>ts.map(t=>fix[t.id]?{...t,...fix[t.id]}:t));
+    ids.forEach(id=>saveTablePos(id,fix[id].x,fix[id].y));
+  },[layoutKey,loading]);
   const saveHall=async(next,silent=false)=>{
     setHall(next);hallRef.current=next;
     const settings={...(event.settings_json||{}),hall:next};
