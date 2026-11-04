@@ -7254,7 +7254,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
 // בחירת נמענים (SMS / וואטסאפ): ברירת מחדל  -  אף קבוצה לא מסומנת. נשלח רק למה שמסומן
 const RECIPIENT_GROUPS=[
   {v:"all",      l:"כולם",      c:"#2B6CB0", match:()=>true},
-  {v:"pending",  l:"ממתינים",   c:"#718096", match:g=>!g.rsvp||g.rsvp==="pending"},
+  {v:"pending",  l:"ממתינים",   c:"#718096", match:g=>g.rsvp!=="confirmed"&&g.rsvp!=="declined"},
   {v:"confirmed",l:"מגיעים",    c:"#276749", match:g=>g.rsvp==="confirmed"},
   {v:"declined", l:"לא מגיעים", c:"#C53030", match:g=>g.rsvp==="declined"},
 ];
@@ -8017,7 +8017,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
           </div>
 
           {/* תזמון שליחה וואטסאפ  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn lockDefaults
+          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn
             onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("wa-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
 
           {/* כפתור שליחה */}
