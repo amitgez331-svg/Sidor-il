@@ -3668,6 +3668,26 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // גרירה בתוך האולם: off = גבולות הצורה ביחס לנקודת המיקום
   const clampIn=(x,y,off,r=hallRect())=>({x:Math.round(Math.min(r[2]-off[2],Math.max(r[0]-off[0],x))),y:Math.round(Math.min(r[3]-off[3],Math.max(r[1]-off[1],y)))});
   const tableOff=type=>tableBox({x:0,y:0,type});
+  // ─── רשת ריבועים במפה: שולחן שנגרר נכנס למרכז הריבוע הקרוב (הפנוי). hall.grid=false מכבה ───
+  const GRID=200;
+  const gridOn=()=>(hallRef.current||{}).grid!==false;
+  const snapToGrid=(t,x,y,hr)=>{
+    const o=tableOff(t.type),ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
+    const cx=x+ox,cy=y+oy,col=Math.floor((cx-hr[0])/GRID),row=Math.floor((cy-hr[1])/GRID);
+    // ריבוע תפוס = השולחן שם היה נוגע בשולחן אחר (לפי הגודל האמיתי, גם שולחנות שהונחו לפני הרשת)
+    const others=tables.filter(o2=>o2.id!==t.id).map(tableBox);
+    const hits=(x0,y0)=>{const b=[x0+o[0]-6,y0+o[1]-6,x0+o[2]+6,y0+o[3]+6];return others.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);};
+    let best=null,bd=Infinity;
+    for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
+      const c=col+dc,r=row+dr;if(c<0||r<0)continue;
+      const px=hr[0]+c*GRID+GRID/2,py=hr[1]+r*GRID+GRID/2;
+      if(px>hr[2]||py>hr[3]||hits(px-ox,py-oy))continue;
+      const d=Math.hypot(px-cx,py-cy);if(d<bd){bd=d;best={px,py,c,r};}
+    }
+    if(!best)return {...clampIn(x,y,o,hr),cell:null};
+    return {...clampIn(best.px-ox,best.py-oy,o,hr),cell:[hr[0]+best.c*GRID,hr[1]+best.r*GRID]};
+  };
+  const snapCellRef=useRef(null);
   // המצלמה תחומה לאולם: קטן מהמסך — במרכז; גדול — אי אפשר לגלול מעבר לקירות
   const clampCam=(p,z=zoomRef.current)=>{
     const el=mapBoxRef.current;if(!el)return p;
@@ -4107,6 +4127,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     // אירוע ששותף איתי: החבילות של בעל האירוע
     ?sb.rpc("event_packages",{p_event:event.id}).then(r=>({data:(r.data||[]).map(p=>({package_id:p}))}))
     :sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
+  // בועת הסבר על בורר מפה/רשימה — פעם אחת לכל דפדפן
+  const [viewTip,setViewTipRaw]=useState(()=>{try{return !localStorage.getItem("sidor_view_tip");}catch{return false;}});
+  const setViewTip=v=>{setViewTipRaw(v);if(!v)try{localStorage.setItem("sidor_view_tip","1");}catch{}};
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
 
@@ -4677,7 +4700,21 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         :<button onClick={onBack} className="sx-btn" style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>→ כל האירועים</button>}
       <span style={{fontWeight:800,fontSize:15,color:"#fff",flex:1}}>{event.name}</span>
       {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
-      {screen==="seating"&&<div style={{display:"flex",gap:4}}>{[["map","🗺 מפה"],["list","📋 רשימה"],["guests","👥 אורחים"]].map(([v,l])=>(<button key={v} onClick={()=>setView(v)} style={{background:view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",color:view===v?C.blue:"#fff",border:`2px solid ${view===v?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.4)"}`,borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 2px 8px rgba(0,0,0,0.2)":"none",transition:"all .15s"}}>{l}</button>))}</div>}
+      {/* בורר תצוגה בולט (מפה / רשימה / אורחים): כפתור פעיל לבן, ובפעם הראשונה בועת הסבר */}
+      {screen==="seating"&&<div style={{position:"relative"}}>
+        <div role="tablist" aria-label="תצוגת ההושבה" style={{display:"flex",gap:3,background:"rgba(0,0,0,.18)",border:"1px solid rgba(255,255,255,.35)",borderRadius:14,padding:3}}>
+          {[["map","🗺️","מפת האולם"],["list","📋","רשימת שולחנות"],["guests","👥","אורחים"]].map(([v,ic,l])=>(
+            <button key={v} role="tab" aria-selected={view===v} onClick={()=>{setView(v);setViewTip(false);}}
+              style={{display:"flex",alignItems:"center",gap:6,background:view===v?"#fff":"transparent",color:view===v?C.blue:"#fff",border:"none",borderRadius:11,padding:"7px 14px",fontSize:13.5,fontWeight:900,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 4px 12px rgba(0,0,0,.22)":"none",transition:"all .15s",whiteSpace:"nowrap"}}>
+              <span style={{fontSize:16}}>{ic}</span>{l}
+            </button>))}
+        </div>
+        {viewTip&&<div role="status" style={{position:"absolute",top:"calc(100% + 10px)",right:0,zIndex:95,background:"#2B1D3F",color:"#fff",borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:700,width:260,boxShadow:"0 12px 30px -10px rgba(0,0,0,.4)",lineHeight:1.5}}>
+          <span style={{position:"absolute",top:-6,right:28,width:12,height:12,background:"#2B1D3F",transform:"rotate(45deg)"}}/>
+          👆 כאן עוברים בין <b>מפת האולם</b> (גרירה על המפה) ל<b>רשימת השולחנות</b> (כרטיס לכל שולחן).
+          <button onClick={()=>setViewTip(false)} style={{display:"block",marginTop:8,background:"#fff",color:"#2B1D3F",border:"none",borderRadius:8,padding:"4px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>הבנתי</button>
+        </div>}
+      </div>}
       <span style={{background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:100,fontSize:12,fontWeight:700,padding:"3px 12px"}}>{seated}/{total}</span>
       {screen==="seating"&&<>{view!=="map"&&undoBtn({padding:"5px 12px",border:"1px solid rgba(255,255,255,.3)"})}<button onClick={()=>setModal("autoSeat")} style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
       <button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
@@ -5101,6 +5138,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1}}>
                   📐 יישר
                 </button>
+                <button onClick={()=>saveHall({...hallRef.current,grid:!gridOn()})} className="sx-btn" aria-pressed={gridOn()}
+                  title={gridOn()?"ריבועים פעילים: שולחן שגוררים נכנס לריבוע. לחצו לכיבוי (גרירה חופשית)":"גרירה חופשית. לחצו כדי ששולחן ייכנס לריבוע"}
+                  style={{background:gridOn()?"#F6F0FF":"#fff",border:`1.5px solid ${gridOn()?C.blueM:C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  {gridOn()?"▦ ריבועים":"▢ חופשי"}
+                </button>
                 <button disabled={mapLocked} onClick={openTemplates} className="sx-btn"
                   title={mapLocked?"המפה נעולה":"תבניות אולם מוכנות, או אולם ששמרתם"}
                   style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
@@ -5167,6 +5209,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
                   {/* רצפת האולם — כמו כרטיס המפה בדף הבית: לבן, נקודות עדינות, מסגרת וצל רך */}
                   <div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,background:"#fff",backgroundImage:"radial-gradient(circle,#E9E1F5 1.4px,transparent 1.6px)",backgroundSize:"18px 18px",backgroundPosition:"2px 2px",border:"1px solid #EFE8F7",boxShadow:"0 50px 100px -40px rgba(91,60,140,.45),0 0 0 8px rgba(255,255,255,.6)",pointerEvents:"none"}}/>
+                  {/* רשת הריבועים (GRID) + הריבוע שאליו ייכנס השולחן בזמן גרירה */}
+                  {gridOn()&&<div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,pointerEvents:"none",
+                    backgroundImage:"linear-gradient(to right,rgba(155,107,255,.16) 1.5px,transparent 1.5px),linear-gradient(to bottom,rgba(155,107,255,.16) 1.5px,transparent 1.5px)",
+                    backgroundSize:`${GRID}px ${GRID}px`,backgroundPosition:"-14px -14px"}}/>}
+                  <div ref={snapCellRef} aria-hidden="true" style={{display:"none",position:"absolute",width:GRID,height:GRID,borderRadius:18,background:"rgba(155,107,255,.10)",border:"2px dashed rgba(155,107,255,.55)",pointerEvents:"none",transition:"left .08s,top .08s"}}/>
 
                   {/* כתמי צבע רכים ונצנוצים ברקע  -  כמו בדף הבית */}
                   <div className="sx-anim" style={{position:"absolute",left:hx0,top:hy0,width:hx1-hx0,height:hy1-hy0,borderRadius:28,pointerEvents:"none",overflow:"hidden"}}>
@@ -5259,11 +5306,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       // גרירה חלקה: מזיזים את העוטף ישירות (בלי לרנדר את כל המסך בכל תזוזה) ושומרים בסוף
                       const node=e.currentTarget.closest("[data-tid]");
                       const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current,hr=hallRect();let posX=bx,posY=by,raf=0;
+                      let cell=null;
                       const mv=me=>{
-                        ({x:posX,y:posY}=clampIn(bx+(me.clientX-sx)/z,by+(me.clientY-sy)/z,tableOff(t.type),hr));
-                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}});
+                        const rx=bx+(me.clientX-sx)/z,ry=by+(me.clientY-sy)/z;
+                        // עם רשת: השולחן קופץ לריבוע הקרוב כבר בזמן הגרירה, והריבוע מודגש
+                        ({x:posX,y:posY,cell}=gridOn()?snapToGrid(t,rx,ry,hr):{...clampIn(rx,ry,tableOff(t.type),hr),cell:null});
+                        if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}
+                          const hl=snapCellRef.current;if(hl){if(cell){hl.style.display="block";hl.style.left=cell[0]+"px";hl.style.top=cell[1]+"px";}else hl.style.display="none";}});
                       };
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                        if(raf){cancelAnimationFrame(raf);raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}}
+                        if(snapCellRef.current)snapCellRef.current.style.display="none";
                         if(posX!==bx||posY!==by){moveTablePos(t.id,posX,posY);saveTablePos(t.id,posX,posY);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}};
                       window.addEventListener("mousemove",mv);
                       window.addEventListener("mouseup",up);
