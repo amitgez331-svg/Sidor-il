@@ -51,7 +51,8 @@ export function buildTemplates(event: any): Record<string, string> {
 
 // למי נשלח כל נוסח (מוצג גם במסך התזמונים)
 export function recipientsFor(templateId: string, guests: any[]) {
-  if (templateId === "reminder") return guests.filter((g) => !g.rsvp || g.rsvp === "pending");
+  // תזכורת: רק מי שעוד לא ענה — לא מי שאישר ולא מי שסירב (כל ערך אחר נחשב "ממתין")
+  if (templateId === "reminder") return guests.filter((g) => g.rsvp !== "confirmed" && g.rsvp !== "declined");
   if (templateId === "table") return guests.filter((g) => g.rsvp === "confirmed" && g.table_id);
   if (templateId === "thanks") return guests.filter((g) => g.rsvp === "confirmed");
   return guests; // invite / אחר: כולם
