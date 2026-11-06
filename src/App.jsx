@@ -86,8 +86,9 @@ const WaIcon=({size=16,color="#fff"})=>(
 );
 const WaButton=({event,url,label="שלח בוואטסאפ",style={}})=>(
   <button onClick={()=>shareInviteWA(event,url)} className="sx-btn" title="פותח וואטסאפ עם הודעה מוכנה וקישור להזמנה"
-    style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:7,background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,
-      padding:"10px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 18px -8px rgba(37,211,102,.75)",...style}}>
+    style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:7,background:"#0F7F40",color:"#fff",border:"none",borderRadius:12,
+      padding:"10px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 8px 18px -10px rgba(15,127,64,.6)",...style}}>
+    {/* ירוק וואטסאפ כהה: טקסט לבן על #25D366 קריא רק ב-2:1, על #0F7F40 ב-5:1 */}
     <WaIcon/>{label}
   </button>
 );
@@ -2539,7 +2540,7 @@ function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpi
         }}
           style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,border:"none",background:"none",cursor:"pointer",fontFamily:"inherit",padding:"6px 0",position:"relative",opacity:item.locked?.5:1}}>
           <span style={{fontSize:20,lineHeight:1,filter:active===item.id?"none":"grayscale(1)",opacity:active===item.id?1:.5}}>{item.icon}</span>
-          <span style={{fontSize:10,fontWeight:700,color:active===item.id?C.blue:C.muted}}>{item.label}</span>
+          <span style={{fontSize:12,fontWeight:700,color:active===item.id?C.blue:C.muted}}>{item.label}</span>
           {item.locked&&<span style={{position:"absolute",top:4,left:"50%",transform:"translateX(-50%)",fontSize:8,background:"#FEF3C7",color:"#B45309",borderRadius:4,padding:"1px 4px",fontWeight:800}}>🔒</span>}
           {active===item.id&&<div style={{position:"absolute",bottom:0,width:32,height:3,borderRadius:"3px 3px 0 0",background:`linear-gradient(90deg,${C.blueM},${C.blueL})`}}/>}
         </button>
@@ -3342,6 +3343,43 @@ function UpcomingTasks({ event, onOpen, style }) {
         </div>
       );}):<div style={{fontSize:13,color:"#276749",fontWeight:700}}>{eventPassed(event)?"🎉 אין משימות פתוחות אחרי האירוע":"🎉 כל המשימות הושלמו"}</div>}
     </div>
+  );
+}
+
+// כרטיס "אישורי הגעה" למסך הראשי של האירוע: השאלה הראשונה של המסך ("כמה אישרו?") כמספר הכי גדול,
+// פס אחד של מגיעים / לא מגיעים / ממתינים לפי האחוז האמיתי, ומה לעשות עכשיו
+function HomeRsvpCard({ confirmed, declined, pending, total, onOpen, onShare, style }) {
+  const parts=[["מגיעים",confirmed,"#25A55F"],["לא מגיעים",declined,"#E5566F"],["ממתינים לתשובה",pending,"#E8A93A"]];
+  const pct=v=>total>0?v/total*100:0;
+  return(
+    <section aria-labelledby="home-rsvp-h" style={{background:"#fff",borderRadius:20,padding:"22px 24px",border:"1px solid #F0E8F7",display:"flex",flexDirection:"column",...style}}>
+      <h2 id="home-rsvp-h" style={{fontSize:16,fontWeight:900,color:"#2B1D3F",margin:"0 0 12px"}}>אישורי הגעה</h2>
+      <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:4}}>
+        <span style={{fontSize:36,fontWeight:900,color:"#2B1D3F",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{confirmed}</span>
+        <span style={{fontSize:15,fontWeight:700,color:"#2B1D3F"}}>מגיעים</span>
+        <span style={{fontSize:14,color:"#6B6280",fontVariantNumeric:"tabular-nums"}}>מתוך {total} מוזמנים</span>
+      </div>
+      <div style={{fontSize:13,color:pending?"#8A5A00":"#1F7A4D",fontWeight:700,marginBottom:14}}>
+        {total===0?"עוד לא נוספו מוזמנים":pending?`${pending} עוד לא ענו`:"כל המוזמנים ענו"}
+      </div>
+      {/* פס אחד מחולק לפי האחוז האמיתי, עם מרווח של 2px בין החלקים */}
+      <div role="img" aria-label={parts.map(([l,v])=>`${l} ${v}`).join(", ")} style={{display:"flex",gap:2,height:10,borderRadius:99,overflow:"hidden",background:"#F1ECF6",marginBottom:14}}>
+        {parts.map(([l,v,c])=>v>0&&<div key={l} style={{width:`${pct(v)}%`,background:c}}/>)}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+        {parts.map(([l,v,c])=>(
+          <div key={l} style={{display:"flex",alignItems:"center",gap:8,fontSize:14}}>
+            <span style={{width:8,height:8,borderRadius:"50%",background:c,flexShrink:0}}/>
+            <span style={{flex:1,color:"#4A4060"}}>{l}</span>
+            <span style={{fontWeight:800,color:"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{v}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:"auto"}}>
+        <button onClick={onOpen} className="sx-btn" style={{flex:1.3,background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לרשימת האורחים ←</button>
+        {onShare&&<button onClick={onShare} className="sx-btn" style={{flex:1,background:"#FBF7FC",color:"#7A3FBF",border:"1.5px solid #E9D9F7",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>שיתוף ההזמנה</button>}
+      </div>
+    </section>
   );
 }
 
@@ -4516,15 +4554,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
           <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
           <div style={{position:"relative",zIndex:2}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600,marginBottom:4}}>סקירה כללית</div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.2}}>
+            <h1 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 14px",lineHeight:1.2}}>
               {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
-            </div>
+            </h1>
             {daysLeft!==null&&daysLeft>0?(
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 <div style={{background:"rgba(0,0,0,.25)",borderRadius:12,padding:"8px 10px",textAlign:"center",minWidth:54}}>
-                  <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{daysLeft}</div>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,.7)"}}>ימים</div>
+                  <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{daysLeft}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.85)"}}>ימים</div>
                 </div>
                 <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:700}}>
                   📅 {eventDate?.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
@@ -4536,11 +4573,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 {event.date?`📅 ${eventDate?.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})} ${event.event_time||""}`:"תאריך לא הוגדר"}
               </div>
             )}
+            {checksPct===100&&<div style={{marginTop:12,fontSize:13,fontWeight:700,color:"#fff"}}>✓ כל שלבי ההכנה הושלמו</div>}
           </div>
         </div>
 
-        {/* ─── צ'קליסט ─── */}
-        <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
+        {/* ─── אישורי הגעה: השאלה הראשונה של המסך, מיד אחרי הבאנר ─── */}
+        <HomeRsvpCard confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}
+          onShare={()=>{const url=inviteUrl;if(navigator.share)navigator.share({title:event.name,url}).catch(()=>{});else navigator.clipboard.writeText(url).then(()=>alert("הקישור הועתק!"));}}
+          style={{margin:"0 14px 12px",padding:"18px 20px"}}/>
+
+        {/* ─── צ'קליסט — רק כל עוד לא הושלם ─── */}
+        {checksPct<100&&<div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",border:"1px solid #F0E8F7"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div>
               <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>השלמו את האירוע</div>
@@ -4561,46 +4604,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               </div>);})}
           </div>
           {nextStep&&<button onClick={()=>setScreen(nextStep.go)} className="sx-btn" style={{width:"100%",marginTop:12,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>הצעד הבא: {nextStep.label} ←</button>}
-        </div>
+        </div>}
 
         <PostEventCard event={event} onGo={setScreen} style={{margin:"0 14px 12px"}}/>
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
         <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
-
-        {/* ─── התקדמות אישורי הגעה ─── */}
-        <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
-          <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:14}}>התקדמות אישורי הגעה</div>
-          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:14}}>
-            {/* עיגול */}
-            <div style={{position:"relative",width:70,height:70,flexShrink:0}}>
-              <svg width="70" height="70" viewBox="0 0 70 70">
-                <circle cx="35" cy="35" r="28" fill="none" stroke="#f0f0f0" strokeWidth="6"/>
-                <circle cx="35" cy="35" r="28" fill="none" stroke="#25D366" strokeWidth="6"
-                  strokeDasharray={`${rsvpPct*1.759} 175.9`}
-                  strokeLinecap="round" transform="rotate(-90 35 35)"/>
-              </svg>
-              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#2B1D3F"}}>{rsvpPct}%</div>
-            </div>
-            <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
-              {[["#25D366","מגיעים",confirmed],["#FC8181","לא מגיעים",declined],["#F6AD55","ממתינים לתשובה",pending]].map(([col,label,val])=>(
-                <div key={label} style={{display:"flex",alignItems:"center",gap:6}}>
-                  <div style={{width:8,height:8,borderRadius:"50%",background:col,flexShrink:0}}/>
-                  <span style={{fontSize:12,color:"#555",flex:1}}>{label}</span>
-                  <span style={{fontSize:13,fontWeight:800,color:"#2B1D3F"}}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            <button onClick={()=>setScreen("rsvp")} style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-              ✅ אישורי הגעה
-            </button>
-            <button onClick={()=>{const url=inviteUrl;if(navigator.share)navigator.share({title:event.name,url});else navigator.clipboard.writeText(url).then(()=>alert("הקישור הועתק!"));}}
-              style={{background:"#FBF7FC",color:"#9147D6",border:"1.5px solid #E9D9F7",borderRadius:12,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-              🔗 שתף הזמנה
-            </button>
-          </div>
-        </div>
 
         {/* ─── קישור להזמנה ─── */}
         <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
@@ -4620,7 +4628,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
         {/* ─── תפריט מהיר ─── */}
         <div style={{padding:"0 14px"}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#888",marginBottom:10}}>פעולות מהירות</div>
+          <h2 style={{fontSize:15,fontWeight:900,color:"#2B1D3F",margin:"8px 6px 10px"}}>פעולות מהירות</h2>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {[
               {icon:"🪑",label:"סידורי הושבה",nav:"seating",bg:"#FFF1F6",color:"#9147D6"},
@@ -4916,23 +4924,22 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           const checksPct=Math.round(checksDone/checks.length*100);
           return(
             <div>
-              {/* ─── שורה עליונה: באנר + צ'קליסט ─── */}
+              {/* ─── שורה עליונה: באנר האירוע + אישורי הגעה (השאלה הראשונה של המסך) ─── */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:20,marginBottom:20}}>
                 {/* באנר */}
-                <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px rgba(155,107,255,.25)"}}>
+                <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",boxShadow:"0 8px 24px -12px rgba(155,107,255,.35)",display:"flex",flexDirection:"column"}}>
                   <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
                   <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-                  <div style={{position:"relative",zIndex:2}}>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,.65)",marginBottom:6}}>סקירה כללית</div>
-                    <div style={{fontSize:28,fontWeight:900,color:"#fff",marginBottom:16,lineHeight:1.1}}>
+                  <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",flex:1}}>
+                    <h1 style={{fontSize:28,fontWeight:900,color:"#fff",margin:"0 0 16px",lineHeight:1.15}}>
                       {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
-                    </div>
+                    </h1>
                     {daysLeft!==null&&daysLeft>0?(
                       <div style={{display:"flex",alignItems:"center",gap:12}}>
                         <div style={{background:"rgba(0,0,0,.25)",borderRadius:14,padding:"10px 18px",display:"flex",alignItems:"center",gap:8}}>
                           <div style={{textAlign:"center"}}>
-                            <div style={{fontSize:28,fontWeight:900,color:"#fff",lineHeight:1}}>{daysLeft}</div>
-                            <div style={{fontSize:10,color:"rgba(255,255,255,.7)"}}>ימים</div>
+                            <div style={{fontSize:28,fontWeight:900,color:"#fff",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{daysLeft}</div>
+                            <div style={{fontSize:12,color:"rgba(255,255,255,.85)"}}>ימים</div>
                           </div>
                         </div>
                         <div style={{fontSize:14,color:"rgba(255,255,255,.8)",fontWeight:700}}>
@@ -4947,22 +4954,31 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         {event.venue&&` · 📍 ${event.venue}`}
                       </div>
                     )}
-                    <div style={{display:"flex",gap:10,marginTop:20}}>
-                      <button onClick={()=>setScreen("invite")}
-                        style={{background:"#fff",color:"#9147D6",border:"none",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-                        👁 צפה בהזמנה
-                      </button>
-                      <WaButton event={event} url={inviteUrl} style={{padding:"10px 18px",fontSize:14,boxShadow:"0 8px 20px -8px rgba(0,0,0,.35)"}}/>
-                      <button onClick={()=>{navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"));}}
-                        style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                        🔗 העתק קישור
-                      </button>
+                    {checksPct===100&&<div style={{marginTop:14,fontSize:14,fontWeight:700,color:"#fff"}}>✓ כל שלבי ההכנה הושלמו</div>}
+                    {/* קישור ההזמנה עצמו, ליד הכפתורים שמשתפים אותו (במקום כרטיס נפרד) */}
+                    <div style={{marginTop:"auto",paddingTop:20}}>
+                      <div style={{background:"rgba(255,255,255,.16)",borderRadius:10,padding:"8px 12px",fontSize:13,color:"#fff",direction:"ltr",textAlign:"left",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:10,maxWidth:520}}>{inviteUrl}</div>
+                      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        <button onClick={()=>setScreen("invite")} className="sx-btn"
+                          style={{background:"#fff",color:"#7A3FBF",border:"none",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                          צפייה בהזמנה
+                        </button>
+                        <WaButton event={event} url={inviteUrl} style={{padding:"10px 18px",fontSize:14}}/>
+                        <button onClick={()=>{navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"));}} className="sx-btn"
+                          style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"1.5px solid rgba(255,255,255,.45)",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                          העתקת הקישור
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* צ'קליסט */}
-                <div style={{background:"#fff",borderRadius:20,padding:"24px",boxShadow:"0 2px 16px rgba(155,107,255,.08)"}}>
+                <HomeRsvpCard confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+              </div>
+
+              {/* צ'קליסט — רק כל עוד לא הושלם; שלבים בשורה אחת */}
+              {checksPct<100&&(
+                <div style={{background:"#fff",borderRadius:20,padding:"22px 24px",border:"1px solid #F0E8F7",marginBottom:20}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
                     <div>
                       <div style={{fontSize:16,fontWeight:900,color:"#2B1D3F"}}>השלמו את האירוע</div>
@@ -4972,97 +4988,26 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       {checksPct}%
                     </div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{display:"grid",gridTemplateColumns:`repeat(${checks.length},1fr)`,gap:8}}>
                     {checks.map((c,i)=>{const nx=c===nextStep;return(
-                      <div key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} role={c.done?undefined:"button"}
-                        style={{display:"flex",alignItems:"center",gap:10,padding:"9px 14px",borderRadius:12,cursor:c.done?"default":"pointer",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:c.done?"#25D366":nx?"#9147D6":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0,color:"#fff"}}>
+                      <button key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} disabled={c.done} className={c.done?undefined:"sx-btn"}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,cursor:c.done?"default":"pointer",fontFamily:"inherit",textAlign:"right",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
+                        <span style={{width:22,height:22,borderRadius:"50%",background:c.done?"#25A55F":nx?"#9147D6":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,color:"#fff"}}>
                           {c.done?"✓":nx?"←":""}
-                        </div>
-                        <span style={{flex:1,fontSize:13,fontWeight:nx?900:700,color:c.done?"#276749":nx?"#3A2464":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
-                        {nx&&<span style={{fontSize:12,fontWeight:800,color:"#9147D6"}}>להתחיל ←</span>}
-                      </div>);})}
+                        </span>
+                        <span style={{flex:1,fontSize:13,fontWeight:nx?900:700,color:c.done?"#1F6B43":nx?"#3A2464":"#5F5675"}}>{c.label}</span>
+                      </button>);})}
                   </div>
                 </div>
-              </div>
+              )}
 
               <PostEventCard event={event} onGo={setScreen} style={{marginBottom:20,padding:"22px 24px"}}/>
-              <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{marginBottom:20,padding:"22px 24px"}}/>
-              <GiftLinksCard key={event.id} event={event} style={{marginBottom:20,padding:"22px 24px"}}/>
-
-              {/* ─── שורה אמצעית: אישורי הגעה + קישור + פעולות אחרונות ─── */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:20,marginBottom:20}}>
-                {/* אישורי הגעה */}
-                <div style={{background:"#fff",borderRadius:20,padding:"22px",boxShadow:"0 2px 16px rgba(155,107,255,.08)"}}>
-                  <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:14}}>התקדמות אישורי הגעה</div>
-                  <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:14}}>
-                    <div style={{position:"relative",width:72,height:72,flexShrink:0}}>
-                      <svg width="72" height="72" viewBox="0 0 72 72">
-                        <circle cx="36" cy="36" r="28" fill="none" stroke="#f0f0f0" strokeWidth="6"/>
-                        <circle cx="36" cy="36" r="28" fill="none" stroke="#25D366" strokeWidth="6"
-                          strokeDasharray={`${rsvpPct*1.759} 175.9`}
-                          strokeLinecap="round" transform="rotate(-90 36 36)"/>
-                      </svg>
-                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#2B1D3F"}}>{rsvpPct}%</div>
-                    </div>
-                    <div style={{flex:1}}>
-                      {[["#25D366","מגיעים",confirmed],["#FC8181","לא מגיעים",declined],["#F6AD55","ממתינים",pending]].map(([col,label,val])=>(
-                        <div key={label} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-                          <div style={{width:8,height:8,borderRadius:"50%",background:col,flexShrink:0}}/>
-                          <span style={{fontSize:12,color:"#555",flex:1}}>{label}</span>
-                          <span style={{fontSize:14,fontWeight:800,color:"#2B1D3F"}}>{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <button onClick={()=>setScreen("rsvp")}
-                    style={{width:"100%",background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                    ✅ אישורי הגעה
-                  </button>
-                </div>
-
-                {/* קישור הזמנה */}
-                <div style={{background:"#fff",borderRadius:20,padding:"22px",boxShadow:"0 2px 16px rgba(155,107,255,.08)"}}>
-                  <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:6}}>קישור להזמנה</div>
-                  <div style={{fontSize:12,color:"#888",marginBottom:14}}>שתף עם האורחים</div>
-                  <div style={{background:"#FBF8FD",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:11,color:"#9147D6",fontFamily:"monospace",marginBottom:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
-                    {inviteUrl}
-                  </div>
-                  <WaButton event={event} url={inviteUrl} label="שלח את ההזמנה בוואטסאפ" style={{width:"100%",padding:"12px",fontSize:14,marginBottom:8}}/>
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
-                      style={{flex:1,background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                      🔗 העתק
-                    </button>
-                    <button onClick={()=>window.open(inviteUrl,"_blank")}
-                      style={{flex:1,background:"#F6F0FF",color:"#9147D6",border:"1.5px solid #E9D9F7",borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                      👁 צפה
-                    </button>
-                  </div>
-                </div>
-
-                {/* פעולות מהירות */}
-                <div style={{background:"#fff",borderRadius:20,padding:"22px",boxShadow:"0 2px 16px rgba(155,107,255,.08)"}}>
-                  <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:14}}>פעולות מהירות</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    {[
-                      {icon:"🪑",label:"סידורי הושבה",nav:"seating"},
-                      {icon:"📱",label:"הודעות SMS",nav:"sms"},
-                      {icon:"💬",label:"WhatsApp",nav:"whatsapp"},
-                      {icon:"➕",label:"הוסף אורח",nav:"add"},
-                    ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
-                      <button key={item.nav} onClick={()=>setScreen(item.nav)}
-                        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,background:"#FBF8FD",border:"1px solid #E2E8F0",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,color:"#2B1D3F",transition:"all .15s",textAlign:"right"}}
-                        onMouseEnter={e=>{e.currentTarget.style.background="#FFF1F6";e.currentTarget.style.borderColor="#9147D6";}}
-                        onMouseLeave={e=>{e.currentTarget.style.background="#FBF8FD";e.currentTarget.style.borderColor="#E2E8F0";}}>
-                        <span style={{fontSize:18}}>{item.icon}</span>
-                        <span>{item.label}</span>
-                        <span style={{marginRight:"auto",color:"#aaa"}}>←</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              {/* משימות + קישורי מתנה זה לצד זה, כל כרטיס בגובה שלו */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start",marginBottom:20}}>
+                <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px",boxShadow:"none",border:"1px solid #F0E8F7"}}/>
+                <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
               </div>
+
             </div>
           );
         })()}
