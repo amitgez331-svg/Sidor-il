@@ -8781,7 +8781,7 @@ function SupplierDirectory({ ui }) {
 
 // טופס פרטי העסק (הרשמה ועריכה)
 function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
-  const [f,setF]=useState(()=>({business_name:"",category:"",contact_name:"",phone:"",email:user.email||"",region:"",city:"",website:"",instagram:"",facebook:"",price_from:"",description:"",logo_url:"",photos:[],...(profile||{}),price_from:profile?.price_from??""}));
+  const [f,setF]=useState(()=>({business_name:"",category:"",contact_name:"",phone:"",email:"",region:"",city:"",website:"",instagram:"",facebook:"",price_from:"",description:"",logo_url:"",photos:[],...(profile||{}),price_from:profile?.price_from??""}));
   const [bt,setBt]=useState(priv?.business_type||""),[bid,setBid]=useState(priv?.business_id||"");
   const [busy,setBusy]=useState(""),[err,setErr]=useState("");
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
@@ -8825,7 +8825,8 @@ function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
         <div>{lbl("תחום",1)}<select value={f.category} onChange={e=>set("category",e.target.value)} style={inp}><option value="">בחרו תחום…</option>{SUPPLIER_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select></div>
         <div>{lbl("איש קשר")}<input value={f.contact_name} onChange={e=>set("contact_name",e.target.value)} maxLength={60} style={inp}/></div>
         <div>{lbl("נייד (וואטסאפ)",1)}<input value={f.phone} onChange={e=>set("phone",e.target.value)} type="tel" dir="ltr" inputMode="tel" maxLength={20} placeholder="050-0000000" style={{...inp,textAlign:"right"}}/></div>
-        <div>{lbl("מייל")}<input value={f.email} onChange={e=>set("email",e.target.value)} type="email" dir="ltr" maxLength={120} style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("מייל לפניות (מוצג ללקוחות)")}<input value={f.email} onChange={e=>set("email",e.target.value)} type="email" dir="ltr" maxLength={120} placeholder="business@example.co.il" style={{...inp,textAlign:"right"}}/>
+          {user.email&&f.email!==user.email&&<button type="button" onClick={()=>set("email",user.email)} style={{marginTop:5,background:"none",border:"none",padding:0,color:"#7C4DDB",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>השתמש במייל החשבון שלי</button>}</div>
         <div>{lbl("אזור פעילות")}<select value={f.region} onChange={e=>set("region",e.target.value)} style={inp}><option value="">בחרו…</option>{SUPPLIER_REGIONS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
         <div>{lbl("עיר")}<input value={f.city} onChange={e=>set("city",e.target.value)} maxLength={40} style={inp}/></div>
         <div>{lbl("מחיר החל מ- (₪, רשות)")}<input value={f.price_from} onChange={e=>set("price_from",e.target.value.replace(/\D/g,""))} inputMode="numeric" style={inp}/></div>
