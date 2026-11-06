@@ -1253,7 +1253,7 @@ const SidorLogo=({size=40,id="sidorLogo"})=>(
 );
 
 // ─── LANDING ─────────────────────────────────────────────────────────────────
-const LP={ink:"#2B1D3F",muted:"#6E6585",rose:"#F0609E",coral:"#FF8A65",violet:"#9B6BFF",gold:"#E8B04A",mint:"#3CC8A0",sky:"#5AA9FF",cream:"#FFFBF7",lav:"#F4EEFF"};
+const LP={ink:"#2B1D3F",muted:"#564C6C",rose:"#F0609E",coral:"#FF8A65",violet:"#9B6BFF",gold:"#E8B04A",mint:"#3CC8A0",sky:"#5AA9FF",cream:"#FFFBF7",lav:"#F4EEFF"};
 const LANDING_CSS=`
   @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -1343,6 +1343,12 @@ const LANDING_CSS=`
   /* ביצועים: האנימציות של הפתיחה עוצרות כשגוללים ממנה, ומקטעים שמחוץ למסך לא מצוירים בכלל עד שמגיעים אליהם */
   .lp-hero-off #top *{animation-play-state:paused!important}
   .lp>section:not(#top),.lp>footer{content-visibility:auto;contain-intrinsic-size:auto 900px}
+  .lp-hero-link{background:none;border:none;padding:12px 2px;color:#0E7490;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;transition:color .15s}
+  .lp-hero-link:hover,.lp-hero-link:focus-visible{color:#0B5566}
+  .lp-sec-sub{font-size:18px;color:#3E3555;max-width:60ch;margin:0 auto;line-height:1.7}
+  @media(max-width:640px){.lp-sec-sub{font-size:16px}}
+  .lp-ev:hover .lp-ev-go,.lp-ev:focus-visible .lp-ev-go{transform:translateX(-4px)}
+  .lp-ev-go{display:inline-block;transition:transform .2s ease}
 `;
 
 // אייקונים בקו דק (בסגנון אחיד במקום אימוג'י)
@@ -1710,12 +1716,12 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   if(venuePage) return <VenuePage onBack={()=>setVenuePage(false)} onOpenAuth={onOpenAuth}/>;
 
   const sectionTitle=(kicker,title,accent,sub)=>(
+    // בלי תגית קטנה מעל הכותרת (היא רק חזרה על שם המקטע מהתפריט); kicker כבר לא מוצג
     <div className="fu" style={{textAlign:"center",marginBottom:56}}>
-      <div style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,fontWeight:800,color:"#C2397A",background:"#FFEFF5",border:"1px solid #F8D6E5",borderRadius:100,padding:"6px 16px",marginBottom:18}}>✦ {kicker}</div>
-      <h2 style={{fontSize:"clamp(30px,4.2vw,54px)",fontWeight:900,lineHeight:1.15,letterSpacing:"-.02em",marginBottom:16,color:LP.ink}}>
+      <h2 style={{fontSize:"clamp(32px,4.6vw,60px)",fontWeight:900,lineHeight:1.1,letterSpacing:"-.025em",marginBottom:18,color:LP.ink}}>
         {title} {accent&&<span className="lp-grad">{accent}</span>}
       </h2>
-      {sub&&<p style={{fontSize:17,color:LP.muted,maxWidth:560,margin:"0 auto",lineHeight:1.75}}>{sub}</p>}
+      {sub&&<p className="lp-sec-sub">{sub}</p>}
     </div>
   );
 
@@ -1757,22 +1763,18 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
         <div className="lp-hero" style={{maxWidth:1200,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",position:"relative",zIndex:2}}>
           <div style={{flex:1,minWidth:280,animation:"fadeUp .9s ease both"}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #F0E3EF",borderRadius:100,padding:"7px 16px 7px 10px",marginBottom:26,boxShadow:"0 6px 20px -8px rgba(240,96,158,.35)"}}>
-              <span style={{width:8,height:8,borderRadius:"50%",background:LP.mint,display:"inline-block",animation:"pulse 2s infinite"}}/>
-              <span style={{fontSize:13,color:"#5A5070",fontWeight:700}}>🪑 מערכת סידורי הושבה ואישורי הגעה חכמה לאירועים</span>
-            </div>
-
-            <h1 style={{fontSize:"clamp(44px,6vw,84px)",fontWeight:900,lineHeight:1.04,letterSpacing:"-.035em",marginBottom:26,color:LP.ink}}>
+            <h1 style={{fontSize:"clamp(48px,7vw,104px)",fontWeight:900,lineHeight:1.02,letterSpacing:"-.035em",marginBottom:28,color:LP.ink}}>
               כל אורח.<br/>
               <span className="lp-underline"><span className="lp-grad">במקום הנכון.</span>
                 <svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true"><path d="M4 11 C 80 2, 200 2, 296 9" stroke="url(#lpUl)" strokeWidth="5" fill="none" strokeLinecap="round"/><defs><linearGradient id="lpUl"><stop offset="0%" stopColor="#9B6BFF"/><stop offset="100%" stopColor="#FF8A65"/></linearGradient></defs></svg>
               </span>
             </h1>
 
-            <p style={{fontSize:"clamp(16px,1.5vw,19px)",color:LP.muted,lineHeight:1.85,marginBottom:34,maxWidth:520}}>
-              סידור ההושבה הוא החלק הכי מלחיץ בתכנון האירוע  -  עד עכשיו.
+            {/* המשפט הראשון אומר במפורש מה זה (הכותרת היא דימוי). בלי תגית מעל הכותרת */}
+            <p style={{fontSize:"clamp(17px,1.6vw,21px)",color:"#3E3555",lineHeight:1.7,marginBottom:34,maxWidth:"40ch"}}>
+              <b style={{color:LP.ink,display:"block",marginBottom:4}}>סידורי הושבה ואישורי הגעה לחתונות ואירועים.</b>
               גוררים אורחים לשולחנות על מפת האולם, נותנים ל-AI לסדר לפי משפחות וחברים,
-              ושולחים לכל אורח את מספר השולחן שלו. <b style={{color:LP.ink}}>בלי אקסלים, בלי ויכוחים.</b>
+              וכל אורח מקבל את מספר השולחן שלו.
             </p>
 
             <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:40}}>
@@ -1785,28 +1787,16 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               </a>
             </div>
             {/* הבטחה קצרה מתחת לכפתור — מסירה חששות לפני ההרשמה */}
-            <div style={{marginTop:-24,marginBottom:10,display:"flex",gap:"6px 16px",flexWrap:"wrap",fontSize:13.5,color:LP.muted,fontWeight:700}}>
+            <div style={{marginTop:-22,marginBottom:14,display:"flex",gap:"6px 18px",flexWrap:"wrap",fontSize:15,color:LP.muted,fontWeight:700}}>
               {[`חינם עד ${FREE_SEATING_LIMIT} מוזמנים`,"בלי כרטיס אשראי","מתחילים תוך 2 דקות"].map(t=>(
                 <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6}}><LpIcon name="check" color={LP.mint} size={16}/>{t}</span>
               ))}
             </div>
-            <div style={{marginBottom:26,fontSize:14,color:LP.muted,display:"flex",alignItems:"center",gap:"4px 16px",flexWrap:"wrap"}} className="lp-hero-cta">
-              <span>🎬 מפיקי אירועים? <button onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",padding:"12px 4px",color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>כניסת מפיקים ←</button></span>
-              <span>🏪 ספקים? <button onClick={()=>onOpenAuth("vendor")} style={{background:"none",border:"none",padding:"12px 4px",color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>הצטרפות ספקים ←</button></span>
-              <InstallAppButton style={{padding:"9px 14px",fontSize:13,minHeight:44}}/>
-            </div>
-
-            {/* פס זכוכית עם שלוש עובדות */}
-            <div className="lp-glass lp-hero-cta" style={{display:"inline-flex",gap:4,flexWrap:"wrap",borderRadius:22,padding:8}}>
-              {[["ai","דקות","לסידור כל האולם",LP.violet,"#F1EAFF"],["check","₪0","להתחלה",LP.mint,"#E9FBF4"],["users","כל השפות","עריכה ושליחה בכל שפה",LP.rose,"#FFEFF5"]].map(([ic,big,small,c,bg],i)=>(
-                <div key={small} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderInlineStart:i?"1px solid #EFE6F5":"none"}}>
-                  <div style={{width:40,height:40,borderRadius:13,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name={ic} color={c} size={20}/></div>
-                  <div style={{textAlign:"right"}}>
-                    <div className="lp-num" style={{fontSize:17,fontWeight:900,lineHeight:1.1}}>{big}</div>
-                    <div style={{fontSize:12,color:LP.muted,fontWeight:600}}>{small}</div>
-                  </div>
-                </div>
-              ))}
+            {/* שורה אחת שקטה למפיקים, לספקים ולהתקנת האפליקציה (במקום שתי שורות ופס עובדות שחזר על "חינם") */}
+            <div style={{fontSize:15,color:LP.muted,display:"flex",alignItems:"center",gap:"2px 18px",flexWrap:"wrap"}} className="lp-hero-cta">
+              <button onClick={()=>onOpenAuth("producer")} className="lp-hero-link">מפיקי אירועים ←</button>
+              <button onClick={()=>onOpenAuth("vendor")} className="lp-hero-link">ספקים: הצטרפות ←</button>
+              <InstallAppButton style={{padding:"9px 14px",fontSize:14,minHeight:44}}/>
             </div>
           </div>
 
@@ -1816,7 +1806,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── MARQUEE ─────────────────────────────────────────────── */}
-      <div style={{overflow:"hidden",padding:"22px 0",background:"#fff",borderTop:"1px solid #F3ECF5",borderBottom:"1px solid #F3ECF5"}} aria-hidden="true">
+      <div style={{overflow:"hidden",padding:"22px 0",background:"#fff"}} aria-hidden="true">
         <div style={{display:"flex",gap:14,width:"max-content",animation:"marquee 38s linear infinite",willChange:"transform"}}>
           {[...marqueeItems,...marqueeItems].map(([ic,t,c],i)=>(
             <span key={i} style={{fontSize:15,fontWeight:800,color:LP.ink,whiteSpace:"nowrap",background:c+"14",border:`1px solid ${c}33`,borderRadius:100,padding:"9px 18px",display:"inline-flex",alignItems:"center",gap:8}}>{ic} {t}</span>
@@ -1979,7 +1969,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                   <div key={cat} style={{display:"flex",alignItems:"center",gap:12,background:"#FFFBF3",border:"1px solid #F3E6C8",borderRadius:16,padding:"11px 13px"}}>
                     <span style={{width:38,height:38,borderRadius:12,background:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{ic}</span>
                     <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:900}}>{cat}</div><div style={{fontSize:12,color:LP.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{q}</div></div>
-                    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:"#B07A12"}}>★ {avg}</div><div style={{fontSize:11,color:LP.muted}}>{n} המלצות</div></div>
+                    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:"#8A5A00"}}>★ {avg}</div><div style={{fontSize:13,color:LP.muted}}>{n} המלצות</div></div>
                   </div>
                 ))}
               </div>
@@ -1998,10 +1988,11 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה  -  Sidor-IL מסדרת את כולם.")}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:22}}>
             {[
-              {emoji:"💍",title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים  -  כל אחד בשולחן הנכון",img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80",c:LP.rose},
-              {emoji:"✡️",title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500&q=80",c:LP.sky},
-              {emoji:"👶",title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&q=80",c:LP.mint},
-              {emoji:"💼",title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות  -  מקצועי ומדויק",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80",c:LP.violet},
+              // c = צבע הכרטיס, t = אותו גוון כהה יותר לטקסט (ניגודיות קריאה על לבן)
+              {emoji:"💍",title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים  -  כל אחד בשולחן הנכון",img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80",c:LP.rose,t:"#B8306F"},
+              {emoji:"✡️",title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500&q=80",c:LP.sky,t:"#1F62B5"},
+              {emoji:"👶",title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&q=80",c:LP.mint,t:"#137556"},
+              {emoji:"💼",title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות  -  מקצועי ומדויק",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80",c:LP.violet,t:"#6A3FCF"},
             ].map((ev,i)=>(
               <button key={ev.title} className="lp-ev fu" onClick={()=>onOpenAuth("register")}
                 style={{transitionDelay:`${i*.1}s`,borderRadius:24,overflow:"hidden",border:"1px solid #EFE8F7",cursor:"pointer",background:"#fff",textAlign:"right",fontFamily:"inherit",color:LP.ink,padding:0,boxShadow:"0 8px 26px -14px rgba(91,60,140,.25)"}}>
@@ -2011,8 +2002,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                   <div style={{position:"absolute",bottom:12,right:12,background:"rgba(255,255,255,.92)",backdropFilter:"blur(6px)",borderRadius:100,padding:"6px 14px",fontSize:15,fontWeight:900}}>{ev.emoji} {ev.title}</div>
                 </div>
                 <div style={{padding:"16px 18px 20px"}}>
-                  <p style={{fontSize:14,color:LP.muted,lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
-                  <span style={{fontSize:14,color:ev.c,fontWeight:900}}>התחילו להושיב ←</span>
+                  <p style={{fontSize:15,color:"#3E3555",lineHeight:1.6,marginBottom:12}}>{ev.desc}</p>
+                  <span style={{fontSize:15,color:ev.t,fontWeight:900}}>התחילו להושיב <span className="lp-ev-go" aria-hidden="true">←</span></span>
                 </div>
               </button>
             ))}
@@ -2878,7 +2869,8 @@ function LandingTestimonials() {
   return(
     <section id="reviews" style={{padding:"70px 6vw",background:"#fff"}}>
       <div style={{maxWidth:1120,margin:"0 auto"}}>
-        <h2 style={{fontSize:"clamp(26px,3.4vw,38px)",fontWeight:900,textAlign:"center",margin:"0 0 10px"}}>מה אומרים עלינו</h2>
+        {/* "מה אומרים עלינו" רק כשיש המלצות אמיתיות; כשיש רק מספרים — כותרת שמתארת מספרים */}
+        <h2 style={{fontSize:"clamp(28px,3.8vw,44px)",fontWeight:900,textAlign:"center",margin:"0 0 10px",color:"#2B1D3F"}}>{items.length?"מה אומרים עלינו":"Sidor-IL במספרים"}</h2>
         {showStats&&<div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap",margin:"18px 0 30px"}}>
           {[[stats.events,"אירועים נוהלו"],[stats.guests,"אורחים הוזמנו"],[stats.seated,"אורחים הושבו"]].map(([v,l])=>(
             <div key={l} style={{background:"#F8F3FF",borderRadius:18,padding:"14px 24px",textAlign:"center",minWidth:140}}>
@@ -11397,7 +11389,9 @@ function CookieNotice() {
   if(!show)return null;
   const ok=()=>{try{localStorage.setItem(COOKIE_KEY,"1");}catch{}setShow(false);};
   return(
-    <div role="region" aria-label="הודעת עוגיות" dir="rtl" style={{position:"fixed",bottom:12,left:12,right:12,zIndex:400,maxWidth:560,margin:"0 auto",background:"#2B1D3F",color:"#fff",borderRadius:16,padding:"12px 16px",boxShadow:"0 10px 30px rgba(0,0,0,.25)",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontFamily:"'Heebo',sans-serif"}}>
+    <div role="region" aria-label="הודעת עוגיות" dir="rtl" className="sx-cookie" style={{position:"fixed",bottom:12,left:12,right:12,zIndex:400,maxWidth:560,margin:"0 auto",background:"#2B1D3F",color:"#fff",borderRadius:16,padding:"12px 16px",boxShadow:"0 10px 30px rgba(0,0,0,.25)",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontFamily:"'Heebo',sans-serif"}}>
+      {/* בנייד: מעל כפתורי הוואטסאפ והנגישות שבפינות התחתונות, כדי לא להסתיר אותם */}
+      <style>{`@media(max-width:640px){.sx-cookie{bottom:88px!important}}`}</style>
       <div style={{flex:"1 1 240px",fontSize:13,lineHeight:1.6}}>🍪 האתר משתמש בעוגיות ובאחסון מקומי חיוניים בלבד (התחברות והגדרות), בלי פרסום ובלי מעקב. <a href="#/privacy" style={{color:"#F9C6DD",fontWeight:700}}>מדיניות הפרטיות</a></div>
       <button onClick={ok} style={{background:"#fff",color:"#2B1D3F",border:"none",borderRadius:10,padding:"8px 18px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>הבנתי</button>
     </div>
