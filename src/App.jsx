@@ -11848,6 +11848,8 @@ export default function App() {
         if(user){setIsVendor(true);setVendorEvents(false);selectEvent(null);}else setAuthMode("vendor");
         return;
       }
+      // "האירועים שלי" (מחובר): תמיד לאירועים, גם לספק — לא לאזור הספקים
+      if(mode==="login"&&user)setVendorEvents(true);
       if(!user)setAuthMode(mode);
     }} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
