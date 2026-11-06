@@ -69,6 +69,8 @@ const shareInviteWA=(event,url)=>window.open(waShareUrl(inviteShareText(event,ur
 const REF_KEY="sidor_ref";
 // נכנסו דרך "כניסת מפיקים" (בלשונית הזו): פותחים את לוח המפיק ולא את האירוע האחרון
 const PRODUCER_ENTRY_KEY="sidor_producer_entry";
+// סוג החשבון שנבחר בהרשמה ("vendor" = ספק). נשמר במכשיר כדי לשרוד גם כניסה עם Google
+const ACCOUNT_KEY="sidor_account";
 const captureRef=()=>{try{const r=new URLSearchParams(window.location.search).get("ref");if(r&&/^[\w-]{2,40}$/.test(r))localStorage.setItem(REF_KEY,JSON.stringify({ref:r.toLowerCase(),at:Date.now()}));}catch{}};
 const myRefCode=u=>u?.id?u.id.replace(/-/g,"").slice(0,8):"";
 const applyRef=async u=>{
@@ -1787,6 +1789,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             </div>
             <div style={{marginBottom:26,fontSize:14,color:LP.muted,display:"flex",alignItems:"center",gap:"4px 16px",flexWrap:"wrap"}} className="lp-hero-cta">
               <span>🎬 מפיקי אירועים? <button onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",padding:"12px 4px",color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>כניסת מפיקים ←</button></span>
+              <span>🏪 ספקים? <button onClick={()=>onOpenAuth("vendor")} style={{background:"none",border:"none",padding:"12px 4px",color:"#0E7490",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>הצטרפות ספקים ←</button></span>
               <InstallAppButton style={{padding:"9px 14px",fontSize:13,minHeight:44}}/>
             </div>
 
@@ -1938,6 +1941,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       <section id="vendors" style={{padding:"100px 6vw",position:"relative"}}>
         <div style={{maxWidth:1120,margin:"0 auto"}}>
           {sectionTitle("ספקים ומחירים","כמה שילמו","זוגות אחרים?","מחירי מנות אמיתיים באולמות, והמלצות על ספקים — מהקהילה של Sidor-IL. משווים, מתמקחים וחוסכים.")}
+          <FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/>
           <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1.15fr 1fr",gap:22,alignItems:"stretch"}}>
             {/* מחירי מנות */}
             <div className="lp-card fu" style={{padding:"28px 26px"}}>
@@ -2142,7 +2146,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             <nav aria-label="מפת אתר" className="lp-foot" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
               {[
                 ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
-                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"כניסת מפיקים",()=>onOpenAuth("producer")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
+                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"כניסת מפיקים",()=>onOpenAuth("producer")],[null,"הצטרפות ספקים",()=>onOpenAuth("vendor")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
                 ["לפי אירוע",EVENT_LANDINGS.map(x=>[`/events/${x.slug}`,x.nav])],
                 ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"],["#/cancel","ביטול עסקה"]]],
               ].map(([head,links])=>(
@@ -2225,7 +2229,11 @@ const authServerUp=async()=>{
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   // "producer" = כניסת מפיקים: אותה כניסה, עם כותרת משלה (אחריה נפתח לוח המפיק)
   const producer=initMode==="producer";
-  const [mode,setMode]=useState(producer?"login":initMode);
+  // "vendor" = הצטרפות ספקים: הרשמה כספק (אחרי הכניסה נפתח אזור הספקים)
+  const [acct,setAcctRaw]=useState(()=>{if(initMode==="vendor")return "vendor";try{return localStorage.getItem(ACCOUNT_KEY)==="vendor"?"vendor":"private";}catch{return "private";}});
+  const setAcct=v=>{setAcctRaw(v);try{v==="vendor"?localStorage.setItem(ACCOUNT_KEY,"vendor"):localStorage.removeItem(ACCOUNT_KEY);}catch{}};
+  useEffect(()=>{if(initMode==="vendor")setAcct("vendor");},[]);
+  const [mode,setMode]=useState(producer?"login":initMode==="vendor"?"register":initMode);
   const [email,setEmail]=useState("");
   const [pass,setPass]=useState("");
   const [err,setErr]=useState("");
@@ -2271,10 +2279,21 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
     <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}>
       <div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/>
       <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>{producer?"🎬":"🪑"}</div>
-        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{producer?"כניסת מפיקים":mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
-        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
+        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>{producer?"🎬":acct==="vendor"?"🏪":"🪑"}</div>
+        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{producer?"כניסת מפיקים":acct==="vendor"?(mode==="register"?"הצטרפות ספקים":"כניסת ספקים"):mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
+        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":acct==="vendor"?"צלמים, DJ, אולמות ועוד: פרופיל עסק שזוגות ומשפחות רואים":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
       </div>
+      {/* סוג החשבון: פרטי (מתכננים אירוע) או ספק */}
+      {!producer&&mode!=="reset"&&<div role="radiogroup" aria-label="סוג החשבון" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
+        {[["private","📅","מתכננים אירוע","חתונה, בר מצווה, ברית…"],["vendor","🏪","ספק / בעל עסק","צלם, DJ, אולם, קייטרינג…"]].map(([v,ic,t,s])=>(
+          <button key={v} role="radio" aria-checked={acct===v} onClick={()=>setAcct(v)}
+            style={{background:acct===v?"#F6F0FF":"#fff",border:`2px solid ${acct===v?"#9B6BFF":C.border}`,borderRadius:14,padding:"10px 8px",cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>
+            <div style={{fontSize:20}}>{ic}</div>
+            <div style={{fontSize:14,fontWeight:900,color:C.text}}>{t}</div>
+            <div style={{fontSize:11,color:C.muted}}>{s}</div>
+          </button>
+        ))}
+      </div>}
 
       {/* שחזור סיסמה */}
       {mode==="reset"?(
@@ -8615,8 +8634,313 @@ const EVENT_TYPE_LABELS={wedding:"💍 חתונה",bar_mitzvah:"✡️ בר/בת
 const dayGroup=d=>{const w=new Date(d+"T12:00:00").getDay();return w===4?"חמישי":w===5?"שישי":w===6?"מוצ״ש":"א׳–ד׳";};
 const flagNote=r=>r.flagged&&<div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:6,background:"#FFF6E2",border:"1px solid #F3D9A4",color:"#8A5A00",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:700}}>⚠️ בבדיקה: {r.flag_reason||"שונה מהותית מהדיווחים האחרים"}</div>;
 
+// ─── ספקים רשומים (vendor_profiles): הרשמה כספק, פרופיל עסק, אישור מנהל, ספק מוביל ───
+const SUPPLIER_CATS=[["venue","🏛️","אולמות וגני אירועים"],["catering","🍽️","קייטרינג"],["photo","📸","צלמי סטילס"],["video","🎥","צלמי וידאו"],["dj","🎧","DJ"],["band","🎷","להקות ונגנים"],
+  ["producer","🎬","הפקת אירועים"],["design","💐","עיצוב ופרחים"],["dress","👗","שמלות כלה וערב"],["suit","🤵","חליפות חתן"],["makeup","💄","איפור ושיער"],["attraction","🎡","אטרקציות"],
+  ["magnets","🧲","מגנטים ועמדות צילום"],["bar","🍸","בר ושייקים"],["cake","🎂","עוגות וקינוחים"],["invitations","💌","הזמנות ומיתוג"],["rabbi","📜","רבנים ועורכי טקס"],
+  ["transport","🚌","הסעות"],["jewelry","💍","טבעות ותכשיטים"],["fireworks","🎆","זיקוקים ואפקטים"],["lighting","💡","תאורה והגברה"],["other","✨","אחר"]];
+const SUPPLIER_CAT=Object.fromEntries(SUPPLIER_CATS.map(([k,i,l])=>[k,{icon:i,label:l}]));
+const SUPPLIER_REGIONS=[["all","כל הארץ"],["north","צפון"],["center","מרכז ושרון"],["jerusalem","ירושלים והסביבה"],["south","דרום"]];
+const SUPPLIER_REGION=Object.fromEntries(SUPPLIER_REGIONS);
+const BUSINESS_TYPES=[["patur","עוסק פטור"],["murshe","עוסק מורשה"],["company","חברה בע״מ"],["amuta","עמותה"]];
+const SUPPORT_WA_NUM="972526817102";
+// ספרת ביקורת של ת.ז / ע.מ / ח.פ (9 ספרות)
+const validIsraeliId=s=>{const d=String(s||"").replace(/\D/g,"");if(!/^\d{5,9}$/.test(d))return false;const p=d.padStart(9,"0");let sum=0;for(let i=0;i<9;i++){let x=+p[i]*((i%2)+1);sum+=x>9?x-9:x;}return sum%10===0;};
+// ספק מוביל = מסומן ועדיין בתוקף
+const isFeatured=v=>v.featured&&(!v.featured_until||v.featured_until>=new Date().toISOString().slice(0,10));
+const isNewVendor=v=>Date.now()-new Date(v.created_at).getTime()<30*864e5;
+// הקטנת תמונה בדפדפן לפני העלאה (JPEG, עד max פיקסלים בצלע הארוכה) — חוסך אחסון וזמן העלאה
+const compressImage=(file,max=1400,q=.82)=>new Promise((res,rej)=>{
+  const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>b?res(b):rej(new Error("compress")),"image/jpeg",q);};
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("לא קובץ תמונה"));};
+  img.src=url;
+});
+const uploadVendorImage=async(userId,file,max)=>{
+  const blob=await compressImage(file,max);
+  const path=`vendors/${userId}/${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}.jpg`;
+  const{error}=await sb.storage.from("event-images").upload(path,blob,{contentType:"image/jpeg"});
+  if(error)throw error;
+  return sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+};
+const waLink=p=>{const n=normPhone(p);return n?`https://wa.me/972${n.slice(1)}`:null;};
+const extLink=u=>!u?null:/^https?:\/\//i.test(u)?u:`https://${u}`;
+
+// דף הבית: ספקים מובילים (מאושרים + מסומנים כמובילים), והזמנה לספקים להצטרף
+function FeaturedSuppliers({ onJoin }) {
+  const [list,setList]=useState([]),[open,setOpen]=useState(null);
+  useEffect(()=>{sb.from("vendor_profiles").select("*").eq("status","approved").eq("featured",true).then(({data})=>setList((data||[]).filter(isFeatured).slice(0,8)),()=>{});},[]);
+  return(
+    <div style={{marginBottom:28}}>
+      {list.length>0&&<>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+          <div style={{fontSize:18,fontWeight:900,color:LP.ink}}>⭐ ספקים מובילים</div>
+          <div style={{flex:1,height:1,background:"#F0E8F4"}}/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14,marginBottom:14}}>
+          {list.map(v=><SupplierCard key={v.user_id} v={v} onOpen={setOpen}/>)}
+        </div>
+      </>}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap",background:"#FFFBF3",border:"1px solid #F3E6C8",borderRadius:16,padding:"12px 16px",fontSize:14,color:LP.ink}}>
+        <span>🏪 <b>צלמים, DJ, אולמות וספקים?</b> פרופיל עסק בחינם, מול זוגות ומשפחות שמתכננים אירוע</span>
+        <button onClick={onJoin} className="lp-btn lp-ghost" style={{padding:"9px 16px",fontSize:14,minHeight:44}}>הצטרפות ספקים ←</button>
+      </div>
+      <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+    </div>
+  );
+}
+
+// כרטיס ספק (ברשימה ובדף הבית)
+function SupplierCard({ v, onOpen, compact=false }) {
+  const cat=SUPPLIER_CAT[v.category]||SUPPLIER_CAT.other;
+  return(
+    <button onClick={()=>onOpen?.(v)} className="sx-btn" style={{all:"unset",cursor:"pointer",display:"flex",flexDirection:"column",background:"#fff",borderRadius:18,overflow:"hidden",border:`1.5px solid ${isFeatured(v)?"#F3D08A":"#F0E8F8"}`,boxShadow:isFeatured(v)?"0 10px 28px -14px rgba(232,176,74,.6)":"0 2px 12px rgba(155,107,255,.08)",fontFamily:"'Heebo',sans-serif",direction:"rtl",textAlign:"right"}}>
+      <div style={{position:"relative",height:compact?110:140,background:v.photos?.[0]?`#F6F0FF url("${v.photos[0]}") center/cover`:"linear-gradient(135deg,#FFF4EE,#F6F0FF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40}}>
+        {!v.photos?.[0]&&cat.icon}
+        <div style={{position:"absolute",top:8,right:8,display:"flex",gap:5}}>
+          {isFeatured(v)&&<span style={{background:"#E8B04A",color:"#fff",borderRadius:100,padding:"3px 9px",fontSize:11,fontWeight:900}}>⭐ מוביל</span>}
+          {isNewVendor(v)&&<span style={{background:"#3CC8A0",color:"#fff",borderRadius:100,padding:"3px 9px",fontSize:11,fontWeight:900}}>חדש</span>}
+        </div>
+      </div>
+      <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
+        {v.logo_url?<img src={v.logo_url} alt="" style={{width:44,height:44,borderRadius:12,objectFit:"cover",border:"1px solid #F0E8F8",flexShrink:0}}/>
+          :<span style={{width:44,height:44,borderRadius:12,background:"#F6F0FF",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{cat.icon}</span>}
+        <div style={{minWidth:0,flex:1}}>
+          <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.business_name}{v.verified&&<span title="עסק רשום שנבדק" style={{color:"#3CC8A0",marginRight:4}}>✓</span>}</div>
+          <div style={{fontSize:12,color:"#7A6F8C"}}>{cat.icon} {cat.label}{v.region?` · ${SUPPLIER_REGION[v.region]}`:""}{v.price_from?` · החל מ-₪${Number(v.price_from).toLocaleString()}`:""}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// פרטי ספק מלאים: גלריה, תיאור ויצירת קשר
+function SupplierDetails({ v, onClose }) {
+  const [img,setImg]=useState(0);
+  if(!v)return null;
+  const cat=SUPPLIER_CAT[v.category]||SUPPLIER_CAT.other,photos=v.photos||[];
+  const b={display:"inline-flex",alignItems:"center",gap:6,borderRadius:12,padding:"10px 14px",fontSize:14,fontWeight:800,textDecoration:"none",fontFamily:"inherit"};
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(43,29,63,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:14}}>
+      <div onClick={e=>e.stopPropagation()} dir="rtl" role="dialog" aria-label={v.business_name} style={{background:"#fff",borderRadius:22,width:"100%",maxWidth:620,maxHeight:"92vh",overflowY:"auto",fontFamily:"'Heebo',sans-serif"}}>
+        {photos.length>0&&<div style={{position:"relative",background:"#111"}}>
+          <img src={photos[img]} alt={`${v.business_name} · תמונה ${img+1}`} style={{width:"100%",maxHeight:380,objectFit:"contain",display:"block"}}/>
+          {photos.length>1&&<div style={{display:"flex",gap:6,padding:8,overflowX:"auto",background:"#1a1a1a"}}>
+            {photos.map((p,i)=><img key={p} src={p} alt="" onClick={()=>setImg(i)} style={{width:64,height:48,objectFit:"cover",borderRadius:8,cursor:"pointer",outline:i===img?"2px solid #F0609E":"none"}}/>)}
+          </div>}
+        </div>}
+        <div style={{padding:"18px 20px 22px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+            {v.logo_url&&<img src={v.logo_url} alt="" style={{width:56,height:56,borderRadius:14,objectFit:"cover",border:"1px solid #F0E8F8"}}/>}
+            <div style={{flex:1}}>
+              <div style={{fontSize:20,fontWeight:900,color:"#2B1D3F"}}>{v.business_name}</div>
+              <div style={{fontSize:13,color:"#7A6F8C"}}>{cat.icon} {cat.label}{v.region?` · ${SUPPLIER_REGION[v.region]}`:""}{v.city?` · ${v.city}`:""}</div>
+            </div>
+            <button onClick={onClose} aria-label="סגירה" style={{background:"#F6F0FF",border:"none",borderRadius:10,width:34,height:34,cursor:"pointer",flexShrink:0}}>✕</button>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+            {isFeatured(v)&&<span style={{background:"#FFF6E2",color:"#8A5A00",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>⭐ ספק מוביל</span>}
+            {v.verified&&<span style={{background:"#E9FBF4",color:"#1F8F6C",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>✓ עסק רשום</span>}
+            {v.price_from>0&&<span style={{background:"#F6F0FF",color:"#5B3C8C",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}>החל מ-₪{Number(v.price_from).toLocaleString()}</span>}
+          </div>
+          {v.description&&<p style={{fontSize:14,color:"#3E3555",lineHeight:1.8,whiteSpace:"pre-line",marginBottom:14}}>{v.description}</p>}
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {waLink(v.phone)&&<a href={`${waLink(v.phone)}?text=${encodeURIComponent(`היי ${v.business_name}, ראיתי אתכם ב-Sidor-IL ואשמח לפרטים`)}`} target="_blank" rel="noopener noreferrer" style={{...b,background:"#25D366",color:"#fff"}}><WaIcon size={16}/> וואטסאפ</a>}
+            {v.phone&&<a href={`tel:${v.phone}`} style={{...b,background:"#F6F0FF",color:"#3A2464"}}>📞 {v.phone}</a>}
+            {v.email&&<a href={`mailto:${v.email}`} style={{...b,background:"#F6F0FF",color:"#3A2464"}}>✉️ מייל</a>}
+            {extLink(v.website)&&<a href={extLink(v.website)} target="_blank" rel="noopener noreferrer" style={{...b,background:"#F6F0FF",color:"#3A2464"}}>🌐 אתר</a>}
+            {extLink(v.instagram)&&<a href={extLink(v.instagram)} target="_blank" rel="noopener noreferrer" style={{...b,background:"#F6F0FF",color:"#3A2464"}}>📷 אינסטגרם</a>}
+            {extLink(v.facebook)&&<a href={extLink(v.facebook)} target="_blank" rel="noopener noreferrer" style={{...b,background:"#F6F0FF",color:"#3A2464"}}>👍 פייסבוק</a>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// רשימת הספקים המאושרים (בתוך המערכת): סינון לפי תחום ואזור, מובילים קודם ואז החדשים
+function SupplierDirectory({ ui }) {
+  const [list,setList]=useState(null),[cat,setCat]=useState(""),[region,setRegion]=useState(""),[q,setQ]=useState(""),[open,setOpen]=useState(null);
+  useEffect(()=>{sb.from("vendor_profiles").select("*").eq("status","approved").then(({data})=>setList(data||[]));},[]);
+  if(!list)return <div style={{textAlign:"center",padding:40}}><Spinner size={30}/></div>;
+  const shown=list.filter(v=>(!cat||v.category===cat)&&(!region||v.region===region||v.region==="all")&&(!q.trim()||(v.business_name+" "+(v.description||"")+" "+(v.city||"")).includes(q.trim())))
+    .sort((a,b)=>(isFeatured(b)-isFeatured(a))||String(b.created_at).localeCompare(String(a.created_at)));
+  const sel={...ui.inp,flex:"1 1 160px",width:"auto"};
+  return(<>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+      <select value={cat} onChange={e=>setCat(e.target.value)} aria-label="תחום" style={sel}><option value="">כל התחומים</option>{SUPPLIER_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select>
+      <select value={region} onChange={e=>setRegion(e.target.value)} aria-label="אזור" style={sel}><option value="">כל האזורים</option>{SUPPLIER_REGIONS.filter(([k])=>k!=="all").map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש לפי שם או עיר" style={sel}/>
+    </div>
+    {!shown.length?<div style={{...ui.card,textAlign:"center",color:"#888"}}>{list.length?"לא נמצאו ספקים בסינון הזה":"עוד אין ספקים רשומים. בקרוב!"}</div>
+      :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>{shown.map(v=><SupplierCard key={v.user_id} v={v} onOpen={setOpen}/>)}</div>}
+    <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+  </>);
+}
+
+// טופס פרטי העסק (הרשמה ועריכה)
+function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
+  const [f,setF]=useState(()=>({business_name:"",category:"",contact_name:"",phone:"",email:user.email||"",region:"",city:"",website:"",instagram:"",facebook:"",price_from:"",description:"",logo_url:"",photos:[],...(profile||{}),price_from:profile?.price_from??""}));
+  const [bt,setBt]=useState(priv?.business_type||""),[bid,setBid]=useState(priv?.business_id||"");
+  const [busy,setBusy]=useState(""),[err,setErr]=useState("");
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  const inp={width:"100%",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#fff"};
+  const lbl=(t,req)=><div style={{fontSize:12,fontWeight:800,color:"#6E6585",marginBottom:5}}>{t}{req&&<span style={{color:"#E53E3E"}}> *</span>}</div>;
+  const up=async(files,kind)=>{
+    setErr("");
+    const list=[...files].slice(0,kind==="logo"?1:6-f.photos.length);
+    if(!list.length)return;
+    setBusy(kind);
+    try{
+      const urls=[];for(const file of list)urls.push(await uploadVendorImage(user.id,file,kind==="logo"?400:1400));
+      if(kind==="logo")set("logo_url",urls[0]);else setF(x=>({...x,photos:[...x.photos,...urls].slice(0,6)}));
+    }catch(e){setErr("❌ ההעלאה נכשלה: "+(e.message||"שגיאה"));}
+    setBusy("");
+  };
+  const save=async()=>{
+    setErr("");
+    const id=bid.replace(/\D/g,"");
+    if(f.business_name.trim().length<2)return setErr("נא למלא שם עסק");
+    if(!f.category)return setErr("נא לבחור תחום");
+    if(!normPhone(f.phone))return setErr("נא למלא נייד תקין ליצירת קשר");
+    if(!bt)return setErr("נא לבחור סוג עסק");
+    if(!validIsraeliId(id))return setErr(`מספר ה${bt==="company"||bt==="amuta"?"ח.פ":"ע.מ"} לא תקין (9 ספרות)`);
+    setBusy("save");
+    const row={user_id:user.id,business_name:f.business_name.trim(),category:f.category,contact_name:f.contact_name.trim()||null,phone:f.phone.trim(),email:f.email.trim()||null,
+      region:f.region||null,city:f.city.trim()||null,website:f.website.trim()||null,instagram:f.instagram.trim()||null,facebook:f.facebook.trim()||null,
+      price_from:f.price_from===""?null:Math.max(0,parseInt(f.price_from)||0),description:f.description.trim()||null,logo_url:f.logo_url||null,photos:f.photos};
+    const{error:e1}=await sb.from("vendor_profiles").upsert(row);
+    const{error:e2}=e1?{}:await sb.from("vendor_private").upsert({user_id:user.id,business_type:bt,business_id:id.padStart(9,"0")});
+    setBusy("");
+    if(e1||e2)return setErr("❌ לא נשמר: "+(e1||e2).message);
+    onSaved?.();
+  };
+  const grid2={display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:12};
+  return(
+    <div style={{background:"#fff",borderRadius:20,padding:"20px",border:"1px solid #F0E8F8",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
+      <div style={{fontSize:13,fontWeight:900,color:"#2B1D3F",marginBottom:10}}>🏪 פרטי העסק</div>
+      <div style={grid2}>
+        <div>{lbl("שם העסק",1)}<input value={f.business_name} onChange={e=>set("business_name",e.target.value)} maxLength={80} placeholder="למשל: סטודיו אור לצילום" style={inp}/></div>
+        <div>{lbl("תחום",1)}<select value={f.category} onChange={e=>set("category",e.target.value)} style={inp}><option value="">בחרו תחום…</option>{SUPPLIER_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select></div>
+        <div>{lbl("איש קשר")}<input value={f.contact_name} onChange={e=>set("contact_name",e.target.value)} maxLength={60} style={inp}/></div>
+        <div>{lbl("נייד (וואטסאפ)",1)}<input value={f.phone} onChange={e=>set("phone",e.target.value)} type="tel" dir="ltr" inputMode="tel" maxLength={20} placeholder="050-0000000" style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("מייל")}<input value={f.email} onChange={e=>set("email",e.target.value)} type="email" dir="ltr" maxLength={120} style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("אזור פעילות")}<select value={f.region} onChange={e=>set("region",e.target.value)} style={inp}><option value="">בחרו…</option>{SUPPLIER_REGIONS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
+        <div>{lbl("עיר")}<input value={f.city} onChange={e=>set("city",e.target.value)} maxLength={40} style={inp}/></div>
+        <div>{lbl("מחיר החל מ- (₪, רשות)")}<input value={f.price_from} onChange={e=>set("price_from",e.target.value.replace(/\D/g,""))} inputMode="numeric" style={inp}/></div>
+      </div>
+      <div style={{marginBottom:12}}>{lbl("על העסק")}<textarea value={f.description} onChange={e=>set("description",e.target.value)} maxLength={1000} rows={4} placeholder="מה אתם מציעים, ניסיון, סגנון, מה כלול…" style={{...inp,resize:"vertical",lineHeight:1.7}}/>
+        <div style={{fontSize:11,color:"#999",textAlign:"left"}}>{f.description.length}/1000</div></div>
+      <div style={grid2}>
+        <div>{lbl("אתר")}<input value={f.website} onChange={e=>set("website",e.target.value)} dir="ltr" maxLength={200} placeholder="www.example.co.il" style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("אינסטגרם")}<input value={f.instagram} onChange={e=>set("instagram",e.target.value)} dir="ltr" maxLength={200} placeholder="instagram.com/…" style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("פייסבוק")}<input value={f.facebook} onChange={e=>set("facebook",e.target.value)} dir="ltr" maxLength={200} placeholder="facebook.com/…" style={{...inp,textAlign:"right"}}/></div>
+      </div>
+
+      <div style={{fontSize:13,fontWeight:900,color:"#2B1D3F",margin:"18px 0 4px"}}>🧾 פרטים עסקיים</div>
+      <div style={{fontSize:12,color:"#7A6F8C",marginBottom:10}}>לא מוצג ללקוחות. משמש רק לאימות העסק, ואחרי הבדיקה יופיע בפרופיל "✓ עסק רשום".</div>
+      <div style={grid2}>
+        <div>{lbl("סוג העסק",1)}<select value={bt} onChange={e=>setBt(e.target.value)} style={inp}><option value="">בחרו…</option>{BUSINESS_TYPES.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></div>
+        <div>{lbl(bt==="company"||bt==="amuta"?"מספר ח.פ":"מספר ע.מ",1)}<input value={bid} onChange={e=>setBid(e.target.value.replace(/\D/g,"").slice(0,9))} inputMode="numeric" dir="ltr" placeholder="9 ספרות" style={{...inp,textAlign:"right"}}/></div>
+      </div>
+
+      <div style={{fontSize:13,fontWeight:900,color:"#2B1D3F",margin:"18px 0 8px"}}>🖼️ לוגו ותמונות</div>
+      <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:12}}>
+        {f.logo_url?<img src={f.logo_url} alt="הלוגו" style={{width:64,height:64,borderRadius:14,objectFit:"cover",border:"1px solid #F0E8F8"}}/>:<span style={{width:64,height:64,borderRadius:14,background:"#F6F0FF",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26}}>🏷️</span>}
+        <label style={{background:"#F6F0FF",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+          {busy==="logo"?"מעלה…":f.logo_url?"🔄 החלפת לוגו":"📁 העלאת לוגו"}
+          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const fl=e.target.files;up(fl,"logo");e.target.value="";}}/>
+        </label>
+        {f.logo_url&&<button onClick={()=>set("logo_url","")} style={{background:"none",border:"none",color:"#A0AEC0",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>הסרה</button>}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(96px,1fr))",gap:8}}>
+        {f.photos.map((p,i)=>(
+          <div key={p} style={{position:"relative",paddingTop:"75%",borderRadius:12,overflow:"hidden",background:`#F6F0FF url("${p}") center/cover`}}>
+            <button onClick={()=>set("photos",f.photos.filter((_,j)=>j!==i))} aria-label={`הסרת תמונה ${i+1}`} style={{position:"absolute",top:4,left:4,background:"rgba(0,0,0,.55)",color:"#fff",border:"none",borderRadius:8,width:24,height:24,cursor:"pointer",fontSize:12}}>✕</button>
+            {i===0&&<span style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,.55)",color:"#fff",borderRadius:6,padding:"1px 6px",fontSize:10,fontWeight:800}}>ראשית</span>}
+          </div>
+        ))}
+        {f.photos.length<6&&<label style={{border:"2px dashed #E6DDF5",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,minHeight:72,cursor:"pointer",color:"#7A6F8C",fontSize:12,fontWeight:800}}>
+          {busy==="photos"?"מעלה…":<><span style={{fontSize:22}}>＋</span>תמונה ({f.photos.length}/6)</>}
+          <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const fl=e.target.files;up(fl,"photos");e.target.value="";}}/>
+        </label>}
+      </div>
+
+      {err&&<div role="alert" style={{marginTop:12,background:"#FFF5F5",border:"1px solid #FED7D7",color:"#C53030",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:700}}>{err}</div>}
+      <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>
+        <button onClick={save} disabled={!!busy} className="sx-btn sx-btn-primary" style={{flex:"1 1 200px",background:GRAD,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",opacity:busy?.6:1}}>
+          {busy==="save"?"שומר…":profile?"💾 שמירת השינויים":"🚀 שליחה לאישור"}
+        </button>
+        {onCancel&&<button onClick={onCancel} style={{background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:14,padding:"13px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>}
+      </div>
+      <div style={{fontSize:11,color:"#999",marginTop:10,lineHeight:1.6}}>בשליחה אתם מאשרים שהפרטים נכונים ושמותר לפרסם את פרטי הקשר והתמונות באתר, לפי <a href="#/terms" style={{color:C.blue}}>תנאי השימוש</a>.</div>
+    </div>
+  );
+}
+
+// לוח הספק: סטטוס, תצוגה מקדימה, עריכה ושדרוג לספק מוביל
+function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
+  const [p,setP]=useState(undefined),[priv,setPriv]=useState(null),[edit,setEdit]=useState(false),[open,setOpen]=useState(null);
+  const load=async()=>{
+    const [{data:a},{data:b}]=await Promise.all([sb.from("vendor_profiles").select("*").eq("user_id",user.id).maybeSingle(),sb.from("vendor_private").select("*").eq("user_id",user.id).maybeSingle()]);
+    setP(a||null);setPriv(b||null);
+  };
+  useEffect(()=>{load();},[user.id]);
+  const upgrade=()=>window.open(`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(`היי, אני ${p?.business_name||"ספק"} (${SUPPLIER_CAT[p?.category]?.label||""}) ב-Sidor-IL ואשמח לשמוע על שדרוג לספק מוביל`)}`,"_blank","noopener,noreferrer");
+  const status=p&&({pending:{bg:"#FFF8E8",b:"#F5DDA6",c:"#8A5A00",t:"⏳ הפרופיל ממתין לאישור",s:"נבדוק את הפרטים בדרך כלל תוך יום-יומיים, ואז הפרופיל יופיע ללקוחות."},
+    approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#1F8F6C",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
+    rejected:{bg:"#FFF5F5",b:"#FED7D7",c:"#C53030",t:"✗ הפרופיל לא אושר",s:p.reject_reason||"תקנו את הפרטים ושלחו שוב."}}[p.status]);
+  return(
+    <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)"}}>
+      <header style={{background:"rgba(255,255,255,.94)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 20px",height:60,display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:50}}>
+        <SidorLogo size={34} id="supLogo"/>
+        <div style={{fontWeight:900,fontSize:17,color:"#2B1D3F",flex:1}}>אזור הספקים</div>
+        {onBackToLanding&&<button onClick={onBackToLanding} style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🏠 דף הבית</button>}
+        <button onClick={onLogout} style={{background:"none",border:"none",color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>התנתק</button>
+      </header>
+      <div style={{maxWidth:820,margin:"0 auto",padding:"22px 16px 60px"}}>
+        {p===undefined?<div style={{textAlign:"center",padding:60}}><Spinner size={34}/></div>
+        :!p||edit?<>
+          {!p&&<div style={{marginBottom:16}}>
+            <div style={{fontSize:24,fontWeight:900,color:"#2B1D3F"}}>ברוכים הבאים, ספקים! 🎉</div>
+            <div style={{fontSize:14,color:"#7A6F8C",marginTop:4,lineHeight:1.7}}>ממלאים פעם אחת את פרטי העסק, ואחרי אישור קצר שלנו אתם מופיעים לכל מי שמתכנן אירוע ב-Sidor-IL.</div>
+          </div>}
+          <SupplierForm user={user} profile={p} priv={priv} onSaved={()=>{setEdit(false);load();}} onCancel={p?()=>setEdit(false):null}/>
+        </>:<>
+          <div style={{background:status.bg,border:`1.5px solid ${status.b}`,borderRadius:18,padding:"14px 18px",marginBottom:16}}>
+            <div style={{fontSize:16,fontWeight:900,color:status.c}}>{status.t}</div>
+            <div style={{fontSize:13,color:"#3E3555",marginTop:3}}>{status.s}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16,alignItems:"start"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:"#7A6F8C",marginBottom:8}}>ככה הלקוחות רואים אתכם:</div>
+              <SupplierCard v={p} onOpen={setOpen}/>
+              <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                <button onClick={()=>setEdit(true)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>✏️ עריכת הפרופיל</button>
+                <button onClick={()=>setOpen(p)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👁 תצוגה מלאה</button>
+              </div>
+            </div>
+            <div style={{background:"linear-gradient(135deg,#FFF6E2,#FFF0F6)",border:"1.5px solid #F3D08A",borderRadius:20,padding:"18px 20px"}}>
+              <div style={{fontSize:17,fontWeight:900,color:"#2B1D3F"}}>⭐ שדרוג לספק מוביל</div>
+              <div style={{fontSize:13,color:"#5A5070",lineHeight:1.8,margin:"6px 0 12px"}}>
+                • מופיעים ראשונים ברשימת הספקים<br/>• מופיעים בדף הבית של Sidor-IL<br/>• תג "ספק מוביל" בולט על הכרטיס
+              </div>
+              <button onClick={upgrade} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#25D366",color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}><WaIcon size={17}/> דברו איתנו על שדרוג</button>
+            </div>
+          </div>
+        </>}
+        <div style={{textAlign:"center",marginTop:26}}>
+          <button onClick={onEvents} style={{background:"none",border:"none",color:C.blue,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>📅 מתכננים גם אירוע? מעבר לאירועים שלי</button>
+        </div>
+      </div>
+      <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+    </div>
+  );
+}
+
 function VendorsScreen({ user, event, mobile }) {
-  const [tab,setTab]=useState("prices");
+  const [tab,setTab]=useState("suppliers");
   const [prices,setPrices]=useState(null),[reviews,setReviews]=useState(null),[err,setErr]=useState("");
   const load=async()=>{
     const [p,r]=await Promise.all([sb.from("plate_prices").select("*").order("created_at",{ascending:false}).limit(3000),sb.from("vendor_reviews").select("*").order("created_at",{ascending:false}).limit(3000)]);
@@ -8634,13 +8958,14 @@ function VendorsScreen({ user, event, mobile }) {
         <div style={{fontSize:22,fontWeight:900,color:"#2B1D3F"}}>💡 ספקים ומחירים</div>
         <div style={{fontSize:13,color:"#888",marginTop:2}}>מה שילמו זוגות אחרים, והמלצות על ספקים — מהקהילה של Sidor-IL. עוזר להשוות ולהתמקח.</div>
       </div>
-      <div role="tablist" style={{display:"flex",gap:8,marginBottom:16}}>
-        {[["prices","🍽️ מחירי מנות"],["reviews","⭐ המלצות על ספקים"]].map(([k,l])=>(
+      <div role="tablist" style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+        {[["suppliers","🏪 ספקים"],["prices","🍽️ מחירי מנות"],["reviews","⭐ המלצות על ספקים"]].map(([k,l])=>(
           <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{flex:mobile?1:"none",background:tab===k?"#2B1D3F":"#fff",color:tab===k?"#fff":"#2B1D3F",border:"1.5px solid #E2E8F0",borderRadius:12,padding:"10px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",minHeight:44}}>{l}</button>
         ))}
       </div>
       {err&&<div role="alert" style={{...card,color:"#C53030",marginBottom:12}}>⚠️ {err}</div>}
-      {prices===null?<div style={{textAlign:"center",padding:40}}><Spinner size={32}/></div>
+      {tab==="suppliers"?<SupplierDirectory ui={{card,inp,lbl,btn,mobile}}/>
+        :prices===null?<div style={{textAlign:"center",padding:40}}><Spinner size={32}/></div>
         :tab==="prices"?<PlatePrices user={user} event={event} prices={prices} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>
         :<VendorReviews user={user} reviews={reviews} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>}
     </div>
@@ -9645,7 +9970,7 @@ function InviteSettings({ event, onUpdate }) {
 
 
 // ─── CREATE EVENT SCREEN ──────────────────────────────────────────────────────
-function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
+function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor }) {
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [creating,setCreating]=useState(false);
@@ -9713,6 +10038,9 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding }) {
       {/* TOP NAV */}
       <header className="ev-top" style={{background:"rgba(255,255,255,.94)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {onVendor&&<button onClick={onVendor} className="sx-btn"
+            style={{background:"#FFF6E2",color:"#8A5A00",border:"1.5px solid #F3D08A",borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+            🏪 אזור הספקים</button>}
           {onBackToLanding&&<button onClick={onBackToLanding} className="sx-btn"
             style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
             → דף הבית
@@ -10279,6 +10607,62 @@ function AdminBackups({ card, events }) {
   );
 }
 
+// ניהול ספקים: אישור / דחייה, אימות עסק (ע.מ / ח.פ מוצג רק כאן), ספק מוביל עד תאריך
+function AdminSuppliers({ card }) {
+  const [rows,setRows]=useState(null),[priv,setPriv]=useState({}),[show,setShow]=useState("pending"),[err,setErr]=useState(""),[open,setOpen]=useState(null);
+  const load=async()=>{
+    const [a,b]=await Promise.all([sb.from("vendor_profiles").select("*").order("created_at",{ascending:false}),sb.from("vendor_private").select("*")]);
+    if(a.error)setErr(a.error.message);
+    setRows(a.data||[]);setPriv(Object.fromEntries((b.data||[]).map(x=>[x.user_id,x])));
+  };
+  useEffect(()=>{load();},[]);
+  const upd=async(v,patch)=>{const{error}=await sb.from("vendor_profiles").update(patch).eq("user_id",v.user_id);if(error)setErr(error.message);else load();};
+  const reject=v=>{const r=window.prompt(`סיבת הדחייה ל"${v.business_name}" (הספק יראה אותה):`,"חסרים פרטים");if(r==null)return;upd(v,{status:"rejected",reject_reason:r.trim().slice(0,300)||null});};
+  const feature=v=>{
+    if(isFeatured(v)){upd(v,{featured:false,featured_until:null});return;}
+    const d=window.prompt("ספק מוביל לכמה ימים?","30");const n=parseInt(d,10);if(!n||n<1)return;
+    upd(v,{featured:true,featured_until:new Date(Date.now()+n*864e5).toISOString().slice(0,10)});
+  };
+  const del=async v=>{if(!window.confirm(`למחוק לצמיתות את הספק "${v.business_name}"?`))return;const{error}=await sb.from("vendor_profiles").delete().eq("user_id",v.user_id);if(error)setErr(error.message);else load();};
+  if(!rows)return <div style={card}><Spinner/></div>;
+  const counts={pending:rows.filter(v=>v.status==="pending").length,approved:rows.filter(v=>v.status==="approved").length,rejected:rows.filter(v=>v.status==="rejected").length};
+  const list=rows.filter(v=>show==="featured"?isFeatured(v):v.status===show);
+  const b={border:"none",borderRadius:9,padding:"7px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+  return(
+    <div style={card}>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        {[["pending",`⏳ ממתינים (${counts.pending})`],["approved",`✓ מאושרים (${counts.approved})`],["featured",`⭐ מובילים (${rows.filter(isFeatured).length})`],["rejected",`✗ נדחו (${counts.rejected})`]].map(([k,l])=>(
+          <button key={k} onClick={()=>setShow(k)} style={{...b,background:show===k?"#2B1D3F":"#F4EEFC",color:show===k?"#fff":"#2B1D3F"}}>{l}</button>
+        ))}
+      </div>
+      {err&&<div style={{color:"#C53030",fontSize:13,marginBottom:8}}>⚠️ {err}</div>}
+      {!list.length&&<div style={{color:"#888",fontSize:14}}>אין ספקים כאן.</div>}
+      {list.map(v=>{const p=priv[v.user_id],cat=SUPPLIER_CAT[v.category]||SUPPLIER_CAT.other;return(
+        <div key={v.user_id} style={{display:"flex",gap:12,alignItems:"flex-start",borderTop:"1px solid #F0EAF7",padding:"12px 0",flexWrap:"wrap"}}>
+          {v.logo_url?<img src={v.logo_url} alt="" style={{width:48,height:48,borderRadius:12,objectFit:"cover"}}/>:<span style={{width:48,height:48,borderRadius:12,background:"#F6F0FF",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{cat.icon}</span>}
+          <div style={{flex:"1 1 240px",minWidth:0}}>
+            <div style={{fontSize:15,fontWeight:900}}>{v.business_name} <span style={{fontSize:12,color:"#888",fontWeight:600}}>· {cat.label}{v.region?` · ${SUPPLIER_REGION[v.region]}`:""}</span></div>
+            <div style={{fontSize:12,color:"#555",marginTop:2,direction:"ltr",textAlign:"right"}}>{v.phone}{v.email?` · ${v.email}`:""}</div>
+            <div style={{fontSize:12,color:p?(validIsraeliId(p.business_id)?"#1F8F6C":"#C53030"):"#C53030",marginTop:2,fontWeight:700}}>
+              🧾 {p?`${BUSINESS_TYPES.find(([k])=>k===p.business_type)?.[1]||""} ${p.business_id} ${validIsraeliId(p.business_id)?"(ספרת ביקורת תקינה)":"(ספרת ביקורת לא תקינה!)"}`:"חסרים פרטים עסקיים"}
+            </div>
+            <div style={{fontSize:11,color:"#999",marginTop:2}}>נרשם {new Date(v.created_at).toLocaleDateString("he-IL")} · {(v.photos||[]).length} תמונות{v.reject_reason?` · סיבת דחייה: ${v.reject_reason}`:""}{isFeatured(v)&&v.featured_until?` · מוביל עד ${new Date(v.featured_until).toLocaleDateString("he-IL")}`:""}</div>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <button onClick={()=>setOpen(v)} style={{...b,background:"#F4EEFC",color:"#2B1D3F"}}>👁 צפייה</button>
+            {v.status!=="approved"&&<button onClick={()=>upd(v,{status:"approved",reject_reason:null,verified:!!p&&validIsraeliId(p.business_id)})} style={{...b,background:"#E9FBF4",color:"#1F8F6C"}}>✓ אישור</button>}
+            {v.status!=="rejected"&&<button onClick={()=>reject(v)} style={{...b,background:"#FFF6E2",color:"#8A5A00"}}>✗ דחייה</button>}
+            {v.status==="approved"&&<button onClick={()=>upd(v,{verified:!v.verified})} style={{...b,background:"#F0F9FF",color:"#0E7490"}}>{v.verified?"הסר \"עסק רשום\"":"✓ עסק רשום"}</button>}
+            {v.status==="approved"&&<button onClick={()=>feature(v)} style={{...b,background:isFeatured(v)?"#FFF0F6":"#FFF6E2",color:isFeatured(v)?"#B13B72":"#8A5A00"}}>{isFeatured(v)?"⭐ הסר מוביל":"⭐ מוביל"}</button>}
+            <button onClick={()=>del(v)} style={{...b,background:"#FFF0F0",color:"#C53030"}}>🗑</button>
+          </div>
+        </div>
+      );})}
+      <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+    </div>
+  );
+}
+
 function AdminReferrals({ card, refs, users, packages, onCustomer }) {
   const [name,setName]=useState(""),[copied,setCopied]=useState("");
   const code=name.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^\w-]/g,"").slice(0,40);
@@ -10663,7 +11047,7 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["vendordata","💡 ספקים ומחירים",null],["backups","💾 גיבויים",null],["log","🧾 יומן SMS",null]];
+  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["suppliers","🏪 ספקים רשומים",null],["vendordata","💡 ספקים ומחירים",null],["backups","💾 גיבויים",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
   return(
@@ -10886,6 +11270,8 @@ function AdminDashboard({ user, onLogout }) {
           <AdminTestimonials card={card}/>
         ):tab==="vendordata"?(
           <AdminVendorData card={card}/>
+        ):tab==="suppliers"?(
+          <AdminSuppliers card={card}/>
         ):tab==="backups"?(
           <AdminBackups card={card} events={events}/>
         ):(
@@ -11301,6 +11687,17 @@ export default function App() {
     return()=>window.removeEventListener("hashchange",onHash);
   },[]);
 
+  // ספק: נבחר "ספק" בהרשמה (במכשיר הזה) או שיש לו פרופיל ספק → אזור הספקים. "לאירועים שלי" עובר לאירועים (עד סגירת הלשונית)
+  const [isVendor,setIsVendor]=useState(false);
+  const [vendorEvents,setVendorEventsRaw]=useState(()=>{try{return sessionStorage.getItem("sidor_vendor_events")==="1";}catch{return false;}});
+  const setVendorEvents=v=>{setVendorEventsRaw(v);try{v?sessionStorage.setItem("sidor_vendor_events","1"):sessionStorage.removeItem("sidor_vendor_events");}catch{}};
+  useEffect(()=>{
+    if(!user){setIsVendor(false);return;}
+    let intent=false;try{intent=localStorage.getItem(ACCOUNT_KEY)==="vendor";}catch{}
+    if(intent){setIsVendor(true);return;}
+    sb.from("vendor_profiles").select("user_id").eq("user_id",user.id).maybeSingle().then(({data})=>setIsVendor(!!data),()=>{});
+  },[user?.id]);
+
   const selectEvent=(ev)=>{
     // כניסה לאירוע מהרשימה תמיד למסך הראשי (שחזור המסך האחרון הוא רק לרענון דף)
     if(ev)try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:"home",view:readLastScreen(ev.id)?.view||"map"}));}catch{}
@@ -11441,6 +11838,12 @@ export default function App() {
         if(!user)setAuthMode("register");
         return;
       }
+      // "הצטרפות ספקים": מחובר — ישר לאזור הספקים; לא מחובר — הרשמה כספק
+      if(mode==="vendor"){
+        try{localStorage.setItem(ACCOUNT_KEY,"vendor");}catch{}
+        if(user){setIsVendor(true);setVendorEvents(false);selectEvent(null);}else setAuthMode("vendor");
+        return;
+      }
       if(!user)setAuthMode(mode);
     }} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
@@ -11448,8 +11851,13 @@ export default function App() {
     <CookieNotice/>
   </>);
 
+  if(!event&&isVendor&&!vendorEvents)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <SupplierHome user={user} onLogout={logout} onEvents={()=>setVendorEvents(true)} onBackToLanding={()=>setShowLanding(true)}/>
+    <CookieNotice/>
+  </>);
+
   if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)}/>
+    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)} onVendor={isVendor?()=>setVendorEvents(false):null}/>
     <CookieNotice/>
   </>);
 
