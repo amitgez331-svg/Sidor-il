@@ -3667,6 +3667,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
+  // מעבר למסך אחר (או כניסה לאירוע) תמיד מתחיל מלמעלה — בנייד הגלילה של המסך הקודם נשארה והמסך החדש נפתח באמצע/בתחתית
+  useEffect(()=>{try{window.scrollTo(0,0);}catch{}},[screen]);
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
@@ -11625,6 +11627,8 @@ export default function App() {
   // משתמש מחובר שעבר לדף הבית: רענון באותה לשונית נשאר בדף הבית (ולא קופץ לאירועים)
   const [showLanding,setShowLanding]=useState(()=>{try{return sessionStorage.getItem("sidor_landing")==="1";}catch{return false;}});
   useEffect(()=>{try{showLanding?sessionStorage.setItem("sidor_landing","1"):sessionStorage.removeItem("sidor_landing");}catch{}},[showLanding]);
+  // מעבר בין דף הבית, רשימת האירועים ואירוע — תמיד מלמעלה (אחרת בנייד נשארת הגלילה של הדף הקודם)
+  useEffect(()=>{if(window.location.hash.length>1&&showLanding)return;try{window.scrollTo(0,0);}catch{}},[showLanding,event?.id]);
   const [legal,setLegal]=useState(LEGAL_ROUTES[window.location.hash]||null);
   const [,setHashTick]=useState(0);
   const [showResetPw,setShowResetPw]=useState(false);
