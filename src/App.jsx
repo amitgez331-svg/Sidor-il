@@ -1367,23 +1367,31 @@ const Sparkles=({items})=>(<>
 </>);
 
 // שרשרת נורות תלויה מעל ה-Hero
+// ביצועים: החוט סטטי, והנורות ב-3 שכבות שכל אחת מהבהבת כולה (opacity על השכבה = עבודה של כרטיס המסך).
+// קודם כל נורה הבהבה לבד, וכל הרצועה (ברוחב המסך) צוירה מחדש בכל פריים — איטי במסכים גדולים
 function StringLights() {
   const pts=Array.from({length:26},(_,i)=>i);
   const y=x=>30+Math.sin((x/1200)*Math.PI*3)*22+Math.sin((x/1200)*Math.PI*12)*6;
   const colors=["#E8B04A","#F0609E","#9B6BFF","#3CC8A0","#5AA9FF","#FF8A65"];
-  return(
-    <svg viewBox="0 0 1200 90" preserveAspectRatio="none" style={{position:"absolute",top:62,left:0,width:"100%",height:90,pointerEvents:"none"}} aria-hidden="true">
+  const box={position:"absolute",top:62,left:0,width:"100%",height:90,pointerEvents:"none"};
+  return(<>
+    <svg viewBox="0 0 1200 90" preserveAspectRatio="none" style={box} aria-hidden="true">
       <path d={"M0 "+y(0)+pts.map(i=>{const x=i*48;return ` L${x} ${y(x)}`;}).join("")} fill="none" stroke="#CBBFE0" strokeWidth="1.5"/>
-      {pts.map(i=>{const x=i*48+24;const c=colors[i%colors.length];return(
-        <g key={i} style={{animation:`bulb ${1.8+(i%4)*.5}s ease-in-out ${i*.15}s infinite`}}>
-          <circle cx={x} cy={y(x)+10} r="9" fill={c} opacity=".18"/>
-          <rect x={x-2.5} y={y(x)} width="5" height="5" rx="1" fill="#B8AACF"/>
-          <ellipse cx={x} cy={y(x)+10} rx="4.2" ry="5.5" fill={c}/>
-          <ellipse cx={x-1.3} cy={y(x)+8} rx="1.2" ry="1.8" fill="#fff" opacity=".7"/>
-        </g>
-      );})}
+      {pts.map(i=>{const x=i*48+24;return <rect key={i} x={x-2.5} y={y(x)} width="5" height="5" rx="1" fill="#B8AACF"/>;})}
     </svg>
-  );
+    {[0,1,2].map(g=>(
+      <svg key={g} viewBox="0 0 1200 90" preserveAspectRatio="none" aria-hidden="true"
+        style={{...box,willChange:"opacity",animation:`bulb ${2.2+g*.6}s ease-in-out ${g*.55}s infinite`}}>
+        {pts.filter(i=>i%3===g).map(i=>{const x=i*48+24;const c=colors[i%colors.length];return(
+          <g key={i}>
+            <circle cx={x} cy={y(x)+10} r="9" fill={c} opacity=".18"/>
+            <ellipse cx={x} cy={y(x)+10} rx="4.2" ry="5.5" fill={c}/>
+            <ellipse cx={x-1.3} cy={y(x)+8} rx="1.2" ry="1.8" fill="#fff" opacity=".7"/>
+          </g>
+        );})}
+      </svg>
+    ))}
+  </>);
 }
 
 // מפת אולם מאוירת ומונפשת: שולחנות שמתמלאים באורחים
@@ -1426,12 +1434,6 @@ function SeatingPlanDemo() {
           {/* שולחנות עגולים */}
           {tables.map(t=>(
             <g key={t.n}>
-              {Array.from({length:chairs}).map((_,i)=>{
-                const deg=i*(360/chairs);const a=deg*Math.PI/180;
-                const cx=t.x+40*Math.sin(a),cy=t.y-40*Math.cos(a);
-                return <rect key={i} x="-7" y="-5" width="14" height="10" rx="4.5" transform={`translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${deg})`}
-                  fill="#ECE6F5" style={{"--c":t.c,animation:`seatIn 8s ease-in-out ${t.d+i*.13}s infinite`}}/>;
-              })}
               <g filter="url(#lpSh)"><circle cx={t.x} cy={t.y} r="29" fill="url(#lpCloth)" stroke={t.c} strokeOpacity=".45" strokeWidth="1.5"/></g>
               {/* סידור פרחים במרכז */}
               {[0,72,144,216,288].map(d=>{const a=d*Math.PI/180;return <circle key={d} cx={t.x+6*Math.cos(a)} cy={t.y-4+6*Math.sin(a)} r="4" fill={t.c} opacity=".55"/>;})}
@@ -1445,6 +1447,15 @@ function SeatingPlanDemo() {
               <g key={l} transform={`translate(${i*72},0)`}><circle cx="6" cy="-4" r="5" fill={c}/><text x="16" y="0">{l}</text></g>
             ))}
           </g>
+        </svg>
+        {/* הכיסאות בשכבה נפרדת בלי פילטרים: הצביעה שלהם לא מחשבת מחדש את הצללים של השולחנות בכל פריים */}
+        <svg direction="ltr" viewBox="0 0 460 460" width="460" height="460" aria-hidden="true" style={{position:"absolute",inset:0,pointerEvents:"none",willChange:"transform"}}>
+          {tables.map(t=>Array.from({length:chairs}).map((_,i)=>{
+            const deg=i*(360/chairs);const a=deg*Math.PI/180;
+            const cx=t.x+40*Math.sin(a),cy=t.y-40*Math.cos(a);
+            return <rect key={t.n+"-"+i} x="-7" y="-5" width="14" height="10" rx="4.5" transform={`translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${deg})`}
+              fill="#ECE6F5" style={{"--c":t.c,animation:`seatIn 8s ease-in-out ${t.d+i*.13}s infinite`}}/>;
+          }))}
         </svg>
         {/* אורח נגרר */}
         <div style={{position:"absolute",top:142,right:14,animation:"dragGuest 8s ease-in-out infinite",zIndex:3}}>
@@ -1733,9 +1744,9 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── HERO ────────────────────────────────────────────────── */}
       <section id="top" style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",overflow:"hidden",padding:"150px 6vw 90px",
         background:"linear-gradient(180deg,#FFF4EE 0%,#FFF7FB 45%,#FFFBF7 100%)"}}>
-        <div style={{position:"absolute",top:"-8%",right:"-6%",width:520,height:520,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.22),transparent 65%)",animation:"blob 16s ease-in-out infinite"}}/>
-        <div style={{position:"absolute",bottom:"-10%",left:"-8%",width:560,height:560,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.2),transparent 65%)",animation:"blob 20s ease-in-out 2s infinite"}}/>
-        <div style={{position:"absolute",top:"30%",left:"35%",width:340,height:340,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.16),transparent 65%)",animation:"blob 18s ease-in-out 4s infinite"}}/>
+        <div style={{position:"absolute",top:"-8%",right:"-6%",width:520,height:520,borderRadius:"50%",background:"radial-gradient(circle,rgba(240,96,158,.22),transparent 65%)",animation:"blob 16s ease-in-out infinite",willChange:"transform"}}/>
+        <div style={{position:"absolute",bottom:"-10%",left:"-8%",width:560,height:560,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.2),transparent 65%)",animation:"blob 20s ease-in-out 2s infinite",willChange:"transform"}}/>
+        <div style={{position:"absolute",top:"30%",left:"35%",width:340,height:340,borderRadius:"50%",background:"radial-gradient(circle,rgba(232,176,74,.16),transparent 65%)",animation:"blob 18s ease-in-out 4s infinite",willChange:"transform"}}/>
         <StringLights/>
         <Sparkles items={[["22%","6%",18,0,LP.gold],["70%","44%",14,.8,LP.rose],["30%","52%",12,1.4,LP.violet],["82%","12%",20,.4,LP.coral],["18%","88%",14,1.1,LP.violet],["60%","92%",12,.2,LP.gold]]}/>
 
@@ -1800,7 +1811,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
       {/* ─── MARQUEE ─────────────────────────────────────────────── */}
       <div style={{overflow:"hidden",padding:"22px 0",background:"#fff",borderTop:"1px solid #F3ECF5",borderBottom:"1px solid #F3ECF5"}} aria-hidden="true">
-        <div style={{display:"flex",gap:14,width:"max-content",animation:"marquee 38s linear infinite"}}>
+        <div style={{display:"flex",gap:14,width:"max-content",animation:"marquee 38s linear infinite",willChange:"transform"}}>
           {[...marqueeItems,...marqueeItems].map(([ic,t,c],i)=>(
             <span key={i} style={{fontSize:15,fontWeight:800,color:LP.ink,whiteSpace:"nowrap",background:c+"14",border:`1px solid ${c}33`,borderRadius:100,padding:"9px 18px",display:"inline-flex",alignItems:"center",gap:8}}>{ic} {t}</span>
           ))}
