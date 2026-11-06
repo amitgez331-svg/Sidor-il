@@ -62,8 +62,11 @@ revoke execute on function public.vendor_profile_guard() from public, anon, auth
 alter table public.vendor_profiles enable row level security;
 alter table public.vendor_private enable row level security;
 
+-- אורח לא מחובר: רק ספקים מאושרים (ל-anon אין הרשאה להריץ is_admin)
 drop policy if exists vp_select on public.vendor_profiles;
-create policy vp_select on public.vendor_profiles for select to anon, authenticated
+drop policy if exists vp_select_anon on public.vendor_profiles;
+create policy vp_select_anon on public.vendor_profiles for select to anon using (status = 'approved');
+create policy vp_select on public.vendor_profiles for select to authenticated
   using (status = 'approved' or user_id = auth.uid() or public.is_admin());
 drop policy if exists vp_insert on public.vendor_profiles;
 create policy vp_insert on public.vendor_profiles for insert to authenticated with check (user_id = auth.uid());
