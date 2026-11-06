@@ -1127,7 +1127,7 @@ function HamburgerMenu({ onOpenAuth, onClose, onVenuePage, onLogout }) {
 // ─── ACCESSIBILITY WIDGET ────────────────────────────────────────────────────
 function AccessibilityWidget() {
   const [open,setOpen]=useState(false);
-  const [settings,setSettings]=useState({
+  const [settings,setSettings]=useState(()=>{let saved={};try{saved=JSON.parse(localStorage.getItem("sidor_a11y")||"{}")||{};}catch{}return{
     fontSize:0,      // -1, 0, 1, 2
     contrast:false,  // ניגודיות גבוהה
     grayscale:false, // גווני אפור
@@ -1136,18 +1136,21 @@ function AccessibilityWidget() {
     dyslexia:false,  // גופן דיסלקציה
     highlight:false, // הדגש קישורים
     underline:false, // קו תחתי לקישורים
-  });
+    ...saved};}); // נשמר בין כניסות, כדי שהגדרה שנבחרה לא תיעלם ברענון
 
   useEffect(()=>{
     const r=document.documentElement;
     // גודל טקסט
     const base=16;
     r.style.fontSize=(base+settings.fontSize*2)+"px";
-    // ניגודיות
-    document.body.style.filter=[
+    // ניגודיות — על html ולא על body: filter על body הופך אותו ל"מכיל" של position:fixed,
+    // ואז כפתור הנגישות, הפאנל וכל הסרגלים הקבועים קופצים לתחתית הדף ונעלמים. על html (root) זה לא קורה
+    document.body.style.filter="";
+    r.style.filter=[
       settings.contrast?"contrast(150%)":"",
       settings.grayscale?"grayscale(100%)":"",
-    ].filter(Boolean).join(" ")||"none";
+    ].filter(Boolean).join(" ")||"";
+    try{localStorage.setItem("sidor_a11y",JSON.stringify(settings));}catch{}
     // אנימציות
     const style=document.getElementById("a11y-style")||document.createElement("style");
     style.id="a11y-style";
