@@ -9998,16 +9998,21 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
       <div className="ev-wrap" style={{maxWidth:1100,margin:"0 auto",padding:"40px 24px"}}>
 
         {/* כותרת */}
-        <div className="ev-hero" style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:24,padding:"32px 40px",marginBottom:36,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 32px rgba(155,107,255,.25)",animation:"fadeUp .5s ease both"}}>
+        <div className="ev-hero" style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:24,padding:"26px 34px",marginBottom:28,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 8px 24px -14px rgba(155,107,255,.5)",animation:"fadeUp .5s ease both"}}>
           <div>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{background:"rgba(255,255,255,.15)",borderRadius:100,padding:"4px 12px",fontSize:12,color:"rgba(255,255,255,.9)",fontWeight:600}}>{isProducer?"🎬 חשבון מפיק":"⚙️ ניהול האירועים"}</span>
-            </div>
-            <h1 style={{fontSize:"clamp(26px,3.5vw,40px)",fontWeight:900,color:"#fff",marginBottom:8,lineHeight:1.1}}>{isProducer?"לוח המפיק":"האירועים שלי"}</h1>
-            <p style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>{isProducer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":"צרו ונהלו את כל האירועים שלכם במקום אחד"}</p>
+            <h1 style={{fontSize:"clamp(24px,2.6vw,32px)",fontWeight:900,color:"#fff",margin:"0 0 6px",lineHeight:1.15}}>{isProducer?"לוח המפיק":"האירועים שלי"}</h1>
+            {/* משפט על הנתונים, לא על הממשק */}
+            <p style={{fontSize:15,color:"rgba(255,255,255,.92)",margin:0}}>{(()=>{
+              const t0=new Date();t0.setHours(0,0,0,0);
+              const up=events.filter(e=>!e.date||new Date(e.date+"T00:00:00")>=t0);
+              if(!events.length)return "עוד אין אירועים. מתחילים ביצירת האירוע הראשון";
+              const next=up.filter(e=>e.date).sort((a,b)=>a.date.localeCompare(b.date))[0];
+              const dd=next?Math.round((new Date(next.date+"T00:00:00")-t0)/864e5):null;
+              return `${up.length===1?"אירוע קרוב אחד":`${up.length} אירועים קרובים`}${next?` · הקרוב ${dd===0?"היום":`בעוד ${dd} ימים`}`:""}`;
+            })()}</p>
           </div>
-          <button onClick={()=>setShowForm(true)}
-            style={{background:"#fff",color:"#9147D6",border:"none",borderRadius:14,padding:"14px 28px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 16px rgba(0,0,0,.15)",flexShrink:0}}>
+          <button onClick={()=>setShowForm(true)} className="sx-btn"
+            style={{background:"#fff",color:"#7A3FBF",border:"none",borderRadius:14,padding:"13px 26px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
             + אירוע חדש
           </button>
         </div>
@@ -10062,7 +10067,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
               {tiles.map(([ic,v,l])=>(
                 <div key={l} style={{background:"#fff",borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
                   <div style={{fontSize:12,color:"#888",fontWeight:700,marginBottom:4}}>{ic} {l}</div>
-                  <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F"}}>{statsReady?v:"…"}</div>
+                  <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{statsReady?v:"…"}</div>
                 </div>
               ))}
             </div>
@@ -10106,7 +10111,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
                 <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש אירוע, אולם או שם" style={{flex:"1 1 200px",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"7px 12px",fontSize:13,fontFamily:"inherit",outline:"none"}}/>
               </div>
               <div style={{overflowX:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:820}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:820,fontVariantNumeric:"tabular-nums"}}>
                   <thead><tr style={{background:"#F7F3FB",textAlign:"right"}}>{["אירוע","תאריך","עוד","התקדמות","מוזמנים","אישרו","ממתינים","הושבו","SMS"].map(h=><th key={h} style={{padding:"9px 10px",fontWeight:900,color:"#4A3D66",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
                   <tbody>{list.map(e=>{const s=stats[e.id]||{},d=dl(e),conf=s.people?Math.round(s.confirmed/s.people*100):0,seat=s.rows?Math.round(s.seated/s.rows*100):0;return(
                     <tr key={e.id} onClick={()=>onSelect(e)} style={{borderTop:"1px solid #F0EAF7",cursor:"pointer"}} onMouseEnter={x=>x.currentTarget.style.background="#FBF8FE"} onMouseLeave={x=>x.currentTarget.style.background=""}>
@@ -10133,7 +10138,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
             </div>
           );
         })():
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:20,marginBottom:32}}>
+        // מספר העמודות לפי מספר האירועים, כדי שאירוע יחיד לא יעמוד לבד בשורה ריקה; התא האחרון הוא "אירוע חדש"
+        events.length>0&&<div className="ev-grid" style={{display:"grid",gridTemplateColumns:events.length<=2?`repeat(${events.length+1},minmax(0,1fr))`:"repeat(auto-fill,minmax(300px,1fr))",gap:20,marginBottom:32}}>
+          <style>{`@media(max-width:760px){.ev-grid{grid-template-columns:1fr!important}.ev-new{display:none!important}}
+            .ev-new{transition:border-color .15s,background .15s}.ev-new:hover,.ev-new:focus-visible{border-color:#B98AF0!important;background:#FBF7FF!important}`}</style>
           {events.map((ev,i)=>{
             const typeEmoji=eventTypeEmoji(ev.event_type);
             const eventDate=ev.date?new Date(ev.date):null;
@@ -10152,47 +10160,51 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
                 {/* גרדיאנט עדין בפינה */}
                 <div style={{position:"absolute",top:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.06) 0%,transparent 70%)"}}/>
 
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{background:"#F0FFF4",color:"#276749",border:"1px solid #9AE6B4",borderRadius:100,padding:"2px 10px",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
-                        ✓ פעיל
-                      </span>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:18}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,color:"#6B6280",fontWeight:700,marginBottom:4}}>{({wedding:"חתונה",bar_mitzvah:"בר/בת מצווה",brit:"ברית",business:"אירוע עסקי"})[ev.event_type]||"אירוע"}{ev._shared?" · משותף איתי":""}</div>
+                    <h2 style={{fontSize:19,fontWeight:900,color:"#2B1D3F",margin:"0 0 4px",lineHeight:1.25}}>{ev.name}</h2>
+                    <div style={{fontSize:14,color:"#5F5675"}}>
+                      {eventDate?eventDate.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"}):"תאריך עוד לא נקבע"}
+                      {ev.event_time?` · ${ev.event_time}`:""}{ev.venue?` · ${ev.venue}`:""}
                     </div>
-                    <div style={{fontSize:17,fontWeight:900,color:"#2B1D3F",marginBottom:4}}>{ev.name}</div>
-                    {eventDate&&<div style={{fontSize:12,color:"#888"}}>{eventDate.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}</div>}
                   </div>
                   {dayNum&&(
-                    <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:14,padding:"8px 12px",textAlign:"center",flexShrink:0,minWidth:52}}>
-                      <div style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1}}>{dayNum}</div>
-                      <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:600}}>{monthStr}</div>
+                    <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:14,padding:"8px 12px",textAlign:"center",flexShrink:0,minWidth:56}}>
+                      <div style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{dayNum}</div>
+                      <div style={{fontSize:12,color:"#fff",fontWeight:700}}>{monthStr}</div>
                     </div>
                   )}
                 </div>
 
-                {/* פס התקדמות: אחוז שאישרו הגעה */}
-                {(()=>{const s=stats[ev.id]||{},pct=s.people?Math.round(s.confirmed/s.people*100):0;return(
-                <div style={{borderTop:"1px solid #f0f0f0",paddingTop:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:32,height:32,borderRadius:"50%",border:"2.5px solid #9147D6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#9147D6"}}>{pct}%</div>
-                      <span style={{fontSize:13,color:"#555",fontWeight:600}}>{s.people||0} מוזמנים</span>
-                    </div>
-                    <span style={{fontSize:13,color:"#888"}}>{s.confirmed||0} מגיעים</span>
+                {/* אישורי הגעה: כמה מגיעים מתוך כמה, ופס אחד מחולק לפי האחוזים האמיתיים */}
+                {(()=>{const s=stats[ev.id]||{},people=s.people||0,conf=s.confirmed||0,dec=s.declined||0,pend=s.pending||0,w=v=>people?`${v/people*100}%`:0;return(
+                <div style={{background:"#FBF8FD",borderRadius:14,padding:"14px 16px"}}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                    <span style={{fontSize:24,fontWeight:900,color:"#2B1D3F",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{statsReady?conf:"…"}</span>
+                    <span style={{fontSize:14,fontWeight:700,color:"#2B1D3F"}}>מגיעים</span>
+                    <span style={{fontSize:14,color:"#6B6280",fontVariantNumeric:"tabular-nums"}}>מתוך {people} מוזמנים</span>
                   </div>
-                  <div style={{height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#9147D6,#9B6BFF)",borderRadius:2}}/>
+                  <div role="img" aria-label={`מגיעים ${conf}, לא מגיעים ${dec}, ממתינים ${pend}`} style={{display:"flex",gap:2,height:8,borderRadius:99,overflow:"hidden",background:"#EDE6F4"}}>
+                    {conf>0&&<div style={{width:w(conf),background:"#25A55F"}}/>}
+                    {dec>0&&<div style={{width:w(dec),background:"#E5566F"}}/>}
+                    {pend>0&&<div style={{width:w(pend),background:"#E8A93A"}}/>}
                   </div>
+                  <div style={{fontSize:13,color:pend?"#8A5A00":"#5F5675",fontWeight:700,marginTop:8}}>{!people?"עוד לא נוספו מוזמנים":pend?`${pend} עוד לא ענו`:"כל המוזמנים ענו"}</div>
                 </div>);})()}
 
-                {daysLeft!==null&&daysLeft>0&&(
-                  <div style={{marginTop:12,fontSize:11,color:"#9147D6",fontWeight:700,background:"rgba(155,107,255,.06)",borderRadius:8,padding:"5px 10px",display:"inline-block"}}>
-                    ⏰ עוד {daysLeft} ימים
-                  </div>
-                )}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14,fontSize:14}}>
+                  <span style={{color:"#7A3FBF",fontWeight:800}}>{daysLeft===null?"":daysLeft>0?`עוד ${daysLeft} ימים`:daysLeft===0?"היום!":"האירוע עבר"}</span>
+                  <span style={{color:"#2B1D3F",fontWeight:800}}>לאירוע ←</span>
+                </div>
               </div>
             );
           })}
+          <button onClick={()=>setShowForm(true)} className="ev-new"
+            style={{background:"transparent",border:"2px dashed #D9C8EE",borderRadius:20,padding:24,cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,color:"#2B1D3F"}}>
+            <span style={{fontSize:18,fontWeight:900}}>+ אירוע חדש</span>
+            <span style={{fontSize:14,color:"#5F5675"}}>חתונה, בר/ת מצווה, ברית או אירוע עסקי</span>
+          </button>
         </div>}
 
         {/* טופס יצירת אירוע */}
