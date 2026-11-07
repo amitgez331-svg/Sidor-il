@@ -749,9 +749,10 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
 
 // ─── RSVP BADGE ──────────────────────────────────────────────────────────────
 const RsvpBadge = ({rsvp}) => {
-  const map = {confirmed:{bg:"#F0FFF6",color:C.success,label:"מגיע ✓"},declined:{bg:"#FEF2F2",color:C.danger,label:"לא מגיע ✗"},pending:{bg:C.blueXL,color:C.muted,label:"ממתין..."}};
-  const s = map[rsvp||"pending"];
-  return <span style={{fontSize:11,fontWeight:700,background:s.bg,color:s.color,borderRadius:100,padding:"2px 9px",whiteSpace:"nowrap"}}>{s.label}</span>;
+  // "ממתין..." נראה כמו טקסט שנחתך — מילה מלאה וקצרה; גוונים כהים מספיק לקריאה על הרקע הבהיר
+  const map = {confirmed:{bg:"#E9F7EF",color:"#1F7A4D",label:"מגיע ✓"},declined:{bg:"#FDECEC",color:"#B42318",label:"לא מגיע ✗"},pending:{bg:"#F1ECF7",color:"#5F5675",label:"ממתין"}};
+  const s = map[rsvp]||map.pending;
+  return <span style={{fontSize:12,fontWeight:700,background:s.bg,color:s.color,borderRadius:100,padding:"2px 9px",whiteSpace:"nowrap",flex:"none"}}>{s.label}</span>;
 };
 
 function GuestChip({ guest, tableId, onRemove }) {
@@ -4669,7 +4670,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit"}}>→ חזרה</button>
         }
         <h1 role={screen==="home"?"presentation":undefined} style={{flex:1,margin:0,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-          {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="tasks"?"✅ משימות":screen==="settings"?"⚙️ הגדרות":event.name}
+          {screen==="home"?event.name:screen==="seating"?"הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="tasks"?"✅ משימות":screen==="settings"?"⚙️ הגדרות":event.name}
         </h1>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
         {screen!=="seating"&&<SupportMenu event={event} compact/>}
@@ -5019,6 +5020,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {/* מסכי תוכן */}
     {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 54px)",gap:8,padding:8,boxSizing:"border-box",
       background:"radial-gradient(circle at 85% 0%,rgba(240,96,158,.10),transparent 40%),radial-gradient(circle at 10% 100%,rgba(155,107,255,.10),transparent 45%),#FBF7FE"}}>
+      {/* כותרת המסך לקוראי מסך (במסך עצמו השם מופיע בלשוניות "מפת האולם / רשימת שולחנות") */}
+      <h1 style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",margin:-1}}>סידורי הושבה</h1>
       {/* עיצוב בסגנון המסך הראשי: כרטיסים לבנים מעוגלים, צל רך, אריחי אייקון צבעוניים */}
       <style>{`
         .sx-card{background:#fff;border:1px solid #EFE8F7;border-radius:20px;box-shadow:0 14px 34px -22px rgba(91,60,140,.45)}
@@ -5028,7 +5031,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         .sx-stat{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #EFE8F7;border-radius:12px;padding:3px 9px 3px 10px;white-space:nowrap}
         .sx-stat .sx-ictile{width:26px;height:26px;border-radius:9px;font-size:13px}
         .sx-stat b{font-size:14px;font-weight:900;line-height:1}
-        .sx-stat small{display:block;font-size:10px;color:${C.muted};font-weight:700}
+        .sx-stat small{display:block;font-size:12px;color:#5F5675;font-weight:700}
         @media (prefers-reduced-motion:reduce){.sx-guest{transition:none}.sx-guest:hover{transform:none}}
       `}</style>
       {!asideOpen&&(
@@ -5066,7 +5069,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{g.name}</div>
                     <div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap"}}>
-                      {g.relation&&<span style={{fontSize:10,background:C.blueXL,color:C.blue,borderRadius:100,padding:"1px 6px",fontWeight:600}}>{g.relation}</span>}
+                      {g.relation&&<span style={{fontSize:12,background:C.blueXL,color:"#3A3050",borderRadius:100,padding:"1px 7px",fontWeight:600}}>{g.relation}</span>}
                       <RsvpBadge rsvp={g.rsvp}/>
                     </div>
                   </div>
@@ -5113,7 +5116,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:C.text}}>{g.name}</div>
                     <div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap"}}>
-                      {g.relation&&<span style={{fontSize:10,background:RELATION_COLORS[g.relation]+"22"||C.blueXL,color:RELATION_COLORS[g.relation]||C.blue,borderRadius:100,padding:"1px 6px",fontWeight:600}}>{g.relation}</span>}
+                      {g.relation&&<span style={{fontSize:12,background:(RELATION_COLORS[g.relation]||"#9B8CB5")+"22",color:"#3A3050",borderRadius:100,padding:"1px 7px",fontWeight:600,whiteSpace:"nowrap"}}>{g.relation}</span>}
                       <RsvpBadge rsvp={g.rsvp}/>
                     </div>
                   </div>
@@ -5412,7 +5415,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               );
             })()}
           </div>
-          <div style={{padding:"7px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:14,fontSize:11,color:C.muted,flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{padding:"7px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:"4px 14px",fontSize:12,color:"#4A4060",flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
             {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
             <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · גלגלת או גרירת הרקע = הזזה · Ctrl+גלגלת או ＋ − = זום</span>
           </div>
@@ -5468,7 +5471,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         {avatar(g)}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
-                          {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
+                          {g.relation&&<div style={{fontSize:12,color:"#5F5675"}}>{g.relation}</div>}
                         </div>
                         <button onClick={()=>setEditGuestData(g)} title="עריכת אורח" style={smallBtn}>✏️</button>
                         <button onClick={()=>removeFromTable(selTable.id,g)} title="הוצאה מהשולחן" style={{...smallBtn,background:"#FFF2F4",color:C.danger,borderColor:"#F9D2D8"}}>הוצא</button>
@@ -5503,7 +5506,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         {avatar(g)}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:13,fontWeight:800,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
-                          {g.relation&&<div style={{fontSize:10,color:C.muted}}>{g.relation}</div>}
+                          {g.relation&&<div style={{fontSize:12,color:"#5F5675"}}>{g.relation}</div>}
                         </div>
                         <button onClick={()=>setEditGuestData(g)} title="עריכת אורח" style={smallBtn}>✏️</button>
                       </div>
@@ -5619,8 +5622,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{g.name}</div>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:2}}>
-                      {g.relation&&<span style={{fontSize:10,background:C.blueXL,color:C.blue,borderRadius:100,padding:"1px 6px"}}>{g.relation}</span>}
-                      {tbl&&<span style={{fontSize:10,background:"#F0FFF4",color:C.success,borderRadius:100,padding:"1px 6px"}}>🪑 שולחן {numOf(tbl)} · {tbl.name}</span>}
+                      {g.relation&&<span style={{fontSize:12,background:C.blueXL,color:"#3A3050",borderRadius:100,padding:"1px 7px"}}>{g.relation}</span>}
+                      {tbl&&<span style={{fontSize:12,background:"#E9F7EF",color:"#1F7A4D",borderRadius:100,padding:"1px 7px"}}>🪑 שולחן {numOf(tbl)} · {tbl.name}</span>}
                       <RsvpBadge rsvp={g.rsvp}/>
                     </div>
                   </div>
