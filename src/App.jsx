@@ -3704,6 +3704,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const panRef=useRef(pan);panRef.current=pan;
   const zoomRef=useRef(zoom);zoomRef.current=zoom;
   const hallLayerRef=useRef(null);
+  const floorRef=useRef(null),gridLayerRef=useRef(null); // רצפת האולם והרשת — מתעדכנות ישירות כשהאולם גדל בזמן גרירה
   const ZMIN=.3,ZMAX=1.8;
   // גבולות כל שולחן ביחס לנקודת המיקום שלו (כמו שהוא מצויר ב-TableNode)
   const tableBox=t=>t.type==="knight"?[t.x-16,t.y-16,t.x+196,t.y+76]:t.type==="rect"?[t.x-18,t.y-18,t.x+128,t.y+98]:[t.x,t.y,t.x+158,t.y+158];
@@ -5305,9 +5306,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <>
                 <div dir="rtl" ref={hallLayerRef} style={{position:"absolute",top:0,left:0,width:MAP_W,height:MAP_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"0 0",willChange:"transform"}}>
                   {/* רצפת האולם — כמו כרטיס המפה בדף הבית: לבן, נקודות עדינות, מסגרת וצל רך */}
-                  <div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,background:"#fff",backgroundImage:"radial-gradient(circle,#E9E1F5 1.4px,transparent 1.6px)",backgroundSize:"18px 18px",backgroundPosition:"2px 2px",border:"1px solid #EFE8F7",boxShadow:"0 50px 100px -40px rgba(91,60,140,.45),0 0 0 8px rgba(255,255,255,.6)",pointerEvents:"none"}}/>
+                  <div ref={floorRef} aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,background:"#fff",backgroundImage:"radial-gradient(circle,#E9E1F5 1.4px,transparent 1.6px)",backgroundSize:"18px 18px",backgroundPosition:"2px 2px",border:"1px solid #EFE8F7",boxShadow:"0 50px 100px -40px rgba(91,60,140,.45),0 0 0 8px rgba(255,255,255,.6)",pointerEvents:"none"}}/>
                   {/* רשת הריבועים (GRID) + הריבוע שאליו ייכנס השולחן בזמן גרירה */}
-                  {gridOn()&&<div aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,pointerEvents:"none",
+                  {gridOn()&&<div ref={gridLayerRef} aria-hidden="true" style={{position:"absolute",left:hx0+14,top:hy0+14,width:hx1-hx0-28,height:hy1-hy0-28,borderRadius:32,pointerEvents:"none",
                     backgroundImage:"linear-gradient(to right,rgba(155,107,255,.16) 1.5px,transparent 1.5px),linear-gradient(to bottom,rgba(155,107,255,.16) 1.5px,transparent 1.5px)",
                     backgroundSize:`${GRID}px ${GRID}px`,backgroundPosition:`${(((-(hx0+14))%GRID)+GRID)%GRID}px ${(((-(hy0+14))%GRID)+GRID)%GRID}px`}}/>}
                   <div ref={snapCellRef} aria-hidden="true" style={{display:"none",position:"absolute",width:GRID,height:GRID,borderRadius:18,background:"rgba(155,107,255,.10)",border:"2px dashed rgba(155,107,255,.55)",pointerEvents:"none",transition:"left .08s,top .08s"}}/>
@@ -5403,19 +5404,46 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       if(mapLocked||lockedTables.has(t.id))return; // מפה / שולחן נעולים: אפשר לבחור, לא להזיז
                       // גרירה חלקה: מזיזים את העוטף ישירות (בלי לרנדר את כל המסך בכל תזוזה) ושומרים בסוף
                       const node=e.currentTarget.closest("[data-tid]");
-                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current,hr=hallRect();let posX=bx,posY=by,raf=0;
-                      let cell=null;
-                      const mv=me=>{
-                        const rx=bx+(me.clientX-sx)/z,ry=by+(me.clientY-sy)/z;
+                      const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current,p0={...panRef.current};let posX=bx,posY=by,raf=0;
+                      let cell=null,last=null,edgeRaf=0;
+                      // האולם גדל בזמן הגרירה: שולחן שמתקרב לקצה מקבל עוד ריבוע מקום באותו כיוון (ימינה/למטה בלי הגבלה,
+                      // שמאלה/למעלה עד נקודה 0 — שם מתחילה הרשת). הרצפה והרשת מתעדכנות מיד, ואחרי השחרור האולם מחושב מחדש
+                      const hr=[...hallRect()],o=tableOff(t.type),EDGE=GRID/2,MAXS=8000;
+                      const growTo=(x,y)=>{let ch=false;
+                        if(x+o[2]>hr[2]-EDGE&&hr[2]-hr[0]<MAXS){hr[2]=x+o[2]+GRID;ch=true;}
+                        if(y+o[3]>hr[3]-EDGE&&hr[3]-hr[1]<MAXS){hr[3]=y+o[3]+GRID;ch=true;}
+                        const minX=Math.min(hr[0],0),minY=Math.min(hr[1],0);
+                        if(x+o[0]<hr[0]+EDGE&&hr[0]>minX){hr[0]=Math.max(minX,x+o[0]-GRID);ch=true;}
+                        if(y+o[1]<hr[1]+EDGE&&hr[1]>minY){hr[1]=Math.max(minY,y+o[1]-GRID);ch=true;}
+                        if(ch)[floorRef.current,gridLayerRef.current].forEach(el=>{if(el)Object.assign(el.style,{left:hr[0]+14+"px",top:hr[1]+14+"px",width:hr[2]-hr[0]-28+"px",height:hr[3]-hr[1]-28+"px"});});
+                        if(ch&&gridLayerRef.current)gridLayerRef.current.style.backgroundPosition=`${(((-(hr[0]+14))%GRID)+GRID)%GRID}px ${(((-(hr[1]+14))%GRID)+GRID)%GRID}px`;
+                      };
+                      const place=()=>{
+                        if(!last)return;
+                        // המיקום לפי הסמן + כמה שהמפה זזה מאז תחילת הגרירה (בגלילה אוטומטית בקצה)
+                        const p=panRef.current,rx=bx+(last.x-sx)/z+(p0.x-p.x)/z,ry=by+(last.y-sy)/z+(p0.y-p.y)/z;
+                        growTo(rx,ry);
                         // עם רשת: השולחן קופץ לריבוע הקרוב כבר בזמן הגרירה, והריבוע מודגש
-                        ({x:posX,y:posY,cell}=gridOn()?snapToGrid(t,rx,ry,hr):{...clampIn(rx,ry,tableOff(t.type),hr),cell:null});
+                        ({x:posX,y:posY,cell}=gridOn()?snapToGrid(t,rx,ry,hr):{...clampIn(rx,ry,o,hr),cell:null});
                         if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}
                           const hl=snapCellRef.current;if(hl){if(cell){hl.style.display="block";hl.style.left=cell[0]+"px";hl.style.top=cell[1]+"px";}else hl.style.display="none";}});
                       };
+                      // הסמן בקצה המפה: המפה גוללת לבד, כדי שאפשר יהיה להמשיך לגרור הלאה
+                      const edgeTick=()=>{
+                        edgeRaf=0;const box=mapBoxRef.current;if(!box||!last)return;
+                        const r=box.getBoundingClientRect(),M=48,S=14;
+                        const vx=last.x<r.left+M?S:last.x>r.right-M?-S:0,vy=last.y<r.top+M?S:last.y>r.bottom-M?-S:0;
+                        if(vx||vy){const p=panRef.current;panRef.current={x:p.x+vx,y:p.y+vy};paintCam();place();edgeRaf=requestAnimationFrame(edgeTick);}
+                      };
+                      const mv=me=>{last={x:me.clientX,y:me.clientY};place();if(!edgeRaf)edgeRaf=requestAnimationFrame(edgeTick);};
                       const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                        if(edgeRaf){cancelAnimationFrame(edgeRaf);edgeRaf=0;}
                         if(raf){cancelAnimationFrame(raf);raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}}
                         if(snapCellRef.current)snapCellRef.current.style.display="none";
-                        if(posX!==bx||posY!==by){moveTablePos(t.id,posX,posY);saveTablePos(t.id,posX,posY);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}};
+                        // המפה גללה בזמן הגרירה: שומרים את מיקום המצלמה החדש
+                        if(panRef.current.x!==p0.x||panRef.current.y!==p0.y){manualZoomRef.current=true;setPan({...panRef.current});}
+                        if(posX!==bx||posY!==by){moveTablePos(t.id,posX,posY);saveTablePos(t.id,posX,posY);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}
+                        else [floorRef.current,gridLayerRef.current].forEach(el=>{if(el){const h=hallRect();Object.assign(el.style,{left:h[0]+14+"px",top:h[1]+14+"px",width:h[2]-h[0]-28+"px",height:h[3]-h[1]-28+"px"});}});};
                       window.addEventListener("mousemove",mv);
                       window.addEventListener("mouseup",up);
                     };
