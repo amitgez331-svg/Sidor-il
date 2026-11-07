@@ -3594,11 +3594,13 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
 
       {/* סטטיסטיקות */}
       <div style={{background:"#fff",padding:"16px 16px 12px",borderBottom:"1px solid #eee"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center",marginBottom:12}}>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#3A2464",lineHeight:1}}>{allGuests.length}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מוזמנים</div></div>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#C53030",lineHeight:1}}>{declined}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>לא מגיעים</div></div>
-          <div><div style={{fontSize:30,fontWeight:900,color:"#276749",lineHeight:1}}>{confirmed}</div><div style={{fontSize:11,color:"#666",fontWeight:600}}>מגיעים</div></div>
-        </div>
+        {/* אנשים (לפי מספר האורחים בכל רשומה), כמו במחשב — לא מספר הרשומות */}
+        {(()=>{const ppl=g=>g.guest_count||1,totalP=allGuests.reduce((s,g)=>s+ppl(g),0),pendP=allGuests.filter(g=>!g.rsvp||g.rsvp==="pending").reduce((s,g)=>s+ppl(g),0);return(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,textAlign:"center",marginBottom:12,fontVariantNumeric:"tabular-nums"}}>
+          {[[confirmed,"מגיעים","#1F7A4D"],[declined,"לא מגיעים","#C53030"],[pendP,"ממתינים","#8A5A00"],[totalP,"מוזמנים","#2B1D3F"]].map(([v,l,c])=>(
+            <div key={l}><div style={{fontSize:26,fontWeight:900,color:c,lineHeight:1}}>{v}</div><div style={{fontSize:12,color:"#4A4060",fontWeight:700,marginTop:3}}>{l}</div></div>
+          ))}
+        </div>);})()}
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>setModal("addGuest")} style={{flex:1,background:"#3D5475",color:"#fff",border:"none",borderRadius:50,padding:"10px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>➕ הוסף מוזמן</button>
         </div>
@@ -3615,27 +3617,24 @@ function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, set
 
       {/* טבלה */}
       <div style={{background:"#fff",margin:"0 12px",borderRadius:14,overflow:"hidden",border:"1px solid #eee",boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 82px 104px",padding:"10px 14px",background:"#f5f5f5",borderBottom:"1px solid #eee"}}>
-          {["שם מלא","טלפון","סטטוס"].map(h=><div key={h} style={{fontSize:11,fontWeight:800,color:"#555",textAlign:"center"}}>{h}</div>)}
-        </div>
+        {/* שורה בשתי שורות טקסט: השם ומספר האורחים, והטלפון מתחת (במקום עמודה צרה של 10px); הסטטוס בצד */}
         {filtered.map((g,i)=>(
-          <div key={g.id} style={{display:"grid",gridTemplateColumns:"1fr 82px 104px",padding:"11px 14px",borderBottom:i<filtered.length-1?"1px solid #f0f0f0":"none",background:i%2===0?"#fff":"#fafafa",alignItems:"center"}}>
-            <div onClick={()=>openEdit(g)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-              <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{g.name?.[0]}</div>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:"#1a1a1a"}}>{g.name}</div>
-                {g.guest_count>1&&<div style={{fontSize:10,color:"#888"}}>({g.guest_count})</div>}
-              </div>
-            </div>
-            <div style={{fontSize:10,color:"#666",textAlign:"center"}}>{g.phone||" - "}</div>
-            <div onClick={()=>setStatusModal(g)} style={{textAlign:"center",cursor:"pointer"}}>
-              {(()=>{const st=rsvpStage(g);return <span style={{fontSize:10,fontWeight:700,color:st.c,background:st.bg,borderRadius:50,padding:"3px 8px",whiteSpace:"nowrap"}}>{st.t}</span>;})()}
-            </div>
+          <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",minHeight:56,borderBottom:i<filtered.length-1?"1px solid #F2EEF6":"none"}}>
+            <button onClick={()=>openEdit(g)} style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:10,background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"right"}}>
+              <span style={{width:32,height:32,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#9B8CB5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{g.name?.[0]}</span>
+              <span style={{minWidth:0}}>
+                <span style={{display:"block",fontSize:14,fontWeight:700,color:"#1F1730",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}{(g.guest_count||1)>1&&<span style={{fontWeight:500,color:"#5F5675"}}> · {g.guest_count} אורחים</span>}</span>
+                <span style={{display:"block",fontSize:12,color:"#5F5675",direction:"ltr",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{g.phone||"—"}</span>
+              </span>
+            </button>
+            <button onClick={()=>setStatusModal(g)} aria-label={`שינוי מצב ההגעה של ${g.name}`} style={{flex:"none",background:"none",border:"none",padding:"6px 0",cursor:"pointer",fontFamily:"inherit"}}>
+              {(()=>{const st=rsvpStage(g);return <span style={{fontSize:12,fontWeight:700,color:st.c,background:st.bg,borderRadius:50,padding:"4px 10px",whiteSpace:"nowrap"}}>{st.t}</span>;})()}
+            </button>
           </div>
         ))}
-        {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:"#aaa",fontSize:13}}>לא נמצאו אורחים</div>}
+        {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:"#5F5675",fontSize:14}}>לא נמצאו אורחים</div>}
       </div>
-      <div style={{textAlign:"center",fontSize:11,color:"#999",margin:"8px 0 16px"}}>{filtered.length} מתוך {allGuests.length} אורחים</div>
+      <div style={{textAlign:"center",fontSize:13,color:"#5F5675",margin:"8px 0 16px"}}>{filtered.length} מתוך {allGuests.length} רשומות</div>
     </div>
   );
 }
@@ -4669,9 +4668,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           ? <button onClick={onBack} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"}}>→ האירועים שלי</button>
           : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit"}}>→ חזרה</button>
         }
-        <span style={{flex:1,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+        <h1 role={screen==="home"?"presentation":undefined} style={{flex:1,margin:0,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
           {screen==="home"?event.name:screen==="seating"?"🪑 סידורי הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="tasks"?"✅ משימות":screen==="settings"?"⚙️ הגדרות":event.name}
-        </span>
+        </h1>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
         {screen!=="seating"&&<SupportMenu event={event} compact/>}
         {screen==="seating"&&<button onClick={undo} disabled={!lastUndo||saving} aria-label="ביטול פעולה" title={lastUndo?`ביטול: ${lastUndo.label}`:"אין פעולה לבטל"} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:lastUndo?"pointer":"default",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap",opacity:lastUndo?1:.5}}>↩ בטל</button>}
@@ -6271,8 +6270,9 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
       <div style={{padding:"16px 24px 0"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
-          <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>אישורי הגעה</div>
-          <div style={{fontSize:13,color:"#718096"}}>טבלת ניהול מוזמנים לאירוע</div>
+          <h1 style={{fontSize:22,fontWeight:900,color:"#1A202C",margin:0}}>אישורי הגעה</h1>
+          {/* משפט על הנתונים: כמה רשומות וכמה עוד לא ענו */}
+          <div style={{fontSize:14,color:"#5F5675"}}>{(()=>{const p=allGuests.filter(g=>!g.rsvp||g.rsvp==="pending").reduce((s,g)=>s+(g.guest_count||1),0);return `${allGuests.length} רשומות · ${total} מוזמנים${p?` · ${p} עוד לא ענו`:" · כולם ענו"}`;})()}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>setShowCats(s=>!s)}
@@ -6381,7 +6381,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         {[
           {label:"מגיעים",value:confirmed,color:"#276749",bg:"#F0FFF4",active:filterRsvp==="confirmed",filter:"confirmed"},
           {label:"לא מגיעים",value:declined,color:"#C53030",bg:"#FFF5F5",active:filterRsvp==="declined",filter:"declined"},
-          {label:"ממתינים",value:allGuests.filter(g=>!g.rsvp||g.rsvp==="pending").reduce((s,g)=>s+(g.guest_count||1),0),color:"#718096",bg:"#F7FAFC",active:filterRsvp==="pending",filter:"pending"},
+          {label:"ממתינים",value:allGuests.filter(g=>!g.rsvp||g.rsvp==="pending").reduce((s,g)=>s+(g.guest_count||1),0),color:"#8A5A00",bg:"#FFFAEE",active:filterRsvp==="pending",filter:"pending"},
           {label:"מוזמנים",value:total,color:"#2C5282",bg:"#EBF8FF",active:filterRsvp==="all",filter:"all"},
         ].map(s=>(
           <div key={s.label} onClick={()=>setFilterRsvp(s.filter)}
@@ -6402,12 +6402,14 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
       {/* טבלה  -  מקצה לקצה */}
       </div>
-      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",minWidth:960,borderCollapse:"collapse",fontSize:14}}>
+      <div style={{background:"#fff",overflowX:"auto",borderTop:"1px solid #ECE5F3",borderBottom:"1px solid #ECE5F3",width:"100%"}}>
+        <style>{`.sx-rsvp-row:hover{background:#FBF8FE!important}`}</style>
+        <table style={{width:"100%",minWidth:960,borderCollapse:"collapse",fontSize:14,fontVariantNumeric:"tabular-nums"}}>
           <thead>
-            <tr style={{background:"#3A2464",borderBottom:"3px solid #122e70"}}>
-              {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","👁","הגעה","פעולות"].map((h,i)=>(
-                <th key={h} style={{padding:"13px "+(i===0?"16px":"10px"),textAlign:i===0||i===5?"right":"center",fontWeight:800,color:"#fff",fontSize:13,borderRight:i>0?"1px solid rgba(255,255,255,.15)":"none",whiteSpace:"nowrap"}}>
+            {/* כותרות שקטות: אפור, בלי פס צבעוני — הנתונים הם הדבר הבולט */}
+            <tr style={{background:"#FAF7FD",borderBottom:"1px solid #E6DDF0",position:"sticky",top:0,zIndex:1}}>
+              {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","צפו בהזמנה","הגעה","פעולות"].map((h,i)=>(
+                <th key={h} style={{padding:"11px "+(i===0?"16px":"10px"),textAlign:i===0||i===5?"right":"center",fontWeight:700,color:"#4A4060",fontSize:13,whiteSpace:"nowrap"}}>
                   {h}
                 </th>
               ))}
@@ -6417,18 +6419,16 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             {filtered.length===0&&<tr><td colSpan={11} style={{padding:32,textAlign:"center",color:"#aaa"}}>אין אורחים</td></tr>}
             {filtered.map((g)=>{
               const relColor=RELATION_COLORS[g.relation];
-              const rowBg=relColor?relColor+"18":"#fff";
-              const updatedAt=g.updated_at||g.created_at;
-              const dateStr=updatedAt?
-                new Date(updatedAt).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})
-                +" · "+new Date(updatedAt).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})
-                :" - ";
+              const updatedAt=g.updated_at||g.created_at,ud=updatedAt?new Date(updatedAt):null;
+              // תאריך שלא ניתן לקרוא מוצג כקו, לא כ-"Invalid Date"
+              const dateStr=ud&&!isNaN(ud)?
+                ud.toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"numeric"})
+                +" · "+ud.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})
+                :"—";
               return(
-              <tr key={g.id} style={{borderBottom:"2px solid #E2E8F0",background:rowBg,transition:"filter .1s"}}
-                onMouseEnter={e=>e.currentTarget.style.filter="brightness(.96)"}
-                onMouseLeave={e=>e.currentTarget.style.filter="none"}>
+              <tr key={g.id} className="sx-rsvp-row" style={{borderBottom:"1px solid #F0EBF5",background:"#fff"}}>
                 {/* שם */}
-                <td style={{padding:"11px 12px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
+                <td style={{padding:"11px 12px",overflow:"hidden"}}>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{width:30,height:30,borderRadius:"50%",background:relColor||"#CBD5E0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",flexShrink:0}}>{g.name[0]}</div>
                     <QuickCell value={g.name} onSave={v=>quickSave(g,"name",v)} style={{flex:1,minWidth:0}}>
@@ -6436,35 +6436,35 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                     </QuickCell>
                   </div>
                 </td>
-                <td style={{padding:"11px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:"#2D3748",borderRight:"1px solid #E2E8F0"}}>
+                <td style={{padding:"11px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:"#2D3748"}}>
                   <QuickCell value={g.guest_count||1} type="number" onSave={v=>quickSave(g,"guest_count",v)}>{g.guest_count||1}</QuickCell>
                 </td>
-                <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  <span style={{fontWeight:900,fontSize:13,color:g.rsvp==="confirmed"?"#276749":"#CBD5E0"}}>{g.rsvp==="confirmed"?g.guest_count||1:0}</span>
+                <td style={{padding:"12px 10px",textAlign:"center"}}>
+                  <span style={{fontWeight:900,fontSize:13,color:g.rsvp==="confirmed"?"#1F7A4D":"#8E85A3"}}>{g.rsvp==="confirmed"?g.guest_count||1:0}</span>
                 </td>
-                <td style={{padding:"11px 8px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:12,fontWeight:600,borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                <td style={{padding:"11px 8px",color:"#4A5568",direction:"ltr",textAlign:"right",fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                   <QuickCell value={g.phone||""} type="tel" onSave={v=>quickSave(g,"phone",v)}>{g.phone||" - "}</QuickCell>
                 </td>
-                <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
+                <td style={{padding:"12px 10px",textAlign:"center"}}>
                   {getTableNum(g)?<span style={{background:"#3A2464",color:"#fff",borderRadius:5,padding:"2px 7px",fontWeight:800,fontSize:12}}>{getTableNum(g)}</span>:<span style={{color:"#CBD5E0"}}> - </span>}
                 </td>
-                <td style={{padding:"11px 8px",borderRight:"1px solid #E2E8F0",overflow:"hidden"}}>
+                <td style={{padding:"11px 8px",overflow:"hidden"}}>
                   <QuickCell value={g.relation||"ללא שיוך"} options={[...new Set([...Object.keys(customCats),g.relation||"ללא שיוך"])]} onSave={v=>quickSave(g,"relation",v)}>
-                    {g.relation?<span style={{display:"inline-flex",alignItems:"center",gap:3,background:(relColor||"#CBD5E0")+"25",border:`1.5px solid ${relColor||"#CBD5E0"}66`,borderRadius:20,padding:"2px 7px",fontSize:12,fontWeight:700,color:relColor||"#718096",whiteSpace:"nowrap"}}>
+                    {g.relation?<span style={{display:"inline-flex",alignItems:"center",gap:3,background:(relColor||"#CBD5E0")+"25",border:`1.5px solid ${relColor||"#CBD5E0"}66`,borderRadius:20,padding:"2px 7px",fontSize:12,fontWeight:700,color:"#3A3050",whiteSpace:"nowrap"}}>
                       <span style={{width:5,height:5,borderRadius:"50%",background:relColor||"#CBD5E0",display:"inline-block",flexShrink:0}}/>{g.relation}
                     </span>:<span style={{color:"#CBD5E0"}}> - </span>}
                   </QuickCell>
                 </td>
-                <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
+                <td style={{padding:"12px 10px",textAlign:"center"}}>
                   <QuickCell value={g.gift||""} type="number" onSave={v=>quickSave(g,"gift",v)}>
                     {g.gift&&g.gift>0?<span style={{background:"#FFFFF0",color:"#B7791F",border:"1.5px solid #FAF089",borderRadius:5,padding:"2px 6px",fontWeight:800,fontSize:12}}>₪{g.gift}</span>:<span style={{color:"#CBD5E0",fontSize:10}}> - </span>}
                   </QuickCell>
                 </td>
-                <td style={{padding:"11px 8px",color:"#718096",fontSize:11,textAlign:"center",whiteSpace:"nowrap",borderRight:"1px solid #E2E8F0",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
-                <td style={{padding:"12px 10px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}>
-                  <span style={{color:"#718096",fontSize:11}}>{g.views||0}</span>
+                <td style={{padding:"11px 8px",color:"#5F5675",fontSize:12,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
+                <td style={{padding:"12px 10px",textAlign:"center"}}>
+                  <span style={{color:"#5F5675",fontSize:13}}>{g.views||0}</span>
                 </td>
-                <td style={{padding:"11px 6px",borderRight:"1px solid #E2E8F0"}}>
+                <td style={{padding:"11px 6px"}}>
                   {/* מצב: לא הופצה → נשלחה הזמנה → נשלחה תזכורת → מגיע / לא מגיע (guests.last_msg) */}
                   {(()=>{const st=rsvpStage(g);return(
                   <select value={stageOf(g)} onChange={async e=>{if(e.target.value)await updateRsvp(g,e.target.value);}}
@@ -6485,15 +6485,15 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             );})}
           </tbody>
         </table>
-        <div style={{padding:"12px 16px",borderTop:"2px solid #E2E8F0",fontSize:13,color:"#718096",textAlign:"center",background:"#F7FAFC",fontWeight:600}}>
-          מציג {filtered.length} מתוך {allGuests.length} אורחים
+        <div style={{padding:"12px 16px",borderTop:"1px solid #ECE5F3",fontSize:13,color:"#5F5675",textAlign:"center",background:"#FAF7FD",fontWeight:600}}>
+          מציג {filtered.length} מתוך {allGuests.length} רשומות
         </div>
       </div>
 
       {/* מקרא קטגוריות */}
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14,padding:"0 24px 16px"}}>
         {Object.entries(RELATION_COLORS).map(([rel,col])=>(
-          <div key={rel} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#718096"}}>
+          <div key={rel} style={{display:"flex",alignItems:"center",gap:5,fontSize:13,color:"#4A4060"}}>
             <div style={{width:10,height:10,borderRadius:"50%",background:col}}/>
             {rel}
           </div>
@@ -7367,7 +7367,7 @@ const rsvpStage=g=>g.rsvp==="confirmed"?{t:"✓ מגיע",c:"#276749",bg:"#F0FFF
   :g.rsvp==="declined"?{t:"✗ לא מגיע",c:"#C53030",bg:"#FFF5F5",b:"#FEB2B2"}
   :g.last_msg==="reminder"?{t:"🔔 תזכורת",c:"#B45309",bg:"#FFF8E8",b:"#F5DDA6"}
   :g.last_msg==="invite"?{t:"💌 הזמנה ראשונה",c:"#2B6CB0",bg:"#EBF8FF",b:"#BEE3F8"}
-  :{t:"לא הופצה",c:"#718096",bg:"#F7FAFC",b:"#CBD5E0"};
+  :{t:"לא הופצה",c:"#525A66",bg:"#F2F4F7",b:"#CBD5E0"};
 // 4 שלבים לבחירה באישורי הגעה: הזמנה ראשונה → תזכורת → מגיע / לא מגיע.
 // "הזמנה" ו"תזכורת" = עוד לא ענה (rsvp pending) + מה נשלח אחרון (last_msg); כך יודעים באיזה שלב האורח לא אישר
 const RSVP_STAGES=[["invite","💌 הזמנה ראשונה"],["reminder","🔔 תזכורת"],["confirmed","✓ מגיע"],["declined","✗ לא מגיע"]];
