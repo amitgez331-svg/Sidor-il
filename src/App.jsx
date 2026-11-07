@@ -2605,8 +2605,8 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 }
 
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
-function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
-  const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null);
+function MobileSeating({ tables, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
+  const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const assign=async tableId=>{if(!picked)return;await dropOnTable(tableId,picked.id,picked.table_id||null);setPicked(null);setTab("guests");};
   return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
     {picked&&<div style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,fontSize:14,flexShrink:0}}>
@@ -2638,6 +2638,28 @@ function MobileSeating({ tables, guests, search, setSearch, newGuest, setNewGues
             </Card>
           ))
         }
+        {/* מי שסימן "לא מגיע": מקופל כברירת מחדל, ואפשר עדיין לבחור ולהושיב אם התוכניות השתנו */}
+        {declined.length>0&&<div style={{marginTop:14}}>
+          <button onClick={()=>setShowDeclined(o=>!o)} aria-expanded={showDeclined}
+            style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,color:"#4A4060"}}>
+            לא מגיעים <span style={{background:"#FDECEC",color:"#B42318",borderRadius:100,padding:"1px 9px",fontSize:12}}>{declined.length}</span>
+            <span style={{marginRight:"auto",fontSize:12,color:"#5F5675"}}>{showDeclined?"הסתרה ▲":"הצגה ▼"}</span>
+          </button>
+          {showDeclined&&<>
+            <div style={{fontSize:13,color:"#5F5675",margin:"8px 4px"}}>סימנו שלא מגיעים, ולכן לא נספרים להושבה. אם התוכניות השתנו — בוחרים אורח ושולחן.</div>
+            {declined.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
+              <Card key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 6px",marginBottom:8,opacity:.8,border:`1.5px solid ${picked?.id===g.id?C.blueL:C.border}`,background:picked?.id===g.id?C.blueXL:"#FBFAFC"}}>
+                <div onClick={()=>{setPicked(g);setTab("tables");}} style={{width:38,height:38,borderRadius:"50%",background:"#B9B0C8",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0,cursor:"pointer"}}>{g.name[0]}</div>
+                <div onClick={()=>{setPicked(g);setTab("tables");}} style={{flex:1,cursor:"pointer",minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:14,color:C.text}}>{g.name}</div>
+                  {g.phone&&<div style={{fontSize:12,color:"#5F5675"}}>{g.phone}</div>}
+                </div>
+                <RsvpBadge rsvp={g.rsvp}/>
+                <button onClick={e=>{e.stopPropagation();onEditGuest(g);}} style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:9,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,flexShrink:0}}>✏️</button>
+              </Card>
+            ))}
+          </>}
+        </div>}
         <div style={{display:"flex",gap:10,marginTop:16}}>
           <input value={newGuest} onChange={e=>setNewGuest(e.target.value)} placeholder="+ הוסף אורח חדש" onKeyDown={e=>e.key==="Enter"&&addGuest()} style={{flex:1,background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 16px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit"}}/>
           <button onClick={addGuest} style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"12px 20px",fontSize:20,fontWeight:700,cursor:"pointer"}}>+</button>
@@ -3308,10 +3330,11 @@ function GiftLinksCard({ event, style }) {
         {!edit&&<button onClick={()=>setEdit(true)} style={{background:"none",border:"none",color:"#9147D6",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>עריכה</button>}
       </div>
       {edit?(<>
-        <div style={{fontSize:12,color:"#888",marginBottom:12}}>הוסיפו Bit או Paybox: יופיע כפתור "תן מתנה" בהזמנה הדיגיטלית ושורת "💝 למתנה" בהודעות.</div>
+        <div style={{fontSize:13,color:"#5F5675",marginBottom:12,lineHeight:1.6}}>הוסיפו Bit או PayBox: יופיע כפתור מתנה בהזמנה הדיגיטלית ושורת "💝 למתנה" בהודעות.<br/>
+          קישור לתשלום (מתחיל ב-https) נפתח ישר באפליקציה. מספר טלפון — האורח מעתיק אותו בלחיצה ומעביר באפליקציה.</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
-          <div>{lbl("#1DB954","💚","Bit")}<input value={bit} onChange={e=>setBit(e.target.value)} placeholder="https://bit.ly/... או מספר הטלפון" style={inp}/></div>
-          <div>{lbl("#6B46C1","💜","Paybox")}<input value={pb} onChange={e=>setPb(e.target.value)} placeholder="https://payboxapp.com/..." style={inp}/></div>
+          <div>{lbl("#1DB954","💚","Bit")}<input value={bit} onChange={e=>setBit(e.target.value)} placeholder="קישור לתשלום או מספר טלפון" style={inp}/></div>
+          <div>{lbl("#6B46C1","💜","PayBox")}<input value={pb} onChange={e=>setPb(e.target.value)} placeholder="קישור לקבוצה או מספר טלפון" style={inp}/></div>
         </div>
         {err&&<div style={{marginTop:10,fontSize:12,color:"#C53030"}}>שגיאה בשמירה: {err}</div>}
         <button onClick={save} disabled={saving} className="sx-btn" style={{width:"100%",marginTop:12,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{saving?"שומר...":"שמירה"}</button>
@@ -3669,6 +3692,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   // מעבר למסך אחר (או כניסה לאירוע) תמיד מתחיל מלמעלה — בנייד הגלילה של המסך הקודם נשארה והמסך החדש נפתח באמצע/בתחתית
   useEffect(()=>{try{window.scrollTo(0,0);}catch{}},[screen]);
+  // להושבה: רק מי שלא סימן "לא מגיע" (מי שלא מגיע לא מופיע ברשימת הממתינים ולא נכנס להושבה האוטומטית)
+  const toSeat=guests.filter(g=>g.rsvp!=="declined");
+  const declinedGuests=guests.filter(g=>g.rsvp==="declined"),[showDeclined,setShowDeclined]=useState(false);
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [zoom,setZoom]=useState(1);
   const mapBoxRef=useRef(null);
@@ -4170,7 +4196,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       ${gs.length?`<ol>${gs.map(g=>`<li>${esc(g.name)}${ppl(g)>1?` <b>×${ppl(g)}</b>`:""}${g.relation&&g.relation!=="ללא שיוך"?` <i>${esc(g.relation)}</i>`:""}</li>`).join("")}</ol>`:`<p class="empty">אין אורחים</p>`}</section>`;}).join("");
     const idx=tablesNum.flatMap(t=>(t.guests||[]).map(g=>({g,t}))).sort((a,b)=>a.g.name.localeCompare(b.g.name,"he"))
       .map(({g,t})=>`<tr><td>${esc(g.name)}</td><td class="c">${ppl(g)}</td><td class="c"><b>${t.num}</b></td><td>${esc(tName(t))}</td></tr>`).join("");
-    const waiting=guests.length?`<h2>ממתינים להושבה (${guests.length})</h2><p class="wait">${guests.map(g=>esc(g.name)).join(" · ")}</p>`:"";
+    const waiting=toSeat.length?`<h2>ממתינים להושבה (${toSeat.length})</h2><p class="wait">${toSeat.map(g=>esc(g.name)).join(" · ")}</p>`:"";
     const title=esc(event.name||"סידור הושבה"),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
     const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
     w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סידור הושבה · ${title}</title><style>
@@ -4520,7 +4546,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const autoSeatModal=modal==="autoSeat"&&(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={()=>setModal(null)}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:22,width:"100%",maxWidth:720,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
-        <AISeatingScreen event={event} tables={tables} guests={guests} onApply={applyAutoSeating} onClose={()=>setModal(null)} saving={saving}/>
+        <AISeatingScreen event={event} tables={tables} guests={toSeat} onApply={applyAutoSeating} onClose={()=>setModal(null)} saving={saving}/>
       </div>
     </div>
   );
@@ -4680,7 +4706,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
       <div style={{flex:1,overflow:"auto"}}>
         {screen==="home"&&<HomeScreen/>}
-        {screen==="seating"&&<MobileSeating tables={tablesNum} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={guests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
+        {screen==="seating"&&<MobileSeating tables={tablesNum} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
         {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
@@ -5037,7 +5063,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       {!asideOpen&&(
         <button onClick={()=>setAsideOpen(true)} title="פתיחת רשימת האורחים" className="sx-btn sx-card"
           style={{flexShrink:0,width:44,cursor:"pointer",fontFamily:"inherit",color:C.blue,fontWeight:900,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:14}}>
-          <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({guests.length})</span><span>‹</span>
+          <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({toSeat.length})</span><span>‹</span>
         </button>
       )}
       <aside className="sx-card" style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
@@ -5099,15 +5125,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,gap:8}}>
                 <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span>
                 <span style={{fontWeight:900,fontSize:15,color:C.text}}>ממתינים להושבה</span>
-                <span style={{background:C.gold+"22",color:C.gold,borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px",marginRight:"auto",marginLeft:8}}>{guests.length}</span>
+                <span style={{background:C.gold+"22",color:C.gold,borderRadius:100,fontSize:12,fontWeight:700,padding:"2px 10px",marginRight:"auto",marginLeft:8}}>{toSeat.length}</span>
                 <button onClick={()=>setAsideOpen(false)} title="קיפול הרשימה — המפה תקבל את כל הרוחב" aria-label="קיפול רשימת האורחים"
                   style={{width:28,height:28,borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,cursor:"pointer",fontSize:15,fontWeight:900,lineHeight:1,flexShrink:0}}>›</button>
               </div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש..." style={{width:"100%",background:C.surface,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
-              {guests.length===0&&<div style={{textAlign:"center",marginTop:30}}><div style={{fontSize:40}}>🎉</div><p style={{color:C.success,fontWeight:700,fontSize:14,marginTop:8}}>כולם מוסבים!</p></div>}
-              {guests.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
+              {toSeat.length===0&&<div style={{textAlign:"center",marginTop:30}}><div style={{fontSize:40}}>🎉</div><p style={{color:C.success,fontWeight:700,fontSize:14,marginTop:8}}>כולם מוסבים!</p></div>}
+              {toSeat.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
                 <div key={g.id} draggable className="sx-guest" onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
                   style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:"8px 11px",cursor:"grab",marginBottom:7}}>
                   <div style={{width:32,height:32,borderRadius:11,background:RELATION_COLORS[g.relation]||C.blueL,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>
@@ -5123,6 +5149,31 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <button onClick={e=>{e.stopPropagation();setEditGuestData(g);}} style={{background:C.blueXL,border:`1px solid ${C.border}`,color:C.blue,borderRadius:7,padding:"4px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700,flexShrink:0}}>✏️</button>
                 </div>
               ))}
+              {/* מי שסימן "לא מגיע": מקופל כברירת מחדל; אפשר עדיין לגרור לשולחן אם התוכניות השתנו */}
+              {declinedGuests.length>0&&<div style={{marginTop:12,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+                <button onClick={()=>setShowDeclined(o=>!o)} aria-expanded={showDeclined}
+                  style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"none",border:"none",padding:"4px 2px",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800,color:"#4A4060"}}>
+                  לא מגיעים <span style={{background:"#FDECEC",color:"#B42318",borderRadius:100,padding:"1px 9px",fontSize:12}}>{declinedGuests.length}</span>
+                  <span style={{marginRight:"auto",fontSize:12,color:"#5F5675"}}>{showDeclined?"הסתרה ▲":"הצגה ▼"}</span>
+                </button>
+                {showDeclined&&<>
+                  <div style={{fontSize:12,color:"#5F5675",margin:"6px 2px 8px",lineHeight:1.5}}>לא נספרים להושבה. אם התוכניות השתנו — גוררים לשולחן.</div>
+                  {declinedGuests.filter(g=>g.name.toLowerCase().includes(search.toLowerCase())).map(g=>(
+                    <div key={g.id} draggable className="sx-guest" onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
+                      style={{display:"flex",alignItems:"center",gap:8,background:"#FBFAFC",border:`1px dashed ${C.border}`,borderRadius:14,padding:"8px 11px",cursor:"grab",marginBottom:7,opacity:.85}}>
+                      <div style={{width:32,height:32,borderRadius:11,background:"#B9B0C8",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>{g.name[0]}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:C.text}}>{g.name}</div>
+                        <div style={{display:"flex",gap:4,marginTop:2,flexWrap:"wrap"}}>
+                          {g.relation&&<span style={{fontSize:12,background:"#F1ECF7",color:"#3A3050",borderRadius:100,padding:"1px 7px",fontWeight:600,whiteSpace:"nowrap"}}>{g.relation}</span>}
+                          <RsvpBadge rsvp={g.rsvp}/>
+                        </div>
+                      </div>
+                      <button onClick={e=>{e.stopPropagation();setEditGuestData(g);}} aria-label={`עריכת ${g.name}`} style={{background:C.blueXL,border:`1px solid ${C.border}`,color:C.blue,borderRadius:7,padding:"4px 8px",fontSize:11,cursor:"pointer",fontFamily:"inherit",fontWeight:700,flexShrink:0}}>✏️</button>
+                    </div>
+                  ))}
+                </>}
+              </div>}
             </div>
             <div style={{padding:"10px 14px",borderTop:`1px solid ${C.border}`,flexShrink:0,background:"#fff"}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
@@ -5163,7 +5214,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 </div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:C.success}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FDECEE"}}>🔴</span><div><b style={{color:C.danger}}>{fullTables}</b><small>שולחנות מלאים</small></div></div>
-                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{guests.length}</b><small>ממתינים</small></div></div>
+                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{toSeat.length}</b><small>ממתינים</small></div></div>
                 <div style={{position:"relative",marginRight:"auto"}}>
                   <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת...?"
                     style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
@@ -5494,13 +5545,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <button onClick={()=>setFullListOpen(o=>!o)}
                   style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"none",border:"none",borderBottom:fullListOpen?`1px solid ${C.border}`:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:900,color:C.text}}>
                   👥 ממתינים להושבה
-                  <span style={{background:C.gold+"26",color:"#B07A12",borderRadius:100,padding:"1px 9px",fontSize:12}}>{guests.length}</span>
+                  <span style={{background:C.gold+"26",color:"#B07A12",borderRadius:100,padding:"1px 9px",fontSize:12}}>{toSeat.length}</span>
                   <span style={{marginRight:"auto",color:C.muted,fontSize:12}}>{fullListOpen?"▲":"▼"}</span>
                 </button>
                 {fullListOpen&&(
                   <div style={{overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:6}}>
-                    {guests.length===0&&<div style={{textAlign:"center",padding:"18px 6px",color:C.success,fontWeight:800,fontSize:13}}>🎉 כולם הושבו!</div>}
-                    {guests.map(g=>(
+                    {toSeat.length===0&&<div style={{textAlign:"center",padding:"18px 6px",color:C.success,fontWeight:800,fontSize:13}}>🎉 כולם הושבו!</div>}
+                    {toSeat.map(g=>(
                       <div key={g.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("guestId",String(g.id));}}
                         style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"7px 10px",cursor:"grab"}}>
                         {avatar(g)}
@@ -5602,7 +5653,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         </div>}
         {view==="guests"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
           <div style={{display:"flex",gap:12,marginBottom:20,flexWrap:"wrap"}}>
-            {[{l:"סה״כ",v:total,c:C.blue,i:"👥"},{l:"מוסבים",v:seated,c:C.success,i:"✅"},{l:"ממתינים",v:guests.length,c:C.gold,i:"⏳"},{l:"פנויים",v:tables.reduce((s,t)=>s+t.seats,0)-seated,c:C.blueM,i:"🪑"}].map(({l,v,c,i})=>(
+            {[{l:"סה״כ",v:total,c:C.blue,i:"👥"},{l:"מוסבים",v:seated,c:C.success,i:"✅"},{l:"ממתינים",v:toSeat.length,c:C.gold,i:"⏳"},{l:"פנויים",v:tables.reduce((s,t)=>s+t.seats,0)-seated,c:C.blueM,i:"🪑"}].map(({l,v,c,i})=>(
               <Card key={l} style={{padding:"14px 18px",borderTop:`3px solid ${c}`,minWidth:110}}>
                 <div style={{fontSize:20,marginBottom:2}}>{i}</div>
                 <div style={{fontSize:24,fontWeight:900,color:c,lineHeight:1}}>{v}</div>
@@ -9473,6 +9524,7 @@ function InvitePage({ code, guestId }) {
   const [event,setEvent]=useState(null);
   const [loading,setLoading]=useState(true);
   const [firstName,setFirstName]=useState("");
+  const [giftCopied,setGiftCopied]=useState(null); // "bit" / "paybox" אחרי העתקת מספר הטלפון
   const [lastName,setLastName]=useState("");
   const [phoneState,setPhone]=useState("");
   const [guestCount,setGuestCount]=useState(1);
@@ -9738,20 +9790,24 @@ function InvitePage({ code, guestId }) {
         {(event.bit_link||event.paybox_link)&&(
           <div style={{marginBottom:24}}>
             <div style={{fontSize:14,fontWeight:700,color:"#555",textAlign:"center",marginBottom:10}}>💝 שלח מתנה דיגיטלית</div>
-            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              {event.bit_link&&(
-                <a href={event.bit_link} target="_blank" rel="noopener"
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"12px 20px",background:"linear-gradient(135deg,#1DB954,#17a347)",color:"#fff",borderRadius:14,textDecoration:"none",fontSize:14,fontWeight:800,boxShadow:"0 4px 14px rgba(29,185,84,.35)"}}>
-                  💚 Bit
-                </a>
-              )}
-              {event.paybox_link&&(
-                <a href={event.paybox_link} target="_blank" rel="noopener"
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"12px 20px",background:"linear-gradient(135deg,#6B46C1,#553C9A)",color:"#fff",borderRadius:14,textDecoration:"none",fontSize:14,fontWeight:800,boxShadow:"0 4px 14px rgba(107,70,193,.35)"}}>
-                  💜 Paybox
-                </a>
-              )}
-            </div>
+            {/* קישור (https) — נפתח ישר. מספר טלפון — ל-Bit ול-PayBox אין קישור ציבורי שפותח תשלום לפי מספר,
+                לכן הכפתור מעתיק את המספר ומסביר מה לעשות (קודם הוא הוביל לכתובת שבורה) */}
+            {(()=>{const isUrl=v=>/^https?:\/\//i.test(String(v||"").trim()),phoneOf=v=>String(v||"").replace(/[^\d+]/g,"");
+              const fmt=p=>/^05\d{8}$/.test(p)?`${p.slice(0,3)}-${p.slice(3)}`:p;
+              const items=[["bit","Bit","💚",event.bit_link,"linear-gradient(135deg,#1DB954,#17a347)","rgba(29,185,84,.35)"],["paybox","PayBox","💜",event.paybox_link,"linear-gradient(135deg,#6B46C1,#553C9A)","rgba(107,70,193,.35)"]].filter(x=>String(x[3]||"").trim());
+              const st=(bg,sh)=>({display:"flex",alignItems:"center",gap:8,padding:"12px 18px",background:bg,color:"#fff",borderRadius:14,textDecoration:"none",fontSize:14,fontWeight:800,boxShadow:`0 4px 14px ${sh}`,border:"none",cursor:"pointer",fontFamily:"inherit"});
+              return(<>
+              <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+                {items.map(([k,name,ic,val,bg,sh])=>isUrl(val)
+                  ?<a key={k} href={String(val).trim()} target="_blank" rel="noopener noreferrer" style={st(bg,sh)}>{ic} {name}</a>
+                  :<button key={k} onClick={()=>{const p=phoneOf(val);navigator.clipboard?.writeText(p).catch(()=>{});setGiftCopied(k);}} style={st(bg,sh)}>
+                    {ic} {name} · <span style={{direction:"ltr",fontVariantNumeric:"tabular-nums"}}>{fmt(phoneOf(val))}</span>
+                  </button>)}
+              </div>
+              {giftCopied&&<div role="status" style={{marginTop:10,fontSize:13,color:"#333",textAlign:"center",lineHeight:1.6}}>
+                ✓ המספר הועתק. פתחו את אפליקציית {giftCopied==="bit"?"Bit":"PayBox"} והעבירו למספר הזה.
+              </div>}
+              </>);})()}
           </div>
         )}
 
