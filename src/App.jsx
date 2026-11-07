@@ -9659,11 +9659,11 @@ function InvitePage({ code, guestId }) {
         return(
           <div style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"10px 16px",textAlign:"center",direction:"rtl"}}>
             <div style={{display:"inline-flex",gap:16,alignItems:"center"}}>
-              <span style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600}}>⏳ עוד</span>
+              <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>⏳ עוד</span>
               {days>0&&<span style={{color:"#fff",fontWeight:800,fontSize:14}}>{days} ימים</span>}
               <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{hours} שעות</span>
               <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{mins} דקות</span>
-              <span style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600}}>לאירוע</span>
+              <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>לאירוע</span>
             </div>
           </div>
         );
@@ -9673,9 +9673,10 @@ function InvitePage({ code, guestId }) {
         <div style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
         <div style={{position:"absolute",inset:0,background:tmpl.overlay}}/>
         <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,textAlign:"center"}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:"clamp(26px,7vw,52px)",fontWeight:800,color:"#fff",lineHeight:1.2,textShadow:"0 2px 20px rgba(0,0,0,.5)",marginBottom:8}}>
-            {event.bride_name&&event.groom_name?<>{event.groom_name} & {event.bride_name}<br/><span style={{fontSize:"clamp(16px,4vw,28px)",fontWeight:600,opacity:.9}}>מתחתנים</span></>:event.name}
-          </div>
+          {/* גופן אחד לכל השורה (Syne בלי עברית הציג רק את ה-& בגופן אחר), וגדול יותר בנייד */}
+          <h1 style={{fontFamily:"'Heebo',sans-serif",fontSize:"clamp(34px,8.5vw,58px)",fontWeight:900,color:"#fff",lineHeight:1.12,letterSpacing:"-.01em",textShadow:"0 2px 18px rgba(0,0,0,.45)",margin:"0 0 8px"}}>
+            {event.bride_name&&event.groom_name?<>{event.groom_name} & {event.bride_name}<br/><span style={{fontSize:"clamp(18px,4.6vw,28px)",fontWeight:700,opacity:.95}}>מתחתנים</span></>:event.name}
+          </h1>
         </div>
       </div>
 
@@ -9697,7 +9698,7 @@ function InvitePage({ code, guestId }) {
             try{
               const d=new Date(event.date);
               const heb=new Intl.DateTimeFormat("he-IL-u-ca-hebrew",{year:"numeric",month:"long",day:"numeric"}).format(d);
-              return <div style={{fontSize:12,color:"#888",marginBottom:4}}>{heb}</div>;
+              return <div style={{fontSize:14,color:"#666",marginBottom:4}}>{heb}</div>;
             }catch{return null;}
           })()}
           {event.event_time&&<div style={{fontSize:18,fontWeight:900,color:"#111",marginBottom:8,letterSpacing:".05em"}}>{event.event_time}</div>}
@@ -9715,22 +9716,25 @@ function InvitePage({ code, guestId }) {
           {knownGuest?.id&&knownGuest?.rsvp==="confirmed"&&<div style={{marginTop:14}}><GuestQR code={code} guestId={knownGuest.id}/></div>}
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
-          {event.venue_address&&<button onClick={()=>navigate("waze")} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:22}}>🚗</span><span style={{fontSize:11,color:"#555",fontWeight:600}}>נווט לאירוע</span>
-          </button>}
-          {eventDate&&<button onClick={addCalendar} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:22}}>📅</span><span style={{fontSize:11,color:"#555",fontWeight:600}}>הוסף ליומן</span>
-          </button>}
-          {(event.settings_json?.shareBtn??true)&&<button onClick={share} style={{background:"none",border:"1px solid #ddd",borderRadius:12,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:22}}>🔗</span><span style={{fontSize:11,color:"#555",fontWeight:600}}>שתפו את האירוע</span>
-          </button>}
-        </div>
+        {/* הכפתורים ממלאים את השורה לפי כמה שיש (2 או 3), במקום שלוש עמודות קבועות עם תא ריק */}
+        {(()=>{const acts=[
+            event.venue_address&&["🚗","נווט לאירוע",()=>navigate("waze")],
+            eventDate&&["📅","הוסף ליומן",addCalendar],
+            (event.settings_json?.shareBtn??true)&&["🔗","שתפו את האירוע",share],
+          ].filter(Boolean);
+          return acts.length>0&&(
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${acts.length},1fr)`,gap:10,marginBottom:24}}>
+            {acts.map(([ic,l,fn])=>(
+              <button key={l} onClick={fn} className="sx-btn" style={{background:"#fff",border:"1px solid #DDD6E6",borderRadius:12,padding:"12px 6px",minHeight:64,cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <span style={{fontSize:22}} aria-hidden="true">{ic}</span><span style={{fontSize:13,color:"#333",fontWeight:700}}>{l}</span>
+              </button>
+            ))}
+          </div>);})()}
 
         {/* כפתורי מתנה  -  Bit / Paybox */}
         {(event.bit_link||event.paybox_link)&&(
           <div style={{marginBottom:24}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#888",textAlign:"center",marginBottom:10}}>💝 שלח מתנה דיגיטלית</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#555",textAlign:"center",marginBottom:10}}>💝 שלח מתנה דיגיטלית</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               {event.bit_link&&(
                 <a href={event.bit_link} target="_blank" rel="noopener"
@@ -9750,32 +9754,34 @@ function InvitePage({ code, guestId }) {
 
         <div style={{background:"#f9f9f9",borderRadius:16,padding:20,marginBottom:20}}>
           <h3 style={{fontSize:20,fontWeight:900,color:"#111",textAlign:"center",marginBottom:4}}>אישור הגעה</h3>
-          <p style={{fontSize:13,color:"#888",textAlign:"center",marginBottom:18}}>נשמח לראותכם בין אורחינו</p>
+          <p style={{fontSize:14,color:"#666",textAlign:"center",marginBottom:18}}>נשמח לראותכם בין אורחינו</p>
 
+          {/* תווית גלויה מעל כל שדה (כשהשדות מלאים מראש לא היה אפשר לדעת מה כל אחד), והשלמה אוטומטית של הטלפון */}
+          {(()=>{const lbl={display:"block",fontSize:13,fontWeight:700,color:"#444",marginBottom:6},fld={background:"#fff",border:"1px solid #CFC8D9",borderRadius:10,padding:"12px 14px",fontSize:16,color:"#111",outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"};return(<>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <input value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="שם פרטי"
-              style={{background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",fontSize:14,color:"#111",outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
-            <input value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="שם משפחה"
-              style={{background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",fontSize:14,color:"#111",outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
+            <label><span style={lbl}>שם פרטי</span>
+              <input value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" style={fld}/></label>
+            <label><span style={lbl}>שם משפחה</span>
+              <input value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" style={fld}/></label>
           </div>
-
-          <input value={phoneState} onChange={e=>setPhone(e.target.value)} placeholder="מספר נייד" type="tel"
-            style={{width:"100%",background:"#fff",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",fontSize:14,color:"#111",outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14}}/>
+          <label style={{display:"block",marginBottom:16}}><span style={lbl}>מספר נייד</span>
+            <input value={phoneState} onChange={e=>setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" style={{...fld,textAlign:"right"}}/></label>
+          </>);})()}
 
           <div style={{textAlign:"center",marginBottom:16}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#555",marginBottom:10}}>בחירת כמות אורחים</div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
-              <button onClick={()=>setGuestCount(c=>Math.max(1,c-1))} style={{width:36,height:36,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
-              <span style={{fontSize:24,fontWeight:900,color:"#111",minWidth:32,textAlign:"center"}}>{guestCount}</span>
-              <button onClick={()=>setGuestCount(c=>c+1)} style={{width:36,height:36,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
+            <div id="inv-count-l" style={{fontSize:14,fontWeight:700,color:"#444",marginBottom:10}}>כמה תגיעו?</div>
+            <div role="group" aria-labelledby="inv-count-l" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
+              <button onClick={()=>setGuestCount(c=>Math.max(1,c-1))} aria-label="פחות אורחים" style={{width:44,height:44,borderRadius:"50%",background:"#fff",border:"1px solid #CFC8D9",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
+              <span aria-live="polite" style={{fontSize:26,fontWeight:900,color:"#111",minWidth:32,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{guestCount}</span>
+              <button onClick={()=>setGuestCount(c=>c+1)} aria-label="יותר אורחים" style={{width:44,height:44,borderRadius:"50%",background:"#fff",border:"1px solid #CFC8D9",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
             </div>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-            <button onClick={()=>setRsvp("confirmed")} style={{background:rsvp==="confirmed"?"#2D9B5A":"#fff",color:rsvp==="confirmed"?"#fff":"#2D9B5A",border:"2px solid #2D9B5A",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <button onClick={()=>setRsvp("confirmed")} aria-pressed={rsvp==="confirmed"} style={{background:rsvp==="confirmed"?"#1F7A4D":"#fff",color:rsvp==="confirmed"?"#fff":"#1F7A4D",border:"2px solid #1F7A4D",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               ✓ מגיעים
             </button>
-            <button onClick={()=>setRsvp("declined")} style={{background:rsvp==="declined"?"#D63B3B":"#fff",color:rsvp==="declined"?"#fff":"#D63B3B",border:"2px solid #D63B3B",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <button onClick={()=>setRsvp("declined")} aria-pressed={rsvp==="declined"} style={{background:rsvp==="declined"?"#D63B3B":"#fff",color:rsvp==="declined"?"#fff":"#D63B3B",border:"2px solid #D63B3B",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               ✗ לא מגיעים
             </button>
           </div>
@@ -9812,12 +9818,14 @@ function InvitePage({ code, guestId }) {
             </div>);})()}
 
           {saveError&&<div role="alert" style={{background:"#FDECEE",color:"#C53030",border:"1px solid #F9D2D8",borderRadius:12,padding:"10px 12px",fontSize:13,fontWeight:700,marginBottom:10,textAlign:"center"}}>⚠️ {saveError}</div>}
-          <button onClick={submit} disabled={!firstName.trim()||!rsvp||submitting}
-            style={{width:"100%",background:firstName.trim()&&rsvp?"#1B3A8C":"#ccc",color:"#fff",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:firstName.trim()&&rsvp?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
-            {submitting?"שולח...":"שלח אישור ←"}
-          </button>
-          <p style={{fontSize:11,color:"#999",textAlign:"center",lineHeight:1.6,marginTop:10}}>
-            הפרטים נמסרים לבעלי האירוע לצורך ניהול האירוע בלבד. <a href="https://www.sidoril.com/#/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#888"}}>מדיניות פרטיות</a>
+          {/* כפתור לא זמין נשאר קריא ואומר מה חסר (קודם: לבן על אפור בהיר, 1.6:1, בלי הסבר) */}
+          {(()=>{const ready=firstName.trim()&&rsvp;return(
+          <button onClick={submit} disabled={!ready||submitting}
+            style={{width:"100%",background:ready?"#1B3A8C":"#ECE8F1",color:ready?"#fff":"#4A4060",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:ready?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
+            {submitting?"שולח...":ready?"שלח אישור ←":!firstName.trim()?"נא למלא שם פרטי":"בחרו מגיעים או לא מגיעים"}
+          </button>);})()}
+          <p style={{fontSize:12,color:"#6B6B6B",textAlign:"center",lineHeight:1.6,marginTop:10}}>
+            הפרטים נמסרים לבעלי האירוע לצורך ניהול האירוע בלבד. <a href="https://www.sidoril.com/#/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#555"}}>מדיניות פרטיות</a>
           </p>
         </div>
 
@@ -9826,13 +9834,13 @@ function InvitePage({ code, guestId }) {
           <div style={{textAlign:"center",padding:"6px 0 14px"}}>
             {event.brand.logo&&<img src={event.brand.logo} alt={event.brand.name} style={{height:48,maxWidth:160,objectFit:"contain",display:"block",margin:"0 auto 6px"}} onError={e=>{e.target.style.display="none";}}/>}
             <div style={{fontSize:13,color:"#666",fontWeight:700}}>בהפקת {event.brand.name}</div>
-            {event.brand.phone&&<a href={`tel:${String(event.brand.phone).replace(/[^\d+]/g,"")}`} style={{fontSize:12,color:"#888",textDecoration:"none",direction:"ltr",display:"inline-block"}}>📞 {event.brand.phone}</a>}
+            {event.brand.phone&&<a href={`tel:${String(event.brand.phone).replace(/[^\d+]/g,"")}`} style={{fontSize:13,color:"#555",textDecoration:"none",direction:"ltr",display:"inline-block"}}>📞 {event.brand.phone}</a>}
           </div>
         )}
         <a href="https://www.sidoril.com/?ref=invite" target="_blank" rel="noopener"
-          style={{display:"block",textAlign:"center",textDecoration:"none",padding:"4px 12px 22px",color:"#999",fontSize:12,lineHeight:1.7}}>
+          style={{display:"block",textAlign:"center",textDecoration:"none",padding:"4px 12px 22px",color:"#6B6B6B",fontSize:13,lineHeight:1.7}}>
           נוצר ב־<b style={{color:"#7A5BB0"}}>◈ Sidor-IL</b><br/>
-          <span style={{color:"#B07AA8",fontWeight:700}}>מתכננים אירוע? סידור הושבה ואישורי הגעה, התחילו בחינם ←</span>
+          <span style={{color:"#8A4E86",fontWeight:700}}>מתכננים אירוע? סידור הושבה ואישורי הגעה, התחילו בחינם ←</span>
         </a>
       </div>
     </div>
