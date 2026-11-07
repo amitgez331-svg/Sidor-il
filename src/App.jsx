@@ -11714,9 +11714,19 @@ export default function App() {
   },[]);
 
   // ספק: נבחר "ספק" בהרשמה (במכשיר הזה) או שיש לו פרופיל ספק → אזור הספקים. "לאירועים שלי" עובר לאירועים (עד סגירת הלשונית)
-  const [isVendor,setIsVendor]=useState(false);
-  const [vendorEvents,setVendorEventsRaw]=useState(()=>{try{return sessionStorage.getItem("sidor_vendor_events")==="1";}catch{return false;}});
-  const setVendorEvents=v=>{setVendorEventsRaw(v);try{v?sessionStorage.setItem("sidor_vendor_events","1"):sessionStorage.removeItem("sidor_vendor_events");}catch{}};
+  // ברירת המחדל בפתיחת האתר: מי שיש לו אירועים נכנס לאירועים; רק ספק בלי אירועים נכנס לאזור הספקים.
+  // בחירה מפורשת בלשונית הזו (sessionStorage): "1" = לאירועים, "0" = לאזור הספקים
+  const [isVendor,setIsVendor]=useState(false),[hasEvents,setHasEvents]=useState(null);
+  const [vendorChoice,setVendorChoice]=useState(()=>{try{return sessionStorage.getItem("sidor_vendor_events");}catch{return null;}});
+  const setVendorEvents=v=>{const c=v?"1":"0";setVendorChoice(c);try{sessionStorage.setItem("sidor_vendor_events",c);}catch{}};
+  const vendorView=vendorChoice==="0"?true:vendorChoice==="1"?false:hasEvents===false;
+  useEffect(()=>{
+    if(!user){setHasEvents(null);return;}
+    Promise.all([
+      sb.from("events").select("id").eq("user_id",user.id).limit(1),
+      sb.from("event_members").select("event_id").eq("email",String(user.email||"").toLowerCase()).limit(1),
+    ]).then(([a,b])=>setHasEvents(!!((a.data||[]).length||(b.data||[]).length)),()=>setHasEvents(true));
+  },[user?.id,event?.id]);
   useEffect(()=>{
     if(!user){setIsVendor(false);return;}
     let intent=false;try{intent=localStorage.getItem(ACCOUNT_KEY)==="vendor";}catch{}
@@ -11879,7 +11889,7 @@ export default function App() {
     <CookieNotice/>
   </>);
 
-  if(!event&&isVendor&&!vendorEvents)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  if(!event&&isVendor&&vendorView)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <SupplierHome user={user} onLogout={logout} onEvents={()=>setVendorEvents(true)} onBackToLanding={()=>setShowLanding(true)}/>
     <CookieNotice/>
   </>);
