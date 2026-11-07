@@ -985,7 +985,7 @@ function Countdown({ date }) {
 function VenuePage({ onBack, onOpenAuth }) {
   return(
     <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,minHeight:"100vh"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <SiteNav/>
       {/* Header */}
       <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
@@ -1257,7 +1257,7 @@ const SidorLogo=({size=40,id="sidorLogo"})=>(
 // ─── LANDING ─────────────────────────────────────────────────────────────────
 const LP={ink:"#2B1D3F",muted:"#564C6C",rose:"#F0609E",coral:"#FF8A65",violet:"#9B6BFF",gold:"#E8B04A",mint:"#3CC8A0",sky:"#5AA9FF",cream:"#FFFBF7",lav:"#F4EEFF"};
 const LANDING_CSS=`
-  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap');
+  
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -9610,7 +9610,8 @@ function InvitePage({ code, guestId }) {
       setSubmitting(false);return;
     }
     if(data.status==="phone_exists"){
-      setDupGuest(data);setGuestCount(c=>Math.max(c,1));setPhoneDupInv(true);setSubmitting(false);return;
+      // השרת מחזיר רק שם פרטי (לא מזהה ולא טלפון) — מציגים את המספר שהאורח עצמו הקליד
+      setDupGuest({...data,phone:(r.phone||"").trim()});setGuestCount(c=>Math.max(c,1));setPhoneDupInv(true);setSubmitting(false);return;
     }
     setSubmitted(true);setSubmitting(false);setShowDupModal(false);setPhoneDupInv(false);
   };
@@ -9711,7 +9712,7 @@ function InvitePage({ code, guestId }) {
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"#f9f9f9"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
       {showDupModal&&DupModal()}
       {phoneDupInv&&dupGuest&&<PhoneExistsDialog guest={dupGuest} count={guestCount} setCount={setGuestCount} busy={submitting}
         zIndex={450} onBack={()=>setPhoneDupInv(false)} onUpdate={doUpdate}/>}
@@ -10071,7 +10072,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
   return(
     <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)",position:"relative",overflowX:"hidden"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(155,107,255,.18)!important;transform:translateY(-3px)!important;} @media(max-width:600px){.ev-top{padding:0 14px!important}.ev-wrap{padding:20px 14px!important}.ev-hero{flex-direction:column;align-items:stretch!important;gap:18px;padding:24px 20px!important}.ev-hero button{width:100%;justify-content:center}}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} .ev-card:hover{box-shadow:0 8px 32px rgba(155,107,255,.18)!important;transform:translateY(-3px)!important;} @media(max-width:600px){.ev-top{padding:0 14px!important}.ev-wrap{padding:20px 14px!important}.ev-hero{flex-direction:column;align-items:stretch!important;gap:18px;padding:24px 20px!important}.ev-hero button{width:100%;justify-content:center}}`}</style>
 
       {/* TOP NAV */}
       <header className="ev-top" style={{background:"rgba(255,255,255,.94)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 32px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
@@ -11837,7 +11838,7 @@ export default function App() {
   if(inviteMatch){
     const guestId=new URLSearchParams(window.location.search).get("g")||
       hash.includes("?g=")&&hash.split("?g=")[1]||null;
-    return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style><InvitePage code={inviteMatch[1]} guestId={guestId}/></>);
+    return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}`}</style><InvitePage code={inviteMatch[1]} guestId={guestId}/></>);
   }
 
   if(checking)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Spinner size={40}/></div>);
@@ -11847,7 +11848,7 @@ export default function App() {
     if(!isAdminUser(user))return(
       <AdminLogin onSuccess={u=>{setUser(u);}} onClose={()=>window.location.hash=""}/>
     );
-    return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <AdminDashboard user={user} onLogout={logout}/>
     </>);
   }
@@ -11890,7 +11891,7 @@ export default function App() {
     </div>
   );
 
-  if(!user||showLanding) return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&family=Syne:wght@700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
+  if(!user||showLanding) return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}} @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:none;opacity:1}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}} @media(min-width:768px){.nav-link{display:block!important;}} @media(max-width:767px){.hide-mobile{display:none!important;}}`}</style>
     {/* משתמש מחובר שחזר לדף הבית: כפתורי הכניסה מחזירים אותו ישר למערכת */}
     <LandingPage onOpenAuth={mode=>{
       setShowLanding(false);
@@ -11917,16 +11918,16 @@ export default function App() {
     <CookieNotice/>
   </>);
 
-  if(!event&&isVendor&&vendorView)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  if(!event&&isVendor&&vendorView)return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <SupplierHome user={user} onLogout={logout} onEvents={()=>setVendorEvents(true)} onBackToLanding={()=>setShowLanding(true)}/>
     <CookieNotice/>
   </>);
 
-  if(!event)return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  if(!event)return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)} onVendor={isVendor?()=>setVendorEvents(false):null}/>
     <CookieNotice/>
   </>);
 
-  return(<><style>{`@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap'); *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
+  return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
   <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout} onHome={()=>setShowLanding(true)}/><CookieNotice/></>);
 }
