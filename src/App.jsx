@@ -4555,6 +4555,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,flexDirection:"column",gap:14}}><Spinner size={40}/><p style={{color:C.muted,fontSize:15,fontFamily:"'Heebo',sans-serif"}}>טוען...</p></div>);
 
   if(mobile){
+    // כותרת הסרגל העליון היא הכותרת הראשית של המסך — חוץ ממסכים שיש להם כותרת משלהם
+    const TopTitleTag=["home","budget"].includes(screen)?"span":"h1";
     const confirmed=guests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
     const declined=guests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
     const eventIcon=event.event_type==="wedding"?"💍":event.event_type==="bar_mitzvah"?"✡️":event.event_type==="brit"?"👶":"💼";
@@ -4696,9 +4698,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           ? <button onClick={onBack} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"}}>→ האירועים שלי</button>
           : <button onClick={()=>setScreen("home")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit"}}>→ חזרה</button>
         }
-        <h1 role={screen==="home"?"presentation":undefined} style={{flex:1,margin:0,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+        <TopTitleTag style={{flex:1,margin:0,fontWeight:800,fontSize:15,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
           {screen==="home"?event.name:screen==="seating"?"הושבה":screen==="add"?"➕ הוסף אורח":screen==="import"?"📊 ייבוא אורחים":screen==="rsvp"?"✅ אישורי הגעה":screen==="invite"?"💌 הזמנה דיגיטלית":screen==="budget"?"💰 ניהול תקציב":screen==="ai"?"🤖 AI סידור חכם":screen==="packages"?"📦 חבילות":screen==="sms"?"📱 הודעות SMS":screen==="whatsapp"?"💬 הודעות WhatsApp":screen==="checkin"?"📷 כניסה לאולם":screen==="gifts"?"🎁 מתנות":screen==="tasks"?"✅ משימות":screen==="settings"?"⚙️ הגדרות":event.name}
-        </h1>
+        </TopTitleTag>
         {saving&&<Spinner size={16} color="rgba(255,255,255,.8)"/>}
         {screen!=="seating"&&<SupportMenu event={event} compact/>}
         {screen==="seating"&&<button onClick={undo} disabled={!lastUndo||saving} aria-label="ביטול פעולה" title={lastUndo?`ביטול: ${lastUndo.label}`:"אין פעולה לבטל"} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.35)",color:"#fff",borderRadius:10,padding:"6px 10px",cursor:lastUndo?"pointer":"default",fontSize:12,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap",opacity:lastUndo?1:.5}}>↩ בטל</button>}
@@ -6712,6 +6714,9 @@ function BudgetScreen({ event }) {
   const totalIncome=own.filter(i=>i.type==="income").reduce((s,i)=>s+Number(i.amount||0),0)+gifts.sum;
   const guestIncome=own.filter(i=>i.type==="income"&&i.category==="מתנות").reduce((s,i)=>s+Number(i.amount||0),0)+gifts.sum;
   const profit=totalIncome-totalExpenses;
+  // כמה עוד צריך לשלם לספקים (סכום פחות מקדמה, רק הוצאות) — המספר שהכי חשוב בזמן התכנון
+  const leftToPay=own.filter(i=>i.type==="expense").reduce((s,i)=>s+Math.max(0,Number(i.amount||0)-Number(i.advance||0)),0);
+  const openNew=(name="",category="אחר")=>{setEditItem(null);setForm({name,amount:"",advance:"0",type:"expense",category,note:""});setShowForm(true);};
   // ייצוא לאקסל: כל השורות + שורת מתנות וסיכום, מימין לשמאל
   const exportXlsx=async()=>{
     const rows=[["מוצר / שירות","סוג","קטגוריה","סכום","שולם (מקדמה)","נשאר לשלם","הערה"],
@@ -6776,15 +6781,16 @@ function BudgetScreen({ event }) {
       {/* כותרת */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div>
-          <div style={{fontSize:20,fontWeight:900,color:"#1A202C"}}>ניהול תקציב</div>
-          <div style={{fontSize:13,color:"#718096"}}>מעקב הכנסות והוצאות לאירוע</div>
+          <h1 style={{fontSize:22,fontWeight:900,color:"#1A202C",margin:0}}>ניהול תקציב</h1>
+          {/* משפט על הנתונים במקום תיאור הממשק */}
+          <div style={{fontSize:14,color:"#5F5675"}}>{own.length?`${own.length===1?"פריט אחד":`${own.length} פריטים`}${leftToPay>0?` · נשאר לשלם לספקים ₪${leftToPay.toLocaleString()}`:" · הכל שולם"}`:"מעקב אחרי הוצאות, מקדמות ומתנות"}</div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
-          <button onClick={exportXlsx} disabled={!own.length&&!gifts.sum}
-            style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:700,cursor:own.length||gifts.sum?"pointer":"default",fontFamily:"inherit",opacity:own.length||gifts.sum?1:.5}}>
+          {(own.length>0||gifts.sum>0)&&<button onClick={exportXlsx}
+            style={{background:"#fff",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
             ⬇️ ייצוא לאקסל
-          </button>
-          <button onClick={()=>{setEditItem(null);setForm({name:"",amount:"",advance:"0",type:"expense",category:"אחר",note:""});setShowForm(true);}}
+          </button>}
+          <button onClick={()=>openNew()}
             style={{background:"#2B6CB0",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
             ➕ הוסף פריט
           </button>
@@ -6793,15 +6799,16 @@ function BudgetScreen({ event }) {
 
       {/* סטטיסטיקות */}
       <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}}>
+        {/* הוצאות → כמה עוד לשלם → הכנסות ומתנות → מאזן (הכנסות פחות הוצאות; "רווח" לא מתאים לחתונה) */}
         {[
-          {label:"רווח / הפסד",value:profit,color:profit>=0?"#276749":"#C53030",bg:profit>=0?"#F0FFF4":"#FFF5F5",prefix:"₪"},
-          {label:"סה״כ הוצאות",value:totalExpenses,color:"#C53030",bg:"#FFF5F5",prefix:"₪"},
-          {label:"סה״כ הכנסות",value:totalIncome,color:"#276749",bg:"#F0FFF4",prefix:"₪"},
-          {label:"הכנסות מאורחים",value:guestIncome,color:"#2C5282",bg:"#EBF8FF",prefix:"₪"},
+          {label:"סה״כ הוצאות",value:totalExpenses,color:"#B42318",bg:"#FFF5F5"},
+          {label:"נשאר לשלם לספקים",value:leftToPay,color:leftToPay>0?"#8A5A00":"#1F7A4D",bg:leftToPay>0?"#FFFAEE":"#F0FFF4"},
+          {label:gifts.sum?`הכנסות ומתנות (${gifts.count} מתנות)`:"הכנסות ומתנות",value:totalIncome,color:"#1F7A4D",bg:"#F0FFF4"},
+          {label:"מאזן",value:profit,color:profit>=0?"#1F7A4D":"#B42318",bg:profit>=0?"#F0FFF4":"#FFF5F5",sign:true},
         ].map(s=>(
-          <div key={s.label} style={{background:s.bg,border:`1.5px solid ${s.color}33`,borderRadius:12,padding:"14px 18px",flex:1,minWidth:140,textAlign:"center"}}>
-            <div style={{fontSize:22,fontWeight:900,color:s.color,lineHeight:1}}>{s.prefix}{s.value.toLocaleString()}</div>
-            <div style={{fontSize:12,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
+          <div key={s.label} style={{background:s.bg,border:`1.5px solid ${s.color}26`,borderRadius:12,padding:"14px 18px",flex:1,minWidth:140,textAlign:"center"}}>
+            <div dir="ltr" style={{fontSize:22,fontWeight:900,color:s.color,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{s.sign&&s.value<0?"−":""}₪{Math.abs(s.value).toLocaleString()}</div>
+            <div style={{fontSize:13,color:"#3E3555",marginTop:5,fontWeight:700}}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -6817,14 +6824,29 @@ function BudgetScreen({ event }) {
       </div>
 
       {/* טבלה */}
-      <div style={{background:"#fff",boxShadow:"0 2px 16px rgba(0,0,0,.08)",overflowX:"auto",borderTop:"2px solid #C3D3F5",borderBottom:"2px solid #C3D3F5",width:"100%"}}>
-        <table style={{width:"100%",minWidth:320,borderCollapse:"collapse",fontSize:12}}>
+      <style>{`.sx-rsvp-row:hover{background:#FBF8FE!important}`}</style>
+      {/* מצב ריק: מה עושים עכשיו, עם קיצורי דרך להוצאות הנפוצות (נפתח טופס עם השם והקטגוריה) */}
+      {own.length===0&&!gifts.sum&&(
+        <div style={{background:"#fff",border:"1px solid #ECE5F3",borderRadius:16,padding:"22px 20px",marginBottom:14,textAlign:"center"}}>
+          <h2 style={{fontSize:17,fontWeight:900,color:"#1A202C",margin:"0 0 6px"}}>עוד לא נוספו הוצאות</h2>
+          <p style={{fontSize:14,color:"#4A4060",margin:"0 0 14px",lineHeight:1.6}}>מתחילים מההוצאות הגדולות. אפשר לרשום גם מקדמה, ונראה כמה נשאר לשלם לכל ספק.</p>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+            {[["אולם","אולם"],["קייטרינג","קייטרינג"],["צלם","צילום"],["DJ / להקה","מוזיקה"],["פרחים ועיצוב","פרחים"],["שמלה וחליפה","הלבשה"]].map(([n,c])=>(
+              <button key={n} onClick={()=>openNew(n,c)} className="sx-btn"
+                style={{background:"#F6F1FC",color:"#3A2464",border:"1px solid #E6DDF0",borderRadius:100,padding:"8px 14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ {n}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div style={{background:"#fff",overflowX:"auto",borderTop:"1px solid #ECE5F3",borderBottom:"1px solid #ECE5F3",width:"100%"}}>
+        <table style={{width:"100%",minWidth:320,borderCollapse:"collapse",fontSize:13,fontVariantNumeric:"tabular-nums"}}>
           <thead>
-            <tr style={{background:"#3A2464",borderBottom:"3px solid #122e70"}}>
-              <th style={{padding:"10px 12px",textAlign:"right",fontWeight:800,color:"#fff",fontSize:12}}>מוצר</th>
-              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:800,color:"#fff",fontSize:12,borderRight:"1px solid rgba(255,255,255,.15)"}}>סכום</th>
-              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:800,color:"#fff",fontSize:12,borderRight:"1px solid rgba(255,255,255,.15)"}}>נשאר</th>
-              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:800,color:"#fff",fontSize:12}}>פעולות</th>
+            {/* כותרות שקטות: אפור על רקע בהיר — הסכומים הם מה שבולט */}
+            <tr style={{background:"#FAF7FD",borderBottom:"1px solid #E6DDF0"}}>
+              <th style={{padding:"10px 12px",textAlign:"right",fontWeight:700,color:"#4A4060",fontSize:13}}>מוצר / שירות</th>
+              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:700,color:"#4A4060",fontSize:13}}>סכום</th>
+              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:700,color:"#4A4060",fontSize:13}}>נשאר לשלם</th>
+              <th style={{padding:"10px 8px",textAlign:"center",fontWeight:700,color:"#4A4060",fontSize:13}}>פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -6832,32 +6854,30 @@ function BudgetScreen({ event }) {
               <tr style={{borderBottom:"1px solid #E2E8F0",background:"#E53E3E10"}}>
                 <td style={{padding:"10px 12px",borderRight:"1px solid #E2E8F0"}}>
                   <div style={{fontWeight:800,color:"#1A202C",fontSize:13}}>🎁 מתנות מאורחים ({gifts.count})</div>
-                  <div style={{fontSize:10,color:"#276749",marginTop:1,fontWeight:700}}>הכנסה · מתעדכן אוטומטית ממסך המתנות</div>
+                  <div style={{fontSize:12,color:"#1F7A4D",marginTop:2,fontWeight:600}}>הכנסה · מתעדכן אוטומטית ממסך המתנות</div>
                 </td>
                 <td style={{padding:"10px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:"#276749",borderRight:"1px solid #E2E8F0"}}>₪{gifts.sum.toLocaleString()}</td>
                 <td style={{padding:"10px 8px",textAlign:"center",borderRight:"1px solid #E2E8F0"}}><span style={{color:"#276749",fontWeight:800}}>✓</span></td>
-                <td style={{padding:"10px 8px",textAlign:"center",fontSize:11,color:"#A0AEC0"}}>אוטומטי</td>
+                <td style={{padding:"10px 8px",textAlign:"center",fontSize:12,color:"#5F5675"}}>אוטומטי</td>
               </tr>
             )}
             {filtered.length===0&&!showGifts&&(
-              <tr><td colSpan={4} style={{padding:"40px",textAlign:"center",color:"#aaa",fontSize:14}}>אין נתונים בטבלה</td></tr>
+              <tr><td colSpan={4} style={{padding:"28px",textAlign:"center",color:"#5F5675",fontSize:14}}>{own.length?"אין שורות בסינון הזה":"הפריטים שתוסיפו יופיעו כאן"}</td></tr>
             )}
             {filtered.map(item=>{
               const catColor=CAT_COLORS[item.category]||"#718096";
               const remain=Number(item.amount||0)-Number(item.advance||0);
               return(
-                <tr key={item.id} style={{borderBottom:"1px solid #E2E8F0",background:catColor+"10",transition:"filter .1s"}}
-                  onMouseEnter={e=>e.currentTarget.style.filter="brightness(.96)"}
-                  onMouseLeave={e=>e.currentTarget.style.filter="none"}>
-                  <td style={{padding:"10px 12px",borderRight:"1px solid #E2E8F0",maxWidth:150}}>
+                <tr key={item.id} className="sx-rsvp-row" style={{borderBottom:"1px solid #F0EBF5",background:"#fff"}}>
+                  <td style={{padding:"10px 12px",maxWidth:180}}>
                     <div style={{fontWeight:800,color:"#1A202C",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>
-                    <div style={{fontSize:10,color:item.type==="expense"?"#C53030":"#276749",marginTop:1,fontWeight:700}}>{item.type==="expense"?"הוצאה":"הכנסה"} · {item.category}</div>
+                    <div style={{fontSize:12,color:"#5F5675",marginTop:2,fontWeight:600}}><span style={{display:"inline-block",width:7,height:7,borderRadius:"50%",background:catColor,marginLeft:5}}/>{item.type==="expense"?"הוצאה":"הכנסה"} · {item.category}</div>
                   </td>
-                  <td style={{padding:"10px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:item.type==="expense"?"#C53030":"#276749",borderRight:"1px solid #E2E8F0"}}>
+                  <td style={{padding:"10px 8px",textAlign:"center",fontWeight:800,fontSize:14,color:item.type==="expense"?"#1A202C":"#1F7A4D"}}>
                     ₪{Number(item.amount||0).toLocaleString()}
                   </td>
-                  <td style={{padding:"10px 8px",textAlign:"center",fontWeight:700,fontSize:13,borderRight:"1px solid #E2E8F0"}}>
-                    {remain>0?<span style={{color:"#C53030",fontWeight:800}}>₪{remain.toLocaleString()}</span>:<span style={{color:"#276749",fontWeight:800}}>✓</span>}
+                  <td style={{padding:"10px 8px",textAlign:"center",fontWeight:700,fontSize:14}}>
+                    {item.type!=="expense"?<span style={{color:"#8E85A3"}}>—</span>:remain>0?<span style={{color:"#8A5A00",fontWeight:800}}>₪{remain.toLocaleString()}</span>:<span style={{color:"#1F7A4D",fontWeight:800}}>✓ שולם</span>}
                   </td>
                   <td style={{padding:"10px 8px"}}>
                     <div style={{display:"flex",gap:4,justifyContent:"center"}}>
@@ -6872,7 +6892,7 @@ function BudgetScreen({ event }) {
             })}
           </tbody>
         </table>
-        <div style={{padding:"12px 16px",borderTop:"2px solid #E2E8F0",fontSize:13,color:"#718096",textAlign:"center",background:"#F7FAFC",fontWeight:600}}>
+        <div style={{padding:"12px 16px",borderTop:"1px solid #ECE5F3",fontSize:13,color:"#5F5675",textAlign:"center",background:"#FAF7FD",fontWeight:600}}>
           מציג {filtered.length+(showGifts?1:0)} מתוך {own.length+(gifts.sum?1:0)} שורות
         </div>
       </div>
