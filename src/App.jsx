@@ -1488,7 +1488,7 @@ function SeatingPlanDemo() {
       <div className="lp-hide-sm" style={{position:"absolute",top:-22,left:-44,background:"#fff",borderRadius:20,padding:"12px 16px",boxShadow:"0 22px 44px -14px rgba(91,60,140,.4)",animation:"float 5s ease-in-out infinite",display:"flex",alignItems:"center",gap:12,border:"1px solid #EFE8F7"}}>
         <div style={{width:40,height:40,borderRadius:12,background:`linear-gradient(135deg,${LP.violet},${LP.rose})`,display:"flex",alignItems:"center",justifyContent:"center"}}><LpIcon name="ai" color="#fff" size={22}/></div>
         <div>
-          <div style={{fontSize:11,color:LP.violet,fontWeight:800}}>AI סידר עכשיו</div>
+          <div style={{fontSize:12,color:"#6A3FCF",fontWeight:800}}>AI סידר עכשיו</div>
           <div style={{fontSize:18,fontWeight:900,color:LP.ink,lineHeight:1.1}}>214 אורחים</div>
           <div style={{fontSize:11,color:LP.muted}}>ב-22 שולחנות · 12 שניות</div>
         </div>
@@ -2161,7 +2161,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                 <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
                 <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}><LpIcon name="pin" color={LP.rose} size={18}/>השושנים 30, נוף הגליל</div>
-                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#1FA855",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#1FA855" size={18}/>WhatsApp</a>
+                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#167A3E",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#167A3E" size={18}/>WhatsApp</a>
                   <a href="tel:0526817102" style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>052-681-7102</a>
                   <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}><LpIcon name="mail" color={LP.coral} size={18}/>sidoril2026@gmail.com</a>
                 </div>
@@ -2192,7 +2192,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
       {/* WhatsApp FAB */}
       <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
-        className="lp-wa-fab" style={{position:"fixed",bottom:20,left:20,background:"#25D366",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
+        className="lp-wa-fab" style={{position:"fixed",bottom:20,left:20,background:"#0F7F40",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         <span className="lp-lg">לחץ לצ'אט</span>
       </a>
@@ -2305,12 +2305,12 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
             <div>
               <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>שחזור סיסמה</div>
               <div style={{fontSize:13,color:C.muted,marginBottom:16}}>הכנס את המייל שלך ונשלח לך קישור לאיפוס.</div>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל"
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" aria-label="אימייל" autoComplete="email"
                 style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box",marginBottom:12}}/>
               {err&&<div style={{background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:C.danger,marginBottom:12}}>{err}</div>}
               <Btn primary full onClick={submit} disabled={load||!email}>{load?<><Spinner size={18} color="#fff"/>שולח...</>:"שלח קישור לאיפוס ←"}</Btn>
               <p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:14}}>
-                <span onClick={()=>setMode("login")} style={{color:C.blue,fontWeight:700,cursor:"pointer"}}>חזרה לכניסה</span>
+                <button type="button" onClick={()=>setMode("login")} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:700,cursor:"pointer"}}>חזרה לכניסה</button>
               </p>
             </div>
           )}
@@ -2331,12 +2331,12 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
             ))}
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
-            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה (מינימום 6 תווים)" onKeyDown={e=>e.key==="Enter"&&submit()} style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" aria-label="אימייל" autoComplete="email" style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה (מינימום 6 תווים)" aria-label="סיסמה (מינימום 6 תווים)" autoComplete={mode==="login"?"current-password":"new-password"} onKeyDown={e=>e.key==="Enter"&&submit()} style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
           </div>
           {mode==="login"&&(
             <div style={{textAlign:"left",marginBottom:12}}>
-              <span onClick={()=>{setMode("reset");setErr("");}} style={{fontSize:13,color:C.blue,fontWeight:600,cursor:"pointer"}}>שכחתי סיסמה</span>
+              <button type="button" onClick={()=>{setMode("reset");setErr("");}} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:600,cursor:"pointer"}}>שכחתי סיסמה</button>
             </div>
           )}
           {err&&<div style={{background:err.startsWith("✅")?"#F0FFF6":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?C.success:C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?C.success:C.danger,marginBottom:12}}>{err}</div>}
@@ -2345,10 +2345,14 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
           </Btn>
           <p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:16}}>
             {mode==="login"?"אין חשבון? ":"יש חשבון? "}
-            <span onClick={()=>setMode(mode==="login"?"register":"login")} style={{color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</span>
+            <button type="button" onClick={()=>setMode(mode==="login"?"register":"login")} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</button>
           </p>
-          <p style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10,lineHeight:1.6}}>
+          <p style={{fontSize:12,color:"#5F5675",textAlign:"center",marginTop:10,lineHeight:1.6}}>
             בהרשמה או בכניסה (גם עם Google) אתם מסכימים ל<a href="#/terms" onClick={onClose} style={{color:C.blue}}>תנאי השימוש</a> ול<a href="#/privacy" onClick={onClose} style={{color:C.blue}}>מדיניות הפרטיות</a>
+          </p>
+          {/* הודעה לפי סעיף 11 לחוק הגנת הפרטיות (תיקון 13): חובה / מטרה / בעל השליטה / מי מקבל / עיון ותיקון */}
+          <p style={{fontSize:12,color:"#5F5675",textAlign:"center",marginTop:6,lineHeight:1.6}}>
+            אין חובה חוקית למסור את הפרטים, אך בלעדיהם אי אפשר לפתוח חשבון. האימייל משמש להתחברות ולעדכונים על החשבון. בעל השליטה במידע: Sidor-IL (sidoril2026@gmail.com). המידע נשמר אצל ספקי התשתית שלנו בלבד, ואפשר לעיין בו ולבקש לתקנו.
           </p>
         </div>
       )}
@@ -3355,7 +3359,7 @@ function UpcomingTasks({ event, onOpen, style }) {
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
         <div style={{flex:1}}>
           <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>✅ המשימות הקרובות</div>
-          <div style={{fontSize:12,color:"#888"}}>{eventPassed(event)?`📅 עבר תאריך ${eventWord(event)}`:`${done} / ${list.length} הושלמו`}{late?<span style={{color:C.danger,fontWeight:800}}> · {late} באיחור</span>:null}</div>
+          <div style={{fontSize:12,color:"#5F5675"}}>{eventPassed(event)?`📅 עבר תאריך ${eventWord(event)}`:`${done} / ${list.length} הושלמו`}{late?<span style={{color:"#B42318",fontWeight:800}}> · {late} באיחור</span>:null}</div>
         </div>
         <button onClick={onOpen} style={{background:"#F6F0FF",border:"none",color:"#9147D6",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לכל המשימות ←</button>
       </div>
@@ -4644,7 +4648,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {/* ─── קישור להזמנה ─── */}
         <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
           <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:8}}>קישור להזמנה</div>
-          <div style={{fontSize:12,color:"#888",marginBottom:12}}>שתף את הקישור עם האורחים</div>
+          <div style={{fontSize:13,color:"#5F5675",marginBottom:12}}>שתף את הקישור עם האורחים</div>
           <div style={{background:"#FBF8FD",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#9147D6",fontFamily:"monospace",marginBottom:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
             🔗 {inviteUrl}
           </div>
@@ -4825,7 +4829,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   return(<div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,color:C.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
     {/* TOP HEADER */}
     <header style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"0 18px",height:54,position:"sticky",top:0,zIndex:90,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
-      <button onClick={()=>setSidebarOpen(o=>!o)}
+      <button onClick={()=>setSidebarOpen(o=>!o)} aria-label="תפריט המסכים" aria-expanded={!!sidebarOpen}
         style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",cursor:"pointer",borderRadius:10,padding:"6px 10px",display:"flex",flexDirection:"column",gap:4,alignItems:"center",justifyContent:"center",width:36,height:36,flexShrink:0}}>
         <span style={{width:16,height:2,background:"#fff",borderRadius:1,display:"block"}}/>
         <span style={{width:16,height:2,background:"#fff",borderRadius:1,display:"block"}}/>
@@ -5209,13 +5213,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <div className="sx-stat" style={{minWidth:200}}>
                   <span className="sx-ictile" style={{background:"#F1E8FF"}}>🪑</span>
                   <div style={{flex:1}}>
-                    <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{color:C.text}}>{seated}/{total}</b><small style={{display:"inline"}}>הושבו</small><span style={{marginRight:"auto",fontSize:12,fontWeight:900,color:C.blueM}}>{p}%</span></div>
+                    <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{color:C.text}}>{seated}/{total}</b><small style={{display:"inline"}}>הושבו</small><span style={{marginRight:"auto",fontSize:12,fontWeight:900,color:"#B8306F"}}>{p}%</span></div>
                     <div style={{height:6,background:"#F1EAF8",borderRadius:100,overflow:"hidden",marginTop:4}}>
                       <div style={{position:"relative",overflow:"hidden",height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}><span className="sx-shine"/></div>
                     </div>
                   </div>
                 </div>
-                <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:C.success}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
+                <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:"#1F7A4D"}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FDECEE"}}>🔴</span><div><b style={{color:C.danger}}>{fullTables}</b><small>שולחנות מלאים</small></div></div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{toSeat.length}</b><small>ממתינים</small></div></div>
                 <div style={{position:"relative",marginRight:"auto"}}>
@@ -5484,7 +5488,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     <div style={{fontSize:15,fontWeight:900,color:LP.ink,lineHeight:1.2}}>מפת האולם</div>
                     <div style={{fontSize:11,color:LP.muted,fontWeight:600}}>{event.name} · {guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} אורחים</div>
                   </div>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#E9FBF4",color:"#1F8F6C",borderRadius:100,padding:"3px 10px",fontSize:11,fontWeight:800}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#E9FBF4",color:"#17694F",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
                 </div>
                 {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
                 <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
@@ -5777,7 +5781,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
     {autoSeatModal}{templatesModal}
     {/* WhatsApp צף */}
-    <a href="https://wa.me/972526817102" target="_blank" rel="noopener"
+    <a href="https://wa.me/972526817102" target="_blank" rel="noopener" aria-label="תמיכה בוואטסאפ"
       style={{position:"fixed",bottom:90,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none"}}>
       <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
@@ -6551,7 +6555,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                 <td style={{padding:"11px 6px"}}>
                   {/* מצב: לא הופצה → נשלחה הזמנה → נשלחה תזכורת → מגיע / לא מגיע (guests.last_msg) */}
                   {(()=>{const st=rsvpStage(g);return(
-                  <select value={stageOf(g)} onChange={async e=>{if(e.target.value)await updateRsvp(g,e.target.value);}}
+                  <select value={stageOf(g)} aria-label={`מצב ההגעה של ${g.name}`} onChange={async e=>{if(e.target.value)await updateRsvp(g,e.target.value);}}
                     title={g.last_msg_at&&(!g.rsvp||g.rsvp==="pending")?`נשלח ${new Date(g.last_msg_at).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`:undefined}
                     style={{border:`1.5px solid ${st.b}`,background:st.bg,color:st.c,
                       borderRadius:6,padding:"4px 3px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",outline:"none",width:"100%"}}>
@@ -8743,8 +8747,9 @@ function SupplierCard({ v, onOpen, compact=false }) {
       <div style={{position:"relative",height:compact?110:140,background:v.photos?.[0]?`#F6F0FF url("${v.photos[0]}") center/cover`:"linear-gradient(135deg,#FFF4EE,#F6F0FF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40}}>
         {!v.photos?.[0]&&cat.icon}
         <div style={{position:"absolute",top:8,right:8,display:"flex",gap:5}}>
-          {isFeatured(v)&&<span style={{background:"#E8B04A",color:"#fff",borderRadius:100,padding:"3px 9px",fontSize:11,fontWeight:900}}>⭐ מוביל</span>}
-          {isNewVendor(v)&&<span style={{background:"#3CC8A0",color:"#fff",borderRadius:100,padding:"3px 9px",fontSize:11,fontWeight:900}}>חדש</span>}
+          {/* "מקודם": מיקום מוביל ניתן בתשלום, ולכן מסומן כקידום (שקיפות כלפי הגולשים) */}
+          {isFeatured(v)&&<span title="ספק מוביל — מקום בולט בתשלום" style={{background:"#FFF4DC",color:"#7A4E00",border:"1px solid #E8B04A",borderRadius:100,padding:"3px 9px",fontSize:12,fontWeight:900}}>⭐ מוביל · מקודם</span>}
+          {isNewVendor(v)&&<span style={{background:"#E3F8F1",color:"#14614A",border:"1px solid #3CC8A0",borderRadius:100,padding:"3px 9px",fontSize:12,fontWeight:900}}>חדש</span>}
         </div>
       </div>
       <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
@@ -8919,7 +8924,11 @@ function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
         </button>
         {onCancel&&<button onClick={onCancel} style={{background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:14,padding:"13px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>}
       </div>
-      <div style={{fontSize:11,color:"#999",marginTop:10,lineHeight:1.6}}>בשליחה אתם מאשרים שהפרטים נכונים ושמותר לפרסם את פרטי הקשר והתמונות באתר, לפי <a href="#/terms" style={{color:C.blue}}>תנאי השימוש</a>.</div>
+      {/* הודעה לפי סעיף 11 לחוק הגנת הפרטיות (תיקון 13) */}
+      <div style={{fontSize:12,color:"#5F5675",marginTop:10,lineHeight:1.6}}>
+        בשליחה אתם מאשרים שהפרטים נכונים ושמותר לפרסם את פרטי העסק, פרטי הקשר והתמונות באתר, לפי <a href="#/terms" style={{color:C.blue}}>תנאי השימוש</a>.
+        אין חובה חוקית למסור את הפרטים, אך בלעדיהם לא נוכל להציג את העסק. מספר ע.מ / ח.פ משמש לאימות העסק בלבד, אינו מוצג לאף אחד ונשמר רק אצלנו. בעל השליטה במידע: Sidor-IL (sidoril2026@gmail.com). אפשר לעיין בפרטים, לתקן אותם או למחוק את הפרופיל, לפי <a href="#/privacy" style={{color:C.blue}}>מדיניות הפרטיות</a>.
+      </div>
     </div>
   );
 }
@@ -8932,6 +8941,16 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
     setP(a||null);setPriv(b||null);
   };
   useEffect(()=>{load();},[user.id]);
+  // הספק מוחק את הפרופיל בעצמו (זכות המחיקה): הפרטים העסקיים נמחקים איתו (on delete cascade)
+  const removeProfile=async()=>{
+    if(!window.confirm(`למחוק לצמיתות את הפרופיל של "${p?.business_name||"העסק"}" מהמדריך?\nהפרטים, התמונות ומספר העוסק יימחקו, ואי אפשר לשחזר.`))return;
+    const{error}=await sb.from("vendor_profiles").delete().eq("user_id",user.id);
+    if(error){alert("המחיקה נכשלה: "+error.message);return;}
+    // גם הלוגו והתמונות (vendors/<uid>/...) נמחקים מהאחסון
+    try{const st=sb.storage.from("event-images"),{data:files}=await st.list(`vendors/${user.id}`,{limit:100});
+      if(files?.length)await st.remove(files.map(f=>`vendors/${user.id}/${f.name}`));}catch{}
+    setP(null);setPriv(null);setEdit(false);
+  };
   const upgrade=()=>window.open(`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(`היי, אני ${p?.business_name||"ספק"} (${SUPPLIER_CAT[p?.category]?.label||""}) ב-Sidor-IL ואשמח לשמוע על שדרוג לספק מוביל`)}`,"_blank","noopener,noreferrer");
   const status=p&&({pending:{bg:"#FFF8E8",b:"#F5DDA6",c:"#8A5A00",t:"⏳ הפרופיל ממתין לאישור",s:"נבדוק את הפרטים בדרך כלל תוך יום-יומיים, ואז הפרופיל יופיע ללקוחות."},
     approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#1F8F6C",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
@@ -8965,6 +8984,7 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
                 <button onClick={()=>setEdit(true)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>✏️ עריכת הפרופיל</button>
                 <button onClick={()=>setOpen(p)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👁 תצוגה מלאה</button>
               </div>
+              <button onClick={removeProfile} style={{marginTop:10,background:"none",border:"none",padding:"6px 0",color:"#B42318",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>מחיקת הפרופיל מהמדריך</button>
             </div>
             <div style={{background:"linear-gradient(135deg,#FFF6E2,#FFF0F6)",border:"1.5px solid #F3D08A",borderRadius:20,padding:"18px 20px"}}>
               <div style={{fontSize:17,fontWeight:900,color:"#2B1D3F"}}>⭐ שדרוג לספק מוביל</div>
@@ -9932,8 +9952,9 @@ function InvitePage({ code, guestId }) {
             style={{width:"100%",background:ready?"#1B3A8C":"#ECE8F1",color:ready?"#fff":"#4A4060",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:ready?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
             {submitting?"שולח...":ready?"שלח אישור ←":!firstName.trim()?"נא למלא שם פרטי":"בחרו מגיעים או לא מגיעים"}
           </button>);})()}
-          <p style={{fontSize:12,color:"#6B6B6B",textAlign:"center",lineHeight:1.6,marginTop:10}}>
-            הפרטים נמסרים לבעלי האירוע לצורך ניהול האירוע בלבד. <a href="https://www.sidoril.com/#/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#555"}}>מדיניות פרטיות</a>
+          {/* הודעה לפי סעיף 11 לחוק הגנת הפרטיות (תיקון 13): חובה / מטרה / בעל השליטה / מי מקבל / עיון ותיקון */}
+          <p style={{fontSize:12,color:"#5F5675",textAlign:"center",lineHeight:1.6,marginTop:10}}>
+            אין חובה חוקית למסור את הפרטים, אך בלעדיהם לא נוכל לרשום את אישור ההגעה. הפרטים נמסרים ל{eventWords(event).hosts?`בעלי האירוע (${eventWords(event).hosts})`:"בעלי האירוע"}, שהם בעלי השליטה במידע, לצורך ניהול האירוע בלבד, ונשמרים עבורם ב-Sidor-IL. אפשר לבקש לעיין בפרטים ולתקן אותם. <a href="https://www.sidoril.com/#/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#3E3555"}}>מדיניות פרטיות</a>
           </p>
         </div>
 
@@ -11423,6 +11444,8 @@ const LEGAL_PAGES={
     {title:"5א. עיבוד פרטי האורחים עבורכם",text:`לגבי פרטי האורחים שאתם מזינים, אתם בעלי השליטה במידע ואנו מחזיקים ומעבדים אותו עבורכם בלבד: לצורך מתן השירות, לפי הוראותיכם, ובאמצעי אבטחה סבירים. איננו משתמשים בפרטים אלה לכל מטרה אחרת, ואיננו מוסרים אותם לאחרים מלבד הספקים הנדרשים להפעלת השירות (כמפורט במדיניות הפרטיות). עם מחיקת האירוע נמחקים פרטי האורחים שלו.`},
     {title:"5ב. תקופת שמירת המידע",text:`השירות נועד לניהול אירוע, ולא לאחסון קבוע של רשימות אנשי קשר. פרטי האורחים של כל אירוע נשמרים עד 12 חודשים מתאריך האירוע, ולאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים, בלי הודעה נוספת. חשבון שלא נעשה בו שימוש 24 חודשים עשוי להימחק לאחר הודעה מוקדמת באימייל. באחריותכם לייצא ולשמור עותק של מה שתרצו לפני כן (למשל ייצוא לאקסל). לא נהיה אחראים לאובדן מידע שנמחק בהתאם לסעיף זה. הפרטים המלאים במדיניות הפרטיות.`},
     {title:"5ג. המלצות ודירוגים",text:`המלצה שאתם שולחים דרך האתר עשויה להתפרסם באתר עם השם שבחרתם להציג, לאחר אישורנו. אנו מפרסמים רק המלצות אמיתיות של לקוחות, ולא עורכים את תוכנן מלבד תיקון שגיאות כתיב. ניתן לבקש בכל עת להסיר המלצה.`},
+    {title:"5ד. מדריך הספקים",text:`• ספק שנרשם למדריך אחראי לכך שכל הפרטים, המחירים והתמונות שהוא מפרסם נכונים, שייכים לו או שיש לו זכות לפרסמם, ושהוא פועל כדין (כולל רישיונות והיתרים הנדרשים בתחומו).\n• פרופיל מוצג לאחר אישורנו. אנו רשאים לסרב לפרופיל, לבקש תיקונים, לסמן "עסק רשום" לאחר בדיקת מספר העוסק או ח.פ, או להסיר פרופיל שמפר את התנאים, לפי שיקול דעתנו.\n• "ספק מוביל" הוא מיקום בולט בתשלום, ומסומן באתר כ"מקודם". הוא אינו המלצה שלנו על איכות הספק.\n• Sidor-IL אינה צד להתקשרות בין גולשים לספקים, אינה בודקת את טיב השירות של הספקים ואינה אחראית לו. ההתקשרות, התשלום וכל מחלוקת הם בין הגולש לספק בלבד.\n• ספק יכול לעדכן את הפרופיל או למחוק אותו בכל עת מאזור הספקים.`},
+    {title:"5ה. דיווחי מחירים והמלצות על ספקים",text:`• דיווח מחיר או המלצה על ספק צריכים להתבסס על ניסיון אישי ואמיתי שלכם. אין לפרסם מידע כוזב, מטעה או פוגעני, ואין לפרסם תוכן שעלול להוות לשון הרע לפי חוק איסור לשון הרע, התשכ"ה-1965.\n• ספק אינו רשאי לפרסם המלצות על עצמו או על מתחריו.\n• ההמלצות והדיווחים משקפים את דעת הכותבים בלבד ולא את עמדתנו. אנו רשאים לסמן, להסתיר או להסיר דיווח או המלצה שנראים חריגים, לא אמינים או מפרים את התנאים, ולפעול לפי בקשת הסרה מוצדקת של ספק.\n• פרסום בעילום שם אפשרי, אך פרטי המפרסם נשמרים אצלנו ועשויים להימסר אם נחויב לכך על פי דין.`},
     {title:"6. זמינות השירות",text:`אנו עושים מאמץ שהשירות יפעל באופן רציף ותקין, אך ייתכנו תקלות, הפסקות לצורך תחזוקה או עיכובים אצל ספקים חיצוניים (כגון ספקי SMS ו-WhatsApp). מומלץ לשמור עותק של רשימת האורחים וסידור ההושבה (למשל באמצעות כפתורי ההדפסה והייצוא) לקראת יום האירוע.`},
     {title:"7. הגבלת אחריות",text:`השירות ניתן כפי שהוא (AS IS). ככל שהדין מתיר, לא נהיה אחראים לנזק עקיף או תוצאתי הנובע מהשימוש בשירות או מחוסר היכולת להשתמש בו, ובכלל זה הודעה שלא נמסרה או עוכבה אצל ספק חיצוני. בכל מקרה, אחריותנו הכוללת לא תעלה על הסכום ששילמתם עבור השירות הרלוונטי. אין באמור כדי לגרוע מזכויות שאינן ניתנות להתניה על פי דין.`},
     {title:"8. קניין רוחני",text:`כל הזכויות באתר, בעיצובו, בקוד ובתכנים שלנו שמורות ל-Sidor-IL. התוכן שאתם מזינים (פרטי האירוע, האורחים, תמונות ונוסחים) נשאר שלכם, ואתם מעניקים לנו רשות להשתמש בו לצורך מתן השירות בלבד.`},
@@ -11431,23 +11454,24 @@ const LEGAL_PAGES={
     {title:"11. יצירת קשר",text:CONTACT_TXT},
   ]},
   privacy:{title:"מדיניות פרטיות",updated:"נובמבר 2026",sections:[
-    {title:"1. כללי",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 ולתקנות מכוחו.\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, ובלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם.`},
-    {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
+    {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com, טלפון: 052-681-7102.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
+    {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
-    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה, וטעינת הגופן של האתר (Google Fonts), שבמהלכה כתובת ה-IP של הדפדפן נחשפת ל-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל, בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
+    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה, וטעינת הגופן של האתר (Google Fonts), שבמהלכה כתובת ה-IP של הדפדפן נחשפת ל-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
     {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
-    {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com. נשיב בתוך 30 ימים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
+    {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com, טלפון 052-681-7102, או בדואר: Sidor-IL, השושנים 30, נוף הגליל. נשיב בתוך 30 ימים. ספק יכול גם לעדכן או למחוק את הפרופיל שלו בעצמו מאזור הספקים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
     {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage) ובעוגיות חיוניות בלבד, שבלעדיהם השירות לא יעבוד כראוי:\n\n• שמירת ההתחברות לחשבון.\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות).\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n• סימון שראיתם את הודעת העוגיות.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם כנדרש. ניתן למחוק את המידע השמור בכל עת דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
     {title:"10. קטינים",text:`פתיחת חשבון מיועדת לבני 18 ומעלה. פרטי אורחים קטינים מוזנים על ידי בעל האירוע ובאחריותו.`},
     {title:"11. שינויים במדיניות",text:`נעדכן מדיניות זו לפי הצורך. שינוי מהותי יפורסם באתר, ותאריך העדכון האחרון מופיע בראש הדף.`},
     {title:"12. יצירת קשר",text:CONTACT_TXT},
   ]},
-  accessibility:{title:"הצהרת נגישות",updated:"אוקטובר 2026",sections:[
+  accessibility:{title:"הצהרת נגישות",updated:"נובמבר 2026",sections:[
     {title:"מחויבות לנגישות",text:`אנו ב-Sidor-IL רואים חשיבות רבה במתן שירות שוויוני לכל המשתמשים, ובכלל זה אנשים עם מוגבלות. אנו פועלים להנגיש את האתר בהתאם לחוק שוויון זכויות לאנשים עם מוגבלות, התשנ"ח-1998, לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568 המבוסס על הנחיות WCAG 2.0 ברמה AA.`},
-    {title:"מה עשינו באתר",text:`• תפריט נגישות (כפתור ♿ בפינת המסך): הגדלה והקטנה של הטקסט, ניגודיות גבוהה, גווני אפור, סמן גדול, עצירת אנימציות, גופן קריא, הדגשת קישורים וקו תחתי לקישורים.\n• מבנה דף בעברית מימין לשמאל, עם הגדרת שפה וכיוון.\n• תמיכה בניווט במקלדת וסימון פוקוס ברכיבים עיקריים.\n• תיאורים טקסטואליים לכפתורים ולתמונות עיקריים.\n• כיבוד הגדרת "הפחתת תנועה" של מערכת ההפעלה.\n• התאמה לצפייה בטלפון, בטאבלט ובמחשב.`},
-    {title:"מגבלות ידועות",text:`למרות מאמצינו, ייתכן שחלקים מהאתר עדיין אינם נגישים במלואם:\n\n• מפת האולם וגרירת אורחים לשולחנות מבוססות על גרירה בעכבר או במגע. כחלופה, ניתן לשבץ אורחים מתצוגת הרשימה ולהשתמש בהושבה האוטומטית.\n• סריקת QR בכניסה לאולם דורשת מצלמה. כחלופה, ניתן לחפש אורח לפי שם.\n• תכנים שמעלים המשתמשים עצמם (כגון תמונת הזמנה) אינם בשליטתנו.\n\nאנו ממשיכים לשפר את הנגישות באופן שוטף.`},
+    {title:"מה עשינו באתר",text:`• תפריט נגישות (כפתור הנגישות בפינת המסך): הגדלה והקטנה של הטקסט, ניגודיות גבוהה, גווני אפור, סמן גדול, עצירת אנימציות, גופן קריא, הדגשת קישורים וקו תחתי לקישורים. ההגדרות נשמרות גם אחרי רענון.\n• מבנה דף בעברית מימין לשמאל, עם הגדרת שפה וכיוון, וכותרת ראשית בכל מסך.\n• תמיכה בניווט במקלדת וסימון פוקוס ברכיבים עיקריים.\n• טקסט חלופי לתמונות, ושמות נגישים לכפתורים, לקישורים ולשדות טפסים, לשימוש עם קוראי מסך.\n• תוויות גלויות בטפסים (למשל בטופס אישור ההגעה), והודעות שגיאה בטקסט.\n• ניגודיות צבעים לטקסט לפי רמה AA.\n• כיבוד הגדרת "הפחתת תנועה" של מערכת ההפעלה.\n• התאמה לצפייה בטלפון, בטאבלט ובמחשב.`},
+    {title:"בדיקת הנגישות",text:`האתר נבדק לאחרונה בנובמבר 2026: בדיקה אוטומטית בכלי axe לפי WCAG 2.0 ברמה AA בדף הבית, בדף ההזמנה לאורח, במסכי ניהול האירוע ובדפי המידע המשפטי, במחשב ובטלפון, ובדיקה ידנית של ניווט מקלדת, ניגודיות, טקסט חלופי ותוויות. הבעיות שנמצאו תוקנו.`},
+    {title:"מגבלות ידועות",text:`למרות מאמצינו, ייתכן שחלקים מהאתר עדיין אינם נגישים במלואם:\n\n• מפת האולם וגרירת אורחים לשולחנות מבוססות על גרירה בעכבר או במגע. כחלופה, ניתן לשבץ אורחים מתצוגת הרשימה ולהשתמש בהושבה האוטומטית.\n• סריקת QR בכניסה לאולם דורשת מצלמה. כחלופה, ניתן לחפש אורח לפי שם.\n• תכנים שמעלים המשתמשים עצמם (כגון תמונת הזמנה, תמונות ספקים ונוסחי הודעות) אינם בשליטתנו.\n• שירותים חיצוניים שהאתר מקשר אליהם (כגון התחברות עם Google, WhatsApp, Bit, PayBox, Waze ו-Google Maps) מונגשים על ידי מפעיליהם.\n• דפי ההדפסה (סידור הושבה, כרטיסי שולחן ורשימות) מיועדים להדפסה על נייר. המידע שבהם זמין גם במסכי האתר עצמם.\n\nאנו ממשיכים לשפר את הנגישות באופן שוטף.`},
     {title:"נתקלתם בבעיה?",text:`אם נתקלתם בקושי בשימוש באתר, או שיש לכם הצעה לשיפור, נשמח לשמוע ולסייע. אנא ציינו את הדף, תיאור הבעיה וסוג הדפדפן או הטכנולוגיה המסייעת.\n\nרכז/ת הנגישות של Sidor-IL:\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102\n\nנשתדל להשיב בתוך 7 ימי עבודה.`},
     {title:"הסדרי נגישות בשירות",text:`השירות ניתן באופן מקוון בלבד, ואין קבלת קהל פיזית. ניתן לקבל סיוע טלפוני או בוואטסאפ בשימוש באתר, בהקמת האירוע ובהזנת אורחים, לרבות עבור אנשים עם מוגבלות.`},
   ]},
@@ -11488,7 +11512,7 @@ function LegalPage({ kind }) {
       </header>
       <main style={{maxWidth:800,margin:"0 auto",padding:"48px 24px 80px"}}>
         <h1 style={{fontSize:28,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>{page.title}</h1>
-        <p style={{fontSize:13,color:"#888",marginBottom:40}}>עדכון אחרון: {page.updated}</p>
+        <p style={{fontSize:13,color:"#5F5675",marginBottom:40}}>עדכון אחרון: {page.updated}</p>
         {page.sections.map(({title,text})=>(
           <section key={title} style={{marginBottom:32}}>
             <h2 style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:10,borderRight:"3px solid "+C.blue,paddingRight:12}}>{title}</h2>
