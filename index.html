@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים</title>
     <link rel="preconnect" href="https://zcfosfaazvljnzipyzon.supabase.co" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- הגופן נטען מהשרת שלנו (לא מ-Google), כך שכתובת ה-IP של הגולשים לא נחשפת לצד שלישי -->
+    <link rel="preload" href="/fonts/heebo-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+      @font-face{font-family:'Heebo';font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/heebo-hebrew-wght-normal.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+      @font-face{font-family:'Heebo';font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/heebo-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+    </style>
     <meta name="description" content="Sidor-IL - סידורי הושבה חכמים ואישורי הגעה לחתונות, בר/בת מצווה, בריתות ואירועים: מפת אולם, הושבה אוטומטית, הזמנות ב-SMS ו-WhatsApp, וכניסה לאולם עם QR.">
     <meta name="theme-color" content="#FFF4EE">
     <link rel="canonical" href="https://www.sidoril.com/">

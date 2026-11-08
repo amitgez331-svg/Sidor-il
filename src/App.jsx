@@ -71,7 +71,24 @@ const REF_KEY="sidor_ref";
 const PRODUCER_ENTRY_KEY="sidor_producer_entry";
 // סוג החשבון שנבחר בהרשמה ("vendor" = ספק). נשמר במכשיר כדי לשרוד גם כניסה עם Google
 const ACCOUNT_KEY="sidor_account";
-const captureRef=()=>{try{const r=new URLSearchParams(window.location.search).get("ref");if(r&&/^[\w-]{2,40}$/.test(r))localStorage.setItem(REF_KEY,JSON.stringify({ref:r.toLowerCase(),at:Date.now()}));}catch{}};
+// ─── הסכמה לאחסון לא חיוני (באנר העוגיות) ───
+// "all" = אישור · "essential" = דחייה · כל ערך אחר = עוד לא נבחר (כמו דחייה: לא שומרים דברים לא חיוניים).
+// חיוני תמיד: ההתחברות, הבחירה הזו, ומצב הניווט בלשונית. לא חיוני: הפניה, חזרה למסך האחרון, הגדרות תצוגה ונגישות.
+const COOKIE_KEY="sidor_cookie_ok";
+const OPTIONAL_STORAGE=["sidor_ref","sidor_a11y","sidor_aside","sidor_event_id","sidor_last_screen","sidor_events_view","sidor_view_tip"];
+const REF_PENDING="sidor_ref_pending"; // קוד הפניה עד שהגולש בוחר (בלשונית בלבד, נמחק עם סגירתה)
+function cookieChoice(){try{const v=localStorage.getItem(COOKIE_KEY);return v==="all"||v==="essential"?v:null;}catch{return null;}}
+function optSet(k,v){if(cookieChoice()!=="all")return;try{localStorage.setItem(k,v);}catch{}}
+function setCookieChoice(choice){
+  try{
+    localStorage.setItem(COOKIE_KEY,choice);
+    if(choice==="all"){const p=sessionStorage.getItem(REF_PENDING);if(p)localStorage.setItem(REF_KEY,p);}
+    else OPTIONAL_STORAGE.forEach(k=>localStorage.removeItem(k)); // דחייה: מוחקים גם מה שכבר נשמר
+    sessionStorage.removeItem(REF_PENDING);
+  }catch{}
+}
+const openCookieSettings=()=>window.dispatchEvent(new Event("sidor-cookie-settings"));
+const captureRef=()=>{try{const r=new URLSearchParams(window.location.search).get("ref");if(r&&/^[\w-]{2,40}$/.test(r)){const v=JSON.stringify({ref:r.toLowerCase(),at:Date.now()}),c=cookieChoice();if(c==="all")localStorage.setItem(REF_KEY,v);else if(!c)sessionStorage.setItem(REF_PENDING,v);}}catch{}};
 const myRefCode=u=>u?.id?u.id.replace(/-/g,"").slice(0,8):"";
 const applyRef=async u=>{
   let r=null;try{const v=JSON.parse(localStorage.getItem(REF_KEY)||"null");if(v&&Date.now()-v.at<60*864e5)r=v.ref;}catch{}
@@ -1152,7 +1169,7 @@ function AccessibilityWidget() {
       settings.contrast?"contrast(150%)":"",
       settings.grayscale?"grayscale(100%)":"",
     ].filter(Boolean).join(" ")||"";
-    try{localStorage.setItem("sidor_a11y",JSON.stringify(settings));}catch{}
+    optSet("sidor_a11y",JSON.stringify(settings));
     // אנימציות
     const style=document.getElementById("a11y-style")||document.createElement("style");
     style.id="a11y-style";
@@ -2175,6 +2192,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
               <a href="#/accessibility" style={{textDecoration:"none"}}>הצהרת נגישות</a>
               <a href="#/cancel" style={{textDecoration:"none"}}>ביטול עסקה</a>
+              <button type="button" onClick={openCookieSettings} style={{background:"none",border:"none",padding:0,font:"inherit",color:"inherit",cursor:"pointer"}}>הגדרות עוגיות</button>
             </span>
             <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
           </div>
@@ -3436,7 +3454,7 @@ function printCateringReport(event,guests){
   const title=esc(event.name||""),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
   const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
   w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>דוח לקייטרינג · ${title}</title><style>
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+    @font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-hebrew-wght-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}@font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
     body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 18px;font-size:13px}
     h2{font-size:16px;margin:20px 0 8px;border-bottom:2px solid #2B1D3F;padding-bottom:4px}table{border-collapse:collapse;font-size:14px;min-width:300px}td,th{border-bottom:1px solid #EEE6F7;padding:6px 10px;text-align:right}th{background:#F4EEFC}
     .big{font-size:22px;font-weight:900}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}@media print{.bar{display:none}body{margin:10mm}}
@@ -3488,7 +3506,7 @@ function printRsvpList(event,allGuests,tables,only="all"){
   const title=esc(event.name||"אישורי הגעה"),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
   const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
   w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>אישורי הגעה · ${title}</title><style>
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+    @font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-hebrew-wght-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}@font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
     *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}
     h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 14px;font-size:13px}
     .sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}.sum div{border:1.5px solid #CFC3E0;border-radius:10px;padding:8px 14px;font-size:13px}.sum b{font-size:18px;display:block}
@@ -3926,7 +3944,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [fullListOpen,setFullListOpen]=useState(true);
   // רשימת האורחים שליד המפה: אפשר לקפל כדי לתת למפה את כל הרוחב (הבחירה נשמרת)
   const [asideOpen,setAsideOpen]=useState(()=>{try{return localStorage.getItem("sidor_aside")!=="0";}catch{return true;}});
-  useEffect(()=>{try{localStorage.setItem("sidor_aside",asideOpen?"1":"0");}catch{}},[asideOpen]);
+  useEffect(()=>{optSet("sidor_aside",asideOpen?"1":"0");},[asideOpen]);
   // בחירת שולחן פותחת את הרשימה (שם עורכים את היושבים בו)
   useEffect(()=>{if(selected&&!mapFull)setAsideOpen(true);},[selected]);
   useEffect(()=>{if(screen!=="seating"||view!=="map")setMapFull(false);},[screen,view]);
@@ -4205,7 +4223,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const title=esc(event.name||"סידור הושבה"),date=event.date?fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"";
     const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
     w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סידור הושבה · ${title}</title><style>
-      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+      @font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-hebrew-wght-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}@font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
       *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}
       h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 18px;font-size:13px}h2{font-size:17px;margin:26px 0 10px;border-bottom:2px solid #2B1D3F;padding-bottom:4px}
       .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.t{border:1.5px solid #CFC3E0;border-radius:10px;padding:10px 12px;break-inside:avoid}
@@ -4247,7 +4265,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     }
     const w=window.open("","_blank");if(!w){alert("הדפדפן חסם את חלון ההדפסה — אפשרו חלונות קופצים לאתר");return;}
     w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>${kind==="tables"?"כרטיסי שולחן":"כרטיסי שם"} · ${title}</title><style>
-      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+      @font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-hebrew-wght-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}@font-face{font-family:Heebo;src:url(${window.location.origin}/fonts/heebo-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
       *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;margin:16px}
       .bar{margin-bottom:12px;font-size:13px;color:#6E6585}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer;margin-left:10px}
       ${css}@media print{.bar{display:none}body{margin:8mm}}
@@ -4288,7 +4306,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     return()=>window.removeEventListener("resize",fn);
   },[event.id]);
   // שמירת המסך הנוכחי לרענון הבא
-  useEffect(()=>{try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));}catch{}},[event.id,screen,view]);
+  useEffect(()=>{optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));},[event.id,screen,view]);
   // מסך נעול (למשל הושבה כשעברו את מגבלת המוזמנים בחינם): להושבה — למסך החבילות, לשאר — לראשי
   useEffect(()=>{if(!loading&&lockedFor(screen))setScreen(screen==="seating"||screen==="ai"?"packages":"home");},[loading,userPackages,memberRole,screen,guests,tables]);
   const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),event.user_id&&event.user_id!==user.id
@@ -4297,7 +4315,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     :sb.from("user_packages").select("package_id").eq("user_id",user.id)]);setTables((tData||[]).map(t=>({...t,guests:(gData||[]).filter(g=>g.table_id===t.id)})));setGuests((gData||[]).filter(g=>!g.table_id));setUserPackages((pkgData||[]).map(p=>p.package_id));setLoading(false);};
   // בועת הסבר על בורר מפה/רשימה — פעם אחת לכל דפדפן
   const [viewTip,setViewTipRaw]=useState(()=>{try{return !localStorage.getItem("sidor_view_tip");}catch{return false;}});
-  const setViewTip=v=>{setViewTipRaw(v);if(!v)try{localStorage.setItem("sidor_view_tip","1");}catch{}};
+  const setViewTip=v=>{setViewTipRaw(v);if(!v)optSet("sidor_view_tip","1");};
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
 
@@ -10069,7 +10087,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
   // נכנסו דרך "כניסת מפיקים": אם החשבון עוד לא מפיק מציגים איך מצטרפים. הדגל נמחק כדי שרענון בתוך אירוע ישחזר אותו כרגיל
   const [producerEntry,setProducerEntry]=useState(()=>{try{const v=!!sessionStorage.getItem(PRODUCER_ENTRY_KEY);sessionStorage.removeItem(PRODUCER_ENTRY_KEY);return v;}catch{return false;}});
   const [statsReady,setStatsReady]=useState(false);
-  useEffect(()=>{try{if(view)localStorage.setItem("sidor_events_view",view);}catch{}},[view]);
+  useEffect(()=>{if(view)optSet("sidor_events_view",view);},[view]);
   useEffect(()=>{
     loadMyEvents(user,"created_at",false)
       .then(async data=>{
@@ -11138,7 +11156,7 @@ function AdminDashboard({ user, onLogout }) {
     if(ownerPkgs(ev.user_id).some(p=>p==="auto"||p==="whatsapp")&&(ev.settings_json?.wa_schedule||[]).some(x=>x.enabled))attention.push({lvl:"info",icon:"💬",text:`סבבי WhatsApp לשליחה ידנית · ${ev.name} (${when})`,ev});
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
-  const openEvent=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));}catch{}window.location.href="/";};
+  const openEvent=ev=>{optSet("sidor_event_id",ev.id);optSet("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));window.location.href="/";};
   const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["suppliers","🏪 ספקים רשומים",null],["vendordata","💡 ספקים ומחירים",null],["backups","💾 גיבויים",null],["log","🧾 יומן SMS",null]];
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
 
@@ -11457,12 +11475,12 @@ const LEGAL_PAGES={
     {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com, טלפון: 052-681-7102.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
     {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
-    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה, וטעינת הגופן של האתר (Google Fonts), שבמהלכה כתובת ה-IP של הדפדפן נחשפת ל-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
+    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Unsplash: תמונות הרקע בדף הבית ובעיצובי ההזמנה נטענות משרתי Unsplash, ובמהלך הטעינה כתובת ה-IP של הדפדפן נחשפת אליהם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
     {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
     {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com, טלפון 052-681-7102, או בדואר: Sidor-IL, השושנים 30, נוף הגליל. נשיב בתוך 30 ימים. ספק יכול גם לעדכן או למחוק את הפרופיל שלו בעצמו מאזור הספקים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
-    {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage) ובעוגיות חיוניות בלבד, שבלעדיהם השירות לא יעבוד כראוי:\n\n• שמירת ההתחברות לחשבון.\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות).\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n• סימון שראיתם את הודעת העוגיות.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם כנדרש. ניתן למחוק את המידע השמור בכל עת דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
+    {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage). בכניסה הראשונה תתבקשו לאשר או לדחות את השמירה שאינה חיונית.\n\nנשמר תמיד, כי בלעדיו השירות לא יעבוד:\n• שמירת ההתחברות לחשבון.\n• הבחירה שלכם באישור או בדחייה.\n• סוג החשבון (פרטי או ספק), קוד הגישה לעמדת הכניסה לאולם שהגדרתם, ומצב הניווט בלשונית הפתוחה.\n\nנשמר רק אם אישרתם:\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות). בלי אישור הן פועלות עד רענון הדף.\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n\nבדחייה השירות ממשיך לעבוד במלואו, ומה שכבר נשמר מהרשימה השנייה נמחק. אפשר לשנות את הבחירה בכל עת בכפתור שבסעיף זה או ב"הגדרות עוגיות" בתחתית דף הבית.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם מראש. ניתן גם למחוק את המידע השמור דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
     {title:"10. קטינים",text:`פתיחת חשבון מיועדת לבני 18 ומעלה. פרטי אורחים קטינים מוזנים על ידי בעל האירוע ובאחריותו.`},
     {title:"11. שינויים במדיניות",text:`נעדכן מדיניות זו לפי הצורך. שינוי מהותי יפורסם באתר, ותאריך העדכון האחרון מופיע בראש הדף.`},
     {title:"12. יצירת קשר",text:CONTACT_TXT},
@@ -11482,17 +11500,23 @@ const LEGAL_PAGES={
 };
 const LEGAL_ROUTES={"#/terms":"terms","#/privacy":"privacy","#/accessibility":"accessibility","#/cancel":"cancel"};
 // הודעת עוגיות: רק עוגיות ואחסון חיוניים, אז הודעה (בלי חסימה) שנסגרת ב"הבנתי" ונזכרת בדפדפן
-const COOKIE_KEY="sidor_cookie_ok";
 function CookieNotice() {
-  const [show,setShow]=useState(()=>{try{return !localStorage.getItem(COOKIE_KEY);}catch{return false;}});
+  const [show,setShow]=useState(()=>!cookieChoice());
+  // "הגדרות עוגיות" (בתחתית דף הבית ובמדיניות הפרטיות) פותח את הבחירה מחדש
+  useEffect(()=>{const fn=()=>setShow(true);window.addEventListener("sidor-cookie-settings",fn);return()=>window.removeEventListener("sidor-cookie-settings",fn);},[]);
   if(!show)return null;
-  const ok=()=>{try{localStorage.setItem(COOKIE_KEY,"1");}catch{}setShow(false);};
+  const pick=c=>{setCookieChoice(c);setShow(false);};
+  const b={border:"none",borderRadius:10,padding:"9px 20px",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"inherit",minHeight:40};
   return(
     <div role="region" aria-label="הודעת עוגיות" dir="rtl" className="sx-cookie" style={{position:"fixed",bottom:12,left:12,right:12,zIndex:400,maxWidth:560,margin:"0 auto",background:"#2B1D3F",color:"#fff",borderRadius:16,padding:"12px 16px",boxShadow:"0 10px 30px rgba(0,0,0,.25)",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontFamily:"'Heebo',sans-serif"}}>
       {/* בנייד: מעל כפתורי הוואטסאפ והנגישות שבפינות התחתונות, כדי לא להסתיר אותם */}
       <style>{`@media(max-width:640px){.sx-cookie{bottom:88px!important}}`}</style>
-      <div style={{flex:"1 1 240px",fontSize:13,lineHeight:1.6}}>🍪 האתר משתמש בעוגיות ובאחסון מקומי חיוניים בלבד (התחברות והגדרות), בלי פרסום ובלי מעקב. <a href="#/privacy" style={{color:"#F9C6DD",fontWeight:700}}>מדיניות הפרטיות</a></div>
-      <button onClick={ok} style={{background:"#fff",color:"#2B1D3F",border:"none",borderRadius:10,padding:"8px 18px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>הבנתי</button>
+      <div style={{flex:"1 1 240px",fontSize:13,lineHeight:1.6}}>🍪 מה שחיוני להתחברות ולפעולת האתר נשמר תמיד. באישור נשמור גם העדפות נוחות: חזרה למסך האחרון, הגדרות תצוגה ונגישות וקוד הפניה. בלי פרסום ובלי מעקב. <a href="#/privacy" style={{color:"#F9C6DD",fontWeight:700}}>מדיניות הפרטיות</a></div>
+      {/* שני הכפתורים באותו גודל ובאותו מקום: דחייה קלה בדיוק כמו אישור */}
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>pick("all")} style={{...b,background:"#fff",color:"#2B1D3F"}}>אישור</button>
+        <button onClick={()=>pick("essential")} style={{...b,background:"#fff",color:"#2B1D3F"}}>דחייה</button>
+      </div>
     </div>
   );
 }
@@ -11517,6 +11541,7 @@ function LegalPage({ kind }) {
           <section key={title} style={{marginBottom:32}}>
             <h2 style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:10,borderRight:"3px solid "+C.blue,paddingRight:12}}>{title}</h2>
             <p style={{fontSize:14,color:"#444",lineHeight:1.9,whiteSpace:"pre-line"}}>{linkify(text)}</p>
+            {kind==="privacy"&&title.startsWith("9.")&&<button type="button" onClick={openCookieSettings} className="sx-btn" style={{marginTop:10,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>שינוי הבחירה (הגדרות עוגיות)</button>}
           </section>
         ))}
         <div style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 20px",marginTop:40,fontSize:13,color:C.blue,fontWeight:700}}>
@@ -11809,9 +11834,9 @@ export default function App() {
 
   const selectEvent=(ev)=>{
     // כניסה לאירוע מהרשימה תמיד למסך הראשי (שחזור המסך האחרון הוא רק לרענון דף)
-    if(ev)try{localStorage.setItem(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:"home",view:readLastScreen(ev.id)?.view||"map"}));}catch{}
+    if(ev)optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:"home",view:readLastScreen(ev.id)?.view||"map"}));
     setEvent(ev);
-    if(ev)localStorage.setItem("sidor_event_id",ev.id);
+    if(ev)optSet("sidor_event_id",ev.id);
     else localStorage.removeItem("sidor_event_id");
   };
 
