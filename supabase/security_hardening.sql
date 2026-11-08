@@ -21,6 +21,10 @@ drop policy if exists "allow all 1o4y39n_0" on storage.objects;
 drop policy if exists event_images_select on storage.objects;
 create policy event_images_select on storage.objects for select to authenticated
   using (bucket_id = 'event-images' and (owner_id = (auth.uid())::text or public.is_admin()));
+--    כל משתמש יכול למחוק את הקבצים שהוא העלה (למשל ספק שמוחק את הפרופיל שלו); מנהל — הכל
+drop policy if exists event_images_delete on storage.objects;
+create policy event_images_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'event-images' and (owner_id = (auth.uid())::text or public.is_admin()));
 --    רק תמונות, עד 10MB (בלי SVG ובלי קבצי HTML — שלא יוכלו להעלות דף אינטרנט לשרת שלנו)
 update storage.buckets set file_size_limit = 10485760,
   allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif']
