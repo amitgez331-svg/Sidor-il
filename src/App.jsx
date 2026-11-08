@@ -4578,7 +4578,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
   if(mobile){
     // כותרת הסרגל העליון היא הכותרת הראשית של המסך — חוץ ממסכים שיש להם כותרת משלהם
-    const TopTitleTag=["home","budget"].includes(screen)?"span":"h1";
+    const TopTitleTag=["home","budget","sms"].includes(screen)?"span":"h1";
     const confirmed=guests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
     const declined=guests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
     const eventIcon=event.event_type==="wedding"?"💍":event.event_type==="bar_mitzvah"?"✡️":event.event_type==="brit"?"👶":"💼";
@@ -4912,7 +4912,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{position:"absolute",top:-24,left:-24,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,.16)"}}/>
             <div style={{position:"absolute",bottom:-30,right:-14,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,.1)"}}/>
             <div style={{position:"relative"}}>
-              <div style={{fontSize:10,fontWeight:800,opacity:.85,letterSpacing:".04em",marginBottom:4}}>האירוע הנוכחי</div>
+              <div style={{fontSize:12,fontWeight:800,letterSpacing:".04em",marginBottom:4}}>האירוע הנוכחי</div>
               <div style={{fontSize:15,fontWeight:900,lineHeight:1.3,marginBottom:6}}>{event.name}</div>
               <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                 {days!==null&&days>=0&&<span style={{background:"rgba(255,255,255,.24)",borderRadius:100,padding:"2px 9px",fontSize:11,fontWeight:900}}>⏳ עוד {days} ימים</span>}
@@ -7335,8 +7335,8 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   const autoStatus=s=>{
     const r=runs[s.id];
     const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
-    if(r?.status==="sent")return{c:C.success,bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} SMS)`};
-    if(r?.status==="failed")return{c:C.danger,bg:"#FFF2F4",t:`✗ לא נשלח: ${r.error||"שגיאה"}. אפשר לשלוח ידנית למטה.`};
+    if(r?.status==="sent")return{c:"#1F7A4D",bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} SMS)`};
+    if(r?.status==="failed")return{c:"#B42318",bg:"#FFF2F4",t:`✗ לא נשלח: ${r.error||"שגיאה"}. אפשר לשלוח ידנית מהמסך הזה.`};
     if(r?.status==="skipped")return{c:"#8A5A00",bg:"#FFF8E8",t:`⏭ דולג: ${r.error||""}`};
     if(r?.status==="sending")return{c:C.blue,bg:"#F4EEFC",t:"⏳ שולח עכשיו…"};
     if(!s.enabled)return null;
@@ -7436,12 +7436,12 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
                   {editing&&s.custom
                     ?<input value={s.label} onChange={e=>update(s.id,{label:e.target.value})} style={{...inp,padding:"4px 8px",fontWeight:800}} placeholder="שם התזמון"/>
                     :<div style={{fontSize:12,fontWeight:800,color:C.text}}>{s.label}</div>}
-                  {s.desc&&<div style={{fontSize:10,color:C.muted}}>{s.desc}</div>}
+                  {s.desc&&<div style={{fontSize:12,color:C.muted}}>{s.desc}</div>}
                 </div>
                 {!editing&&s.enabled&&<div style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>{disp} · {s.time}</div>}
                 {editing&&s.custom&&<button onClick={()=>remove(s.id)} title="מחיקת תזמון" style={{background:"#FFF2F4",border:"1px solid #F4C7CD",color:C.danger,borderRadius:8,padding:"3px 8px",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>מחק</button>}
                 {lockDefaults&&!s.custom
-                  ?<span style={{fontSize:10,fontWeight:800,color:"#fff",background:accent,borderRadius:100,padding:"3px 9px",whiteSpace:"nowrap"}}>✓ דלוק</span>
+                  ?<span style={{fontSize:12,fontWeight:800,color:"#fff",background:accent,borderRadius:100,padding:"3px 9px",whiteSpace:"nowrap"}}>✓ דלוק</span>
                   :<div role="switch" aria-checked={s.enabled} tabIndex={0} onClick={()=>toggle(s.id)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle(s.id);}}}
                   style={{width:38,height:22,borderRadius:11,background:s.enabled?accent:"#CBD5E0",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:s.enabled?18:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
@@ -7450,16 +7450,16 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
               {s.enabled&&<>
                 <div style={{background:"#F4EEFC",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#4A3D66",lineHeight:1.5,marginBottom:editing?8:0}}>
                   📝 {preview}
-                  {onPickTemplate&&<button onClick={()=>onPickTemplate(s.templateId)} style={{display:"inline-block",marginRight:6,background:accent,color:"#fff",border:"none",borderRadius:5,padding:"2px 6px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ערוך נוסח</button>}
+                  {onPickTemplate&&<button onClick={()=>onPickTemplate(s.templateId)} style={{display:"inline-block",marginRight:6,background:"#fff",color:"#3A2464",border:"1px solid #D9C8EE",borderRadius:6,padding:"3px 8px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ערוך נוסח</button>}
                 </div>
                 {auto&&!editing&&(()=>{const st=autoStatus(s);return st&&<div style={{marginTop:6,background:st.bg,color:st.c,borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:700,lineHeight:1.5}}>{st.t}</div>;})()}
                 {editing&&<div style={{display:"grid",gridTemplateColumns:s.custom?"1fr 1fr 1fr":"1fr 1fr",gap:8,marginTop:4}}>
-                  {s.custom&&<div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>הודעה</div>
+                  {s.custom&&<div><div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:3}}>הודעה</div>
                     <select value={s.templateId} onChange={e=>update(s.id,{templateId:e.target.value})} style={inp}>
                       {templates.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
                     </select></div>}
-                  <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><DateField compact value={s.date||""} onChange={v=>update(s.id,{date:v})} style={inp}/></div>
-                  <div><div style={{fontSize:10,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div><input type="time" dir="ltr" value={s.time||""} onChange={e=>update(s.id,{time:e.target.value})} style={inp}/></div>
+                  <div><div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:3}}>תאריך</div><DateField compact value={s.date||""} onChange={v=>update(s.id,{date:v})} style={inp}/></div>
+                  <div><div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:3}}>שעה</div><input type="time" dir="ltr" value={s.time||""} onChange={e=>update(s.id,{time:e.target.value})} style={inp}/></div>
                 </div>}
               </>}
             </div>
@@ -7476,7 +7476,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
 // בחירת נמענים (SMS / וואטסאפ): ברירת מחדל  -  אף קבוצה לא מסומנת. נשלח רק למה שמסומן
 const RECIPIENT_GROUPS=[
   {v:"all",      l:"כולם",      c:"#2B6CB0", match:()=>true},
-  {v:"pending",  l:"ממתינים",   c:"#718096", match:g=>g.rsvp!=="confirmed"&&g.rsvp!=="declined"},
+  {v:"pending",  l:"ממתינים",   c:"#5A6578", match:g=>g.rsvp!=="confirmed"&&g.rsvp!=="declined"},
   {v:"confirmed",l:"מגיעים",    c:"#276749", match:g=>g.rsvp==="confirmed"},
   {v:"declined", l:"לא מגיעים", c:"#C53030", match:g=>g.rsvp==="declined"},
 ];
@@ -7527,7 +7527,7 @@ function TemplateTextBar({ tpl, text, onSave, onReset, accent, autoNote }) {
   return(
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:8}}>
       <button disabled={!dirty||st==="saving"} onClick={async()=>{setSt("saving");setSt(await onSave(text)?"saved":"");setTimeout(()=>setSt(s=>s==="saved"?"":s),2200);}}
-        className="sx-btn" style={{...b,background:dirty?accent:"#E9E4EF",color:dirty?"#fff":C.muted,cursor:dirty?"pointer":"default"}}>
+        className="sx-btn" style={{...b,background:dirty?accent:"#E9E4EF",color:dirty?"#fff":"#4A4060",cursor:dirty?"pointer":"default"}}>
         {st==="saving"?"שומר…":`💾 שמירת הנוסח ל"${tpl.label.replace(/^\S+\s/,"")}"`}
       </button>
       {(tpl.custom||dirty)&&<button onClick={onReset} style={{...b,background:"#F7F1FD",color:C.blue}}>↺ נוסח מקורי</button>}
@@ -7667,6 +7667,9 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
   // רכישה: נוצרת בקשה; היתרה נטענת אחרי שהתשלום מאושר באדמין
   const [buyQty,setBuyQty]=useState(300);
+  // טופס הרכישה: null = לפי היתרה (פתוח רק כשהיא 0), אחרת מה שהמשתמש בחר
+  const [showBuy,setShowBuy]=useState(null);
+  const buyOpen=showBuy??smsBalance===0;
   // תוספת מוקד מתקשר לרכישת SMS
   const [buyCall,setBuyCall]=useState(false), [buyCallRecs,setBuyCallRecs]=useState(Math.max(1,guests.length||100));
   const buySum=pickerTotal({value:buyQty,baseFee:smsBase,callOn:buyCall,callRecords:buyCallRecs});
@@ -7686,7 +7689,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
     if(toSend.length===0){alert(sendTo.length?"אין אורחים עם מספר טלפון בקבוצה שנבחרה":"בחר למי לשלוח");return;}
     if(tooLong){alert(`ההודעה ארוכה מ-${SMS_MAX} תווים (${longest.len} אצל ${longest.name}). קצר את הנוסח.`);return;}
     if(smsBalance!==null&&smsBalance<totalSmsNeeded){
-      alert(`אין מספיק SMS!\nנדרש: ${totalSmsNeeded} | יתרה: ${smsBalance}\nרכוש SMS נוספים למטה.`);return;
+      alert(`אין מספיק SMS!\nנדרש: ${totalSmsNeeded} | יתרה: ${smsBalance}\nאפשר לקנות עוד בכפתור "קניית הודעות" למעלה.`);return;
     }
     if(!window.confirm(`לשלוח SMS ל-${toSend.length} אורחים? (${totalSmsNeeded} SMS)`))return;
     setSending(true);setProgress(0);setResults(null);
@@ -7724,51 +7727,34 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
         }
       `}</style>
 
-      {/* כותרת */}
-      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>📱 שליחת SMS</div>
-          <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
-          <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
-            {ew.hosts} {ew.emoji}
-          </div>
+      {/* פס אחד: מה המסך הזה, כמה הודעות יש, ואיך קונים עוד. טופס הרכישה נפתח רק כשצריך */}
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:16,padding:"18px 20px",marginBottom:16,color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+        <div style={{minWidth:0}}>
+          <h1 style={{fontSize:22,fontWeight:900,margin:"0 0 4px"}}>שליחת SMS</h1>
+          <div style={{fontSize:14,color:"rgba(255,255,255,.92)"}}>{ew.hosts} {ew.emoji} · {withPhone.length} אורחים עם טלפון</div>
         </div>
-        <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
-          <div style={{fontSize:28,fontWeight:900}}>{withPhone.length}</div>
-          <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
-        </div>
-      </div>
-
-      {/* יתרת SMS */}
-      <div style={{background:"#fff",borderRadius:14,padding:"14px 18px",marginBottom:16,border:`1.5px solid ${!hasBalance&&smsBalance!==null&&smsBalance<totalSmsNeeded?"#FC8181":C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:44,height:44,borderRadius:12,background:smsBalance===0?"#FFF5F5":smsBalance===null?"#F7FAFC":"#F0FFF4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>
-            {smsBalance===null?"⏳":smsBalance===0?"⚠️":"📊"}
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:32,fontWeight:900,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{smsBalance===null?"...":smsBalance.toLocaleString()}</div>
+            <div style={{fontSize:13,fontWeight:700,marginTop:3}}>הודעות זמינות</div>
           </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:800,color:C.text}}>יתרת SMS</div>
-            <div style={{fontSize:11,color:C.muted}}>
-              {totalSmsNeeded>0?`נדרש לשליחה: ${totalSmsNeeded} SMS`:sendTo.length?"נדרש לשליחה: 0 SMS":"בחר למי לשלוח · נדרש: 0 SMS"}
-            </div>
-          </div>
-        </div>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:32,fontWeight:900,color:smsBalance===0?"#E53E3E":smsBalance!==null&&smsBalance<totalSmsNeeded?"#DD6B20":"#276749",lineHeight:1}}>
-            {smsBalance===null?"...":smsBalance.toLocaleString()}
-          </div>
-          <div style={{fontSize:10,color:C.muted,fontWeight:600}}>הודעות זמינות</div>
+          <button onClick={()=>setShowBuy(!buyOpen)} aria-expanded={buyOpen} aria-controls="sms-buy" className="sx-btn"
+            style={{background:"#fff",color:"#3A2464",border:"none",borderRadius:12,padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+            {buyOpen?"סגירת הרכישה":"קניית הודעות"}
+          </button>
         </div>
       </div>
 
-      {/* כפתורי רכישת SMS */}
-      <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-        <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>🛒 רכישת SMS</div>
-        {pendingReq.length>0&&(
-          <div style={{background:"#FFF8E8",border:"1px solid #F5DDA6",borderRadius:12,padding:"10px 12px",marginBottom:12,fontSize:12,color:"#8A5A00",fontWeight:700}}>
-            ⏳ ממתין לאישור תשלום: {pendingReq.map(r=>`${r.amount} הודעות (₪${r.price})`).join(" · ")}
-            <div style={{fontWeight:500,marginTop:3}}>היתרה תיטען מיד אחרי שהתשלום יאושר.</div>
-          </div>
-        )}
+      {pendingReq.length>0&&(
+        <div style={{background:"#FFF8E8",border:"1px solid #F5DDA6",borderRadius:12,padding:"10px 12px",marginBottom:16,fontSize:13,color:"#7A4E00",fontWeight:700}}>
+          ⏳ ממתין לאישור תשלום: {pendingReq.map(r=>`${r.amount} הודעות (₪${r.price})`).join(" · ")}
+          <div style={{fontWeight:500,marginTop:3}}>היתרה תיטען מיד אחרי שהתשלום יאושר.</div>
+        </div>
+      )}
+
+      {/* רכישת SMS: סגור כברירת מחדל, פתוח מעצמו כשאין יתרה בכלל */}
+      {buyOpen&&<div id="sms-buy" style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
+        <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>קניית הודעות</h2>
         {buyPack&&(
           <div style={{position:"fixed",inset:0,zIndex:320,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setBuyPack(null)}>
             <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,padding:"24px 22px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)"}}>
@@ -7793,19 +7779,19 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
           style={{width:"100%",marginTop:10,background:GRAD,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
           🛒 רכישת {buyQty.toLocaleString()} הודעות{buyCall?" + מוקד":""}{smsBase?" + בסיסית":""} · {fmtShekel(buySum)}
         </button>
-        <div style={{fontSize:10,color:C.muted,textAlign:"center",marginTop:10}}>
+        <div style={{fontSize:12,color:"#5F5675",textAlign:"center",marginTop:10}}>
           💳 תשלום ב-Bit או בהעברה · ההודעות נטענות אחרי אישור התשלום
         </div>
-      </div>
+      </div>}
 
-      <div className="msg-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+      <div className="msg-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
 
-        {/* עמודה שמאל - עריכה */}
+        {/* עמודה שמאל - עריכה: סדר הפעולות האמיתי, 1 נוסח ← 2 עריכה ← 3 נמענים ← שליחה */}
         <div style={{minWidth:0}}>
 
           {/* בחירת נוסח */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>📝 בחר נוסח</div>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>1. בוחרים נוסח</h2>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {TEMPLATES.map(t=>(
                 <div key={t.id} onClick={()=>pickTemplate(t)}
@@ -7822,23 +7808,23 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
           {/* עריכת הודעה */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>✏️ עריכת הודעה</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>
-              משתנים:&nbsp;
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 6px"}}>2. עורכים את ההודעה</h2>
+            <div style={{fontSize:12,color:"#5F5675",marginBottom:10,lineHeight:1.7}}>
+              מתמלא לכל אורח:&nbsp;
               {["{שם}","{שם מלא}","{קישור}","{שולחן}"].map(v=>(
-                <code key={v} style={{background:C.blueXL,padding:"1px 6px",borderRadius:4,marginLeft:4,fontSize:11}}>{v}</code>
+                <code key={v} style={{background:C.blueXL,padding:"1px 6px",borderRadius:4,marginLeft:4,fontSize:12,fontFamily:"inherit"}}>{v}</code>
               ))}
             </div>
-            <textarea id="sms-text" value={msgText} onChange={e=>setMsgText(e.target.value)}
+            <textarea id="sms-text" aria-label="נוסח ההודעה" value={msgText} onChange={e=>setMsgText(e.target.value)}
               style={{width:"100%",minHeight:140,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
                 boxSizing:"border-box",direction:"rtl",color:C.text}}/>
             {/* ספירת תווים */}
-            <div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:6,fontSize:11,color:tooLong?C.danger:C.muted,fontWeight:tooLong?800:400}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:6,fontSize:12,color:tooLong?"#B42318":"#5F5675",fontWeight:tooLong?800:400}}>
               <span>{longest.len}/{SMS_MAX} תווים{longest.name?` (הכי ארוכה: ${longest.name})`:""}</span>
               <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ בתוך המגבלה"}</span>
             </div>
-            <div style={{fontSize:10,color:C.muted,marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
+            <div style={{fontSize:12,color:"#5F5675",marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
             <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={C.blueM} autoNote
               onSave={t=>tooLong?(alert(`ההודעה ארוכה מ-${SMS_MAX} תווים. קצרו לפני השמירה.`),false):saveText(selectedTemplate,t)}
               onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>
@@ -7846,27 +7832,24 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
           {/* פילטר */}
           <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👥 למי לשלוח?</div>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>3. למי לשלוח?</h2>
             <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
-            <div style={{fontSize:11,color:C.muted,margin:"8px 0 12px"}}>
-              {sendTo.length?`${toSend.length} אורחים · ${totalSmsNeeded} SMS`:"לא נבחרו נמענים  -  לא יישלח כלום"}
-              {selectedTemplate==="reminder"&&<div style={{color:"#8A5A00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
+            <div style={{fontSize:13,color:"#5F5675",marginTop:8}}>
+              {sendTo.length?`${toSend.length} אורחים, ${totalSmsNeeded} הודעות`:"עוד לא נבחרו נמענים"}
+              {selectedTemplate==="reminder"&&<div style={{color:"#7A4E00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
             </div>
-
-          {/* תזמון שליחה SMS  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM} auto
-            onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("sms-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
-
           </div>
 
-          {/* כפתור שליחה */}
+          {/* כפתור שליחה: מיד אחרי בחירת הנמענים. לא זמין = עדיין קריא ואומר מה חסר */}
           <button onClick={sendAll} disabled={sending||toSend.length===0||!hasBalance||tooLong}
-            style={{width:"100%",background:sending||toSend.length===0||!hasBalance||tooLong?"#A0AEC0":`linear-gradient(135deg,${C.blue},${C.blueM})`,
-              color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
+            style={{width:"100%",background:sending||toSend.length===0||!hasBalance||tooLong?"#ECE8F1":`linear-gradient(135deg,${C.blue},${C.blueM})`,
+              color:sending||toSend.length===0||!hasBalance||tooLong?"#4A4060":"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
               cursor:sending||toSend.length===0||!hasBalance||tooLong?"default":"pointer",fontFamily:"inherit",
               boxShadow:sending||toSend.length===0||!hasBalance||tooLong?"none":"0 4px 20px rgba(41,82,200,.4)",transition:"all .2s"}}>
             {sending?`שולח... ${progress}%`:tooLong?`⚠️ ההודעה ארוכה מ-${SMS_MAX} תווים`:!hasBalance?`⚠️ אין מספיק SMS (יתרה: ${smsBalance||0})`:toSend.length===0?"בחר למי לשלוח":`📱 שלח SMS ל-${toSend.length} אורחים (${totalSmsNeeded} SMS)`}
           </button>
+          {!hasBalance&&<button onClick={()=>{setShowBuy(true);setTimeout(()=>document.getElementById("sms-buy")?.scrollIntoView({behavior:"smooth",block:"center"}),60);}}
+            style={{display:"block",margin:"10px auto 0",background:"none",border:"none",padding:6,color:C.blue,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>קניית הודעות</button>}
 
           {/* Progress Bar */}
           {(sending||progress>0)&&(
@@ -7904,10 +7887,10 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
         {/* תצוגה מקדימה במקומה (לא "נדבקת" וגולשת עם הגלילה) */}
         <div className="msg-preview">
           <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>ככה ההודעה תיראה</h2>
 
             {guests.length>0&&(
-              <select value={previewGuest?.id||""} onChange={e=>setPreviewGuest(guests.find(g=>String(g.id)===e.target.value)||null)}
+              <select aria-label="תצוגה מקדימה עבור אורח" value={previewGuest?.id||""} onChange={e=>setPreviewGuest(guests.find(g=>String(g.id)===e.target.value)||null)}
                 style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"inherit",outline:"none",marginBottom:14,background:"#fff",color:C.text}}>
                 {guests.map(g=>(
                   <option key={g.id} value={g.id}>{g.name}{g.phone?" ✓":""}</option>
@@ -7923,7 +7906,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
                 </div>
                 <div>
                   <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{previewGuest?.name||"אורח לדוגמה"}</div>
-                  <div style={{fontSize:11,color:"#8E8E93"}}>SMS</div>
+                  <div style={{fontSize:12,color:"#C7C7CC"}}>SMS</div>
                 </div>
               </div>
               <div style={{padding:16}}>
@@ -7931,7 +7914,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
                   <div style={{fontSize:13,color:"#fff",lineHeight:1.8,whiteSpace:"pre-wrap",direction:"rtl"}}>
                     {buildPreview(previewGuest)}
                   </div>
-                  <div style={{fontSize:10,color:"#8E8E93",textAlign:"left",marginTop:6}}>
+                  <div style={{fontSize:12,color:"#C7C7CC",textAlign:"left",marginTop:6}}>
                     {new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})}
                   </div>
                 </div>
@@ -7940,14 +7923,18 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
             {/* מידע */}
             <div style={{marginTop:14,background:!hasBalance&&smsBalance!==null?"#FFF5F5":C.blueXL,border:`1.5px solid ${!hasBalance&&smsBalance!==null?"#FC8181":C.border}`,borderRadius:10,padding:"10px 14px"}}>
-              <div style={{fontSize:12,color:C.text,lineHeight:1.8}}>
-                ✅ מחובר ל-<strong>019 SMS</strong><br/>
-                📊 {toSend.length} אורחים × 1 = <strong>{totalSmsNeeded} SMS</strong><br/>
-                💳 יתרה: <strong style={{color:!hasBalance&&smsBalance!==null?"#E53E3E":"#276749"}}>{smsBalance===null?"טוען...":`${smsBalance} SMS`}</strong>
+              <div style={{fontSize:13,color:C.text,lineHeight:1.7}}>
+                {toSend.length?<>{toSend.length} אורחים יקבלו הודעה אחת כל אחד, ו-<strong>{totalSmsNeeded} הודעות</strong> ירדו מהיתרה.</>:"בוחרים נמענים בשלב 3, וכאן יופיע כמה הודעות ירדו מהיתרה."}
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* תזמון שליחה אוטומטית: נפרד מהשליחה הידנית, אחריה */}
+      <div style={{background:"#fff",borderRadius:14,padding:16,marginTop:20,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
+        <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM} auto
+          onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("sms-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
       </div>
     </div>
   );
