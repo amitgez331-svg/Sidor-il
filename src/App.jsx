@@ -4096,6 +4096,190 @@ const thankYouText=event=>{
     ?`תודה רבה שהגעתם ל${ew.name}! 🙏\nהיה לנו כבוד לארח אתכם, ונשמח להיפגש שוב בקרוב.${ew.hosts?`\n${ew.hosts}`:""}`
     :`תודה ענקית שבאתם לשמוח איתנו ב${ew.name}! ${ew.emoji}\nהנוכחות שלכם עשתה לנו את הערב, ואנחנו מודים על כל ברכה, חיבוק ומתנה ❤️${ew.hosts?`\n\nבאהבה,\n${ew.hosts}`:""}`;
 };
+// ─── מסך הבית של האירוע: סגנון בהיר וצבעוני (גלולות, בועות, גופן מעוגל) בצבעי המותג ───
+const HOME_CSS=`
+.hm{font-synthesis-weight:none}
+.hm h1,.hm h2,.hm h3,.hm .hm-f,.hm button{font-family:'Fredoka','Heebo',sans-serif}
+.hm-hero{position:relative;overflow:hidden;border-radius:36px;padding:30px 34px;color:#fff;background:linear-gradient(120deg,#FF8A65,#F0609E 48%,#9B6BFF);box-shadow:0 30px 70px -40px rgba(155,107,255,.75);display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
+.hm-hero > *{position:relative;z-index:1}
+.hm-hero .hm-bub{position:absolute;z-index:0;border-radius:50%;background:rgba(255,255,255,.16);pointer-events:none}
+.hm-hero h1{font-size:clamp(26px,3vw,40px);font-weight:700;line-height:1.12;margin:4px 0 8px}
+.hm-greet{font-size:15px;font-weight:600;opacity:.95}
+.hm-when{font-size:15px;opacity:.95;display:flex;flex-wrap:wrap;gap:6px 14px}
+.hm-cd{display:flex;gap:10px;margin:18px 0 20px;flex-wrap:wrap}
+.hm-cd div{background:#fff;color:#2B1D3F;border-radius:20px;min-width:72px;padding:10px 12px 8px;text-align:center;box-shadow:0 14px 26px -16px rgba(43,29,63,.6)}
+.hm-cd b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.hm-cd span{font-size:13px;font-weight:600;color:#5E5470}
+.hm-acts{display:flex;gap:10px;flex-wrap:wrap}
+.hm-pill{border:none;border-radius:100px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
+.hm-pill.w{background:#fff;color:#7A3FBF;box-shadow:0 12px 24px -14px rgba(43,29,63,.6)}
+.hm-pill.g{background:rgba(255,255,255,.18);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.6)}
+.hm-pill.p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
+.hm-pill.s{background:#F6F0FF;color:#5B2FA8}
+@media(hover:hover) and (pointer:fine){.hm-pill:hover{translate:0 -2px}}
+.hm-pill:active{translate:0 1px}
+.hm-inv{width:190px;aspect-ratio:3/4;border-radius:24px;background:#fff;padding:8px;rotate:-3deg;box-shadow:0 26px 50px -24px rgba(43,29,63,.7);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:none}
+.hm-inv img{width:100%;height:100%;object-fit:cover;border-radius:18px;display:block}
+.hm-inv.e{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);color:#fff;flex-direction:column;gap:8px;font-size:15px;font-weight:700;text-align:center;padding:16px}
+.hm-inv.e i{font-style:normal;width:52px;height:52px;border-radius:50%;background:#fff;color:#F0609E;display:flex;align-items:center;justify-content:center;font-size:26px}
+.hm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.hm-stat{border-radius:26px;padding:18px 18px 16px;background:var(--bg);text-align:right;border:none;cursor:pointer;font-family:inherit;transition:translate 200ms cubic-bezier(0.23,1,0.32,1)}
+@media(hover:hover) and (pointer:fine){.hm-stat:hover{translate:0 -3px}}
+.hm-stat .t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#2B1D3F}
+.hm-stat .t i{font-style:normal;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+.hm-stat b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:38px;font-weight:700;line-height:1.1;margin:10px 0 2px;color:#2B1D3F;font-variant-numeric:tabular-nums}
+.hm-stat small{font-size:13px;font-weight:600;color:#4A4060}
+.hm-h2{font-size:21px;font-weight:700;color:#2B1D3F;margin:26px 4px 12px}
+.hm-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.hm-tile{background:#fff;border-radius:28px;padding:10px 10px 16px;border:none;cursor:pointer;text-align:right;font-family:inherit;box-shadow:0 18px 40px -28px rgba(91,60,140,.5);transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
+@media(hover:hover) and (pointer:fine){.hm-tile:hover{translate:0 -4px;box-shadow:0 26px 50px -28px rgba(91,60,140,.6)}}
+.hm-tile .art{height:84px;border-radius:20px;background:var(--bg);display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;overflow:hidden}
+.hm-tile .art i{font-style:normal;width:50px;height:50px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 10px 20px -12px rgba(43,29,63,.5)}
+.hm-tile .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 8px}
+.hm-tile .row span{font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700;color:#2B1D3F}
+.hm-tile .row b{font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700;color:#2B1D3F;font-variant-numeric:tabular-nums}
+.hm-tile small{display:block;padding:4px 8px 0;font-size:13px;color:#5E5470;font-weight:600}
+.hm-tile .bar{height:6px;border-radius:99px;background:#F1ECF6;margin:10px 8px 0;overflow:hidden}
+.hm-tile .bar u{display:block;height:100%;border-radius:99px;background:var(--c)}
+.hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:18px}
+.hm-cardw > *{border-radius:28px!important;border:none!important;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)!important}
+.hm-cardw > * > div:first-child > div > div:first-child,.hm-cardw h2{font-family:'Fredoka','Heebo',sans-serif}
+.hm-rsvp{background:#fff;border-radius:28px;padding:22px 24px;box-shadow:0 18px 40px -28px rgba(91,60,140,.5);display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+.hm-rsvp h2{grid-column:1/-1;margin:0;font-size:19px;font-weight:700;color:#2B1D3F;display:flex;justify-content:space-between;align-items:center}
+.hm-donut{width:132px;height:132px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.hm-donut div{width:98px;height:98px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hm-donut b{font-family:'Fredoka','Heebo',sans-serif;font-size:28px;font-weight:700;color:#2B1D3F;line-height:1}
+.hm-donut small{font-size:12px;color:#5E5470;font-weight:600}
+.hm-leg{display:flex;flex-direction:column;gap:10px}
+.hm-leg div{display:flex;align-items:center;gap:10px;font-size:15px;color:#3E3555;background:#FBF8FD;border-radius:14px;padding:8px 12px}
+.hm-leg i{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hm-leg b{margin-inline-start:auto;font-variant-numeric:tabular-nums;color:#2B1D3F}
+.hm-steps{background:#fff;border-radius:28px;padding:22px 24px;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)}
+.hm-steps h2{margin:0 0 4px;font-size:19px;font-weight:700;color:#2B1D3F}
+.hm-step{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;border:none;margin-top:8px;cursor:pointer;text-align:right;font-family:'Heebo',sans-serif!important;font-size:15px;font-weight:600;color:#3E3555;background:#FBF8FD}
+.hm-step.n{background:#FFE9F2;color:#2B1D3F;font-weight:700}
+.hm-step.d{background:#E7F8F0;color:#1F6B43;cursor:default;text-decoration:line-through}
+.hm-step i{font-style:normal;width:26px;height:26px;border-radius:50%;border:2px solid #D9CCEA;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:#fff}
+.hm-step.n i{border-color:#F0609E;color:#F0609E}
+.hm-step.d i{border-color:#25A55F;background:#25A55F;color:#fff}
+.hm-step em{font-style:normal;margin-inline-start:auto;font-size:12px;font-weight:700;border-radius:100px;padding:3px 10px;background:#fff;color:#B4236A}
+.hm-pill:focus-visible,.hm-stat:focus-visible,.hm-tile:focus-visible,.hm-step:focus-visible,.hm-inv:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+@media(max-width:1100px){.hm-stats,.hm-tiles{grid-template-columns:repeat(2,1fr)}.hm-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.hm-hero{grid-template-columns:1fr;padding:24px 20px;border-radius:28px}.hm-inv{display:none}.hm-cd div{min-width:64px}.hm-acts > *{flex:1 1 100%;justify-content:center}.hm-rsvp{grid-template-columns:1fr;justify-items:center}.hm-leg{width:100%}.hm-stat b{font-size:32px}}
+@media(prefers-reduced-motion:reduce){.hm-pill,.hm-stat,.hm-tile{transition:none}}
+`;
+const hmGreet=()=>{const h=new Date().getHours();return h<5?"לילה טוב":h<12?"בוקר טוב":h<17?"צהריים טובים":h<21?"ערב טוב":"לילה טוב";};
+// זמן עד האירוע: התאריך + שעת קבלת הפנים (או שעת האירוע) אם הוגדרה
+function useEventCountdown(event){
+  const [now,setNow]=useState(()=>Date.now());
+  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(id);},[]);
+  if(!event?.date)return null;
+  const t=(event.reception_time||event.event_time||"00:00").slice(0,5);
+  const target=new Date(`${String(event.date).slice(0,10)}T${/^\d\d:\d\d$/.test(t)?t:"00:00"}:00`).getTime();
+  const ms=target-now;if(isNaN(ms)||ms<=0)return null;
+  return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60};
+}
+function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
+  const cd=useEventCountdown(event);
+  const [copied,setCopied]=useState(false);
+  const title=event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name;
+  const copy=()=>navigator.clipboard?.writeText(inviteUrl).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);}).catch(()=>{});
+  return(
+    <section className="hm-hero" aria-labelledby="hm-title">
+      <span className="hm-bub" aria-hidden="true" style={{width:220,height:220,top:-90,left:-60}}/>
+      <span className="hm-bub" aria-hidden="true" style={{width:90,height:90,bottom:-30,left:"38%"}}/>
+      <span className="hm-bub" aria-hidden="true" style={{width:46,height:46,top:24,left:"46%",background:"rgba(255,255,255,.22)"}}/>
+      <div>
+        <div className="hm-greet">{hmGreet()} 👋</div>
+        <h1 id="hm-title">{title}</h1>
+        <div className="hm-when">
+          {event.date?<span>📅 {fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}{event.event_time?` · ${event.event_time.slice(0,5)}`:""}</span>:<span>📅 תאריך לא הוגדר</span>}
+          {hebrewDateStr(event.date)&&<span>✡️ {hebrewDateStr(event.date)}</span>}
+          {event.venue&&<span>📍 {event.venue}</span>}
+        </div>
+        {cd?<div className="hm-cd" role="timer" aria-label={`עוד ${cd.d} ימים, ${cd.h} שעות ו-${cd.m} דקות`}>
+          <div><b>{cd.d}</b><span>ימים</span></div>
+          <div><b>{cd.h}</b><span>שעות</span></div>
+          <div><b>{cd.m}</b><span>דקות</span></div>
+        </div>:<div style={{height:18}}/>}
+        {checksPct===100&&<div style={{marginBottom:14,fontSize:15,fontWeight:700}}>✓ כל שלבי ההכנה הושלמו</div>}
+        <div className="hm-acts">
+          <button className="hm-pill w" onClick={()=>onGo("invite")}>💌 צפייה בהזמנה</button>
+          <WaButton event={event} url={inviteUrl} style={{padding:"12px 20px",fontSize:15,borderRadius:100}}/>
+          <button className="hm-pill g" onClick={copy}>{copied?"✓ הקישור הועתק":"🔗 העתקת הקישור"}</button>
+        </div>
+      </div>
+      {event.invite_image
+        ?<button className="hm-inv" onClick={()=>onGo("invite")} aria-label="ההזמנה הדיגיטלית"><img src={event.invite_image} alt="" loading="lazy"/></button>
+        :<button className="hm-inv e" onClick={()=>onGo("invite")}><i>+</i>עיצוב ההזמנה הדיגיטלית</button>}
+    </section>
+  );
+}
+function EventHomeStats({ confirmed, declined, pending, total, onOpen }) {
+  const p=v=>total>0?Math.round(v/total*100):0;
+  const items=[["👥","מוזמנים",total,total?"אנשים ברשימה":"עוד לא נוספו","#EFE6FF"],["✅","מגיעים",confirmed,`${p(confirmed)}% מהמוזמנים`,"#DFF6EC"],["⏳","ממתינים לתשובה",pending,`${p(pending)}% מהמוזמנים`,"#FFF1D6"],["✖️","לא מגיעים",declined,`${p(declined)}% מהמוזמנים`,"#FFE3EE"]];
+  return(
+    <div className="hm-stats">
+      {items.map(([ic,l,v,s,bg])=>(
+        <button key={l} className="hm-stat" style={{"--bg":bg}} onClick={onOpen}>
+          <span className="t"><i aria-hidden="true">{ic}</i>{l}</span>
+          <b>{v}</b><small>{s}</small>
+        </button>))}
+    </div>
+  );
+}
+function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
+  const list=taskList(event),done=list.filter(t=>t.done).length,late=list.filter(t=>taskLate(t,event)).length;
+  const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):0;
+  const tiles=[
+    {go:"seating",ic:"🪑",l:"סידורי הושבה",v:`${seated}/${total}`,s:`${tablesCount} שולחנות · ${total-seated} ממתינים לשיבוץ`,bg:"#FFE3EE",c:"#F0609E",bar:pct(seated,total)},
+    {go:"rsvp",ic:"👥",l:"ניהול אורחים",v:people??total,s:"הוספה, ייבוא ועריכה",bg:"#EFE6FF",c:"#9B6BFF"},
+    {go:"invite",ic:"💌",l:"הזמנה דיגיטלית",v:event.invite_image?"מוכנה":"לעיצוב",s:"עיצוב, נוסח וקישור לאורחים",bg:"#FFE9DC",c:"#FF8A65"},
+    {go:"tasks",ic:"📋",l:"משימות",v:`${done}/${list.length}`,s:late?`${late} באיחור`:"הכול בזמן",bg:"#DFF6EC",c:"#3CC8A0",bar:pct(done,list.length)},
+  ];
+  return(
+    <div className="hm-tiles">
+      {tiles.map(t=>(
+        <button key={t.go} className="hm-tile" style={{"--bg":t.bg,"--c":t.c}} onClick={()=>onGo(t.go)}>
+          <div className="art"><i aria-hidden="true">{t.ic}</i></div>
+          <div className="row"><span>{t.l}</span><b>{t.v}</b></div>
+          <small style={t.go==="tasks"&&late?{color:"#B42318"}:undefined}>{t.s}</small>
+          {t.bar!==undefined&&<div className="bar" aria-hidden="true"><u style={{width:`${t.bar}%`}}/></div>}
+        </button>))}
+    </div>
+  );
+}
+function HomeRsvpDonut({ confirmed, declined, pending, total, onOpen }) {
+  const a=total>0?confirmed/total*360:0,b=total>0?declined/total*360:0;
+  const bg=total>0?`conic-gradient(#25A55F 0 ${a}deg,#E5566F ${a}deg ${a+b}deg,#E8A93A ${a+b}deg 360deg)`:"#F1ECF6";
+  return(
+    <section className="hm-rsvp" aria-labelledby="hm-rsvp-h">
+      <h2 id="hm-rsvp-h">אישורי הגעה <button className="hm-pill s" style={{padding:"8px 16px",fontSize:14}} onClick={onOpen}>לרשימת האורחים</button></h2>
+      <div className="hm-donut" style={{background:bg}} role="img" aria-label={`מגיעים ${confirmed}, לא מגיעים ${declined}, ממתינים ${pending}`}>
+        <div><b>{total>0?Math.round(confirmed/total*100):0}%</b><small>אישרו הגעה</small></div>
+      </div>
+      <div className="hm-leg">
+        <div><i style={{background:"#25A55F"}}/>מגיעים<b>{confirmed}</b></div>
+        <div><i style={{background:"#E8A93A"}}/>ממתינים לתשובה<b>{pending}</b></div>
+        <div><i style={{background:"#E5566F"}}/>לא מגיעים<b>{declined}</b></div>
+      </div>
+    </section>
+  );
+}
+function HomeSteps({ checks, nextStep, onGo }) {
+  const done=checks.filter(c=>c.done).length;
+  return(
+    <section className="hm-steps" aria-labelledby="hm-steps-h">
+      <h2 id="hm-steps-h">השלמת האירוע</h2>
+      <div style={{fontSize:14,color:"#5E5470",fontWeight:600}}>{done} מתוך {checks.length} שלבים הושלמו</div>
+      {checks.map((c,i)=>{const n=c===nextStep;return(
+        <button key={i} className={`hm-step${c.done?" d":n?" n":""}`} disabled={c.done} onClick={()=>!c.done&&c.go&&onGo(c.go)}>
+          <i aria-hidden="true">{c.done?"✓":i+1}</i>{c.label}{n&&<em>הצעד הבא</em>}
+        </button>);})}
+    </section>
+  );
+}
+
 function PostEventCard({ event, onGo, style }) {
   const [copied,setCopied]=useState(false);
   const d=event.date?new Date(event.date):null;
@@ -5409,88 +5593,25 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       const checksPct=Math.round(checksDone/checks.length*100);
 
       return(
-      <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)",minHeight:"100vh",paddingBottom:80}}>
+      <div className="hm" style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"radial-gradient(760px 520px at 92% 0%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),#FFFBF7",minHeight:"100vh",paddingBottom:80}}>
 
-        {/* ─── באנר ראשי ─── */}
-        <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",margin:"12px 14px",borderRadius:20,padding:"22px 20px",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px rgba(155,107,255,.3)"}}>
-          <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
-          <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-          <div style={{position:"relative",zIndex:2}}>
-            <h1 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 14px",lineHeight:1.2}}>
-              {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
-            </h1>
-            {daysLeft!==null&&daysLeft>0?(
-              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <div style={{background:"rgba(0,0,0,.25)",borderRadius:12,padding:"8px 10px",textAlign:"center",minWidth:54}}>
-                  <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{daysLeft}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.85)"}}>ימים</div>
-                </div>
-                <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:700}}>
-                  📅 {eventDate?.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-                  {hebrewDateStr(event.date)&&<div style={{fontSize:12,opacity:.9,marginTop:2}}>✡️ {hebrewDateStr(event.date)}</div>}
-                </div>
-              </div>
-            ):(
-              <div style={{fontSize:13,color:"rgba(255,255,255,.7)"}}>
-                {event.date?`📅 ${eventDate?.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})} ${event.event_time||""}`:"תאריך לא הוגדר"}
-              </div>
-            )}
-            {checksPct===100&&<div style={{marginTop:12,fontSize:13,fontWeight:700,color:"#fff"}}>✓ כל שלבי ההכנה הושלמו</div>}
-          </div>
+        <style>{HOME_CSS}</style>
+        <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/></div>
+        <h2 className="hm-h2" style={{margin:"20px 18px 10px"}}>האירוע במספרים</h2>
+        <div style={{padding:"0 14px"}}><EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/></div>
+        <div style={{padding:"14px 14px 0",display:"grid",gap:12}}>
+          <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+          {checksPct<100&&<HomeSteps checks={checks} nextStep={nextStep} onGo={setScreen}/>}
         </div>
-
-        {/* ─── אישורי הגעה: השאלה הראשונה של המסך, מיד אחרי הבאנר ─── */}
-        <HomeRsvpCard confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}
-          onShare={()=>{const url=inviteUrl;if(navigator.share)navigator.share({title:event.name,url}).catch(()=>{});else navigator.clipboard.writeText(url).then(()=>alert("הקישור הועתק!"));}}
-          style={{margin:"0 14px 12px",padding:"18px 20px"}}/>
-
-        {/* ─── צ'קליסט — רק כל עוד לא הושלם ─── */}
-        {checksPct<100&&<div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",border:"1px solid #F0E8F7"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <div>
-              <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F"}}>השלמו את האירוע</div>
-              <div style={{fontSize:12,color:"#888"}}>{checksDone} / {checks.length}</div>
-            </div>
-            <div style={{width:44,height:44,borderRadius:"50%",background:checksPct===100?"#F0FFF4":"#FFF1F6",border:`3px solid ${checksPct===100?"#276749":"#9147D6"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:checksPct===100?"#276749":"#9147D6"}}>
-              {checksPct}%
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {checks.map((c,i)=>{const nx=c===nextStep;return(
-              <div key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} role={c.done?undefined:"button"}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,cursor:c.done?"default":"pointer",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:c.done?"#25D366":nx?"#9147D6":"#E2E8F0",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
-                  {c.done?"✓":nx?"←":""}
-                </div>
-                <span style={{fontSize:12,fontWeight:nx?900:700,color:c.done?"#276749":nx?"#3A2464":"#999",textDecoration:c.done?"line-through":"none"}}>{c.label}</span>
-              </div>);})}
-          </div>
-          {nextStep&&<button onClick={()=>setScreen(nextStep.go)} className="sx-btn" style={{width:"100%",marginTop:12,background:"linear-gradient(120deg,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>הצעד הבא: {nextStep.label} ←</button>}
-        </div>}
-
+        <div className="hm-cardw" style={{paddingTop:12}}>
         <PostEventCard event={event} onGo={setScreen} style={{margin:"0 14px 12px"}}/>
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
         <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
-
-        {/* ─── קישור להזמנה ─── */}
-        <div style={{background:"#fff",margin:"0 14px 12px",borderRadius:20,padding:"18px 20px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
-          <div style={{fontSize:15,fontWeight:900,color:"#2B1D3F",marginBottom:8}}>קישור להזמנה</div>
-          <div style={{fontSize:13,color:"#5F5675",marginBottom:12}}>שתף את הקישור עם האורחים</div>
-          <div style={{background:"#FBF8FD",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#9147D6",fontFamily:"monospace",marginBottom:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",direction:"ltr"}}>
-            🔗 {inviteUrl}
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <WaButton event={event} url={inviteUrl} style={{flex:1.4,padding:"12px",fontSize:14}}/>
-            <button onClick={()=>navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"))}
-              style={{flex:1,background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-              🔗 העתק
-            </button>
-          </div>
         </div>
 
         {/* ─── תפריט מהיר ─── */}
         <div style={{padding:"0 14px"}}>
-          <h2 style={{fontSize:15,fontWeight:900,color:"#2B1D3F",margin:"8px 6px 10px"}}>פעולות מהירות</h2>
+          <h2 className="hm-h2" style={{margin:"20px 4px 10px"}}>פעולות מהירות</h2>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {[
               {icon:"🪑",label:"סידורי הושבה",nav:"seating",bg:"#FFF1F6",color:"#9147D6"},
@@ -5508,10 +5629,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
             ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
               <div key={item.nav} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}
-                style={{background:"#fff",borderRadius:16,padding:"16px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 2px 8px rgba(155,107,255,.07)",border:"1px solid rgba(155,107,255,.06)",transition:"all .2s"}}
+                style={{background:"#fff",borderRadius:22,padding:"14px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 14px 30px -22px rgba(91,60,140,.55)",transition:"transform .2s"}}
                 onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"}
                 onTouchEnd={e=>e.currentTarget.style.transform="none"}>
-                <div style={{width:38,height:38,borderRadius:12,background:item.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:item.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>
                   {item.icon}
                 </div>
                 <span style={{fontSize:13,fontWeight:700,color:"#2B1D3F"}}>{item.label}</span>
@@ -5769,7 +5890,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0}}>
 
       {screen==="home"&&(
-      <div style={{flex:1,overflowY:"auto",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)",padding:"24px 28px",direction:"rtl"}}>
+      <div className="hm" style={{flex:1,overflowY:"auto",background:"radial-gradient(760px 520px at 92% 0%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),#FFFBF7",padding:"24px 28px 40px",direction:"rtl"}}>
         {(()=>{
           const allG=[...guests,...tables.flatMap(t=>t.guests||[])];
           const confirmed=allG.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -5786,88 +5907,22 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           const checksPct=Math.round(checksDone/checks.length*100);
           return(
             <div>
-              {/* ─── שורה עליונה: באנר האירוע + אישורי הגעה (השאלה הראשונה של המסך) ─── */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:20,marginBottom:20}}>
-                {/* באנר */}
-                <div style={{background:"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)",borderRadius:20,padding:"28px 32px",position:"relative",overflow:"hidden",boxShadow:"0 8px 24px -12px rgba(155,107,255,.35)",display:"flex",flexDirection:"column"}}>
-                  <div style={{position:"absolute",top:-30,left:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
-                  <div style={{position:"absolute",bottom:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-                  <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",flex:1}}>
-                    <h1 style={{fontSize:28,fontWeight:900,color:"#fff",margin:"0 0 16px",lineHeight:1.15}}>
-                      {event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name}
-                    </h1>
-                    {daysLeft!==null&&daysLeft>0?(
-                      <div style={{display:"flex",alignItems:"center",gap:12}}>
-                        <div style={{background:"rgba(0,0,0,.25)",borderRadius:14,padding:"10px 18px",display:"flex",alignItems:"center",gap:8}}>
-                          <div style={{textAlign:"center"}}>
-                            <div style={{fontSize:28,fontWeight:900,color:"#fff",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{daysLeft}</div>
-                            <div style={{fontSize:12,color:"rgba(255,255,255,.85)"}}>ימים</div>
-                          </div>
-                        </div>
-                        <div style={{fontSize:14,color:"rgba(255,255,255,.8)",fontWeight:700}}>
-                          📅 {eventDate?.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-                          {event.event_time&&` · ${event.event_time}`}
-                          {hebrewDateStr(event.date)&&<div style={{fontSize:13,opacity:.9,marginTop:3}}>✡️ {hebrewDateStr(event.date)}</div>}
-                        </div>
-                      </div>
-                    ):(
-                      <div style={{fontSize:14,color:"rgba(255,255,255,.7)"}}>
-                        {event.date?`📅 ${fmtDateHe(event.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}${event.event_time?` · ${event.event_time}`:""}`:"תאריך לא הוגדר"}
-                        {event.venue&&` · 📍 ${event.venue}`}
-                      </div>
-                    )}
-                    {checksPct===100&&<div style={{marginTop:14,fontSize:14,fontWeight:700,color:"#fff"}}>✓ כל שלבי ההכנה הושלמו</div>}
-                    {/* קישור ההזמנה עצמו, ליד הכפתורים שמשתפים אותו (במקום כרטיס נפרד) */}
-                    <div style={{marginTop:"auto",paddingTop:20}}>
-                      <div style={{background:"rgba(255,255,255,.16)",borderRadius:10,padding:"8px 12px",fontSize:13,color:"#fff",direction:"ltr",textAlign:"left",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:10,maxWidth:520}}>{inviteUrl}</div>
-                      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                        <button onClick={()=>setScreen("invite")} className="sx-btn"
-                          style={{background:"#fff",color:"#7A3FBF",border:"none",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-                          צפייה בהזמנה
-                        </button>
-                        <WaButton event={event} url={inviteUrl} style={{padding:"10px 18px",fontSize:14}}/>
-                        <button onClick={()=>{navigator.clipboard.writeText(inviteUrl).then(()=>alert("הועתק!"));}} className="sx-btn"
-                          style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"1.5px solid rgba(255,255,255,.45)",borderRadius:12,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                          העתקת הקישור
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+              <style>{HOME_CSS}</style>
+              <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/>
+              <h2 className="hm-h2">האירוע במספרים</h2>
+              <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+              <h2 className="hm-h2">קיצורי דרך</h2>
+              <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
+              <div className="hm-grid">
+                <div style={{display:"grid",gap:18}}>
+                  <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+                  {checksPct<100&&<HomeSteps checks={checks} nextStep={nextStep} onGo={setScreen}/>}
                 </div>
-
-                <HomeRsvpCard confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-              </div>
-
-              {/* צ'קליסט — רק כל עוד לא הושלם; שלבים בשורה אחת */}
-              {checksPct<100&&(
-                <div style={{background:"#fff",borderRadius:20,padding:"22px 24px",border:"1px solid #F0E8F7",marginBottom:20}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-                    <div>
-                      <div style={{fontSize:16,fontWeight:900,color:"#2B1D3F"}}>השלמו את האירוע</div>
-                      <div style={{fontSize:12,color:"#888",marginTop:2}}>{checksDone} / {checks.length} הושלמו</div>
-                    </div>
-                    <div style={{width:52,height:52,borderRadius:"50%",background:checksPct===100?"#F0FFF4":"#FFF1F6",border:`3px solid ${checksPct===100?"#276749":"#9147D6"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,color:checksPct===100?"#276749":"#9147D6"}}>
-                      {checksPct}%
-                    </div>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:`repeat(${checks.length},1fr)`,gap:8}}>
-                    {checks.map((c,i)=>{const nx=c===nextStep;return(
-                      <button key={i} onClick={()=>!c.done&&c.go&&setScreen(c.go)} disabled={c.done} className={c.done?undefined:"sx-btn"}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,cursor:c.done?"default":"pointer",fontFamily:"inherit",textAlign:"right",background:c.done?"#F0FFF4":nx?"#F6F0FF":"#FAFAFA",border:`${nx?2:1}px solid ${c.done?"#9AE6B4":nx?"#9147D6":"#E2E8F0"}`}}>
-                        <span style={{width:22,height:22,borderRadius:"50%",background:c.done?"#25A55F":nx?"#9147D6":"#E2E8F0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,color:"#fff"}}>
-                          {c.done?"✓":nx?"←":""}
-                        </span>
-                        <span style={{flex:1,fontSize:13,fontWeight:nx?900:700,color:c.done?"#1F6B43":nx?"#3A2464":"#5F5675"}}>{c.label}</span>
-                      </button>);})}
-                  </div>
+                <div className="hm-cardw" style={{display:"grid",gap:18}}>
+                  <PostEventCard event={event} onGo={setScreen} style={{padding:"22px 24px"}}/>
+                  <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px"}}/>
+                  <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
                 </div>
-              )}
-
-              <PostEventCard event={event} onGo={setScreen} style={{marginBottom:20,padding:"22px 24px"}}/>
-              {/* משימות + קישורי מתנה זה לצד זה, כל כרטיס בגובה שלו */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start",marginBottom:20}}>
-                <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px",boxShadow:"none",border:"1px solid #F0E8F7"}}/>
-                <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
               </div>
 
             </div>
