@@ -9277,24 +9277,21 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   </>);
 
   return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"12px",paddingBottom:80}}>
-      <style>{`@media(max-width:768px){.wa-grid{grid-template-columns:1fr!important;}.wa-preview{display:none!important;}}`}</style>
+    <div className="hm sm wa" style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"22px 24px",paddingBottom:80}}>
+      <style>{HOME_CSS+SMS_CSS+`@media(max-width:768px){.wa-grid{grid-template-columns:1fr!important;}.wa-preview{display:none!important;}}
+        .wa .sm-hero{background:linear-gradient(150deg,#D4F5E4 0%,#E9FBF2 55%,#FFF4D9 100%)!important;box-shadow:0 26px 60px -40px rgba(20,120,80,.55)!important}
+        .wa .wa-chat{background:#ECE5DD;background-image:radial-gradient(rgba(0,0,0,.035) 1px,transparent 1.2px);background-size:14px 14px}`}</style>
       {/* כותרת */}
-      <div style={{background:"linear-gradient(135deg,#075E54,#25D366)",borderRadius:16,padding:"18px 20px",marginBottom:20,color:"#fff"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <div>
-            <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>
-              💬 הודעות WhatsApp
-            </div>
-            <div style={{fontSize:13,opacity:.85}}>הודעה אישית לכל אורח עם השם שלו</div>
-            <div style={{fontSize:12,marginTop:6,background:"rgba(255,255,255,.2)",borderRadius:8,padding:"4px 10px",display:"inline-block",fontWeight:700}}>
-              {coupleStr} 💍
-            </div>
-          </div>
-          <div style={{background:"rgba(255,255,255,.2)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:900}}>{withPhone.length}</div>
-            <div style={{fontSize:11,opacity:.85}}>עם טלפון</div>
-          </div>
+      <div className="sm-hero">
+        <span className="sm-bub" aria-hidden="true" style={{width:160,height:160,top:-60,left:-40}}/>
+        <span className="sm-bub" aria-hidden="true" style={{width:60,height:60,bottom:-18,left:"40%"}}/>
+        <div style={{minWidth:0,position:"relative"}}>
+          <h1 style={{fontSize:"clamp(26px,2.6vw,34px)",fontWeight:700,margin:"0 0 4px",color:"#173D2F"}}>הודעות WhatsApp</h1>
+          <div style={{fontSize:15,color:"#2F4F43"}}>הודעה אישית לכל אורח עם השם שלו · {coupleStr} 💍</div>
+        </div>
+        <div className="sm-bal" style={{position:"relative"}}>
+          <b>{withPhone.length}</b>
+          <span>אורחים עם טלפון</span>
         </div>
       </div>
 
@@ -9306,33 +9303,34 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
         <div style={{minWidth:0}}>
 
           {/* בחירת נוסח */}
-          <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>📝 בחר נוסח</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div className="sm-card" style={{"--t":"#DFF6EC"}}>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>1. בוחרים נוסח</h2>
+            <div role="radiogroup" aria-label="נוסח ההודעה" style={{display:"flex",flexDirection:"column",gap:8}}>
               {TEMPLATES.map(t=>(
-                <div key={t.id} onClick={()=>pickTemplate(t)}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,
-                    border:`2px solid ${selectedTemplate===t.id?"#25D366":C.border}`,
-                    background:selectedTemplate===t.id?"#F0FFF4":"#fff",
-                    cursor:"pointer",transition:"all .15s"}}>
-                  <div style={{width:10,height:10,borderRadius:"50%",background:selectedTemplate===t.id?"#25D366":C.border,flexShrink:0}}/>
-                  <span style={{fontSize:13,fontWeight:700,color:selectedTemplate===t.id?"#276749":C.text}}>{t.label}</span>
+                <div key={t.id} onClick={()=>pickTemplate(t)} role="radio" aria-checked={selectedTemplate===t.id} tabIndex={0}
+                  onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pickTemplate(t);}}}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",borderRadius:100,border:"none",
+                    boxShadow:selectedTemplate===t.id?"0 0 0 2px #1FA855":"inset 0 0 0 1.5px #E4EFE8",
+                    background:selectedTemplate===t.id?"#E3F8EC":"#fff",
+                    cursor:"pointer",transition:"box-shadow 200ms cubic-bezier(0.23,1,0.32,1),background-color 200ms ease"}}>
+                  <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${selectedTemplate===t.id?"#1FA855":"#C9DDD1"}`,background:selectedTemplate===t.id?"radial-gradient(circle,#1FA855 45%,#fff 50%)":"#fff",flexShrink:0}}/>
+                  <span style={{fontSize:14,fontWeight:700,color:"#173D2F"}}>{t.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* עריכת הודעה */}
-          <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>✏️ עריכת הודעה</div>
+          <div className="sm-card" style={{"--t":"#EFE6FF"}}>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 6px"}}>2. עורכים את ההודעה</h2>
             <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>
               משתנים זמינים:&nbsp;
               {["{שם}","{שם מלא}","{קישור}","{שולחן}"].map(v=>(
-                <code key={v} style={{background:C.blueXL,padding:"1px 6px",borderRadius:4,marginLeft:4,fontSize:11}}>{v}</code>
+                <code key={v} style={{background:"#E3F8EC",color:"#156B45",padding:"2px 9px",borderRadius:100,marginLeft:4,fontSize:12,fontWeight:700,fontFamily:"inherit"}}>{v}</code>
               ))}
             </div>
             <textarea id="wa-text" aria-label="נוסח הודעת הוואטסאפ" value={msgText} onChange={e=>setMsgText(e.target.value)}
-              style={{width:"100%",minHeight:180,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",
+              style={{width:"100%",minHeight:180,border:"1.5px solid #DCEBE2",borderRadius:20,padding:"14px 16px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
                 boxSizing:"border-box",direction:"rtl",color:C.text}}/>
             <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={WA_GREEN} onSave={t=>saveText(selectedTemplate,t)}
@@ -9340,8 +9338,8 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
           </div>
 
           {/* פילטר */}
-          <div style={{background:"#fff",borderRadius:14,padding:16,marginBottom:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👥 למי לשלוח?</div>
+          <div className="sm-card" style={{"--t":"#FFE3EE"}}>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>3. למי לשלוח?</h2>
             <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
             <div style={{fontSize:11,color:C.muted,marginTop:8}}>
               {sendTo.length?`${toSend.length} אורחים`:"לא נבחרו נמענים  -  לא יישלח כלום"}
@@ -9355,10 +9353,10 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
 
           {/* כפתור שליחה */}
           <button onClick={sendAll} disabled={sending||toSend.length===0}
-            style={{width:"100%",background:sending||toSend.length===0?"#A0AEC0":"linear-gradient(135deg,#075E54,#25D366)",
-              color:"#fff",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,
+            style={{width:"100%",marginTop:4,background:sending||toSend.length===0?"#ECE8F1":"linear-gradient(120deg,#0F7F40,#16A34A)",
+              color:sending||toSend.length===0?"#4A4060":"#fff",border:"none",borderRadius:100,padding:"16px",fontSize:17,fontWeight:700,
               cursor:sending||toSend.length===0?"default":"pointer",fontFamily:"inherit",
-              boxShadow:sending||toSend.length===0?"none":"0 4px 20px rgba(37,211,102,.4)",transition:"all .2s"}}>
+              boxShadow:sending||toSend.length===0?"none":"0 16px 30px -14px rgba(15,127,64,.7)",transition:"box-shadow .2s"}}>
             {sending?`שולח... ${progress}%`:toSend.length===0?"בחר למי לשלוח":`💬 שלח ל-${toSend.length} אורחים`}
           </button>
 
@@ -9371,7 +9369,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
 
           {/* תוצאות */}
           {results&&(
-            <div style={{marginTop:16,background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`}}>
+            <div className="sm-card" style={{"--t":"#DFF6EC",marginTop:16}}>
               <div style={{display:"flex",gap:12,marginBottom:12}}>
                 <div style={{flex:1,background:"#F0FFF4",borderRadius:10,padding:"12px",textAlign:"center"}}>
                   <div style={{fontSize:24,fontWeight:900,color:"#276749"}}>{sentOk}</div>
@@ -9397,12 +9395,12 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
         {/* עמודה ימין  -  תצוגה מקדימה */}
         {/* תצוגה מקדימה במקומה (לא "נדבקת" וגולשת עם הגלילה) */}
         <div className="wa-preview">
-          <div style={{background:"#fff",borderRadius:14,padding:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>👁 תצוגה מקדימה</div>
+          <div className="sm-card" style={{"--t":"#E2F1FF",marginBottom:0}}>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>ככה ההודעה תיראה</h2>
 
             {guests.length>0&&(
               <select aria-label="תצוגה מקדימה עבור אורח" value={previewGuest?.id||""} onChange={e=>setPreviewGuest(guests.find(g=>String(g.id)===e.target.value)||null)}
-                style={{width:"100%",border:`1.5px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"inherit",outline:"none",marginBottom:14,background:"#fff",color:C.text}}>
+                style={{width:"100%",border:"1.5px solid #DCEBE2",borderRadius:100,padding:"10px 16px",fontSize:14,fontFamily:"inherit",outline:"none",marginBottom:14,background:"#fff",color:C.text}}>
                 {guests.map(g=>(
                   <option key={g.id} value={g.id}>{g.name}{g.phone?" ✓":""}</option>
                 ))}
@@ -9410,9 +9408,10 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             )}
 
             {/* בועת WhatsApp */}
-            <div style={{background:"#ECE5DD",borderRadius:14,overflow:"hidden"}}>
+            <div className="sm-phone">
+              <div className="sm-status" aria-hidden="true" style={{background:"#075E54",color:"#fff"}}><span>{new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})}</span><span className="sm-isl"/><span className="sm-ic" style={{filter:"invert(1)"}}><i/><i/><i/><i/><b/></span></div>
               {/* header */}
-              <div style={{background:"#075E54",padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
+              <div style={{background:"#075E54",padding:"10px 16px 12px",display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:36,height:36,borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:"#fff",flexShrink:0}}>
                   {previewGuest?.name?.[0]||"א"}
                 </div>
@@ -9422,8 +9421,8 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
                 </div>
               </div>
               {/* הודעה */}
-              <div style={{padding:16}}>
-                <div style={{background:"#fff",borderRadius:"0 12px 12px 12px",padding:"10px 14px",maxWidth:"90%",boxShadow:"0 1px 3px rgba(0,0,0,.1)",display:"inline-block"}}>
+              <div className="wa-chat" style={{padding:16,minHeight:380}}>
+                <div style={{background:"#fff",borderRadius:"4px 16px 16px 16px",padding:"10px 14px",maxWidth:"90%",boxShadow:"0 1px 3px rgba(0,0,0,.12)",display:"inline-block"}}>
                   <div style={{fontSize:13,color:"#1A202C",lineHeight:1.8,whiteSpace:"pre-wrap",direction:"rtl"}}>
                     {buildPreview(previewGuest)}
                   </div>
@@ -9435,7 +9434,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             </div>
 
             {/* אזהרה */}
-            <div style={{marginTop:14,background:"#FFFBEB",border:"1.5px solid #F6E05E",borderRadius:10,padding:"10px 14px"}}>
+            <div style={{marginTop:14,background:"#FFF4D9",border:"none",borderRadius:18,padding:"12px 16px"}}>
               <div style={{fontSize:12,color:"#744210",lineHeight:1.7}}>
                 💡 התזמון מראה מתי לשלוח כל אחד מ-4 הסבבים. אם משהו לא נשלח, דברו איתנו בוואטסאפ ונטפל.
               </div>
