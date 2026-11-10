@@ -3850,9 +3850,18 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // all=true (כפתור ⤢): כל האולם על המסך בכל גודל
   const OPEN_ZOOM=.65;
   const manualZoomRef=useRef(false);
+  // במסך מלא: השולחנות והאלמנטים ממלאים את כל המסך (גם כשיש מעט שולחנות — עד פי 1.6)
+  const mapFullRef=useRef(false);
   const fitZoom=(all=false)=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
+    if(!all&&mapFullRef.current){
+      const [cx0,cy0,cx1,cy1]=contentBox(),P=60,cw=el.clientWidth,ch=el.clientHeight;
+      if(cx1>cx0&&cy1>cy0){
+        const zf=+Math.max(minZoom(),Math.min(1.6,ZMAX,cw/(cx1-cx0+2*P),ch/(cy1-cy0+2*P))).toFixed(4);
+        setCam({x:cw/2-(cx0+cx1)/2*zf,y:ch/2-(cy0+cy1)/2*zf},zf);return;
+      }
+    }
     const [x0,y0,x1]=hallRect(),zFit=minZoom(),z=all?zFit:+Math.max(zFit,Math.min(OPEN_ZOOM,ZMAX)).toFixed(4);
     setCam({x:el.clientWidth/2-(x0+x1)/2*z,y:-y0*z},z);
   };
@@ -3942,6 +3951,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // בחירת שולחן פותחת את הרשימה (שם עורכים את היושבים בו)
   useEffect(()=>{if(selected&&!mapFull)setAsideOpen(true);},[selected]);
   useEffect(()=>{if(screen!=="seating"||view!=="map")setMapFull(false);},[screen,view]);
+  // כניסה/יציאה ממסך מלא: מתאימים את הזום מחדש (אחרי שהמפה קיבלה את הגודל החדש)
+  useEffect(()=>{
+    if(mapFullRef.current===mapFull)return;
+    mapFullRef.current=mapFull;manualZoomRef.current=false;
+    const r=requestAnimationFrame(()=>fitZoom());
+    return()=>cancelAnimationFrame(r);
+  },[mapFull]);
   useEffect(()=>{
     if(!mapFull)return;
     const onKey=e=>{if(e.key==="Escape")setMapFull(false);};
