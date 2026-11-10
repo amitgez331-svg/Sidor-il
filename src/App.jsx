@@ -6120,7 +6120,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
 
     {/* מסכי תוכן */}
-    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:"0 0 auto",overflow:"visible",height:"max(900px, calc(100vh + 180px))",gap:8,padding:8,boxSizing:"border-box",
+    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 76px)",gap:8,padding:8,boxSizing:"border-box",
       background:"radial-gradient(circle at 85% 0%,rgba(240,96,158,.10),transparent 40%),radial-gradient(circle at 10% 100%,rgba(155,107,255,.10),transparent 45%),#FBF7FE"}}>
       {/* כותרת המסך לקוראי מסך (במסך עצמו השם מופיע בלשוניות "מפת האולם / רשימת שולחנות") */}
       <h1 style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",margin:-1}}>סידורי הושבה</h1>
@@ -6137,8 +6137,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         .sx-grp > div:not(.sx-stat){display:inline-flex;align-items:center;gap:4px}
         .sx-grp > div > button[aria-label^="הזז"]{width:34px!important;padding:0!important}
         .sx-grp input{height:34px;box-sizing:border-box;border-radius:100px!important}
-        .sx-tbar{align-items:center;padding:8px!important;gap:8px!important;margin:8px 8px 8px!important}
-        .sx-grp{min-height:44px;padding:4px!important}
+        .sx-tbar{align-items:center;padding:6px!important;gap:6px!important;margin:6px 6px 6px!important;flex-wrap:wrap!important}
+        .sx-tbar .sx-grp{flex-wrap:nowrap!important;flex-shrink:0}
+        .sx-tbar .sx-grp[aria-label="נתוני ההושבה"] .sx-stat:not(:first-child){display:none}
+        .sx-grp{min-height:42px;padding:3px!important}
         .sx-stat{padding:2px 9px!important}
         .sx-stat .sx-ictile{width:26px;height:26px;border-radius:9px;font-size:13px}
         .sx-stat b{font-size:14px;font-weight:900;line-height:1}
@@ -6151,7 +6153,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           <span className="sx-ictile" style={{background:"#FFE9F2"}}>👥</span><span style={{writingMode:"vertical-rl",letterSpacing:1}}>אורחים ({toSeat.length})</span><span>‹</span>
         </button>
       )}
-      <aside className="sx-card" style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",flexDirection:"column",overflow:"hidden",flexShrink:0,position:"sticky",top:8,height:"calc(100vh - 92px)"}}>
+      <aside className="sx-card" style={{width:asideOpen?320:0,display:asideOpen?"flex":"none",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
         {selTable?(
           <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
             {/* כפתור חזרה  -  בולט */}
