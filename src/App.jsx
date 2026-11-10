@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://zcfosfaazvljnzipyzon.supabase.co";
@@ -1419,6 +1419,204 @@ const LANDING_CSS=`
   @media(hover:hover){.lp-ev-card:hover .lp-ev-chip{transform:translateX(-4px)}}
   .lp-sticky{border-radius:100px;padding:6px;border:none}
   @media(max-width:860px){.lp-inside{grid-template-columns:1fr;gap:36px}.lp-phone{width:30%}}
+  /* ─── v3: שפת תנועה אחידה (עקומות ומשכים לפי הסקיל animate) ─── */
+  :root{--ease-out:cubic-bezier(0.23,1,0.32,1);--ease-in-out:cubic-bezier(0.77,0,0.175,1);--ease-drawer:cubic-bezier(0.32,0.72,0,1)}
+  .lp{interpolate-size:allow-keywords}
+  @supports (overflow-x:clip){.lp{overflow-x:clip!important}}
+  .lp-wrap{max-width:1120px;margin:0 auto}
+  .lp-sec{padding:110px 6vw;position:relative}
+  .lp-sheet{margin:0 2vw;border-radius:56px;padding:110px 6vw;position:relative}
+  @media(max-width:700px){.lp-sec,.lp-sheet{padding:76px 5vw}.lp-sheet{margin:0 8px;border-radius:36px}}
+  .lp-h2{font-size:clamp(34px,4.8vw,64px);font-weight:900;line-height:1.08;letter-spacing:-.03em;margin-bottom:16px;color:#2B1D3F}
+  .lp-h2:only-child{margin-bottom:0}
+  /* כפתורים: לחיצה מורגשת, ריחוף רק עם עכבר */
+  .lp-btn{transition:transform 160ms var(--ease-out),box-shadow 250ms var(--ease-out),background-color 200ms ease,border-color 200ms ease,color 200ms ease}
+  .lp-primary{transition:transform 160ms var(--ease-out),box-shadow 250ms var(--ease-out),background-position 600ms ease}
+  .lp-btn:hover{transform:none}
+  .lp-btn:hover .lp-go{transform:none}
+  .lp-go{transition:transform 200ms var(--ease-out)}
+  @media(hover:hover) and (pointer:fine){.lp-btn:hover{transform:translateY(-2px)}.lp-btn:hover .lp-go{transform:translateX(-3px)}}
+  .lp-btn:active{transform:scale(.97)}
+  .lp-nav-link{transition:color 200ms ease,background-color 200ms ease}
+  .lp-nav-link.on{background:#F1EAFF;color:#4A2C8F}
+  .lp-nav-top .lp-nav-link.on{background:rgba(255,255,255,.2);color:#fff}
+  .lp-faq-ic{transition:transform 200ms var(--ease-out)}
+  .lp-sticky{transition:transform 300ms var(--ease-out)}
+  /* הופעה בגלילה: פעם אחת, עם השהיה קטנה בין אחים (--d) */
+  .lp-motion [data-reveal]{opacity:0;transform:translateY(32px);transition:opacity 900ms var(--ease-out) var(--d,0s),transform 1000ms var(--ease-out) var(--d,0s),translate 250ms var(--ease-out),box-shadow 250ms var(--ease-out)}
+  .lp-motion [data-reveal="scale"]{transform:translateY(24px) scale(.96)}
+  .lp-motion [data-reveal].in{opacity:1;transform:none}
+  @media print{.lp-motion [data-reveal]{opacity:1!important;transform:none!important}}
+  .lp-lift{transition:translate 250ms var(--ease-out),box-shadow 250ms var(--ease-out)}
+  @media(hover:hover) and (pointer:fine){.lp-lift:hover{translate:0 -6px;box-shadow:0 30px 60px -30px rgba(91,60,140,.5)}}
+  /* תפריט עליון: תמיד באותו מקום ובאותו גודל — רק הרקע והצל מתחלפים בגלילה */
+  .lp-nav{transition:background-color 300ms var(--ease-out),box-shadow 300ms var(--ease-out)}
+  .lp-motion .lp-nav{animation:lpNavIn 700ms var(--ease-out) both}
+  @keyframes lpNavIn{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  .lp-burger{display:none;width:44px;height:44px;border-radius:50%;border:none;background:#F1EAFF;color:#2B1D3F;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex-shrink:0}
+  .lp-nav-top .lp-burger{background:rgba(255,255,255,.18);color:#fff}
+  .lp-burger span{display:block;width:18px;height:2px;border-radius:2px;background:currentColor}
+  .lp-burger:focus-visible,.lp-menu-x:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
+  @media(max-width:960px){.lp-burger{display:inline-flex}}
+  @media(max-width:600px){.lp-hide-xs{display:none!important}}
+  .lp-menu{position:fixed;inset:0;z-index:160;background:rgba(20,10,40,.55);opacity:0;visibility:hidden;transition:opacity 300ms var(--ease-out),visibility 0s linear 300ms}
+  .lp-menu.open{opacity:1;visibility:visible;transition:opacity 300ms var(--ease-out),visibility 0s}
+  .lp-menu-sheet{position:absolute;top:0;right:0;left:0;max-height:100%;overflow:auto;background:#FFFBF7;border-radius:0 0 32px 32px;padding:12px 6vw 26px;transform:translateY(-100%);transition:transform 450ms var(--ease-drawer);box-shadow:0 30px 60px -30px rgba(20,10,40,.6)}
+  .lp-menu.open .lp-menu-sheet{transform:none}
+  .lp-menu-head{display:flex;align-items:center;justify-content:space-between;height:58px;margin-bottom:6px}
+  .lp-menu-x{width:44px;height:44px;border-radius:50%;border:none;background:#F1EAFF;color:#2B1D3F;font-size:18px;font-weight:900;cursor:pointer}
+  .lp-menu ul{list-style:none;margin:0 0 20px;padding:0}
+  .lp-menu li{opacity:0;transform:translateY(-8px);transition:opacity 300ms var(--ease-out),transform 300ms var(--ease-out)}
+  .lp-menu.open li{opacity:1;transform:none;transition-delay:var(--d,0s)}
+  .lp-menu li a{display:flex;align-items:center;min-height:56px;font-size:24px;font-weight:900;color:#2B1D3F;text-decoration:none;border-bottom:1px solid #EFE6F5}
+  .lp-menu-cta{display:grid;gap:10px;margin-bottom:8px}
+  .lp-menu-cta .lp-btn{min-height:52px;font-size:16px;padding:12px 20px}
+  .lp-menu-more{display:flex;gap:4px 20px;flex-wrap:wrap}
+  /* פתיחה: תמונה שזזה לאט, אורות רכים, וכותרת שעולה שורה אחרי שורה */
+  .lp-hero-sec{min-height:100vh;min-height:100svh;display:flex;align-items:center;position:relative;z-index:1;overflow:hidden;isolation:isolate;padding:128px 6vw 110px;border-radius:0 0 56px 56px;background:#2A1650;color:#fff}
+  .lp-hero-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+  .lp-hero-bg img,.lp-cta3>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:60% 40%}
+  .lp-hero-tint{position:absolute;inset:0;background:linear-gradient(200deg,rgba(38,20,74,.84) 0%,rgba(70,38,122,.72) 55%,rgba(150,50,120,.62) 100%)}
+  .lp-motion .lp-kb{animation:lpKB 26s var(--ease-in-out) infinite alternate;will-change:transform}
+  @keyframes lpKB{from{transform:scale(1.14) translate3d(1.2%,0,0)}to{transform:scale(1.03) translate3d(-1.2%,-1%,0)}}
+  .lp-bokeh{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lp-bokeh i{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--c) 0%,rgba(255,255,255,0) 68%);opacity:calc(var(--o) * .6)}
+  .lp-motion .lp-bokeh i{opacity:0;animation:lpBokeh var(--t) linear var(--dl) infinite;will-change:transform,opacity}
+  @keyframes lpBokeh{0%{opacity:0;transform:translate3d(0,40px,0) scale(.85)}30%{opacity:var(--o)}70%{opacity:calc(var(--o) * .7)}100%{opacity:0;transform:translate3d(var(--dx),-110px,0) scale(1.1)}}
+  .lp-h1{font-size:clamp(48px,7vw,104px);font-weight:900;line-height:1.02;letter-spacing:-.035em;margin-bottom:28px;color:#fff}
+  .lp-line{display:block;overflow:hidden;padding:0 .05em .16em;margin-bottom:-.16em}
+  .lp-line>span{display:inline-block}
+  .lp-motion .lp-line>span{animation:lpLine 1100ms var(--ease-out) var(--d,0s) both}
+  @keyframes lpLine{from{transform:translateY(112%)}to{transform:none}}
+  .lp-motion .lp-rise{animation:lpRise 900ms var(--ease-out) var(--d,0s) both}
+  @keyframes lpRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+  .lp-motion .lp-rise-side{animation:lpRiseSide 1100ms var(--ease-out) var(--d,0s) both}
+  @keyframes lpRiseSide{from{opacity:0;transform:translateY(46px) scale(.97)}to{opacity:1;transform:none}}
+  /* סרט סוגי האירועים: נע לאט, רק כשהוא על המסך, ונעצר בריחוף */
+  .lp-ribbon{position:relative;z-index:3;height:78px;margin:-34px -5vw 0;display:flex;align-items:center;overflow:hidden;transform:rotate(-2deg);background:linear-gradient(90deg,#FF8A65,#F0609E 45%,#9B6BFF);box-shadow:0 22px 44px -22px rgba(120,40,110,.6)}
+  .lp-ribbon-track{display:flex;flex-shrink:0;width:max-content}
+  .lp-ribbon span{display:inline-flex;align-items:center;gap:26px;padding-inline:13px;font-size:clamp(24px,3.2vw,42px);font-weight:900;color:#fff;white-space:nowrap;letter-spacing:-.01em}
+  .lp-ribbon span.o{color:transparent;-webkit-text-stroke:1.5px #fff}
+  .lp-ribbon b{font-size:.55em;color:#FFE0B0;-webkit-text-stroke:0}
+  .lp-motion .lp-ribbon-track{animation:lpMarq 44s linear infinite;animation-play-state:paused}
+  .lp-motion .lp-ribbon.run .lp-ribbon-track{animation-play-state:running}
+  @media(hover:hover) and (pointer:fine){.lp-motion .lp-ribbon.run:hover .lp-ribbon-track{animation-play-state:paused}}
+  @keyframes lpMarq{from{transform:translateX(0)}to{transform:translateX(25%)}}
+  @media(max-width:600px){.lp-ribbon{height:60px;margin-top:-26px}}
+  /* לפני / אחרי */
+  .lp-before{position:relative;padding:220px 6vw 100px;margin-top:-100px;background:#F6F3FF}
+  @media(max-width:600px){.lp-before{margin-top:-82px;padding:150px 5vw 70px}}
+  .lp-cmp{position:relative;aspect-ratio:2/1;border-radius:32px;overflow:hidden;background:#fff;box-shadow:0 44px 90px -46px rgba(60,35,110,.6);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize}
+  @media(max-width:700px){.lp-cmp{aspect-ratio:4/5;border-radius:26px}}
+  .lp-cmp-after,.lp-cmp-before{position:absolute;inset:0}
+  .lp-cmp-after img{display:block;width:100%;height:100%;object-fit:cover;object-position:0 0;-webkit-user-drag:none}
+  @media(max-width:700px){.lp-cmp-after img{object-position:36% 50%}}
+  .lp-cmp-before{clip-path:inset(0 0 0 50%)}
+  .lp-cmp-tag{position:absolute;top:16px;z-index:2;background:rgba(43,29,63,.88);color:#fff;font-size:14px;font-weight:800;padding:8px 16px;border-radius:999px;pointer-events:none}
+  .lp-cmp-tag.before{right:16px}
+  .lp-cmp-tag.after{left:16px}
+  .lp-cmp-bar{position:absolute;top:0;bottom:0;left:0;width:0;z-index:4}
+  .lp-cmp-bar::before{content:"";position:absolute;top:0;bottom:0;left:-1.5px;width:3px;background:#fff;box-shadow:0 0 0 1px rgba(43,29,63,.1),0 0 26px rgba(155,107,255,.7)}
+  .lp-cmp-knob{position:absolute;top:50%;left:-28px;margin-top:-28px;width:56px;height:56px;border-radius:50%;background:#fff;color:#5B3FD0;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px -10px rgba(43,29,63,.55);cursor:grab;transition:scale 160ms var(--ease-out)}
+  .lp-cmp:active .lp-cmp-knob{scale:.94;cursor:grabbing}
+  .lp-cmp-knob:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  .lp-cmp-cap{font-size:14px;color:#5F5675;margin-top:14px;text-align:left}
+  .lp-xls{position:absolute;inset:0;display:flex;flex-direction:column;background:#fff;color:#1F2328}
+  .lp-xls-bar{display:flex;align-items:center;gap:10px;flex-shrink:0;height:40px;padding:0 14px;background:#1E6E43;color:#fff;font-size:13px;font-weight:600}
+  .lp-xls-bar b{width:22px;height:22px;border-radius:5px;background:#fff;color:#1E6E43;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900}
+  .lp-xls-tools{flex-shrink:0;height:30px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#F3F3F3;border-bottom:1px solid #DADADA}
+  .lp-xls-tools i{width:44px;height:10px;border-radius:3px;background:#DEDEDE}
+  .lp-xls table{flex:1;width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}
+  .lp-xls th,.lp-xls td{border:1px solid #E3E3E3;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  .lp-xls th{height:24px;background:#F3F3F3;color:#5F5F5F;font-weight:600;font-size:12px;text-align:center}
+  .lp-xls .n{width:38px;background:#F3F3F3;color:#5F5F5F;text-align:center;font-size:12px}
+  .lp-xls tr.h td{font-weight:700;background:#E8F1EC}
+  .lp-xls tr.x td:not(.n){text-decoration:line-through;color:#767676}
+  .lp-xls tr.y td:not(.n){background:#FFF59D}
+  .lp-xls td.r{color:#C62828;font-weight:800}
+  .lp-note{position:absolute;z-index:1;width:178px;padding:12px 14px;background:#FFF1A6;color:#4A3B00;font-size:15px;font-weight:600;line-height:1.35;box-shadow:0 12px 24px -10px rgba(0,0,0,.35)}
+  .lp-note.pink{background:#FFD6E7;color:#5A1036}
+  @media(max-width:700px){.lp-xls .ph{display:none}.lp-xls table{font-size:12px}.lp-xls th,.lp-xls td{padding:0 6px}.lp-note{width:140px;font-size:13px;padding:9px 11px}}
+  /* איך זה עובד: גוללים בטקסט, והמסך שלצידו מתחלף */
+  .lp-how3{margin:0 2vw;border-radius:56px;padding:110px 6vw 90px;color:#fff;background:radial-gradient(900px 520px at 88% 0%,rgba(155,107,255,.38),transparent 62%),radial-gradient(760px 520px at 0% 100%,rgba(240,96,158,.24),transparent 62%),#1E1233}
+  @media(max-width:700px){.lp-how3{margin:0 8px;border-radius:36px;padding:76px 5vw 40px}}
+  .lp-story{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:5vw;align-items:start}
+  .lp-story-col{position:relative}
+  .lp-story-rail,.lp-story-fill{position:absolute;top:32vh;bottom:32vh;right:21px;width:2px;border-radius:2px}
+  .lp-story-rail{background:rgba(255,255,255,.16)}
+  .lp-story-fill{background:linear-gradient(#FF8A65,#F0609E,#9B6BFF);transform-origin:top;transition:transform 700ms var(--ease-out)}
+  .lp-story-steps{list-style:none;margin:0;padding:0}
+  .lp-story-step{position:relative;min-height:64vh;display:flex;flex-direction:column;justify-content:center;padding-right:70px;opacity:.55;transition:opacity 400ms var(--ease-out)}
+  .lp-story-step.on{opacity:1}
+  .lp-story-n{position:absolute;right:0;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;background:#1E1233;border:2px solid rgba(255,255,255,.35);color:#fff;transition:background-color 300ms ease,border-color 300ms ease,color 300ms ease}
+  .lp-story-step.on .lp-story-n{background:var(--c);border-color:var(--c);color:#2B1D3F}
+  .lp-story-step h3{font-size:clamp(26px,2.7vw,38px);font-weight:900;line-height:1.15;margin-bottom:12px;color:#fff}
+  .lp-story-step p{font-size:18px;line-height:1.7;color:#E6DEF2;max-width:40ch}
+  .lp-story-sm{display:none}
+  .lp-story-stage{position:sticky;top:calc(50vh - 270px);height:540px}
+  .lp-screen{position:absolute;inset:0;margin:0;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(26px) scale(.96);transition:opacity 600ms var(--ease-out),transform 700ms var(--ease-out)}
+  .lp-screen.on{opacity:1;transform:none}
+  .lp-frame{border:9px solid #0E0820;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 44px 90px -36px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}
+  .lp-frame img{display:block;width:100%;height:auto}
+  .lp-screen.laptop .lp-frame{width:100%}
+  .lp-screen.phone .lp-frame{width:258px;border-width:8px;border-radius:40px}
+  .lp-screen.phone .lp-frame img,.lp-story-sm.phone img{aspect-ratio:390/760;object-fit:cover;object-position:top}
+  .lp-screen-chip{position:absolute;bottom:56px;right:4%;background:#fff;color:#2B1D3F;font-size:15px;font-weight:800;padding:12px 16px;border-radius:16px;border-right:4px solid var(--c);box-shadow:0 18px 40px -14px rgba(0,0,0,.6);opacity:0;transform:translateY(12px);transition:opacity 400ms var(--ease-out),transform 500ms var(--ease-out)}
+  .lp-screen.on .lp-screen-chip{opacity:1;transform:none;transition-delay:250ms}
+  @media(max-width:960px){
+    .lp-story{grid-template-columns:1fr}
+    .lp-story-stage,.lp-story-rail,.lp-story-fill{display:none}
+    .lp-story-step{min-height:0;opacity:1;padding:0 62px 44px 0}
+    .lp-story-n{top:2px;margin-top:0}
+    .lp-story-sm{display:block;margin:22px 0 0}
+    .lp-story-sm.phone .lp-frame{width:min(240px,70%);margin:0 auto;border-width:7px;border-radius:34px}
+  }
+  /* יכולות: האיור בכל כרטיס מדגים את היכולת כשהכרטיס נכנס */
+  .lp-ch{transform-box:fill-box;transform-origin:center}
+  .lp-motion .lp-bento .in .lp-ch.f{animation:lpChair 450ms var(--ease-out) var(--d,0s) both}
+  @keyframes lpChair{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+  .lp-motion .lp-bento .in .lp-bub1{animation:lpRise 500ms var(--ease-out) .25s both}
+  .lp-slot{display:grid}
+  .lp-slot>*{grid-area:1/1;justify-self:end;align-self:center}
+  .lp-typing{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #E6DAFF;border-radius:16px 16px 4px 16px;padding:12px 14px;opacity:0}
+  .lp-typing i{width:6px;height:6px;border-radius:50%;background:#9B6BFF}
+  .lp-motion .lp-bento .in .lp-typing{animation:lpTyping 950ms ease .8s both}
+  @keyframes lpTyping{0%{opacity:0;transform:translateY(6px)}20%,75%{opacity:1;transform:none}100%{opacity:0;transform:none}}
+  .lp-motion .lp-bento .in .lp-typing i{animation:lpDot 480ms ease-in-out .8s 2}
+  .lp-motion .lp-bento .in .lp-typing i:nth-child(2){animation-delay:.9s}
+  .lp-motion .lp-bento .in .lp-typing i:nth-child(3){animation-delay:1s}
+  @keyframes lpDot{50%{transform:translateY(-4px)}}
+  .lp-motion .lp-bento .in .lp-bub2{animation:lpPop 500ms var(--ease-out) 1.7s both}
+  @keyframes lpPop{from{opacity:0;transform:translateY(8px) scale(.95)}to{opacity:1;transform:none}}
+  .lp-motion .lp-bento .in .lp-chip{animation:lpPop 450ms var(--ease-out) var(--d,0s) both}
+  .lp-motion .lp-bento .in .lp-ring{animation:lpRing 1200ms var(--ease-out) .3s both}
+  @keyframes lpRing{from{stroke-dashoffset:163}}
+  .lp-wa{transform-origin:bottom right}
+  .lp-motion .lp-bento .in .lp-wa{animation:lpPop 600ms var(--ease-out) .35s both}
+  .lp-motion .lp-bento .in .lp-scard{animation:lpDeal 700ms var(--ease-out) var(--d,0s) both}
+  @keyframes lpDeal{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+  /* סוגי אירועים: בנייד — קרוסלה שגוללים באצבע */
+  .lp-ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  @media(max-width:700px){.lp-ev-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:80%;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -5vw;padding:4px 5vw 12px;scrollbar-width:none}.lp-ev-grid::-webkit-scrollbar{display:none}.lp-ev-grid>*{scroll-snap-align:center}}
+  /* מחירים: מסגרת זוהרת שמסתובבת לאט סביב החבילה המומלצת */
+  .lp-pwrap{display:flex;border-radius:28px}
+  .lp-pcard{flex:1;border-radius:26px;padding:32px 30px;display:flex;flex-direction:column}
+  .lp-glow{position:relative;padding:2px;overflow:hidden;isolation:isolate;box-shadow:0 30px 70px -34px rgba(240,96,158,.7)}
+  .lp-glow::before{content:"";position:absolute;inset:-50%;z-index:-1;background:conic-gradient(from 0deg,#FF8A65,#F0609E,#9B6BFF,#5AA9FF,#3CC8A0,#FF8A65)}
+  .lp-motion .lp-glow::before{animation:lpSpin 8s linear infinite}
+  @keyframes lpSpin{to{transform:rotate(360deg)}}
+  /* שאלות נפוצות: נפתחות בהחלקה (בדפדפנים שתומכים) */
+  .lp-faq::details-content{block-size:0;overflow:clip;transition:block-size 200ms var(--ease-out),content-visibility 200ms allow-discrete}
+  .lp-faq[open]::details-content{block-size:auto}
+  .lp-faq p{transition:opacity 200ms var(--ease-out)}
+  .lp-faq:not([open]) p{opacity:0}
+  /* הסוף */
+  .lp-cta3{margin:0 2vw 60px;padding:110px 5vw;position:relative;overflow:hidden;isolation:isolate;border-radius:56px;background:#4A2C8F;color:#fff}
+  .lp-cta3>img{z-index:-2}
+  .lp-cta-tint{position:absolute;inset:0;z-index:-1;background:linear-gradient(120deg,rgba(150,40,110,.86),rgba(74,44,143,.86))}
+  .lp-cta3 .lp-bokeh{z-index:-1}
+  @media(max-width:700px){.lp-cta3{margin:0 8px 40px;border-radius:36px;padding:76px 6vw}}
+  .lp-wordmark{direction:ltr;text-align:center;font-weight:900;font-size:clamp(72px,17vw,250px);line-height:.8;letter-spacing:-.05em;margin:36px 0 0;background:linear-gradient(180deg,rgba(124,75,214,.34),rgba(124,75,214,0) 92%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;white-space:nowrap}
 `;
 
 // אייקונים בקו דק (בסגנון אחיד במקום אימוג'י)
@@ -1741,6 +1939,195 @@ function SiteNav() {
   </>);
 }
 
+// ─── דף הבית: מערכת התנועה ───
+// אלמנטים עם data-reveal נכנסים בעדינות כשמגיעים אליהם (פעם אחת), ולולאות דקורטיביות (data-loop) רצות רק כשהן על המסך.
+// עם "תנועה מופחתת" במכשיר — אין מצב מוסתר בכלל, והכל פשוט מוצג. "עצור אנימציות" בתפריט הנגישות עוצר הכל
+const lpMotionOK=()=>{try{return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch{return false;}};
+function useLpReveal(rootRef,dep){
+  useEffect(()=>{
+    const root=rootRef.current;
+    if(!root||!root.classList.contains("lp-motion"))return;
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{rootMargin:"0px 0px -10% 0px"});
+    root.querySelectorAll("[data-reveal]:not(.in)").forEach(el=>io.observe(el));
+    const lo=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle("run",e.isIntersecting)));
+    root.querySelectorAll("[data-loop]").forEach(el=>lo.observe(el));
+    // רשת ביטחון: אחרי גלילה (או קפיצה לקישור) — כל מה שכבר מעל תחתית המסך מוצג, גם אם ה-observer התעכב
+    let t=0;
+    const sweep=()=>{
+      t=0;const vh=window.innerHeight;
+      const hit=[...root.querySelectorAll("[data-reveal]:not(.in)")].filter(el=>el.getBoundingClientRect().top<vh*.95);
+      hit.forEach(el=>{el.classList.add("in");io.unobserve(el);});
+    };
+    const onScroll=()=>{if(!t)t=setTimeout(sweep,180);};
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>{io.disconnect();lo.disconnect();window.removeEventListener("scroll",onScroll);clearTimeout(t);};
+  },[dep]);
+}
+// אורות רכים שמרחפים לאט מעל התמונה, כמו נורות בערב. דקורטיבי בלבד
+const LP_BOKEH=[[8,72,90,"255,214,150",.5,9,0,20],[18,40,40,"255,170,200",.55,7,1.2,-14],[27,84,120,"200,170,255",.3,11,2.4,26],[38,62,28,"255,230,170",.75,6,.6,-10],[46,30,64,"255,190,210",.38,10,3.1,18],[57,78,46,"255,214,150",.55,8,1.8,-22],[66,48,110,"190,160,255",.28,12,.3,14],[74,22,34,"255,240,200",.7,7,2.7,-12],[83,68,70,"255,170,200",.42,9,1,24],[92,40,26,"255,226,160",.75,6,3.6,-8],[4,28,30,"255,236,190",.65,8,4.2,10],[61,92,54,"210,180,255",.36,10,5,-16]];
+const LpBokeh=({n=12})=>(
+  <div className="lp-bokeh" aria-hidden="true">
+    {LP_BOKEH.slice(0,n).map(([l,t,s,c,o,d,dl,dx],i)=>(
+      <i key={i} style={{left:`${l}%`,top:`${t}%`,width:s,height:s,"--c":`rgba(${c},.95)`,"--o":o,"--t":`${d}s`,"--dl":`${dl}s`,"--dx":`${dx}px`}}/>
+    ))}
+  </div>
+);
+const LP_RIBBON=["חתונות","בר מצווה","בת מצווה","בריתות","ערבי חברה","כנסים"];
+const LP_NAV=[["how","איך זה עובד"],["features","יכולות"],["vendors","ספקים ומחירים"],["events","סוגי אירועים"],["pricing","מחירים"]];
+
+// לפני / אחרי: האקסל שכולם מכירים מול מפת האולם. גוררים את הידית (עכבר או אצבע) או משתמשים בחצים במקלדת.
+// המיקום נכתב ישר ל-DOM (בלי רינדור בכל תזוזה). בגלילה אנכית בנייד המסך ממשיך לגלול כרגיל
+const XLS_ROWS=[
+  ["משה טל","052-•••-6049","2","4?",""],
+  ["יעל שגיא","052-•••-7420","לא","—","","x"],
+  ["אלון קפלן","052-•••-8791","??","","לבדוק עם אמא"],
+  ["דנה וייס","","אולי","7 או 12","","y"],
+  ["גיל אורן","052-•••-1533","לא ענה","",""],
+  ["רחל כהן","052-•••-0000","1","","לא ליד דוד משה!!","r"],
+  ["דוד לוי","052-•••-1371","2","3",""],
+  ["נועה פרץ","052-•••-2742","לא","","","x"],
+  ["יוסי מזרחי","052-•••-4113","2","?","פלוס 1?"],
+];
+function CompareSlider() {
+  const boxRef=useRef(null),topRef=useRef(null),barRef=useRef(null),knobRef=useRef(null);
+  const pos=useRef(50),hint=useRef([]),drag=useRef(null),touched=useRef(false);
+  const apply=p=>{
+    const box=boxRef.current;if(!box)return;
+    p=Math.max(0,Math.min(100,p));pos.current=p;
+    topRef.current.style.clipPath=`inset(0 0 0 ${p}%)`;
+    barRef.current.style.transform=`translateX(${(p/100*box.clientWidth).toFixed(1)}px)`;
+    const r=Math.round(p);
+    knobRef.current.setAttribute("aria-valuenow",String(r));
+    knobRef.current.setAttribute("aria-valuetext",`${100-r}% אקסל, ${r}% מפת אולם`);
+  };
+  const stopHint=()=>{hint.current.forEach(a=>a.cancel());hint.current=[];};
+  useLayoutEffect(()=>{
+    const box=boxRef.current;if(!box)return;
+    apply(pos.current);
+    const ro=new ResizeObserver(()=>apply(pos.current));ro.observe(box);
+    // רמז חד-פעמי כשהרכיב נכנס למסך: הידית זזה לשני הצדדים וחוזרת לאמצע, כדי שיבינו שאפשר לגרור
+    let timer=0,io=null;
+    if(lpMotionOK()&&box.animate){
+      io=new IntersectionObserver(([e])=>{
+        if(!e.isIntersecting)return;
+        io.disconnect();
+        timer=setTimeout(()=>{
+          if(touched.current)return;
+          const W=box.clientWidth,ease="cubic-bezier(0.77, 0, 0.175, 1)",ps=[50,64,38,50],o={duration:2400};
+          hint.current=[
+            topRef.current.animate(ps.map(p=>({clipPath:`inset(0 0 0 ${p}%)`,easing:ease})),o),
+            barRef.current.animate(ps.map(p=>({transform:`translateX(${(p/100*W).toFixed(1)}px)`,easing:ease})),o),
+          ];
+          hint.current[0].onfinish=()=>{hint.current=[];};
+        },450);
+      },{threshold:.6});
+      io.observe(box);
+    }
+    return()=>{ro.disconnect();if(io)io.disconnect();clearTimeout(timer);stopHint();};
+  },[]);
+  const xToP=x=>{const r=boxRef.current.getBoundingClientRect();return (x-r.left)/r.width*100;};
+  const onDown=e=>{
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    touched.current=true;stopHint();
+    // עכבר: הידית קופצת מיד לנקודה. אצבע: רק אחרי תנועה אופקית (כדי לא להפריע לגלילה)
+    drag.current={id:e.pointerId,x:e.clientX,y:e.clientY,on:e.pointerType==="mouse"};
+    if(drag.current.on){try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}apply(xToP(e.clientX));}
+  };
+  const onMove=e=>{
+    const d=drag.current;if(!d||d.id!==e.pointerId)return;
+    if(!d.on){
+      const dx=Math.abs(e.clientX-d.x),dy=Math.abs(e.clientY-d.y);
+      if(dx<6||dx<dy)return;
+      d.on=true;try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
+    }
+    apply(xToP(e.clientX));
+  };
+  const onUp=e=>{if(drag.current&&drag.current.id===e.pointerId)drag.current=null;};
+  const onKey=e=>{
+    const s=e.shiftKey?20:5,k=e.key;let p=null;
+    if(k==="ArrowLeft"||k==="ArrowDown")p=pos.current-s;
+    else if(k==="ArrowRight"||k==="ArrowUp")p=pos.current+s;
+    else if(k==="Home")p=0;
+    else if(k==="End")p=100;
+    if(p===null)return;
+    e.preventDefault();touched.current=true;stopHint();apply(p);
+  };
+  return(
+    <div className="lp-cmp" ref={boxRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+      <div className="lp-cmp-after">
+        <img src="/landing/seating.jpg" alt="אחרי: מפת האולם ב-Sidor-IL, עם שולחנות ממוספרים ורשימת אורחים שממתינים להושבה" width="1440" height="655" loading="lazy" draggable="false"/>
+        <span className="lp-cmp-tag after" aria-hidden="true">אחרי</span>
+      </div>
+      <div className="lp-cmp-before" ref={topRef} role="img" aria-label="לפני: רשימת מוזמנים באקסל, עם שורות מחוקות, סימני שאלה והערות בצד">
+        <div className="lp-xls" aria-hidden="true">
+          <div className="lp-xls-bar"><b>X</b>מוזמנים_סופי_סופי (3).xlsx</div>
+          <div className="lp-xls-tools"><i/><i/><i/><i/><i/></div>
+          <table>
+            <thead><tr><th className="n"/><th>A</th><th className="ph">B</th><th>C</th><th>D</th><th>E</th></tr></thead>
+            <tbody>
+              <tr className="h"><td className="n">1</td><td>שם</td><td className="ph">טלפון</td><td>מגיעים?</td><td>שולחן</td><td>הערות</td></tr>
+              {XLS_ROWS.map(([nm,ph,co,tb,note,f],i)=>(
+                <tr key={i} className={f||undefined}><td className="n">{i+2}</td><td>{nm}</td><td className="ph">{ph}</td><td>{co}</td><td>{tb}</td><td className={f==="r"?"r":undefined}>{note}</td></tr>
+              ))}
+              {[11,12].map(n=><tr key={n}><td className="n">{n}</td><td/><td className="ph"/><td/><td/><td/></tr>)}
+            </tbody>
+          </table>
+          <div className="lp-note" style={{right:"6%",bottom:"8%",rotate:"-4deg"}}>סבתא צריכה כיסא ליד היציאה</div>
+          <div className="lp-note pink" style={{right:"30%",top:"40%",rotate:"3deg"}}>עוד 46 לא ענו...</div>
+        </div>
+        <span className="lp-cmp-tag before" aria-hidden="true">לפני</span>
+      </div>
+      <div className="lp-cmp-bar" ref={barRef}>
+        <div ref={knobRef} className="lp-cmp-knob" role="slider" tabIndex={0} aria-label="השוואה בין האקסל למפת האולם" aria-valuemin={0} aria-valuemax={100} aria-valuenow={50} aria-valuetext="50% אקסל, 50% מפת אולם" onKeyDown={onKey}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// איך זה עובד: במחשב הטקסט נגלל והמסך שלצידו מתחלף לפי השלב שבמרכז המסך. בנייד — כל שלב עם התמונה שלו
+const LP_STORY=[
+  {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp.jpg",kind:"phone",alt:"רשימת המוזמנים בנייד: מגיעים, ממתינים ולא מגיעים",chip:"36 מוזמנים נכנסו מהאקסל"},
+  {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating.jpg",kind:"laptop",alt:"מפת האולם במחשב: שולחנות ממוספרים, במה ובר",chip:"שולחן 2 · משפחת החתן · 5/10"},
+  {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite.jpg",kind:"phone",alt:"דף ההזמנה בנייד, עם טופס אישור הגעה",chip:"היי רחל, השולחן שלך: 7"},
+];
+function HowStory() {
+  const [act,setAct]=useState(0);
+  const refs=useRef([]);
+  useEffect(()=>{
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setAct(+e.target.dataset.i);}),{rootMargin:"-45% 0px -45% 0px"});
+    refs.current.forEach(el=>el&&io.observe(el));
+    return()=>io.disconnect();
+  },[]);
+  return(
+    <div className="lp-story">
+      <div className="lp-story-col">
+        <span className="lp-story-rail" aria-hidden="true"/>
+        <span className="lp-story-fill" aria-hidden="true" style={{transform:`scaleY(${act/(LP_STORY.length-1)})`}}/>
+        <ol className="lp-story-steps">
+          {LP_STORY.map((s,i)=>(
+            <li key={i} ref={el=>{refs.current[i]=el;}} data-i={i} className={`lp-story-step${act===i?" on":""}`} style={{"--c":s.c}}>
+              <span className="lp-story-n" aria-hidden="true">{i+1}</span>
+              <h3>{s.t}</h3>
+              <p>{s.d}</p>
+              <figure className={`lp-story-sm ${s.kind}`}><div className="lp-frame"><img src={s.img} alt={s.alt} loading="lazy"/></div></figure>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="lp-story-stage" aria-hidden="true">
+        {LP_STORY.map((s,i)=>(
+          <figure key={i} className={`lp-screen ${s.kind}${act===i?" on":""}`}>
+            <div className="lp-frame"><img src={s.img} alt="" loading="lazy"/></div>
+            <span className="lp-screen-chip" style={{"--c":s.c}}>{s.chip}</span>
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   // הגעה מהבר שבדפים הפנימיים: גלילה למקטע (#how...) ופתיחת כניסה/הרשמה אם נבחרה
   useEffect(()=>{
@@ -1753,142 +2140,180 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   // בנייד: כפתור הרשמה דביק בתחתית, רק אחרי שגוללים מעבר לפתיחה (כפתור ה-Hero כבר לא נראה)
   const [pastHero,setPastHero]=useState(false);
   const [venuePage,setVenuePage]=useState(false);
+  const [motion]=useState(lpMotionOK);
+  const [spy,setSpy]=useState("");
+  const [menu,setMenu]=useState(false);
+  const rootRef=useRef(null),menuRef=useRef(null),burgerRef=useRef(null);
 
   useEffect(()=>{
-    const fn=()=>{
-      setScrolled(window.scrollY>40);setPastHero(window.scrollY>window.innerHeight*.85);
-    };
-    window.addEventListener("scroll",fn);
+    const fn=()=>{setScrolled(window.scrollY>40);setPastHero(window.scrollY>window.innerHeight*.85);};
+    fn();
+    window.addEventListener("scroll",fn,{passive:true});
     return()=>window.removeEventListener("scroll",fn);
   },[]);
+  useLpReveal(rootRef,venuePage);
+  // הקישור של המקטע שבמרכז המסך מודגש בתפריט העליון
+  useEffect(()=>{
+    if(venuePage)return;
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setSpy(e.target.id);}),{rootMargin:"-45% 0px -50% 0px"});
+    ["top","before","how","features","vendors","events","pricing","faq","contact"].forEach(id=>{const el=document.getElementById(id);if(el)io.observe(el);});
+    return()=>io.disconnect();
+  },[venuePage]);
+  // תפריט בנייד: נועל את הגלילה מאחור, Esc סוגר, והפוקוס חוזר לכפתור שפתח
+  useEffect(()=>{
+    if(!menu)return;
+    document.body.style.overflow="hidden";
+    const t=setTimeout(()=>menuRef.current?.querySelector("a,button")?.focus(),80);
+    const esc=e=>{if(e.key==="Escape")setMenu(false);};
+    window.addEventListener("keydown",esc);
+    return()=>{clearTimeout(t);document.body.style.overflow="";window.removeEventListener("keydown",esc);burgerRef.current?.focus({preventScroll:true});};
+  },[menu]);
+  const trapTab=e=>{
+    if(e.key!=="Tab"||!menuRef.current)return;
+    const f=[...menuRef.current.querySelectorAll("a,button")];if(!f.length)return;
+    const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  };
+  const go=fn=>()=>{setMenu(false);fn();};
 
   if(venuePage) return <VenuePage onBack={()=>setVenuePage(false)} onOpenAuth={onOpenAuth}/>;
 
   // כותרות מקטע מיושרות לימין, על קו אחד עם התוכן שמתחתן
   const sectionTitle=(kicker,title,accent,sub,opts={})=>(
-    <div style={{marginBottom:opts.mb??48,maxWidth:820}}>
-      <h2 style={{fontSize:"clamp(32px,4.6vw,60px)",fontWeight:900,lineHeight:1.1,letterSpacing:"-.025em",marginBottom:sub?16:0,color:opts.dark?LP.cream:LP.ink}}>
-        {title} {accent&&<span className="lp-grad">{accent}</span>}
+    <div data-reveal style={{marginBottom:opts.mb??52,maxWidth:820}}>
+      <h2 className="lp-h2" style={opts.dark?{color:LP.cream}:undefined}>
+        {title} {accent&&<span className={opts.dark?"lp-grad-light":"lp-grad"}>{accent}</span>}
       </h2>
       {sub&&<p className="lp-sec-sub" style={opts.dark?{color:"#E2DAEE"}:undefined}>{sub}</p>}
     </div>
   );
 
   return(
-    <div className={`lp${pastHero?" lp-hero-off":""}`} dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
+    <div ref={rootRef} className={`lp${motion?" lp-motion":""}${pastHero?" lp-hero-off":""}`} dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
       <style>{LANDING_CSS}</style>
       <a href="#top" className="lp-skip">דלג לתוכן הראשי</a>
 
-      {/* ─── NAV: שקוף מעל התמונה, ובגלילה הופך לגלולה לבנה צפה ─── */}
-      <nav className={`lp-nav${scrolled?"":" lp-nav-top"}`} style={{position:"fixed",top:scrolled?12:0,right:scrolled?"3vw":0,left:scrolled?"3vw":0,zIndex:100,height:scrolled?62:74,display:"flex",alignItems:"center",padding:scrolled?"0 18px":"0 5vw",gap:14,
-        background:scrolled?"rgba(255,255,255,.97)":"transparent",borderRadius:scrolled?100:0,boxShadow:scrolled?"0 16px 40px -20px rgba(60,35,110,.45)":"none"}}>
+      {/* ─── NAV: גלולה צפה. שקופה מעל התמונה, לבנה כשגוללים ─── */}
+      <nav className={`lp-nav${scrolled?"":" lp-nav-top"}`} style={{position:"fixed",top:12,right:"3vw",left:"3vw",zIndex:100,height:64,display:"flex",alignItems:"center",padding:"0 18px 0 12px",gap:12,borderRadius:100,
+        backgroundColor:scrolled?"rgba(255,255,255,.97)":"rgba(255,255,255,0)",boxShadow:scrolled?"0 16px 40px -20px rgba(60,35,110,.45)":"0 0 0 rgba(0,0,0,0)"}}>
         <a href="#top" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:scrolled?LP.ink:"#fff"}}>
           <SidorLogo size={40} id="lpLogo"/>
           <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </a>
-        <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>
-          {[["#how","איך זה עובד"],["#features","יכולות"],["#vendors","ספקים ומחירים"],["#events","סוגי אירועים"],["#pricing","מחירים"]].map(([h,l])=>(
-            <a key={h} href={h} className="lp-nav-link">{l}</a>
+        <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:14}}>
+          {LP_NAV.map(([id,l])=>(
+            <a key={id} href={"#"+id} className={`lp-nav-link${spy===id?" on":""}`} aria-current={spy===id?"location":undefined}>{l}</a>
           ))}
         </div>
         <div style={{flex:1}}/>
         <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
         <button className={`lp-btn lp-navbtn ${scrolled?"lp-ghost":"lp-glass-btn"}`} onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>{loggedIn?<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>:"כניסה"}</button>
-        <button className={`lp-btn lp-navbtn ${scrolled?"lp-primary":"lp-white"}`} onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+        <button className={`lp-btn lp-navbtn lp-hide-xs ${scrolled?"lp-primary":"lp-white"}`} onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+        <button ref={burgerRef} type="button" className="lp-burger" aria-label="פתיחת התפריט" aria-expanded={menu} aria-controls="lp-menu" onClick={()=>setMenu(true)}><span/><span/><span/></button>
       </nav>
 
-      {/* ─── HERO: תמונת אווירה מלאה, ועליה המפה החיה ─── */}
-      <section id="top" style={{minHeight:"100vh",display:"flex",alignItems:"center",position:"relative",zIndex:1,overflow:"hidden",padding:"130px 6vw 70px",borderRadius:"0 0 56px 56px",background:"#3A2464",color:"#fff"}}>
-        <img src="https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=1800&q=70&auto=format&fit=crop" alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-        <div aria-hidden="true" style={{position:"absolute",inset:0,background:"linear-gradient(200deg,rgba(38,20,74,.82) 0%,rgba(70,38,122,.72) 55%,rgba(150,50,120,.62) 100%)"}}/>
+      {/* ─── תפריט בנייד: גיליון שיורד מלמעלה ─── */}
+      <div className={`lp-menu${menu?" open":""}`} onClick={e=>{if(e.target===e.currentTarget)setMenu(false);}}>
+        <div id="lp-menu" ref={menuRef} className="lp-menu-sheet" role="dialog" aria-modal="true" aria-label="תפריט האתר" onKeyDown={trapTab}>
+          <div className="lp-menu-head">
+            <span style={{display:"flex",alignItems:"center",gap:10,fontWeight:900,fontSize:20}}><SidorLogo size={36} id="lpMenuLogo"/>Sidor-IL</span>
+            <button type="button" className="lp-menu-x" aria-label="סגירת התפריט" onClick={()=>setMenu(false)}>✕</button>
+          </div>
+          <ul>
+            {[...LP_NAV,["faq","שאלות נפוצות"]].map(([id,l],i)=>(
+              <li key={id} style={{"--d":`${(.08+i*.05).toFixed(2)}s`}}><a href={"#"+id} onClick={()=>setMenu(false)}>{l}</a></li>
+            ))}
+          </ul>
+          <div className="lp-menu-cta">
+            <button type="button" className="lp-btn lp-primary" onClick={go(()=>onOpenAuth("register"))}>התחילו להושיב</button>
+            <button type="button" className="lp-btn lp-ghost" onClick={go(()=>onOpenAuth("login"))}>{loggedIn?"האירועים שלי":"כניסה לחשבון"}</button>
+          </div>
+          <div className="lp-menu-more">
+            <button type="button" className="lp-hero-link" onClick={go(()=>onOpenAuth("producer"))}>כניסת מפיקים</button>
+            <button type="button" className="lp-hero-link" onClick={go(()=>onOpenAuth("vendor"))}>ספקים: הצטרפות</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── HERO: תמונה שזזה לאט, אורות רכים, ומעליה המפה החיה ─── */}
+      <section id="top" className="lp-hero-sec">
+        <div className="lp-hero-bg" aria-hidden="true">
+          <img className="lp-kb" src="https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=1800&q=70&auto=format&fit=crop" alt=""/>
+          <div className="lp-hero-tint"/>
+          <LpBokeh/>
+        </div>
         <StringLights/>
         <div className="lp-hero" style={{maxWidth:1200,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",position:"relative",zIndex:2}}>
-          <div style={{flex:1,minWidth:280,animation:"fadeUp .9s ease both"}}>
-            <h1 style={{fontSize:"clamp(48px,7vw,104px)",fontWeight:900,lineHeight:1.02,letterSpacing:"-.035em",marginBottom:28,color:"#fff"}}>
-              כל אורח.<br/>
-              <span className="lp-grad-light">במקום הנכון.</span>
+          <div style={{flex:1,minWidth:280}}>
+            <h1 className="lp-h1">
+              <span className="lp-line"><span style={{"--d":".15s"}}>כל אורח.</span></span>{" "}
+              <span className="lp-line"><span className="lp-grad-light" style={{"--d":".27s"}}>במקום הנכון.</span></span>
             </h1>
 
             {/* המשפט הראשון אומר במפורש מה זה (הכותרת היא דימוי) */}
-            <p style={{fontSize:"clamp(17px,1.6vw,21px)",color:"#F6F1FB",lineHeight:1.7,marginBottom:34,maxWidth:"40ch"}}>
+            <p className="lp-rise" style={{"--d":".5s",fontSize:"clamp(17px,1.6vw,21px)",color:"#F6F1FB",lineHeight:1.7,marginBottom:34,maxWidth:"40ch"}}>
               <b style={{color:"#fff",display:"block",marginBottom:4}}>סידורי הושבה ואישורי הגעה לחתונות ואירועים.</b>
               גוררים אורחים לשולחנות על מפת האולם, נותנים ל-AI לסדר לפי משפחות וחברים,
               וכל אורח מקבל את מספר השולחן שלו.
             </p>
 
-            <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
+            <div className="lp-hero-cta lp-rise" style={{"--d":".62s",display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
               <button className="lp-btn lp-white" onClick={()=>onOpenAuth("register")} style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>התחילו לסדר את האולם<LpGo/></button>
               <a href="#how" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:17,minHeight:58}}>איך זה עובד</a>
             </div>
-            <div className="lp-hero-cta" style={{marginBottom:12,display:"flex",gap:"6px 18px",flexWrap:"wrap",fontSize:15,color:"#fff",fontWeight:700}}>
+            <div className="lp-hero-cta lp-rise" style={{"--d":".72s",marginBottom:12,display:"flex",gap:"6px 18px",flexWrap:"wrap",fontSize:15,color:"#fff",fontWeight:700}}>
               {[`חינם עד ${FREE_SEATING_LIMIT} מוזמנים`,"בלי כרטיס אשראי","מתחילים תוך 2 דקות"].map(t=>(
                 <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6}}><LpIcon name="check" color="#8FF0D0" size={16}/>{t}</span>
               ))}
             </div>
-            <div className="lp-hero-cta" style={{display:"flex",alignItems:"center",gap:"2px 20px",flexWrap:"wrap"}}>
+            <div className="lp-hero-cta lp-rise" style={{"--d":".8s",display:"flex",alignItems:"center",gap:"2px 20px",flexWrap:"wrap"}}>
               <button onClick={()=>onOpenAuth("producer")} className="lp-hero-link">מפיקי אירועים</button>
               <button onClick={()=>onOpenAuth("vendor")} className="lp-hero-link">ספקים: הצטרפות</button>
               <InstallAppButton label="הורדת האפליקציה" style={{background:"none",border:"none",borderRadius:0,padding:"12px 2px",fontSize:15,color:"#fff",textDecoration:"underline",textUnderlineOffset:4}}/>
             </div>
           </div>
 
-          <div className="lp-demo"><HeroSeating/></div>
+          <div className="lp-demo lp-rise-side" style={{"--d":".38s"}}><HeroSeating/></div>
         </div>
       </section>
 
-      {/* ─── HOW: רצף אמיתי, ולכן ממוספר ─── */}
-      <section id="how" style={{padding:"156px 6vw 100px",marginTop:-56,position:"relative",background:"#F6F3FF"}}>
-        <div style={{maxWidth:1120,margin:"0 auto"}}>
-          {sectionTitle("איך זה עובד","מרשימת מוזמנים לאולם מסודר","ב-3 צעדים","בלי לשבור את הראש מי יושב ליד מי. אתם מחליטים, המערכת עושה את העבודה.")}
-          <div className="lp-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:22}}>
-            {[
-              [1,"מעלים את המוזמנים","מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",LP.rose],
-              [2,"מסדרים את השולחנות","בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",LP.violet],
-              [3,"האורחים יודעים איפה לשבת","שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",LP.mint],
-            ].map(([n,t,d,c])=>(
-              <div key={n} className="lp-step">
-                <div style={{background:`${c}1A`,borderRadius:26,padding:"18px 10px 0",marginBottom:20}}><StepArt kind={n}/></div>
-                <div style={{padding:"0 12px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                    <span className="lp-circ" style={{background:c,color:LP.ink,fontSize:18,fontWeight:900}}>{n}</span>
-                    <h3 style={{fontSize:22,fontWeight:900,lineHeight:1.25}}>{t}</h3>
-                  </div>
-                  <p style={{fontSize:16,color:"#3E3555",lineHeight:1.7}}>{d}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ─── סרט נע: סוגי האירועים (דקורטיבי — אותו מידע מופיע בהמשך) ─── */}
+      <div className="lp-ribbon" data-loop aria-hidden="true">
+        <div className="lp-ribbon-track">
+          {[...LP_RIBBON,...LP_RIBBON,...LP_RIBBON,...LP_RIBBON].map((t,i)=><span key={i} className={i%2?"o":undefined}>{t}<b>✦</b></span>)}
+        </div>
+      </div>
+
+      {/* ─── לפני / אחרי ─── */}
+      <section id="before" className="lp-before">
+        <div className="lp-wrap">
+          {sectionTitle("","מאקסל מבולגן","למפה ברורה","גררו את הידית ותראו את ההבדל: מימין הרשימה שכולם מכירים, משמאל מפת האולם של Sidor-IL.")}
+          <div data-reveal="scale"><CompareSlider/></div>
+          <div className="lp-cmp-cap" data-reveal style={{"--d":".1s"}}>מסך אמיתי מהמערכת, עם נתוני דוגמה</div>
         </div>
       </section>
 
-      {/* ─── מסכים אמיתיים מהמערכת (נתוני דוגמה) ─── */}
-      <section aria-label="הצצה למערכת" style={{margin:"0 2vw",padding:"84px 5vw",borderRadius:56,overflow:"hidden",color:"#fff",background:"linear-gradient(135deg,#4A2C8F,#7C4BD6 55%,#C2397A)"}}>
-        <div className="lp-inside">
-          <div>
-            <h2 style={{fontSize:"clamp(32px,4.6vw,60px)",fontWeight:900,lineHeight:1.1,letterSpacing:"-.025em",marginBottom:16}}>ככה זה נראה מבפנים</h2>
-            <p style={{fontSize:18,lineHeight:1.7,marginBottom:28,maxWidth:"38ch"}}>מפת האולם במחשב, אישורי ההגעה בנייד וההזמנה אצל האורחים. הכל מתעדכן יחד.</p>
-            <button className="lp-btn lp-white" onClick={()=>onOpenAuth("register")} style={{padding:"12px 30px 12px 13px",fontSize:16,minHeight:54}}>פותחים אירוע בחינם<LpGo/></button>
-          </div>
-          <div>
-            <div className="lp-devices">
-              <div className="lp-laptop"><img src="/landing/seating.jpg" alt="מסך מפת האולם: שולחנות, במה ורשימת אורחים שממתינים להושבה" width="1440" height="655" loading="lazy" style={{height:"auto"}}/></div>
-              <div className="lp-phone" style={{left:"27%"}}><img src="/landing/invite.jpg" alt="דף הזמנה לאירוע בנייד, עם טופס אישור הגעה" width="390" height="760" loading="lazy"/></div>
-              <div className="lp-phone" style={{left:0}}><img src="/landing/rsvp.jpg" alt="רשימת אישורי ההגעה בנייד: מגיעים, ממתינים ולא מגיעים" width="390" height="760" loading="lazy"/></div>
-            </div>
-            <div style={{fontSize:13,marginTop:12,textAlign:"left"}}>מסכים מהמערכת, עם נתוני דוגמה</div>
-          </div>
+      {/* ─── HOW: סיפור בגלילה ─── */}
+      <section id="how" className="lp-how3">
+        <div className="lp-wrap">
+          {sectionTitle("","מהרשימה לאולם","ב-3 צעדים","בלי לשבור את הראש מי יושב ליד מי. אתם מחליטים, המערכת עושה את העבודה.",{dark:true})}
+          <HowStory/>
         </div>
       </section>
 
-      {/* ─── FEATURES ────────────────────────────────────────────── */}
-      <section id="features" style={{padding:"100px 6vw 110px",position:"relative"}}>
-        <div style={{maxWidth:1120,margin:"0 auto",position:"relative"}}>
+      {/* ─── FEATURES: האיור בכל כרטיס מדגים את היכולת כשהכרטיס נכנס ─── */}
+      <section id="features" className="lp-sec">
+        <div className="lp-wrap">
           {sectionTitle("היכולות","כל מה שצריך להושבה","מושלמת","כלים שנבנו במיוחד לחתונות, בר מצוות ואירועים גדולים.")}
-          {/* בנטו: כרטיסים בגדלים שונים, ובכל אחד איור קטן של מה שהיכולת עושה בפועל */}
           {(()=>{
-            const chair=(x,y,d,c)=><rect key={`${x}${y}`} x="-6" y="-4.5" width="12" height="9" rx="4" transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${d})`} fill={c}/>;
-            const table=(cx,cy,c,n,fill)=>(<g key={n}>
-              {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return chair(cx+34*Math.sin(a),cy-34*Math.cos(a),d,i<fill?c:"#ECE6F5");})}
+            const chair=(x,y,d,c,f,dl)=>(
+              <g key={`${x.toFixed(1)}-${y.toFixed(1)}`} transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${d})`}>
+                <rect className={f?"lp-ch f":"lp-ch"} style={f?{"--d":`${dl.toFixed(2)}s`}:undefined} x="-6" y="-4.5" width="12" height="9" rx="4" fill={c}/>
+              </g>
+            );
+            const table=(cx,cy,c,n,fill,ti)=>(<g key={n}>
+              {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return chair(cx+34*Math.sin(a),cy-34*Math.cos(a),d,i<fill?c:"#ECE6F5",i<fill,.3+ti*.2+i*.05);})}
               <circle cx={cx} cy={cy} r="23" fill="#fff" stroke={c} strokeOpacity=".5" strokeWidth="1.5"/>
               <text x={cx} y={cy+5} textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">{n}</text>
             </g>);
@@ -1901,48 +2326,51 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             </>);
             return(
               <div className="lp-bento">
-                {/* מפת אולם — הכרטיס הגדול */}
-                <div className="lp-card fu lp-b-a">
+                {/* מפת אולם — הכרטיס הגדול: הכיסאות מתמלאים */}
+                <div className="lp-card lp-lift lp-b-a" data-reveal>
                   <div className="lp-bart" style={{background:"radial-gradient(circle at 50% 40%,#FFF1F7,#F7F1FF 70%)",minHeight:240}}>
                     <svg viewBox="0 0 320 220" width="100%" height="100%" style={{maxWidth:420}} aria-hidden="true">
                       <rect x="110" y="14" width="100" height="22" rx="11" fill="#FFE3EE" stroke="#F3B6CF"/>
                       <text x="160" y="29" textAnchor="middle" fontSize="10" fontWeight="900" fill="#B13B72" fontFamily="Heebo">במה</text>
                       <rect x="125" y="72" width="70" height="80" rx="12" fill="#FBF3E4" stroke="#EBCB8F"/>
                       <text x="160" y="116" textAnchor="middle" fontSize="9" fontWeight="900" fill="#A87A22" fontFamily="Heebo">רחבה</text>
-                      {table(62,80,LP.rose,"1",7)}{table(62,170,LP.sky,"2",5)}{table(258,80,LP.mint,"3",8)}{table(258,170,LP.gold,"4",3)}
+                      {table(62,80,LP.rose,"1",7,0)}{table(62,170,LP.sky,"2",5,1)}{table(258,80,LP.mint,"3",8,2)}{table(258,170,LP.gold,"4",3,3)}
                     </svg>
                   </div>
                   {head("map",LP.rose,"מפת אולם אינטראקטיבית","שולחנות עגולים, מרובעים ושולחן אבירים, במה, רחבה ובר. גוררים, מזיזים ורואים בזמן אמת כמה מקומות נשארו.")}
                 </div>
-                {/* AI — כרטיס רחב */}
-                <div className="lp-card fu lp-b-w" style={{transitionDelay:".06s"}}>
+                {/* AI — בקשה, "מקליד...", ואז התשובה */}
+                <div className="lp-card lp-lift lp-b-w" data-reveal style={{"--d":".07s"}}>
                   <div className="lp-bart" style={{background:"linear-gradient(135deg,#F4EEFF,#FFF1F7)",flexDirection:"column",gap:8,padding:14,alignItems:"stretch"}}>
-                    <div style={{alignSelf:"flex-start",background:"#fff",border:"1px solid #E6DAFF",borderRadius:"16px 16px 16px 4px",padding:"9px 13px",fontSize:13,fontWeight:700,color:LP.ink,boxShadow:"0 8px 20px -12px rgba(155,107,255,.5)"}}>"סבתא ליד הרחבה, החברים מהעבודה ביחד"</div>
-                    <div style={{alignSelf:"flex-end",display:"inline-flex",alignItems:"center",gap:7,background:"linear-gradient(120deg,#9B6BFF,#F0609E)",color:"#fff",borderRadius:"16px 16px 4px 16px",padding:"8px 13px",fontSize:13,fontWeight:800}}><LpIcon name="ai" color="#fff" size={15}/>סודר! 214 אורחים ב-22 שולחנות</div>
+                    <div className="lp-bub1" style={{alignSelf:"flex-start",background:"#fff",border:"1px solid #E6DAFF",borderRadius:"16px 16px 16px 4px",padding:"9px 13px",fontSize:13,fontWeight:700,color:LP.ink,boxShadow:"0 8px 20px -12px rgba(155,107,255,.5)"}}>"סבתא ליד הרחבה, החברים מהעבודה ביחד"</div>
+                    <div className="lp-slot" style={{alignSelf:"flex-end"}}>
+                      <span className="lp-typing" aria-hidden="true"><i/><i/><i/></span>
+                      <div className="lp-bub2" style={{display:"inline-flex",alignItems:"center",gap:7,background:"linear-gradient(120deg,#9B6BFF,#F0609E)",color:"#fff",borderRadius:"16px 16px 4px 16px",padding:"8px 13px",fontSize:13,fontWeight:800}}><LpIcon name="ai" color="#fff" size={15}/>סודר! 214 אורחים ב-22 שולחנות</div>
+                    </div>
                   </div>
                   {head("ai",LP.violet,"סידור הושבה ב-AI","כותבים העדפות בשפה חופשית, וה-AI מסדר את כולם לפי משפחות, חברים והפרדות.")}
                 </div>
                 {/* קבוצות וצבעים */}
-                <div className="lp-card fu" style={{transitionDelay:".12s"}}>
+                <div className="lp-card lp-lift" data-reveal style={{"--d":".14s"}}>
                   <div className="lp-bart" style={{background:"#F3F8FF",flexWrap:"wrap",gap:6,padding:12,alignContent:"center"}}>
-                    {[["משפחה",LP.rose],["חברים",LP.sky],["עבודה",LP.mint],["שכנים",LP.gold]].map(([l,c])=>(
-                      <span key={l} style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${c}55`,borderRadius:100,padding:"5px 11px",fontSize:12,fontWeight:800,color:LP.ink}}><span style={{width:9,height:9,borderRadius:"50%",background:c}}/>{l}</span>
+                    {[["משפחה",LP.rose],["חברים",LP.sky],["עבודה",LP.mint],["שכנים",LP.gold]].map(([l,c],i)=>(
+                      <span key={l} className="lp-chip" style={{"--d":`${(.25+i*.08).toFixed(2)}s`,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${c}55`,borderRadius:100,padding:"5px 11px",fontSize:12,fontWeight:800,color:LP.ink}}><span style={{width:9,height:9,borderRadius:"50%",background:c}}/>{l}</span>
                     ))}
                   </div>
                   {head("users",LP.sky,"קבוצות וצבעים","כל קבוצה בצבע משלה, ורואים במבט אחד מי יושב עם מי.")}
                 </div>
-                {/* אישורי הגעה */}
-                <div className="lp-card fu" style={{transitionDelay:".18s"}}>
+                {/* אישורי הגעה — הטבעת מתמלאת */}
+                <div className="lp-card lp-lift" data-reveal style={{"--d":".21s"}}>
                   <div className="lp-bart" style={{background:"#F0FCF7",gap:12}}>
-                    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#DDF4EA" strokeWidth="7"/><circle cx="32" cy="32" r="26" fill="none" stroke={LP.mint} strokeWidth="7" strokeLinecap="round" strokeDasharray="163" strokeDashoffset="41" transform="rotate(-90 32 32)"/><text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">75%</text></svg>
+                    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#DDF4EA" strokeWidth="7"/><circle className="lp-ring" cx="32" cy="32" r="26" fill="none" stroke={LP.mint} strokeWidth="7" strokeLinecap="round" strokeDasharray="163" strokeDashoffset="41" transform="rotate(-90 32 32)"/><text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">75%</text></svg>
                     <div style={{fontSize:12,fontWeight:800,color:"#1F7A4D",lineHeight:1.6}}>✓ 168 מגיעים<br/><span style={{color:LP.muted}}>⏳ 46 ממתינים</span></div>
                   </div>
                   {head("check",LP.mint,"אישורי הגעה מחוברים","מי שאישר נכנס לסידור, ומי שביטל משחרר מקום.")}
                 </div>
                 {/* מספר שולחן בהודעה */}
-                <div className="lp-card fu lp-b-w" style={{transitionDelay:".06s"}}>
+                <div className="lp-card lp-lift lp-b-w" data-reveal style={{"--d":".07s"}}>
                   <div className="lp-bart" style={{background:"linear-gradient(135deg,#EAF8EF,#FFF6EE)",padding:14}}>
-                    <div style={{background:"#fff",borderRadius:"18px 18px 4px 18px",padding:"11px 15px",maxWidth:300,boxShadow:"0 10px 26px -14px rgba(31,168,85,.6)",border:"1px solid #CFEFDB",fontSize:13.5,lineHeight:1.6,color:LP.ink}}>
+                    <div className="lp-wa" style={{background:"#fff",borderRadius:"18px 18px 4px 18px",padding:"11px 15px",maxWidth:300,boxShadow:"0 10px 26px -14px rgba(31,168,85,.6)",border:"1px solid #CFEFDB",fontSize:13.5,lineHeight:1.6,color:LP.ink}}>
                       <div style={{fontSize:12,fontWeight:900,color:"#167A3E",marginBottom:2}}>Sidor-IL · WhatsApp</div>
                       שלום דנה! 🎉 מחכים לך הערב.<br/><b>השולחן שלך: מספר 7</b> · משפחת הכלה
                       <div style={{fontSize:12,color:"#5F5675",textAlign:"left",marginTop:2}}>19:02 ✓✓</div>
@@ -1950,11 +2378,11 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                   </div>
                   {head("msg",LP.coral,"מספר שולחן לכל אורח","הודעה אישית ב-SMS או WhatsApp עם שם האורח ומספר השולחן שלו. בלי תורים בכניסה.")}
                 </div>
-                {/* כרטיסי הושבה */}
-                <div className="lp-card fu lp-b-w" style={{transitionDelay:".12s"}}>
+                {/* כרטיסי הושבה — נשלפים כמו קלפים */}
+                <div className="lp-card lp-lift lp-b-w" data-reveal style={{"--d":".14s"}}>
                   <div className="lp-bart" style={{background:"#FFF9EE",gap:14}}>
-                    {[["7","משפחת הכלה","#B8306F",-6],["12","חברים מהצבא","#1F62B5",5]].map(([n,l,c,r])=>(
-                      <div key={n} style={{width:118,background:"#fff",borderRadius:14,padding:"12px 10px",textAlign:"center",border:"1px solid #F3E6C8",boxShadow:"0 12px 24px -14px rgba(232,176,74,.7)",transform:`rotate(${r}deg)`}}>
+                    {[["7","משפחת הכלה","#B8306F",-6],["12","חברים מהצבא","#1F62B5",5]].map(([n,l,c,r],i)=>(
+                      <div key={n} className="lp-scard" style={{"--d":`${(.25+i*.12).toFixed(2)}s`,rotate:`${r}deg`,width:118,background:"#fff",borderRadius:14,padding:"12px 10px",textAlign:"center",border:"1px solid #F3E6C8",boxShadow:"0 12px 24px -14px rgba(232,176,74,.7)"}}>
                         <div style={{fontSize:10,fontWeight:800,color:LP.muted}}>שולחן</div>
                         <div className="lp-num" style={{fontSize:30,fontWeight:900,color:c,lineHeight:1.1}}>{n}</div>
                         <div style={{fontSize:11,fontWeight:800,color:LP.ink}}>{l}</div>
@@ -1970,13 +2398,13 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── ספקים ומחירים מהקהילה (פיצ'ר למשתמשים רשומים) ─── */}
-      <section id="vendors" style={{padding:"100px 6vw",position:"relative",margin:"0 2vw",borderRadius:56,background:"#FFF0F6"}}>
-        <div style={{maxWidth:1120,margin:"0 auto"}}>
+      <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
+        <div className="lp-wrap">
           {sectionTitle("ספקים ומחירים","כמה שילמו","זוגות אחרים?","מחירי מנות אמיתיים באולמות, והמלצות על ספקים — מהקהילה של Sidor-IL. משווים, מתמקחים וחוסכים.")}
-          <FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/>
+          <div data-reveal><FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/></div>
           <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1.15fr 1fr",gap:22,alignItems:"stretch"}}>
             {/* מחירי מנות */}
-            <div className="lp-card fu" style={{padding:"28px 26px"}}>
+            <div className="lp-card lp-lift" data-reveal style={{padding:"28px 26px"}}>
               <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
                 <div><h3 style={{fontSize:21,fontWeight:900}}>מחירי מנות והשוואה</h3><div style={{fontSize:15,color:LP.muted}}>לפי אולם, עיר ויום בשבוע</div></div>
               </div>
@@ -1997,7 +2425,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               </div>
             </div>
             {/* המלצות על ספקים */}
-            <div className="lp-card fu" style={{padding:"28px 26px",transitionDelay:".1s",display:"flex",flexDirection:"column"}}>
+            <div className="lp-card lp-lift" data-reveal style={{padding:"28px 26px","--d":".08s",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
                 <div><h3 style={{fontSize:21,fontWeight:900}}>המלצות על ספקים</h3><div style={{fontSize:15,color:LP.muted}}>אולמות, DJ, צלמים, קייטרינג ועוד</div></div>
               </div>
@@ -2020,17 +2448,17 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── EVENTS ──────────────────────────────────────────────── */}
-      <section id="events" style={{padding:"100px 6vw"}}>
-        <div style={{maxWidth:1120,margin:"0 auto"}}>
+      <section id="events" className="lp-sec">
+        <div className="lp-wrap">
           {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה, Sidor-IL מסדרת את כולם.")}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:18}}>
+          <div className="lp-ev-grid">
             {[
               {title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים, כל אחד בשולחן הנכון",img:"https://images.unsplash.com/photo-1775476793931-cb484f197760?w=700&q=70&auto=format&fit=crop"},
               {title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"https://images.unsplash.com/photo-1792587716357-32a29eca7629?w=700&q=70&auto=format&fit=crop"},
               {title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"https://images.unsplash.com/photo-1780925805396-aff84f9f955d?w=700&q=70&auto=format&fit=crop"},
               {title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות",img:"https://images.unsplash.com/photo-1768396855390-0728fa9c21e1?w=700&q=70&auto=format&fit=crop"},
-            ].map(ev=>(
-              <button key={ev.title} type="button" className="lp-ev-card" onClick={()=>onOpenAuth("register")}>
+            ].map((ev,i)=>(
+              <button key={ev.title} type="button" className="lp-ev-card" data-reveal="scale" style={{"--d":`${(i*.07).toFixed(2)}s`}} onClick={()=>onOpenAuth("register")}>
                 <img src={ev.img} alt="" loading="lazy"/>
                 <span style={{position:"relative",zIndex:1,display:"block",padding:"0 22px 24px 66px"}}>
                   <span style={{display:"block",fontSize:27,fontWeight:900,lineHeight:1.2,marginBottom:6}}>{ev.title}</span>
@@ -2044,25 +2472,27 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── PRICING: מה משלמים על ההושבה, ומה רק אם שולחים הודעות ─── */}
-      <section id="pricing" style={{padding:"100px 6vw",margin:"0 2vw",borderRadius:56,background:LP.lav}}>
-        <div style={{maxWidth:1120,margin:"0 auto"}}>
+      <section id="pricing" className="lp-sheet" style={{background:LP.lav}}>
+        <div className="lp-wrap">
           {sectionTitle("מחירים","מחירים","שקופים",`חינם עד ${FREE_SEATING_LIMIT} מוזמנים, ₪${BASIC_PRICE} לאירוע גדול יותר, והודעות SMS ו-WhatsApp לפי כמות, כשצריך.`)}
           {(()=>{
-            const card=pkg=>(
-              <div key={pkg.name} style={{borderRadius:26,padding:"32px 30px",display:"flex",flexDirection:"column",background:pkg.highlight?"linear-gradient(160deg,#4A2C8F,#8A3FA8 60%,#C2397A)":"#fff",color:pkg.highlight?"#fff":LP.ink}}>
-                <h3 style={{fontSize:19,fontWeight:900,marginBottom:8}}>{pkg.name}</h3>
-                <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:22}}>
-                  <span className="lp-num" style={{fontSize:60,fontWeight:900,lineHeight:1}}>{pkg.price}</span>
-                  <span style={{fontSize:16,color:pkg.highlight?"#E2DAEE":LP.muted}}>{pkg.desc}</span>
+            const card=(pkg,i)=>(
+              <div key={pkg.name} className={`lp-pwrap${pkg.highlight?" lp-glow":""}`} data-reveal style={{"--d":`${(i*.08).toFixed(2)}s`}}>
+                <div className="lp-pcard" style={{background:pkg.highlight?"linear-gradient(160deg,#4A2C8F,#8A3FA8 60%,#C2397A)":"#fff",color:pkg.highlight?"#fff":LP.ink}}>
+                  <h3 style={{fontSize:19,fontWeight:900,marginBottom:8}}>{pkg.name}</h3>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:22}}>
+                    <span className="lp-num" style={{fontSize:60,fontWeight:900,lineHeight:1}}>{pkg.price}</span>
+                    <span style={{fontSize:16,color:pkg.highlight?"#E2DAEE":LP.muted}}>{pkg.desc}</span>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:28,flex:1}}>
+                    {pkg.features.map(f=>(
+                      <div key={f} style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:16,lineHeight:1.5,color:pkg.highlight?"#F1ECF7":"#3E3555"}}>
+                        <span style={{flexShrink:0,marginTop:2}}><LpIcon name="check" color={pkg.highlight?LP.mint:"#1F7A4D"} size={19}/></span>{f}
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={()=>onOpenAuth("register")} className={`lp-btn ${pkg.highlight?"lp-white":"lp-ghost"}`} style={{width:"100%",padding:"15px",fontSize:16}}>{pkg.cta}</button>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:28,flex:1}}>
-                  {pkg.features.map(f=>(
-                    <div key={f} style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:16,lineHeight:1.5,color:pkg.highlight?"#F1ECF7":"#3E3555"}}>
-                      <span style={{flexShrink:0,marginTop:2}}><LpIcon name="check" color={pkg.highlight?LP.mint:"#1F7A4D"} size={19}/></span>{f}
-                    </div>
-                  ))}
-                </div>
-                <button onClick={()=>onOpenAuth("register")} className={`lp-btn ${pkg.highlight?"lp-white":"lp-ghost"}`} style={{width:"100%",padding:"15px",fontSize:16}}>{pkg.cta}</button>
               </div>
             );
             return(<>
@@ -2072,7 +2502,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
                   {name:"פתיחת הושבה",price:`₪${BASIC_PRICE}`,desc:"לאירוע",features:[`סידורי הושבה מעל ${FREE_SEATING_LIMIT} מוזמנים`,"מפת אולם, גרירה והושבה אוטומטית","מספרי שולחנות והדפסת סידור ההושבה","תשלום חד-פעמי, בלי מנוי"],cta:"מתחילים להושיב",highlight:true},
                 ].map(card)}
               </div>
-              <h3 style={{fontSize:24,fontWeight:900,margin:"44px 0 18px"}}>הודעות לאורחים, לפי כמות</h3>
+              <h3 data-reveal style={{fontSize:24,fontWeight:900,margin:"44px 0 18px"}}>הודעות לאורחים, לפי כמות</h3>
               <div className="lp-price">
                 {[
                   {name:"הודעות WhatsApp",price:"₪1.8",desc:"לרשומה",features:["4 סבבי WhatsApp אוטומטיים","הזמנה ותזכורת למי שלא אישר","ביום האירוע עם מספר שולחן","בלי צורך בחבילה"],cta:"לפרטים"},
@@ -2088,7 +2518,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       <LandingTestimonials/>
 
       {/* ─── שאלות נפוצות (מה שזוגות שואלים לפני שנרשמים) ─── */}
-      <section id="faq" style={{padding:"90px 6vw 20px"}}>
+      <section id="faq" style={{padding:"100px 6vw 20px"}}>
         <div className="lp-faq-wrap">
           {sectionTitle("שאלות נפוצות","יש שאלות?","יש תשובות.","כל מה שכדאי לדעת לפני שמתחילים לסדר את האולם.",{mb:0})}
           <div>
@@ -2100,7 +2530,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               ["מה קורה ביום האירוע?","בכניסה לאולם אפשר לחפש אורח לפי שם או לסרוק QR, לראות את מספר השולחן שלו ולסמן שהגיע. אפשר גם להזמין צוות הושבה או עמדת טאבלט."],
               ["הפרטים של האורחים שלנו שמורים?","כן. הפרטים מוצפנים בדרך, נשמרים בשרתים מאובטחים, ורק אתם ומי ששיתפתם רואים אותם. אנחנו לא משתמשים בהם לשיווק. הפרטים המלאים במדיניות הפרטיות."],
             ].map(([q,a],i)=>(
-              <details key={q} className="lp-faq">
+              <details key={q} className="lp-faq" data-reveal style={{"--d":`${(i*.05).toFixed(2)}s`}}>
                 <summary>{q}<span className="lp-faq-ic" aria-hidden="true">+</span></summary>
                 <p>{a}</p>
               </details>
@@ -2111,14 +2541,14 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
       {/* ─── נקודות אמון לפני הכפתור האחרון (עובדות בלבד, בלי מספרים מומצאים) ─── */}
       <section aria-label="למה לסמוך עלינו" style={{padding:"70px 6vw 70px"}}>
-        <div style={{maxWidth:1120,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16}}>
+        <div className="lp-wrap" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16}}>
           {[
             ["check","#1F7A4D","#E9FBF4","₪0 להתחלה",`בלי כרטיס אשראי, והושבה חינם עד ${FREE_SEATING_LIMIT} מוזמנים.`],
             ["users","#B8306F","#FFEFF5","בנוי לאירועים בישראל","עברית מלאה, חתונות, בריתות ובר/בת מצווה."],
             ["msg","#167A3E","#EAF8EF","תמיכה בוואטסאפ","שואלים ומקבלים תשובה מאדם אמיתי."],
             ["map","#6A3FCF","#F1EAFF","הפרטים שלכם מוגנים","תקשורת מוצפנת, ורק אתם רואים את האורחים."],
-          ].map(([ic,c,bg,t,d])=>(
-            <div key={t} style={{background:bg,borderRadius:28,padding:"22px 22px 24px"}}>
+          ].map(([ic,c,bg,t,d],i)=>(
+            <div key={t} className="lp-lift" data-reveal style={{"--d":`${(i*.07).toFixed(2)}s`,background:bg,borderRadius:28,padding:"22px 22px 24px"}}>
               <span className="lp-circ" style={{background:"#fff",marginBottom:12}}><LpIcon name={ic} color={c} size={22}/></span>
               <h3 style={{fontSize:18,fontWeight:900,marginBottom:4}}>{t}</h3>
               <p style={{fontSize:16,color:"#3E3555",lineHeight:1.6}}>{d}</p>
@@ -2128,13 +2558,14 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── CTA ─────────────────────────────────────────────────── */}
-      <section id="contact" style={{margin:"0 2vw 60px",padding:"96px 5vw",position:"relative",overflow:"hidden",borderRadius:56,background:"#4A2C8F",color:"#fff"}}>
-        <img src="https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=1600&q=65&auto=format&fit=crop" alt="" loading="lazy" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-        <div aria-hidden="true" style={{position:"absolute",inset:0,background:"linear-gradient(120deg,rgba(150,40,110,.86),rgba(74,44,143,.86))"}}/>
-        <div style={{maxWidth:1120,margin:"0 auto",position:"relative"}}>
-          <h2 style={{fontSize:"clamp(34px,5.4vw,72px)",fontWeight:900,marginBottom:14,letterSpacing:"-.025em",lineHeight:1.08}}>הגיע הזמן להושיב את כולם</h2>
-          <p style={{fontSize:19,marginBottom:32,lineHeight:1.65,maxWidth:"46ch"}}>פותחים אירוע, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה.</p>
-          <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+      <section id="contact" className="lp-cta3">
+        <img className="lp-kb" src="https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=1600&q=65&auto=format&fit=crop" alt="" loading="lazy"/>
+        <div className="lp-cta-tint" aria-hidden="true"/>
+        <LpBokeh n={7}/>
+        <div className="lp-wrap" style={{position:"relative"}}>
+          <h2 data-reveal style={{fontSize:"clamp(34px,5.4vw,72px)",fontWeight:900,marginBottom:14,letterSpacing:"-.025em",lineHeight:1.08}}>הגיע הזמן להושיב את כולם</h2>
+          <p data-reveal style={{"--d":".08s",fontSize:19,marginBottom:32,lineHeight:1.65,maxWidth:"46ch"}}>פותחים אירוע, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה.</p>
+          <div data-reveal style={{"--d":".16s",display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>onOpenAuth("register")} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:60}}>צרו סידור הושבה עכשיו<LpGo/></button>
             <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>דברו איתנו בוואטסאפ</a>
           </div>
@@ -2142,7 +2573,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── FOOTER ──────────────────────────────────────────────── */}
-      <footer style={{borderTop:"1px solid #EFE6F5",padding:"48px 6vw 32px",background:"#F8F3FF"}}>
+      <footer style={{borderTop:"1px solid #EFE6F5",padding:"48px 6vw 0",background:"#F8F3FF",overflow:"hidden"}}>
         <div style={{maxWidth:1120,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:40,marginBottom:40}}>
             <div style={{maxWidth:320}}>
@@ -2194,6 +2625,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             </span>
             <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
           </div>
+          <div className="lp-wordmark" aria-hidden="true" data-reveal>Sidor-IL</div>
         </div>
       </footer>
 
@@ -2211,7 +2643,6 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
     </div>
   );
 }
-
 
 const AUTH_ERRORS={
   "Invalid login credentials":"❌ אימייל או סיסמה שגויים",
