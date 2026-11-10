@@ -4100,27 +4100,31 @@ const thankYouText=event=>{
 const HOME_CSS=`
 .hm{font-synthesis-weight:none}
 .hm h1,.hm h2,.hm h3,.hm .hm-f,.hm button{font-family:'Fredoka','Heebo',sans-serif}
-.hm-hero{position:relative;overflow:hidden;border-radius:36px;padding:30px 34px;color:#fff;background:linear-gradient(120deg,#FF8A65,#F0609E 48%,#9B6BFF);box-shadow:0 30px 70px -40px rgba(155,107,255,.75);display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
+.hm-hero{position:relative;overflow:hidden;border-radius:36px;padding:30px 34px;color:#2B1D3F;background:linear-gradient(150deg,#EFE4FF 0%,#FFE4F0 55%,#FFE9DC 100%);box-shadow:0 30px 70px -44px rgba(155,107,255,.7);display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
 .hm-hero > *{position:relative;z-index:1}
-.hm-hero .hm-bub{position:absolute;z-index:0;border-radius:50%;background:rgba(255,255,255,.16);pointer-events:none}
+.hm-hero .hm-bub{position:absolute;z-index:0;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none}
 .hm-hero h1{font-size:clamp(26px,3vw,40px);font-weight:700;line-height:1.12;margin:4px 0 8px}
-.hm-greet{font-size:15px;font-weight:600;opacity:.95}
-.hm-when{font-size:15px;opacity:.95;display:flex;flex-wrap:wrap;gap:6px 14px}
+.hm-greet{font-size:15px;font-weight:700;color:#7A3FBF}
+.hm-when{font-size:15px;color:#3E3555;display:flex;flex-wrap:wrap;gap:6px 14px}
 .hm-cd{display:flex;gap:10px;margin:18px 0 20px;flex-wrap:wrap}
 .hm-cd div{background:#fff;color:#2B1D3F;border-radius:20px;min-width:72px;padding:10px 12px 8px;text-align:center;box-shadow:0 14px 26px -16px rgba(43,29,63,.6)}
 .hm-cd b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .hm-cd span{font-size:13px;font-weight:600;color:#5E5470}
 .hm-acts{display:flex;gap:10px;flex-wrap:wrap}
 .hm-pill{border:none;border-radius:100px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
-.hm-pill.w{background:#fff;color:#7A3FBF;box-shadow:0 12px 24px -14px rgba(43,29,63,.6)}
-.hm-pill.g{background:rgba(255,255,255,.18);color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.6)}
+.hm-pill.w{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
+.hm-pill.g{background:#fff;color:#4A2C8F;box-shadow:0 12px 24px -16px rgba(43,29,63,.55)}
 .hm-pill.p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
 .hm-pill.s{background:#F6F0FF;color:#5B2FA8}
 @media(hover:hover) and (pointer:fine){.hm-pill:hover{translate:0 -2px}}
 .hm-pill:active{translate:0 1px}
-.hm-inv{width:190px;aspect-ratio:3/4;border-radius:24px;background:#fff;padding:8px;rotate:-3deg;box-shadow:0 26px 50px -24px rgba(43,29,63,.7);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:none}
+.hm-invw{display:flex;flex-direction:column;align-items:center;gap:12px}
+.hm-inv-tag{position:absolute;bottom:16px;right:50%;translate:50% 0;background:rgba(255,255,255,.92);color:#4A2C8F;border-radius:100px;padding:4px 12px;font-size:12px;font-weight:700;white-space:nowrap}
+.hm-up{position:relative;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#4A2C8F;border-radius:100px;padding:9px 16px;font-family:'Fredoka','Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px -16px rgba(43,29,63,.55)}
+.hm-up:focus-within{outline:3px solid #9B6BFF;outline-offset:2px}
+.hm-inv{position:relative;width:190px;aspect-ratio:3/4;border-radius:24px;background:#fff;padding:8px;rotate:-3deg;box-shadow:0 26px 50px -24px rgba(43,29,63,.7);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:none}
 .hm-inv img{width:100%;height:100%;object-fit:cover;border-radius:18px;display:block}
-.hm-inv.e{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);color:#fff;flex-direction:column;gap:8px;font-size:15px;font-weight:700;text-align:center;padding:16px}
+.hm-inv.e{background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px #fff;color:#4A2C8F;flex-direction:column;gap:8px;font-size:15px;font-weight:700;text-align:center;padding:16px}
 .hm-inv.e i{font-style:normal;width:52px;height:52px;border-radius:50%;background:#fff;color:#F0609E;display:flex;align-items:center;justify-content:center;font-size:26px}
 .hm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .hm-stat{border-radius:26px;padding:18px 18px 16px;background:var(--bg);text-align:right;border:none;cursor:pointer;font-family:inherit;transition:translate 200ms cubic-bezier(0.23,1,0.32,1)}
@@ -4165,7 +4169,7 @@ const HOME_CSS=`
 .hm-step em{font-style:normal;margin-inline-start:auto;font-size:12px;font-weight:700;border-radius:100px;padding:3px 10px;background:#fff;color:#B4236A}
 .hm-pill:focus-visible,.hm-stat:focus-visible,.hm-tile:focus-visible,.hm-step:focus-visible,.hm-inv:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
 @media(max-width:1100px){.hm-stats,.hm-tiles{grid-template-columns:repeat(2,1fr)}.hm-grid{grid-template-columns:1fr}}
-@media(max-width:700px){.hm-hero{grid-template-columns:1fr;padding:24px 20px;border-radius:28px}.hm-inv{display:none}.hm-cd div{min-width:64px}.hm-acts > *{flex:1 1 100%;justify-content:center}.hm-rsvp{grid-template-columns:1fr;justify-items:center}.hm-leg{width:100%}.hm-stat b{font-size:32px}}
+@media(max-width:700px){.hm-hero{grid-template-columns:1fr;padding:24px 20px;border-radius:28px}.hm-inv{display:none}.hm-invw{flex-direction:row;justify-content:flex-start}.hm-cd div{min-width:64px}.hm-acts > *{flex:1 1 100%;justify-content:center}.hm-rsvp{grid-template-columns:1fr;justify-items:center}.hm-leg{width:100%}.hm-stat b{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.hm-pill,.hm-stat,.hm-tile{transition:none}}
 @media(prefers-reduced-motion:no-preference){
   .hm-anim .hm-hero{animation:hmIn .6s cubic-bezier(0.23,1,0.32,1) both}
@@ -4296,7 +4300,43 @@ function useEventCountdown(event){
   const ms=target-now;if(isNaN(ms)||ms<=0)return null;
   return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60};
 }
+// תמונה שמעלים להזמנה מוקטנת אוטומטית (עד 1600 פיקסלים בצד הארוך, JPEG) כדי שתיטען מהר אצל האורחים
+async function resizeImageFile(file,max=1600){
+  try{
+    const url=URL.createObjectURL(file);
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});
+    const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    const blob=await new Promise(res=>c.toBlob(res,"image/jpeg",.86));
+    return blob||file;
+  }catch{return file;}
+}
+async function uploadInviteImage(eventId,file){
+  if(!file||!/^image\//.test(file.type||""))throw new Error("נא לבחור קובץ תמונה");
+  if(file.size>25*1024*1024)throw new Error("הקובץ גדול מדי (עד 25MB)");
+  const blob=await resizeImageFile(file);
+  const path=`invite_images/${eventId}_${Date.now()}.jpg`;
+  const{error}=await sb.storage.from("event-images").upload(path,blob,{upsert:true,contentType:"image/jpeg"});
+  if(error)throw error;
+  return sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+}
 function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
+  const [img,setImg]=useState(event.invite_image||"");
+  const [upBusy,setUpBusy]=useState(false),[upErr,setUpErr]=useState("");
+  const cover=coverImgOf(event.event_type,event.template_id);
+  const onUpload=async e=>{
+    const file=e.target.files?.[0];e.target.value="";if(!file)return;
+    setUpBusy(true);setUpErr("");
+    try{
+      const url=await uploadInviteImage(event.id,file);
+      const{error}=await sb.from("events").update({invite_image:url}).eq("id",event.id);
+      if(error)throw error;
+      event.invite_image=url;setImg(url);
+    }catch(err){setUpErr(err.message||"ההעלאה נכשלה");}
+    setUpBusy(false);
+  };
   const cd=useEventCountdown(event);
   const [copied,setCopied]=useState(false);
   const title=event.groom_name&&event.bride_name?`החתונה של ${event.groom_name} ו${event.bride_name}`:event.name;
@@ -4319,16 +4359,24 @@ function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
           <div><b>{cd.h}</b><span>שעות</span></div>
           <div><b>{cd.m}</b><span>דקות</span></div>
         </div>:<div style={{height:18}}/>}
-        {checksPct===100&&<div style={{marginBottom:14,fontSize:15,fontWeight:700}}>✓ כל שלבי ההכנה הושלמו</div>}
+        {checksPct===100&&<div style={{marginBottom:14,fontSize:15,fontWeight:700,color:"#1F6B43"}}>✓ כל שלבי ההכנה הושלמו</div>}
         <div className="hm-acts">
           <button className="hm-pill w" onClick={()=>onGo("invite")}>💌 צפייה בהזמנה</button>
           <WaButton event={event} url={inviteUrl} style={{padding:"12px 20px",fontSize:15,borderRadius:100}}/>
           <button className="hm-pill g" onClick={copy}>{copied?"✓ הקישור הועתק":"🔗 העתקת הקישור"}</button>
         </div>
       </div>
-      {event.invite_image
-        ?<button className="hm-inv" onClick={()=>onGo("invite")} aria-label="ההזמנה הדיגיטלית"><img src={event.invite_image} alt="" loading="lazy"/></button>
-        :<button className="hm-inv e" onClick={()=>onGo("invite")}><i>+</i>עיצוב ההזמנה הדיגיטלית</button>}
+      <div className="hm-invw">
+        <button className="hm-inv" onClick={()=>onGo("invite")} aria-label={img?"ההזמנה הדיגיטלית":"תמונת הפתיחה של ההזמנה"}>
+          <img src={img||cover} alt="" loading="lazy"/>
+          {!img&&<span className="hm-inv-tag">תמונת הפתיחה</span>}
+        </button>
+        <label className="hm-up" aria-busy={upBusy}>
+          {upBusy?"⏳ מעלה...":img?"🔄 החלפת תמונה":"📷 העלאת תמונה"}
+          <input type="file" accept="image/*" onChange={onUpload} disabled={upBusy} style={{position:"absolute",width:1,height:1,opacity:0,overflow:"hidden"}}/>
+        </label>
+        {upErr&&<div role="alert" style={{fontSize:12,color:"#B42318",fontWeight:700,textAlign:"center",maxWidth:190}}>{upErr}</div>}
+      </div>
     </section>
   );
 }
@@ -5948,8 +5996,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             .sx-nav:hover{background:#fff;border-color:${C.border};transform:translateX(-4px);box-shadow:0 8px 18px -12px rgba(91,60,140,.45)}
             .sx-nav:hover .sx-ic{transform:scale(1.12) rotate(-6deg)}
             .sx-nav:focus-visible{outline:3px solid ${C.blueL};outline-offset:1px}
-            .sx-nav.on{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;font-weight:700;box-shadow:0 10px 22px -10px ${C.blueM};transform:none}
-            .sx-nav.on .sx-ic{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+            .sx-nav.on{background:linear-gradient(120deg,#FFE4F0 0%,#EFE4FF 100%);color:#2B1D3F;font-weight:700;box-shadow:0 10px 22px -16px rgba(240,96,158,.6),inset 0 0 0 1.5px #F6CFE2;transform:none}
+            .sx-nav.on .sx-ic{background:#fff;box-shadow:0 6px 14px -8px rgba(240,96,158,.6)}
             .sx-nav.on::before{content:none}
             .sx-nav.locked{color:#9C93AE}
             .sx-nav.locked .sx-ic{filter:grayscale(.6);opacity:.75}
@@ -6063,6 +6111,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         .sx-guest:hover{transform:translateY(-1px);border-color:${C.blueL}!important;box-shadow:0 8px 18px -12px rgba(91,60,140,.5)}
         .sx-ictile{width:34px;height:34px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
         .sx-stat{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #EFE8F7;border-radius:12px;padding:3px 9px 3px 10px;white-space:nowrap}
+        .sx-tbar{display:flex;align-items:center;gap:10px;padding:10px;margin:10px 10px 10px;background:#fff;border-radius:24px;box-shadow:0 16px 34px -24px rgba(91,60,140,.6),inset 0 0 0 1px #F1E9F8;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:5}
+        .sx-grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#FBF7FE;border-radius:18px;padding:5px;box-shadow:inset 0 0 0 1px #F1E9F8}
+        .sx-grp .sx-btn,.sx-grp > button,.sx-grp > div > button{border-radius:100px!important}
         .sx-stat .sx-ictile{width:26px;height:26px;border-radius:9px;font-size:13px}
         .sx-stat b{font-size:14px;font-weight:900;line-height:1}
         .sx-stat small{display:block;font-size:12px;color:#5F5675;font-weight:700}
@@ -6209,8 +6260,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             const found=q?tables.filter(t=>(t.guests||[]).some(g=>g.name.toLowerCase().includes(q))).length:0;
             const zBtn={width:30,height:30,borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"};
             return(
-              <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"linear-gradient(135deg,#FFF7FA,#F7F2FF)",borderBottom:`1px solid ${C.border}`,flexShrink:0,flexWrap:"wrap"}}>
-                {/* אריחי נתונים בסגנון המסך הראשי */}
+              <div role="toolbar" aria-label="כלי המפה" className="sx-tbar">
+                {/* קבוצה 1: נתוני ההושבה */}
+                <div className="sx-grp" aria-label="נתוני ההושבה">
                 <div className="sx-stat" style={{minWidth:200}}>
                   <span className="sx-ictile" style={{background:"#F1E8FF"}}>🪑</span>
                   <div style={{flex:1}}>
@@ -6223,7 +6275,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:"#1F7A4D"}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FDECEE"}}>🔴</span><div><b style={{color:C.danger}}>{fullTables}</b><small>שולחנות מלאים</small></div></div>
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{toSeat.length}</b><small>ממתינים</small></div></div>
-                <div style={{position:"relative",marginRight:"auto"}}>
+                </div>
+                {/* קבוצה 2: עריכת האולם */}
+                <div className="sx-grp" aria-label="עריכת האולם" style={{marginRight:"auto"}}>
+                <div style={{position:"relative"}}>
                   <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת...?"
                     style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
                   {q&&<span style={{position:"absolute",left:8,top:8,fontSize:11,fontWeight:800,color:found?C.success:C.danger}}>{found?`${found} ✓`:"לא נמצא"}</span>}
@@ -6272,12 +6327,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   </>}
                 </div>
                 {undoBtn()}
-                <div style={{display:"flex",alignItems:"center",gap:4}}>
-                  <button style={zBtn} onClick={()=>zoomBy(-.1)} aria-label="הקטן">−</button>
-                  <button style={{...zBtn,width:48,fontSize:11}} onClick={()=>fitZoom()} title="התאם למסך">{Math.round(zoom*100)}%</button>
-                  <button style={zBtn} onClick={()=>zoomBy(.1)} aria-label="הגדל">+</button>
-                  <button style={{...zBtn,width:"auto",padding:"0 8px",fontSize:11}} onClick={()=>fitZoom(true)} title="כל האולם על המסך">⤢ כל האולם</button>
                 </div>
+                {/* קבוצה 3: תצוגה — הזזת המפה ומסך מלא (הגדלה והקטנה נמצאות על המפה) */}
+                <div className="sx-grp" aria-label="תצוגת המפה">
                 {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
                 <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
                   {[["→",-140,0,"ימינה"],["↑",0,140,"למעלה"],["↓",0,-140,"למטה"],["←",140,0,"שמאלה"]].map(([ic,dx,dy,l])=>(
@@ -6293,6 +6345,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   style={{background:mapFull?"#fff":GRAD,color:mapFull?C.blue:"#fff",border:mapFull?`1.5px solid ${C.border}`:"none",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:mapFull?"none":`0 6px 16px -6px ${C.blueM}`}}>
                   {mapFull?"✕ יציאה ממסך מלא":"⛶ מסך מלא"}
                 </button>
+                </div>
               </div>
             );
           })()}
@@ -7097,7 +7150,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
       {/* העלאת תמונת הזמנה */}
       <div className="ed-card" style={{"--t":"#E2F1FF",background:"#fff",borderRadius:28,padding:"24px",marginBottom:18,boxShadow:"0 18px 40px -28px rgba(91,60,140,.5)"}}>
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>🖼️ תמונת הזמנה</div>
-        <div style={{fontSize:12,color:"#5F6B7D",marginBottom:14}}>העלה תמונת הזמנה שתופיע בהזמנה הדיגיטלית. התמונה תוצג מעל הטקסט.</div>
+        <div style={{fontSize:12,color:"#5F6B7D",marginBottom:14}}>העלו תמונת הזמנה שתופיע בהזמנה הדיגיטלית ובמסך הבית של האירוע. כל תמונה מוקטנת אוטומטית לגודל המתאים, כך שאפשר להעלות גם תמונה ישירות מהטלפון.</div>
 
         {/* תצוגה מקדימה */}
         {form.invite_image&&(
@@ -7113,15 +7166,11 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
           <label style={{display:"flex",alignItems:"center",gap:8,padding:"11px 18px",background:"#F6F0FF",border:"none",borderRadius:100,cursor:"pointer",fontSize:14,fontWeight:700,color:"#4A2C8F"}}>
             📁 העלה מהמחשב
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
-              const file=e.target.files[0];
+            <input type="file" accept="image/*" style={{position:"absolute",width:1,height:1,opacity:0,overflow:"hidden"}} onChange={async e=>{
+              const file=e.target.files[0];e.target.value="";
               if(!file)return;
-              if(file.size>5*1024*1024){alert("הקובץ גדול מדי. מקסימום 5MB");return;}
-              const path=`invite_images/${event.id}_${Date.now()}.${file.name.split(".").pop()}`;
-              const{error}=await sb.storage.from("event-images").upload(path,file,{upsert:true});
-              if(error){alert("שגיאה בהעלאה: "+error.message);return;}
-              const{data}=sb.storage.from("event-images").getPublicUrl(path);
-              setForm(f=>({...f,invite_image:data.publicUrl}));
+              try{const url=await uploadInviteImage(event.id,file);setForm(f=>({...f,invite_image:url}));}
+              catch(err){alert("שגיאה בהעלאה: "+(err.message||""));}
             }}/>
           </label>
           <div style={{display:"flex",flex:1,gap:8}}>
