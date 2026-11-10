@@ -310,6 +310,9 @@ const SMS_PACKS=[[150,70],[300,90],[500,120],[800,170],[1000,200],[2000,330]]; /
 // הודעות נקנות בנפרד. BASIC_PRICE = פתיחת הושבה מעל FREE_SEATING_LIMIT מוזמנים.
 // hasBasicPkg כולל גם חבילות ישנות (sms / auto) שנרכשו כשהן כללו את הבסיסית
 const SMS_UNIT_PRICE=0.5, SMS_BUY_MIN=50, SMS_BUY_SLIDER_MAX=5000, SMS_BUY_MAX=20000, BASIC_PRICE=100;
+// "כניסה לאולם" מוצגת רק למפיקי אירועים (חבילת producer), לא לזוגות ולא לבעלי אירוע רגילים
+const isProducerPkg=pkgs=>(pkgs||[]).some(p=>(p?.package_id??p)==="producer");
+const PRODUCER_ONLY=["checkin"];
 const hasBasicPkg=pkgs=>(pkgs||[]).some(p=>["basic","seating","sms","auto","vip","staff","producer"].includes(p?.package_id??p));
 const smsTotal=(q,base=0,unit=SMS_UNIT_PRICE)=>Math.round(q*unit*100)/100+base;
 // חבילת הודעות WhatsApp: 4 סבבים אוטומטיים, מחיר לפי רשומה (אורח / משפחה עם טלפון אחד)
@@ -5452,6 +5455,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     sb.from("event_members").select("role").eq("event_id",event.id).eq("email",String(user.email||"").toLowerCase()).maybeSingle().then(({data})=>setMemberRole(data?.role||"editor"));
   },[event.id]);
   const couple=memberRole==="couple";
+  const producerOnly=id=>PRODUCER_ONLY.includes(id)&&(couple||!isProducerPkg(userPackages));
   const lockedFor=id=>screenLocked(id,userPackages,guestPeople([...guests,...tables.flatMap(t=>t.guests||[])]))||(couple&&COUPLE_HIDDEN.includes(id));
 
   useEffect(()=>{
@@ -5792,7 +5796,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"💡",label:"ספקים ומחירים",nav:"vendors",bg:"#F4EEFF",color:"#7C3AED"},
               {icon:"📋",label:"פרטי האירוע",nav:"settings",bg:"#F4EEFC",color:"#5B3C8C"},
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
-            ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))).map(item=>(
+            ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))&&!producerOnly(item.nav)).map(item=>(
               <div key={item.nav} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}
                 style={{background:"#fff",borderRadius:22,padding:"14px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 14px 30px -22px rgba(91,60,140,.55)",transition:"transform .2s"}}
                 onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"}
@@ -5908,7 +5912,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         )}
         {screen==="invite"&&<InviteSettings event={event} onUpdate={e=>setScreen("home")}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
-        {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
+        {screen==="checkin"&&!producerOnly("checkin")&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
@@ -5971,9 +5975,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         </div>}
       </div>}
       <span className="sx-count" title="אורחים ששובצו מתוך כל האורחים" style={{background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:100,fontSize:12,fontWeight:700,padding:"5px 12px"}}>🪑 {seated}/{total}</span>
-      {screen==="seating"&&<>{view!=="map"&&undoBtn({padding:"5px 12px",border:"1px solid rgba(255,255,255,.3)"})}<button onClick={()=>setModal("autoSeat")} className="sx-prim" style={{background:"rgba(255,255,255,.95)",border:"none",color:C.blue,borderRadius:10,padding:"7px 15px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>🤖 הושבה אוטומטית</button>
-      <button onClick={addTable} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>+ שולחן</button>
-      <button onClick={()=>setModal("receipt")} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:10,padding:"5px 13px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🖨️ חפש</button></>}
       <SupportMenu event={event}/>
       <button onClick={()=>onHome?.()} className="sx-home" style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"rgba(255,255,255,.8)",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",borderRadius:10,padding:"5px 12px"}}>🏠 דף הבית</button>
     </header>
@@ -6020,7 +6021,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           </div>
 
           <nav style={{flex:"1 0 auto",padding:"6px 0 8px"}} aria-label="תפריט ניהול">
-            {navItems.filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.id))).map(item=>{
+            {navItems.filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.id))&&!producerOnly(item.id)).map(item=>{
               const isLocked=(()=>{
                 return lockedFor(item.id);
               })();
@@ -6328,7 +6329,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 </div>
                 {undoBtn()}
                 </div>
-                {/* קבוצה 3: תצוגה — הזזת המפה ומסך מלא (הגדלה והקטנה נמצאות על המפה) */}
+                {/* קבוצה 3: פעולות הושבה */}
+                <div className="sx-grp" aria-label="פעולות הושבה">
+                  <button onClick={addTable} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>+ הוספת שולחן</button>
+                  <button onClick={()=>setModal("autoSeat")} className="sx-btn sx-btn-primary" style={{background:GRAD,border:"none",color:"#fff",borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>
+                  <button onClick={()=>setModal("receipt")} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} title="חיפוש אורח והדפסת פתק עם מספר השולחן">🖨️ פתק שולחן</button>
+                </div>
+                {/* קבוצה 4: תצוגה — הזזת המפה ומסך מלא (הגדלה והקטנה נמצאות על המפה) */}
                 <div className="sx-grp" aria-label="תצוגת המפה">
                 {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
                 <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
@@ -6336,10 +6343,6 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     <button key={l} style={zBtn} onClick={()=>panBy(dx,dy)} aria-label={`הזז את המפה ${l}`}>{ic}</button>
                   ))}
                 </div>
-                {mapFull&&<button onClick={addTable} className="sx-btn"
-                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
-                  + שולחן
-                </button>}
                 <button onClick={()=>setMapFull(f=>!f)} className={mapFull?"sx-btn":"sx-btn sx-btn-primary"}
                   title={mapFull?"יציאה ממסך מלא (Esc)":"פתיחת המפה על כל המסך"}
                   style={{background:mapFull?"#fff":GRAD,color:mapFull?C.blue:"#fff",border:mapFull?`1.5px solid ${C.border}`:"none",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:mapFull?"none":`0 6px 16px -6px ${C.blueM}`}}>
@@ -6657,6 +6660,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             );
           })()}
         </div>}
+        {view!=="map"&&<div role="toolbar" aria-label="כלי ההושבה" className="sx-tbar">
+                <div className="sx-grp" aria-label="פעולות הושבה">
+                  <button onClick={addTable} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>+ הוספת שולחן</button>
+                  <button onClick={()=>setModal("autoSeat")} className="sx-btn sx-btn-primary" style={{background:GRAD,border:"none",color:"#fff",borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>
+                  <button onClick={()=>setModal("receipt")} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} title="חיפוש אורח והדפסת פתק עם מספר השולחן">🖨️ פתק שולחן</button>
+                  {undoBtn()}
+                </div>
+        </div>}
         {view==="list"&&<div style={{flex:1,overflowY:"auto",padding:20}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
             <div style={{flex:1,minWidth:200}}>
@@ -6791,7 +6802,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="sms"&&<SMSScreen event={event} userPackages={userPackages} tables={tables} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="whatsapp"&&<WhatsAppScreen event={event} userPackages={userPackages} guests={[...guests,...tables.flatMap(t=>t.guests||[])]}/>}
         {screen==="budget"&&<BudgetScreen event={event}/>}
-        {screen==="checkin"&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
+        {screen==="checkin"&&!producerOnly("checkin")&&<CheckinScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} tables={tablesNum} onReload={()=>loadAll(true)}/>}
         {screen==="gifts"&&<GiftsScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
