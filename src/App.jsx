@@ -3051,91 +3051,120 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
     const{error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
     if(error){setErr(authErrorText(error));setGoogleLoad(false);}
   };
+  // Esc סוגר, והפוקוס עובר לחלון
+  const boxRef=useRef(null);
+  useEffect(()=>{
+    const esc=e=>{if(e.key==="Escape")onClose();};
+    window.addEventListener("keydown",esc);
+    const t=setTimeout(()=>boxRef.current?.querySelector("input,button")?.focus(),60);
+    return()=>{window.removeEventListener("keydown",esc);clearTimeout(t);};
+  },[]);
 
+  const vendor=acct==="vendor";
+  const title=producer?["כניסת","מפיקים"]:vendor?(mode==="register"?["הצטרפות","ספקים"]:["כניסת","ספקים"]):mode==="register"?["בואו נושיב את","כולם"]:mode==="reset"?["שחזור","סיסמה"]:["ברוכים","השבים"];
+  const sub=producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":vendor?"צלמים, DJ, אולמות ועוד: פרופיל עסק שזוגות ומשפחות רואים":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":mode==="reset"?"נשלח לכם קישור לאיפוס הסיסמה":"היכנסו כדי להמשיך בסידור ההושבה";
+  const icon=producer?"🎬":vendor?"🏪":"🪑";
+  const okMsg=err.startsWith("✅");
   return(<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)"}}/>
-    <div style={{position:"fixed",bottom:0,right:0,left:0,zIndex:201,background:C.surface,borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",maxWidth:480,margin:"0 auto",animation:"slideUp .3s ease both",direction:"rtl"}}>
-      <div style={{width:40,height:4,borderRadius:2,background:C.border,margin:"0 auto 24px"}}/>
-      <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{width:58,height:58,borderRadius:18,background:"linear-gradient(135deg,#F5C46B,#E2588F,#8A4BFF)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,marginBottom:10,boxShadow:"0 10px 28px rgba(226,88,143,.4)"}}>{producer?"🎬":acct==="vendor"?"🏪":"🪑"}</div>
-        <div style={{fontWeight:900,fontSize:22,color:C.text}}>{producer?"כניסת מפיקים":acct==="vendor"?(mode==="register"?"הצטרפות ספקים":"כניסת ספקים"):mode==="register"?"בואו נושיב את כולם":"ברוכים השבים"}</div>
-        <div style={{fontSize:13,color:C.muted,marginTop:4}}>{producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":acct==="vendor"?"צלמים, DJ, אולמות ועוד: פרופיל עסק שזוגות ומשפחות רואים":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":"היכנסו כדי להמשיך בסידור ההושבה"}</div>
+    <style>{`
+      .ad-ov{position:fixed;inset:0;z-index:200;background:rgba(43,29,63,.42);backdrop-filter:blur(4px);animation:adFade 250ms cubic-bezier(0.23,1,0.32,1) both}
+      .ad{position:fixed;z-index:201;right:0;left:0;bottom:0;margin:0 auto;max-width:480px;max-height:94vh;overflow:auto;direction:rtl;font-family:'Heebo',sans-serif;color:#2B1D3F;border-radius:32px 32px 0 0;padding:22px 24px 32px;
+        background:radial-gradient(420px 260px at 90% 0%,#EFE4FF 0%,rgba(239,228,255,0) 70%),radial-gradient(380px 260px at 0% 20%,#FFE4F0 0%,rgba(255,228,240,0) 70%),#FFFBF7;
+        box-shadow:0 -20px 60px -20px rgba(43,29,63,.45);animation:adUp 420ms cubic-bezier(0.32,0.72,0,1) both}
+      @media(min-width:700px){.ad{top:50%;bottom:auto;transform:translateY(-50%);border-radius:32px;animation:adPop 260ms cubic-bezier(0.23,1,0.32,1) both}}
+      @keyframes adFade{from{opacity:0}}
+      @keyframes adUp{from{transform:translateY(100%)}}
+      @keyframes adPop{from{opacity:0;transform:translateY(-50%) scale(.96)}to{opacity:1;transform:translateY(-50%)}}
+      @media(prefers-reduced-motion:reduce){.ad,.ad-ov{animation:none}}
+      .ad h2,.ad .ad-f{font-family:'Fredoka','Heebo',sans-serif}
+      .ad h2{font-size:28px;font-weight:700;line-height:1.15;margin:0}
+      .ad mark{color:inherit;padding:0 .12em;border-radius:.22em;background:linear-gradient(120deg,#FFD1E5,#FFB2D3)}
+      .ad-x{position:absolute;top:16px;left:16px;width:40px;height:40px;border-radius:50%;border:none;background:#fff;color:#2B1D3F;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 8px 20px -10px rgba(43,29,63,.4)}
+      .ad-ic{width:62px;height:62px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:28px;background:linear-gradient(135deg,#FFE0EE,#E9DDFF);box-shadow:0 12px 26px -12px rgba(155,107,255,.6);margin-bottom:12px}
+      .ad-acct{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+      .ad-acct button{border-radius:20px;padding:12px 8px;cursor:pointer;font-family:inherit;text-align:center;border:2px solid transparent;transition:border-color 200ms ease,background-color 200ms ease}
+      .ad-g{width:100%;min-height:52px;background:#fff;color:#2B1D3F;border:none;border-radius:999px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 26px -14px rgba(43,29,63,.4);font-family:'Fredoka','Heebo',sans-serif}
+      .ad-or{display:flex;align-items:center;gap:10px;margin:16px 0;color:#5F5675;font-size:13px;font-weight:600}
+      .ad-or:before,.ad-or:after{content:"";flex:1;height:1px;background:#E6DDF0}
+      .ad-tabs{display:flex;background:#F1EAFF;border-radius:999px;padding:4px;margin-bottom:18px}
+      .ad-tabs button{flex:1;min-height:42px;border-radius:999px;border:none;background:transparent;font-size:15px;font-weight:700;color:#5F5675;cursor:pointer;font-family:'Fredoka','Heebo',sans-serif;transition:background-color 200ms ease,color 200ms ease}
+      .ad-tabs button[aria-pressed="true"]{background:#fff;color:#4A2C8F;box-shadow:0 8px 18px -10px rgba(74,44,143,.5)}
+      .ad label{display:block;font-size:14px;font-weight:700;margin-bottom:6px;color:#3E3555}
+      .ad input{width:100%;box-sizing:border-box;min-height:52px;background:#fff;border:1.5px solid #E6DDF5;border-radius:16px;padding:12px 16px;font-size:16px;color:#2B1D3F;outline:none;font-family:inherit;transition:border-color 200ms ease,box-shadow 200ms ease}
+      .ad input:focus{border-color:#9B6BFF;box-shadow:0 0 0 4px rgba(155,107,255,.18)}
+      .ad-go{width:100%;min-height:56px;border:none;border-radius:999px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Fredoka','Heebo',sans-serif;background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);box-shadow:0 16px 32px -14px rgba(240,96,158,.7);transition:transform 160ms cubic-bezier(0.23,1,0.32,1),opacity 200ms ease}
+      .ad-go:active{transform:scale(.97)}
+      .ad-go:disabled{opacity:.5;cursor:default}
+      .ad-link{background:none;border:none;padding:0;font-family:inherit;font-size:14px;color:#4A2C8F;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+      .ad button:focus-visible,.ad a:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
+      .ad-msg{border-radius:16px;padding:11px 14px;font-size:14px;margin-bottom:12px;line-height:1.5}
+      .ad-fine{font-size:12px;color:#5F5675;text-align:center;line-height:1.6;margin:10px 0 0}
+      .ad-fine a{color:#4A2C8F}
+    `}</style>
+    <div className="ad-ov" onClick={onClose}/>
+    <div className="ad" ref={boxRef} role="dialog" aria-modal="true" aria-label={title.join(" ")}>
+      <button type="button" className="ad-x" aria-label="סגירה" onClick={onClose}>✕</button>
+      <div style={{textAlign:"center",marginBottom:20,paddingTop:6}}>
+        <span className="ad-ic" aria-hidden="true">{icon}</span>
+        <h2>{title[0]} <mark>{title[1]}</mark></h2>
+        <div style={{fontSize:15,color:"#5F5675",marginTop:6}}>{sub}</div>
       </div>
-      {/* סוג החשבון: פרטי (מתכננים אירוע) או ספק */}
-      {!producer&&mode!=="reset"&&<div role="radiogroup" aria-label="סוג החשבון" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
-        {[["private","📅","מתכננים אירוע","חתונה, בר מצווה, ברית…"],["vendor","🏪","ספק / בעל עסק","צלם, DJ, אולם, קייטרינג…"]].map(([v,ic,t,s])=>(
-          <button key={v} role="radio" aria-checked={acct===v} onClick={()=>setAcct(v)}
-            style={{background:acct===v?"#F6F0FF":"#fff",border:`2px solid ${acct===v?"#9B6BFF":C.border}`,borderRadius:14,padding:"10px 8px",cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>
-            <div style={{fontSize:20}}>{ic}</div>
-            <div style={{fontSize:14,fontWeight:900,color:C.text}}>{t}</div>
-            <div style={{fontSize:11,color:C.muted}}>{s}</div>
+      {/* סוג החשבון: פרטי (מתכננים אירוע) או ספק — כל אחד בצבע משלו */}
+      {!producer&&mode!=="reset"&&<div role="radiogroup" aria-label="סוג החשבון" className="ad-acct">
+        {[["private","📅","מתכננים אירוע","חתונה, בר מצווה, ברית…","#F1EAFF","#9B6BFF"],["vendor","🏪","ספק / בעל עסק","צלם, DJ, אולם, קייטרינג…","#FFF0E0","#FF8A65"]].map(([v,ic,t,s,bg,bd])=>(
+          <button key={v} type="button" role="radio" aria-checked={acct===v} onClick={()=>setAcct(v)} style={{background:acct===v?bg:"#fff",borderColor:acct===v?bd:"#EFE8F7"}}>
+            <div style={{fontSize:22}} aria-hidden="true">{ic}</div>
+            <div className="ad-f" style={{fontSize:15,fontWeight:700,color:"#2B1D3F"}}>{t}</div>
+            <div style={{fontSize:12,color:"#5F5675"}}>{s}</div>
           </button>
         ))}
       </div>}
 
-      {/* שחזור סיסמה */}
       {mode==="reset"?(
-        <div>
-          {resetSent?(
-            <div style={{textAlign:"center",padding:"20px 0"}}>
-              <div style={{fontSize:40,marginBottom:12}}>📧</div>
-              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:8}}>נשלח מייל לשחזור!</div>
-              <div style={{fontSize:13,color:C.muted,marginBottom:20}}>בדוק את תיבת הדואר שלך ולחץ על הקישור לאיפוס הסיסמה.</div>
-              <button onClick={()=>{setMode("login");setResetSent(false);}} style={{background:C.blueXL,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px 24px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>חזרה לכניסה</button>
-            </div>
-          ):(
-            <div>
-              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>שחזור סיסמה</div>
-              <div style={{fontSize:13,color:C.muted,marginBottom:16}}>הכנס את המייל שלך ונשלח לך קישור לאיפוס.</div>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" aria-label="אימייל" autoComplete="email"
-                style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box",marginBottom:12}}/>
-              {err&&<div style={{background:"#FEF2F2",border:`1px solid ${C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:C.danger,marginBottom:12}}>{err}</div>}
-              <Btn primary full onClick={submit} disabled={load||!email}>{load?<><Spinner size={18} color="#fff"/>שולח...</>:"שלח קישור לאיפוס ←"}</Btn>
-              <p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:14}}>
-                <button type="button" onClick={()=>setMode("login")} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:700,cursor:"pointer"}}>חזרה לכניסה</button>
-              </p>
-            </div>
-          )}
-        </div>
+        resetSent?(
+          <div style={{textAlign:"center",padding:"10px 0 6px"}}>
+            <div style={{fontSize:42,marginBottom:10}} aria-hidden="true">📧</div>
+            <div className="ad-f" style={{fontSize:19,fontWeight:700,marginBottom:6}}>נשלח מייל לשחזור!</div>
+            <div style={{fontSize:14,color:"#5F5675",marginBottom:18}}>בדקו את תיבת הדואר ולחצו על הקישור לאיפוס הסיסמה.</div>
+            <button type="button" className="ad-go" onClick={()=>{setMode("login");setResetSent(false);}}>חזרה לכניסה</button>
+          </div>
+        ):(
+          <div>
+            <label htmlFor="ad-mail">אימייל</label>
+            <input id="ad-mail" type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" onKeyDown={e=>e.key==="Enter"&&email&&submit()} style={{marginBottom:14}}/>
+            {err&&<div className="ad-msg" role="alert" style={{background:"#FEF2F2",color:"#B42318"}}>{err}</div>}
+            <button type="button" className="ad-go" onClick={submit} disabled={load||!email}>{load?<><Spinner size={18} color="#fff"/>שולח...</>:"שליחת קישור לאיפוס"}</button>
+            <p style={{textAlign:"center",marginTop:14}}><button type="button" className="ad-link" onClick={()=>setMode("login")}>חזרה לכניסה</button></p>
+          </div>
+        )
       ):(
         <div>
-          {/* Google */}
-          <button onClick={loginWithGoogle} disabled={googleLoad} style={{width:"100%",background:"#fff",color:"#444",border:"1.5px solid #ddd",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}>
-            {googleLoad?<Spinner size={20} color="#4285F4"/>:<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>}
-            {googleLoad?"מתחבר...":"התחבר עם Google"}
+          <button type="button" className="ad-g" onClick={loginWithGoogle} disabled={googleLoad}>
+            {googleLoad?<Spinner size={20} color="#4285F4"/>:<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>}
+            {googleLoad?"מתחבר...":"המשך עם Google"}
           </button>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-            <div style={{flex:1,height:1,background:C.border}}/><span style={{fontSize:12,color:C.muted,fontWeight:600}}>או</span><div style={{flex:1,height:1,background:C.border}}/>
-          </div>
-          <div style={{display:"flex",background:C.blueXL,borderRadius:14,padding:4,marginBottom:20}}>
+          <div className="ad-or">או עם אימייל</div>
+          <div className="ad-tabs">
             {[["login","כניסה"],["register","הרשמה"]].map(([v,l])=>(
-              <button key={v} onClick={()=>{setMode(v);setErr("");}} style={{flex:1,padding:"10px 0",borderRadius:11,background:mode===v?C.surface:"transparent",border:"none",fontWeight:700,fontSize:14,color:mode===v?C.blue:C.muted,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>{l}</button>
+              <button key={v} type="button" aria-pressed={mode===v} onClick={()=>{setMode(v);setErr("");}}>{l}</button>
             ))}
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="אימייל" aria-label="אימייל" autoComplete="email" style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
-            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה (מינימום 6 תווים)" aria-label="סיסמה (מינימום 6 תווים)" autoComplete={mode==="login"?"current-password":"new-password"} onKeyDown={e=>e.key==="Enter"&&submit()} style={{background:C.blueXL,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"13px 16px",fontSize:15,color:C.text,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"}}/>
+          <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:12}}>
+            <div><label htmlFor="ad-mail">אימייל</label><input id="ad-mail" type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/></div>
+            <div><label htmlFor="ad-pass">סיסמה{mode==="register"?" (לפחות 6 תווים)":""}</label><input id="ad-pass" type="password" value={pass} onChange={e=>setPass(e.target.value)} autoComplete={mode==="login"?"current-password":"new-password"} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
           </div>
-          {mode==="login"&&(
-            <div style={{textAlign:"left",marginBottom:12}}>
-              <button type="button" onClick={()=>{setMode("reset");setErr("");}} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:600,cursor:"pointer"}}>שכחתי סיסמה</button>
-            </div>
-          )}
-          {err&&<div style={{background:err.startsWith("✅")?"#F0FFF6":"#FEF2F2",border:`1px solid ${err.startsWith("✅")?C.success:C.danger}30`,borderRadius:12,padding:"10px 14px",fontSize:13,color:err.startsWith("✅")?C.success:C.danger,marginBottom:12}}>{err}</div>}
-          <Btn primary full onClick={submit} disabled={load||!email||!pass} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:16}}>
-            {load?<><Spinner size={18} color="#fff"/>מעבד...</>:mode==="login"?"כניסה ←":"צור חשבון ←"}
-          </Btn>
-          <p style={{fontSize:13,color:C.muted,textAlign:"center",marginTop:16}}>
+          {mode==="login"&&<div style={{textAlign:"left",marginBottom:14}}><button type="button" className="ad-link" onClick={()=>{setMode("reset");setErr("");}}>שכחתי סיסמה</button></div>}
+          {err&&<div className="ad-msg" role="alert" style={{background:okMsg?"#E9FBF0":"#FEF2F2",color:okMsg?"#1F7A4D":"#B42318"}}>{err}</div>}
+          <button type="button" className="ad-go" onClick={submit} disabled={load||!email||!pass}>
+            {load?<><Spinner size={18} color="#fff"/>מעבד...</>:mode==="login"?"כניסה":"יצירת חשבון"}
+          </button>
+          <p style={{fontSize:14,color:"#5F5675",textAlign:"center",marginTop:14}}>
             {mode==="login"?"אין חשבון? ":"יש חשבון? "}
-            <button type="button" onClick={()=>setMode(mode==="login"?"register":"login")} style={{background:"none",border:"none",padding:0,fontFamily:"inherit",fontSize:13,color:C.blue,fontWeight:700,cursor:"pointer"}}>{mode==="login"?"הירשם":"כנס"}</button>
+            <button type="button" className="ad-link" onClick={()=>setMode(mode==="login"?"register":"login")}>{mode==="login"?"הרשמה":"כניסה"}</button>
           </p>
-          <p style={{fontSize:12,color:"#5F5675",textAlign:"center",marginTop:10,lineHeight:1.6}}>
-            בהרשמה או בכניסה (גם עם Google) אתם מסכימים ל<a href="#/terms" onClick={onClose} style={{color:C.blue}}>תנאי השימוש</a> ול<a href="#/privacy" onClick={onClose} style={{color:C.blue}}>מדיניות הפרטיות</a>
-          </p>
+          <p className="ad-fine">בהרשמה או בכניסה (גם עם Google) אתם מסכימים ל<a href="#/terms" onClick={onClose}>תנאי השימוש</a> ול<a href="#/privacy" onClick={onClose}>מדיניות הפרטיות</a></p>
           {/* הודעה לפי סעיף 11 לחוק הגנת הפרטיות (תיקון 13): חובה / מטרה / בעל השליטה / מי מקבל / עיון ותיקון */}
-          <p style={{fontSize:12,color:"#5F5675",textAlign:"center",marginTop:6,lineHeight:1.6}}>
-            אין חובה חוקית למסור את הפרטים, אך בלעדיהם אי אפשר לפתוח חשבון. האימייל משמש להתחברות ולעדכונים על החשבון. בעל השליטה במידע: Sidor-IL (sidoril2026@gmail.com). המידע נשמר אצל ספקי התשתית שלנו בלבד, ואפשר לעיין בו ולבקש לתקנו.
-          </p>
+          <p className="ad-fine" style={{marginTop:6}}>אין חובה חוקית למסור את הפרטים, אך בלעדיהם אי אפשר לפתוח חשבון. האימייל משמש להתחברות ולעדכונים על החשבון. בעל השליטה במידע: Sidor-IL (sidoril2026@gmail.com). המידע נשמר אצל ספקי התשתית שלנו בלבד, ואפשר לעיין בו ולבקש לתקנו.</p>
         </div>
       )}
     </div>
