@@ -1015,11 +1015,11 @@ function VenuePage({ onBack, onOpenAuth }) {
       <PageHero crumbs={<><LpHomeCrumb onClick={onBack}/>{LP_SEP}<span>אולמות ומפיקים</span></>} title="אולמות ומפיקים"
         lead="שיתוף פעולה עם Sidor-IL: הושבה, אישורי הגעה וכניסה בלי תורים ללקוחות שלכם, עם המותג שלכם, ותוכנית שותפים.">
         <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-          {onOpenAuth&&<button type="button" className="lp-btn lp-white" onClick={()=>onOpenAuth("producer")} style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>כניסת מפיקים<LpGo/></button>}
-          <a href={wa} target="_blank" rel="noopener noreferrer" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:17,minHeight:58}}>דברו איתנו בוואטסאפ</a>
+          {onOpenAuth&&<button type="button" className="lp-btn lp-primary" onClick={()=>onOpenAuth("producer")} style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>כניסת מפיקים<LpGo/></button>}
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="lp-btn lp-ghost" style={{padding:"13px 30px",fontSize:18,minHeight:58}}>דברו איתנו בוואטסאפ</a>
         </div>
       </PageHero>
-      <section className="lp-sec">
+      <section className="lp-sheet" style={{background:"#EEF4FF",marginTop:28}}>
         <div className="lp-wrap">
           <LpTitle title="מה" accent="אנחנו מציעים" sub="הכלים שהזוגות והמשפחות שסוגרים אצלכם צריכים, במערכת אחת."/>
           <div className="lp-cards">
@@ -1671,7 +1671,7 @@ const LANDING_CSS=`
   .lp-gold{color:#FFE08A}
   .lp-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 14px;max-width:600px}
   .lp-fact{padding:13px 10px;border-radius:22px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);color:#fff;text-align:center}
-  .lp-fact b{display:block;font-size:clamp(17px,1.6vw,22px);font-weight:900;line-height:1.15;overflow-wrap:anywhere}
+  .lp-fact b{display:block;font-size:clamp(15px,1.3vw,19px);font-weight:900;line-height:1.15;overflow-wrap:anywhere}
   @media(max-width:600px){.lp-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .lp-fact span{display:block;font-size:13px;font-weight:700;opacity:.95;margin-top:4px}
   @media(max-width:960px){.lp-facts{margin-inline:auto}}
@@ -1730,6 +1730,9 @@ const LANDING_CSS=`
   .lp-hero6{position:relative;z-index:1;overflow:hidden;min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:132px 6vw 110px;color:#2B1D3F;
     background:radial-gradient(760px 520px at 92% 8%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),radial-gradient(640px 440px at 50% 100%,#E2F6EE 0%,rgba(226,246,238,0) 60%),#FFFBF7}
   .lp-blobs{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .lp-hero6-photo{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .lp-hero6-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.2;filter:saturate(.75) brightness(1.35)}
+  .lp-hero6-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,251,247,.55) 0%,rgba(255,251,247,.25) 45%,rgba(255,251,247,.85) 100%)}
   .lp-blobs i{position:absolute;border-radius:50%}
   .lp-blobs i:nth-child(1){width:220px;height:220px;top:14%;right:46%;background:radial-gradient(circle at 30% 30%,#FFFFFF,#E9DDFF 60%,#D9C6FF);opacity:.7}
   .lp-blobs i:nth-child(2){width:120px;height:120px;bottom:16%;right:8%;background:radial-gradient(circle at 30% 30%,#FFFFFF,#FFD6E8 60%,#FFB8D6);opacity:.75}
@@ -1759,6 +1762,18 @@ const LANDING_CSS=`
   .lp-spark{position:absolute;z-index:2;pointer-events:none}
   .lp-motion .lp-spark{animation:twinkle 3s ease-in-out infinite}
   @media(max-width:960px){.lp-hero6{padding:112px 5vw 90px}.lp-banner{padding:24px 16px 28px;border-radius:34px}.lp-chiprow{justify-content:center}}
+  /* דפים פנימיים: אותה פתיחה בהירה וצבעונית של דף הבית */
+  .lp-phero{border-radius:0;color:#2B1D3F;
+    background:radial-gradient(760px 520px at 92% 8%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),radial-gradient(640px 440px at 50% 100%,#E2F6EE 0%,rgba(226,246,238,0) 60%),#FFFBF7}
+  .lp-phero .lp-phero-h1{color:#2B1D3F}
+  .lp-phero-lead{color:#3E3555}
+  .lp-crumbs{color:#5F5675}
+  .lp-crumbs a{color:#4A2C8F}
+  .lp-hmeta span{background:#fff;border:1.5px solid #E0D3F7;color:#4A2C8F}
+  .lp-tabs a{color:#4A2C8F;background:#fff;border:1.5px solid #E0D3F7}
+  .lp-tabs a[aria-current="page"]{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;border-color:transparent}
+  @media(hover:hover) and (pointer:fine){.lp-tabs a:not([aria-current]):hover{background:#F6F0FF}}
+  .lp-phero .lp-banner{padding:26px 20px 30px}
   /* קישורים שנראים ככפתור או ככרטיס: הצבע שלהם, לא של הטקסט שמסביב (.lp a יורש צבע) */
   .lp a.lp-white,.lp a.lp-ghost{color:#2B1D3F}
   .lp a.lp-primary,.lp a.lp-glass-btn{color:#fff}
@@ -2090,12 +2105,8 @@ const LpTitle=({title,accent,sub,dark=false,mb=52})=>(
 // פתיחה של דף פנימי: רקע כהה עם אורות רכים (ותמונה, אם יש), כותרת שעולה, ומה שצריך מתחתיה
 function PageHero({ crumbs, title, lead, img, aside, children }) {
   return(
-    <section id="top" className={`lp-phero${img?" has-img":""}`}>
-      <div className="lp-hero-bg" aria-hidden="true">
-        {img&&<img className="lp-kb" src={img} alt=""/>}
-        <div className="lp-phero-tint"/>
-        <LpBokeh n={8}/>
-      </div>
+    <section id="top" className="lp-phero">
+      <div className="lp-blobs" aria-hidden="true"><i/><i/><i/><i/></div>
       <StringLights/>
       <div className={`lp-phero-in${aside?" has-aside":""}`}>
         <div className="lp-phero-copy">
@@ -2104,7 +2115,13 @@ function PageHero({ crumbs, title, lead, img, aside, children }) {
           {lead&&<p className="lp-phero-lead lp-rise" style={{"--d":".34s"}}>{lead}</p>}
           {children&&<div className="lp-rise" style={{"--d":".46s"}}>{children}</div>}
         </div>
-        {aside&&<div className="lp-phero-aside lp-rise-side" style={{"--d":".3s"}}>{aside}</div>}
+        {aside&&<div className="lp-phero-aside lp-rise-side" style={{"--d":".3s"}}>
+          <div className="lp-banner">
+            {img&&<img className="lp-banner-img" src={img} alt=""/>}
+            {img&&<div className="lp-banner-tint" aria-hidden="true"/>}
+            <div style={{position:"relative",zIndex:1}}>{aside}</div>
+          </div>
+        </div>}
       </div>
     </section>
   );
@@ -2242,9 +2259,9 @@ function PublicPage({ pageKey, children }) {
     <div ref={rootRef} className={`lp${motion?" lp-motion":""}${off?" lp-hero-off":""}`} dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
       <style>{LANDING_CSS}</style>
       <a href="#main" className="lp-skip" onClick={e=>{e.preventDefault();document.getElementById("main")?.focus();}}>דלג לתוכן הראשי</a>
-      <nav className={`lp-nav${scrolled?"":" lp-nav-top"}`} style={{position:"fixed",top:12,right:"3vw",left:"3vw",zIndex:100,height:64,display:"flex",alignItems:"center",padding:"0 18px 0 12px",gap:12,borderRadius:100,
+      <nav className="lp-nav" style={{position:"fixed",top:12,right:"3vw",left:"3vw",zIndex:100,height:64,display:"flex",alignItems:"center",padding:"0 18px 0 12px",gap:12,borderRadius:100,
         backgroundColor:scrolled?"rgba(255,255,255,.97)":"rgba(255,255,255,0)",boxShadow:scrolled?"0 16px 40px -20px rgba(60,35,110,.45)":"0 0 0 rgba(0,0,0,0)"}}>
-        <a href="/" onClick={toHome(null)} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:scrolled?LP.ink:"#fff"}}>
+        <a href="/" onClick={toHome(null)} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:LP.ink}}>
           <SidorLogo size={40} id="navLogo"/>
           <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
         </a>
@@ -2253,8 +2270,8 @@ function PublicPage({ pageKey, children }) {
         </div>
         <div style={{flex:1}}/>
         <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={auth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
-        <button className={`lp-btn lp-navbtn ${scrolled?"lp-ghost":"lp-glass-btn"}`} onClick={auth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
-        <button className={`lp-btn lp-navbtn lp-hide-xs ${scrolled?"lp-primary":"lp-white"}`} onClick={auth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+        <button className="lp-btn lp-navbtn lp-ghost" onClick={auth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
+        <button className="lp-btn lp-navbtn lp-hide-xs lp-primary" onClick={auth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
         <button ref={burgerRef} type="button" className="lp-burger" aria-label="פתיחת התפריט" aria-expanded={menu} aria-controls="lp-menu" onClick={()=>setMenu(true)}><span/><span/><span/></button>
       </nav>
       <div className={`lp-menu${menu?" open":""}`} onClick={e=>{if(e.target===e.currentTarget)setMenu(false);}}>
@@ -2589,6 +2606,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
       {/* ─── HERO: רקע בהיר, בועות צבע, מילים מודגשות במרקר, ובאנר צבעוני עם מסכי המוצר ─── */}
       <section id="top" className="lp-hero6">
+        {/* תמונת אולם בהירה מאוד, רק כאווירה ברקע */}
+        <div className="lp-hero6-photo" aria-hidden="true"><img className="lp-kb" src="https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=1800&q=60&auto=format&fit=crop" alt=""/></div>
         <div className="lp-blobs" aria-hidden="true"><i/><i/><i/><i/></div>
         <StringLights/>
         <div className="lp-hero" style={{maxWidth:1200,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",position:"relative",zIndex:2}}>
@@ -12397,7 +12416,7 @@ function GuidesPage({ slug }) {
   if(slug&&!g)return(
     <PublicPage pageKey="guide-404">
       <PageHero crumbs={<><LpHomeCrumb/>{LP_SEP}<a href="/guides">מדריכים</a></>} title="המדריך לא נמצא" lead="אולי הקישור השתנה. כל המדריכים מחכים לכם כאן.">
-        <a href="/guides" className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>לכל המדריכים<LpGo/></a>
+        <a href="/guides" className="lp-btn lp-primary" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>לכל המדריכים<LpGo/></a>
       </PageHero>
       <div style={{height:80}}/>
     </PublicPage>
@@ -12501,16 +12520,16 @@ function EventLandingPage({ slug }) {
     <PublicPage pageKey={p.slug}>
       <PageHero img={img} crumbs={<><LpHomeCrumb/>{LP_SEP}<span>{p.nav}</span></>} title={p.title} lead={p.lead} aside={<HeroSeating/>}>
         <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:18}}>
-          <a href={start} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>פתחו אירוע בחינם<LpGo/></a>
-          <a href="#ev-what" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:17,minHeight:58}}>מה מקבלים</a>
+          <a href={start} className="lp-btn lp-primary" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>פתחו אירוע בחינם<LpGo/></a>
+          <a href="#ev-what" className="lp-btn lp-ghost" style={{padding:"13px 30px",fontSize:18,minHeight:58}}>מה מקבלים</a>
         </div>
-        <div className="lp-hero-cta" style={{display:"flex",gap:"6px 18px",flexWrap:"wrap",fontSize:15,color:"#fff",fontWeight:700}}>
-          {[`חינם עד ${FREE_SEATING_LIMIT} מוזמנים`,"בלי כרטיס אשראי","מתחילים תוך 2 דקות"].map(t=>(
-            <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6}}><LpIcon name="check" color="#8FF0D0" size={16}/>{t}</span>
+        <div className="lp-facts lp-facts6">
+          {[["₪0",`עד ${FREE_SEATING_LIMIT} מוזמנים`,"#E3F8EF","#9FE6CB","#156B4A"],["בלי","כרטיס אשראי","#F1EAFF","#D9C6FF","#4A2C8F"],["WhatsApp","ו-SMS לאישורים","#FFE6F0","#FFB8D6","#A3245E"],["2 דקות","ופותחים אירוע","#FFF4D6","#FFD796","#7A4E00"]].map(([v,l,bg,bd,fg])=>(
+            <div key={l} className="lp-fact" style={{"--bg":bg,"--bd":bd,"--fg":fg}}><b>{v}</b><span>{l}</span></div>
           ))}
         </div>
       </PageHero>
-      <section id="ev-what" className="lp-sec">
+      <section id="ev-what" className="lp-sheet" style={{background:"#EEF9F4",marginTop:28}}>
         <div className="lp-wrap">
           <LpTitle title="כל מה שצריך" accent={LP_EVENT_FOR[p.slug]} sub={p.desc}/>
           <div className="lp-cards">
@@ -12531,7 +12550,7 @@ function EventLandingPage({ slug }) {
           <div className="lp-cmp-cap">מסך אמיתי מהמערכת, עם נתוני דוגמה</div>
         </div>
       </section>
-      <section className="lp-sec">
+      <section className="lp-sheet" style={{background:"#FFF9E6"}}>
         <div className="lp-faq-wrap">
           <LpTitle title="שאלות" accent="ותשובות" sub="מה שכדאי לדעת לפני שמתחילים." mb={0}/>
           <div>
