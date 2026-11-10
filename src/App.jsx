@@ -270,7 +270,26 @@ const EVENT_KINDS={
   business:   {emoji:"💼",people:"💼 פרטי המארחים",a:"שם החברה / המארח",pa:"איש קשר"},
   other:      {emoji:"🎉",people:"🎉 פרטי בעלי השמחה",a:"שם בעל/ת השמחה",pa:"המארחים"},
 };
-const eventKind=e=>EVENT_KINDS[e?.event_type]||EVENT_KINDS.wedding;
+// בני הזוג בחתונה: חתן וכלה / חתן וחתן / כלה וכלה. נשמר ב-settings_json.coupleType (בטופס יצירה: couple_type)
+const COUPLE_TYPES={
+  mf:{label:"חתן וכלה",emoji:"💍",a:"שם החתן",b:"שם הכלה",pa:"הורי החתן",pb:"הורי הכלה",roles:[["groom","החתן"],["bride","הכלה"]]},
+  mm:{label:"חתן וחתן",emoji:"💍",a:"שם החתן הראשון",b:"שם החתן השני",pa:"הורי החתן הראשון",pb:"הורי החתן השני",roles:[["groom","החתן הראשון"],["bride","החתן השני"]]},
+  ff:{label:"כלה וכלה",emoji:"💍",a:"שם הכלה הראשונה",b:"שם הכלה השנייה",pa:"הורי הכלה הראשונה",pb:"הורי הכלה השנייה",roles:[["groom","הכלה הראשונה"],["bride","הכלה השנייה"]]},
+};
+const coupleOf=e=>COUPLE_TYPES[e?.couple_type||e?.settings_json?.coupleType]?(e.couple_type||e.settings_json.coupleType):"mf";
+const eventKind=e=>{const k=EVENT_KINDS[e?.event_type]||EVENT_KINDS.wedding;return k===EVENT_KINDS.wedding?{...k,...COUPLE_TYPES[coupleOf(e)]}:k;};
+// בורר סוג הזוג (יצירת אירוע ופרטי האירוע)
+function CouplePicker({ value, onChange }) {
+  return(
+    <div role="radiogroup" aria-label="בני הזוג" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      {Object.entries(COUPLE_TYPES).map(([id,c])=>{const on=(value||"mf")===id;return(
+        <button key={id} type="button" role="radio" aria-checked={on} onClick={()=>onChange(id)}
+          style={{flex:"1 1 110px",background:on?"#FFE6F0":"#fff",color:"#2B1D3F",border:`2px solid ${on?"#F0609E":"#EFE8F7"}`,borderRadius:100,padding:"10px 14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Fredoka','Heebo',sans-serif",transition:"border-color 200ms ease,background-color 200ms ease"}}>
+          {on?"✓ ":""}{c.label}
+        </button>);})}
+    </div>
+  );
+}
 // שם האירוע בתוך משפט ("מוזמנים ל…", "מחכים לך ב…") וחתימה ("באהבה, …"). כמו buildTemplates ב-sms-scheduler
 const eventWords=e=>{
   const t=EVENT_KINDS[e?.event_type]?e.event_type:"wedding";
@@ -4245,7 +4264,7 @@ ${AP_CSS}
 let hmT0=0;const hmFirst=()=>{const n=Date.now();if(!hmT0)hmT0=n;return n-hmT0<1500;};
 // פרטי האירוע: כרטיס לכל נושא עם פס צבע משלו, שדות מעוגלים וגופן מעוגל לכותרות
 const ED_CSS=`
-.ed .ed-share > *{border-radius:28px!important;border:none!important;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)!important;margin-bottom:18px!important;background:linear-gradient(180deg,#FFF1D6 0,#FFF1D6 56px,#fff 56px)!important}
+.ed .ed-share > *{border-radius:28px!important;border:none!important;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)!important;margin-bottom:18px!important;background:linear-gradient(180deg,#FFF1D6 0%,#FFF8EA 45%,#fff 100%)!important}
 .ed .ed-share button{border-radius:100px!important}
 .ed .ed-card{background:linear-gradient(180deg,var(--t) 0,var(--t) 64px,#fff 64px)!important;padding-top:20px!important}
 .ed .ed-card > div:first-child{font-family:'Fredoka','Heebo',sans-serif;font-size:19px!important;font-weight:700!important;color:#2B1D3F!important;border-bottom:none!important;margin-bottom:22px!important;padding-bottom:0!important;min-height:28px}
@@ -6936,8 +6955,8 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
   const [myRole,setMyRole]=useState(event.my_role||"groom");
-  const kind=eventKind(event);
   const [settings,setSettings]=useState({
+    coupleType: coupleOf(event),
     confetti: event.settings_json?.confetti??true,
     popupRsvp: event.settings_json?.popupRsvp??false,
     autoRsvp: event.settings_json?.autoRsvp??true,
@@ -6949,6 +6968,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     rsvpQ: rsvpQOf(event),
   });
   const setQ=patch=>setSettings(s=>({...s,rsvpQ:{...s.rsvpQ,...patch}}));
+  const kind=eventKind({...event,event_type:event.event_type,couple_type:settings.coupleType});
 
   // שמירה אוטומטית: כל שינוי נשמר כשנייה אחרי שמפסיקים להקליד, וגם ביציאה מהמסך.
   // השמירות רצות אחת אחרי השנייה ותמיד עם הנתונים העדכניים (latestRef)
@@ -7023,6 +7043,10 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:16,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>{kind.people}</div>
 
         {/* מי אני  -  רק בחתונה */}
+        {(event.event_type||"wedding")==="wedding"&&<div style={{marginBottom:16}}>
+          <div style={{fontSize:12,color:"#5F6B7D",fontWeight:700,marginBottom:8}}>בני הזוג:</div>
+          <CouplePicker value={settings.coupleType} onChange={v=>setSettings(s=>({...s,coupleType:v}))}/>
+        </div>}
         {kind.roles&&<div style={{marginBottom:16}}>
           <div style={{fontSize:12,color:"#5F6B7D",fontWeight:700,marginBottom:8}}>מי אני: *</div>
           <div style={{display:"flex",gap:8}}>
@@ -7342,9 +7366,15 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
   const total=allGuests.reduce((s,g)=>s+(g.guest_count||1),0);
 
+  // מסננים נוספים: קרבה, שיבוץ לשולחן, צפייה בהזמנה
+  const [fRel,setFRel]=useState("all"),[fSeat,setFSeat]=useState("all"),[fView,setFView]=useState("all");
+  const anyFilter=fRel!=="all"||fSeat!=="all"||fView!=="all"||filterRsvp!=="all"||!!search;
   const filtered=allGuests
     .filter(g=>g.name.toLowerCase().includes(search.toLowerCase())||(g.phone&&g.phone.includes(search)))
-    .filter(g=>filterRsvp==="all"||g.rsvp===filterRsvp||(filterRsvp==="pending"&&(!g.rsvp||g.rsvp==="pending")));
+    .filter(g=>filterRsvp==="all"||g.rsvp===filterRsvp||(filterRsvp==="pending"&&(!g.rsvp||g.rsvp==="pending")))
+    .filter(g=>fRel==="all"||(g.relation||"ללא שיוך")===fRel)
+    .filter(g=>fSeat==="all"||(fSeat==="seated"?!!g.table_id:!g.table_id))
+    .filter(g=>fView==="all"||(fView==="viewed"?(g.views||0)>0:!(g.views>0)));
 
   const updateRsvp=async(g,stage)=>{
     const patch=stagePatch(stage);
@@ -7559,18 +7589,32 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         <span aria-hidden="true">🔍</span>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש לפי שם או טלפון..." aria-label="חיפוש אורח"
           style={{border:"none",outline:"none",fontSize:14,color:"#1A202C",flex:1,fontFamily:"inherit",background:"transparent"}}/>
-        {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#6E6585",fontSize:16}}>×</button>}
+        {search&&<button onClick={()=>setSearch("")} aria-label="ניקוי החיפוש" style={{background:"none",border:"none",cursor:"pointer",color:"#6E6585",fontSize:16}}>×</button>}
+      </div>
+      <div role="group" aria-label="מסננים" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>
+        <span style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:15,fontWeight:700,color:"#2B1D3F",marginLeft:4}}>🎚️ סינון:</span>
+        {[["קרבה",fRel,setFRel,[["all","כל הקרבות"],...[...new Set([...Object.keys(customCats),...allGuests.map(g=>g.relation||"ללא שיוך")])].map(r=>[r,r])]],
+          ["שולחן",fSeat,setFSeat,[["all","שולחן: הכל"],["seated","שובצו לשולחן"],["unseated","עוד לא שובצו"]]],
+          ["צפייה בהזמנה",fView,setFView,[["all","צפייה: הכל"],["viewed","צפו בהזמנה"],["not","לא צפו בהזמנה"]]]].map(([l,v,set,opts])=>(
+          <select key={l} aria-label={`סינון לפי ${l}`} value={v} onChange={e=>set(e.target.value)}
+            style={{border:"none",borderRadius:100,padding:"9px 14px",fontSize:14,fontWeight:700,fontFamily:"inherit",cursor:"pointer",outline:"none",
+              background:v!=="all"?"#FFE6F0":"#fff",color:"#2B1D3F",boxShadow:v!=="all"?"0 0 0 2px #F0609E":"0 10px 22px -18px rgba(43,29,63,.6)"}}>
+            {opts.map(([ov,ol])=><option key={ov} value={ov}>{ol}</option>)}
+          </select>))}
+        {anyFilter&&<button onClick={()=>{setFRel("all");setFSeat("all");setFView("all");setFilterRsvp("all");setSearch("");}}
+          style={{background:"none",border:"none",color:"#B4236A",fontSize:14,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"inherit"}}>ניקוי הסינון</button>}
+        <span style={{marginRight:"auto",fontSize:14,color:"#5E5470",fontWeight:600}}>{filtered.length} מתוך {allGuests.length} רשומות</span>
       </div>
 
       {/* טבלה  -  מקצה לקצה */}
       </div>
       <div style={{background:"#fff",overflowX:"auto",borderRadius:28,margin:"0 24px",boxShadow:"0 18px 40px -28px rgba(91,60,140,.5)"}}>
         <style>{`.sx-rsvp-row:hover{background:#FFF7FB!important}`}</style>
-        <table style={{width:"100%",minWidth:960,borderCollapse:"collapse",fontSize:14,fontVariantNumeric:"tabular-nums"}}>
+        <table style={{width:"100%",minWidth:760,borderCollapse:"collapse",fontSize:14,fontVariantNumeric:"tabular-nums"}}>
           <thead>
             {/* כותרות שקטות: אפור, בלי פס צבעוני — הנתונים הם הדבר הבולט */}
             <tr style={{background:"#F6F0FF",borderBottom:"1px solid #ECE3F7",position:"sticky",top:0,zIndex:1}}>
-              {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","צפו בהזמנה","הגעה","פעולות"].map((h,i)=>(
+              {["שם מלא","הוזמנו","אישרו","מס' נייד","שולחן","קרבה","מתנה","עדכון אחרון","הגעה","פעולות"].map((h,i)=>(
                 <th key={h} style={{padding:"11px "+(i===0?"16px":"10px"),textAlign:i===0||i===5?"right":"center",fontWeight:700,color:"#4A4060",fontSize:13,whiteSpace:"nowrap"}}>
                   {h}
                 </th>
@@ -7578,7 +7622,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
             </tr>
           </thead>
           <tbody>
-            {filtered.length===0&&<tr><td colSpan={11} style={{padding:32,textAlign:"center",color:"#6E6585"}}>אין אורחים</td></tr>}
+            {filtered.length===0&&<tr><td colSpan={10} style={{padding:32,textAlign:"center",color:"#6E6585"}}>{anyFilter?"אין אורחים שמתאימים לסינון":"אין אורחים"}</td></tr>}
             {filtered.map((g)=>{
               const relColor=RELATION_COLORS[g.relation];
               const updatedAt=g.updated_at||g.created_at,ud=updatedAt?new Date(updatedAt):null;
@@ -7623,9 +7667,6 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                   </QuickCell>
                 </td>
                 <td style={{padding:"11px 8px",color:"#5F5675",fontSize:12,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{dateStr}</td>
-                <td style={{padding:"12px 10px",textAlign:"center"}}>
-                  <span style={{color:"#5F5675",fontSize:13}}>{g.views||0}</span>
-                </td>
                 <td style={{padding:"11px 6px"}}>
                   {/* מצב: לא הופצה → נשלחה הזמנה → נשלחה תזכורת → מגיע / לא מגיע (guests.last_msg) */}
                   {(()=>{const st=rsvpStage(g);return(
@@ -7639,8 +7680,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                 </td>
                 <td style={{padding:"11px 6px"}}>
                   <div style={{display:"flex",gap:3}}>
-                    <button onClick={()=>setEditG({...g})} style={{background:"#EBF8FF",color:"#2B6CB0",border:"1.5px solid #BEE3F8",borderRadius:5,padding:"4px 7px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✏️</button>
-                    <button onClick={()=>deleteGuest(g)} style={{background:"#FFF5F5",color:"#C53030",border:"1.5px solid #FED7D7",borderRadius:5,padding:"4px 5px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>🗑️</button>
+                    <button onClick={()=>setEditG({...g})} aria-label={`עריכת ${g.name}`} style={{background:"#F6F0FF",border:"none",borderRadius:100,width:32,height:32,fontSize:13,cursor:"pointer",flexShrink:0}}>✏️</button>
+                    <button onClick={()=>deleteGuest(g)} aria-label={`מחיקת ${g.name}`} style={{background:"#FFEFF2",border:"none",borderRadius:100,width:32,height:32,fontSize:13,cursor:"pointer",flexShrink:0}}>🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -11269,7 +11310,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
   const [loading,setLoading]=useState(true);
   const [creating,setCreating]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
+  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",couple_type:"mf",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
   // שם אוטומטי לפי סוג האירוע והשמות (אם לא כתבו שם)
   const autoName=f=>{const g=f.groom_name.trim(),b=f.bride_name.trim();
     return f.event_type==="wedding"?(g&&b?`החתונה של ${g} ו${b}`:g||b?`החתונה של ${g||b}`:"")
@@ -11312,8 +11353,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
     if(form.host_phone&&!normPhone(form.host_phone)){alert("מספר הנייד לא תקין");return;}
     setCreating(true);
     const invite_code=Math.random().toString(36).slice(2,10);
-    const clean=Object.fromEntries(Object.entries(form).map(([k,v])=>[k,typeof v==="string"?v.trim():v]).filter(([k,v])=>v!==""||k==="date"));
-    const{data,error}=await sb.from("events").insert(eventRow({...clean,name:evName,user_id:user.id,invite_code,invite_active:true})).select().single();
+    const {couple_type,...rest}=form;
+    const clean=Object.fromEntries(Object.entries(rest).map(([k,v])=>[k,typeof v==="string"?v.trim():v]).filter(([k,v])=>v!==""||k==="date"));
+    const extra=form.event_type==="wedding"&&couple_type&&couple_type!=="mf"?{settings_json:{coupleType:couple_type}}:{};
+    const{data,error}=await sb.from("events").insert(eventRow({...clean,...extra,name:evName,user_id:user.id,invite_code,invite_active:true})).select().single();
     setCreating(false);
     if(error||!data){alert("יצירת האירוע נכשלה: "+(error?.message||"נסו שוב"));return;}
     if(goDetails)PENDING_SCREEN="settings_event";
@@ -11608,18 +11651,25 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
                 </div>
               </div>
 
+              {/* בני הזוג (לחתונה) */}
+              {form.event_type==="wedding"&&(
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:8}}>בני הזוג</div>
+                  <CouplePicker value={form.couple_type} onChange={v=>setForm(f=>({...f,couple_type:v}))}/>
+                </div>
+              )}
               {/* שמות (לחתונה) */}
               {form.event_type==="wedding"&&(
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
                   <div>
-                    <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:6}}>שם החתן</div>
-                    <input aria-label="שם החתן" value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))}
+                    <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:6}}>{eventKind(form).a}</div>
+                    <input aria-label={eventKind(form).a} value={form.groom_name} onChange={e=>setForm(f=>({...f,groom_name:e.target.value}))}
                       style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                       onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                   </div>
                   <div>
-                    <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:6}}>שם הכלה</div>
-                    <input aria-label="שם הכלה" value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))}
+                    <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:6}}>{eventKind(form).b}</div>
+                    <input aria-label={eventKind(form).b} value={form.bride_name} onChange={e=>setForm(f=>({...f,bride_name:e.target.value}))}
                       style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
                       onFocus={e=>e.target.style.borderColor="#9147D6"} onBlur={e=>e.target.style.borderColor="#E2E8F0"}/>
                   </div>
@@ -11635,7 +11685,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
               )}
 
               {/* שמות ההורים / המארחים — מופיעים בהזמנה */}
-              {(()=>{const k=EVENT_KINDS[form.event_type]||EVENT_KINDS.wedding,fi={width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};return(
+              {(()=>{const k=eventKind(form),fi={width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};return(
                 <div style={{display:"grid",gridTemplateColumns:k.pb?"1fr 1fr":"1fr",gap:12,marginBottom:16}}>
                   <div>
                     <div style={{fontSize:12,fontWeight:700,color:"#5E5470",marginBottom:6}}>{k.pa} <span style={{fontWeight:400,color:"#6B6380"}}>(רשות)</span></div>
