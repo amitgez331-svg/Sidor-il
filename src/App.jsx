@@ -10443,36 +10443,71 @@ function GiftsScreen({ event, guests, onReload }) {
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${name}.${ext}`;
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   };
+  const came=list.filter(g=>g.arrived_at||g.rsvp==="confirmed");
+  const cameGave=came.filter(g=>Number(g.gift)>0).length;
+  const FILTERS=[["all","כל האורחים",list.length],["came","הגיעו / אישרו",came.length],["gave","נתנו מתנה",gave.length],["missing","עוד לא נרשמה מתנה",came.length-cameGave]];
+  const AV=["#F0609E","#9B6BFF","#FF8A65","#3CC8A0","#5AA9FF","#E8A93A"];
   return(
-    <div style={{direction:"rtl",maxWidth:720,margin:"0 auto",padding:16}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
-        {[[fmtShekel(sum),"סה״כ מתנות"],[gave.length,"נתנו מתנה"],[gave.length?fmtShekel(Math.round(sum/gave.length)):"—","ממוצע"]].map(([v,l])=>(
-          <Card key={l} style={{padding:14,textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:C.blue}}>{v}</div><div style={{fontSize:12,color:C.muted}}>{l}</div></Card>
-        ))}
+    <div className="hm gf" style={{direction:"rtl",maxWidth:960,margin:"0 auto",padding:"22px 24px 40px"}}>
+      <style>{HOME_CSS+`
+        .gf .gf-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:22px;padding:10px 14px;margin-bottom:8px;flex-wrap:wrap;box-shadow:0 12px 28px -24px rgba(91,60,140,.6)}
+        .gf .gf-row.on{background:linear-gradient(90deg,#E7F8F0,#fff 70%)}
+        .gf .gf-av{width:38px;height:38px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka','Heebo',sans-serif;font-weight:700;font-size:16px;flex-shrink:0}
+        .gf .gf-chip{display:inline-block;border-radius:100px;padding:2px 10px;font-size:12px;font-weight:700}
+        .gf input{border:1.5px solid #E6DDF5!important;border-radius:100px!important;background:#fff;font-family:inherit;outline:none}
+        .gf input:focus{border-color:#9B6BFF!important;box-shadow:0 0 0 4px rgba(155,107,255,.16)}
+        .gf input.gf-search{border:none!important;box-shadow:none!important;background:transparent}
+        .gf .gf-amt{position:relative}
+        .gf .gf-amt span{position:absolute;right:12px;top:50%;translate:0 -50%;font-weight:700;color:#5E5470;pointer-events:none}
+        @media(max-width:700px){.gf{padding:16px 12px 30px!important}}
+      `}</style>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:18}}>
+        <div>
+          <h1 style={{fontSize:"clamp(26px,2.6vw,34px)",fontWeight:700,color:"#2B1D3F",margin:"0 0 4px"}}>מתנות</h1>
+          <div style={{fontSize:15,color:"#5E5470"}}>{came.length?`נרשמה מתנה ל-${cameGave} מתוך ${came.length} שהגיעו או אישרו`:"רושמים כאן כמה כל אורח נתן, וזה מתעדכן גם בתקציב"}</div>
+        </div>
+        <button onClick={exportXlsx} disabled={!list.length} className="sx-btn"
+          style={{background:"#fff",color:"#4A2C8F",border:"none",borderRadius:100,padding:"10px 18px",fontSize:14,fontWeight:700,cursor:list.length?"pointer":"default",opacity:list.length?1:.5,boxShadow:"0 10px 22px -16px rgba(43,29,63,.55)"}}>⬇️ ייצוא לאקסל</button>
       </div>
-      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 חיפוש לפי שם"
-          style={{flex:"1 1 180px",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:14,fontFamily:"inherit",outline:"none",background:C.surface}}/>
-        <select value={only} onChange={e=>setOnly(e.target.value)} style={{padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,fontFamily:"inherit",background:C.surface}}>
-          <option value="all">כל האורחים</option><option value="came">הגיעו / אישרו</option><option value="gave">נתנו מתנה</option><option value="missing">הגיעו ועוד לא נרשמה מתנה</option>
-        </select>
-        <button onClick={exportXlsx} disabled={!list.length} style={{background:C.surface,color:C.blue,border:`1.5px solid ${C.blueL}`,borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:800,cursor:list.length?"pointer":"default",fontFamily:"inherit",opacity:list.length?1:.5}}>⬇️ ייצוא לאקסל</button>
+      <div className="hm-stats" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:14}}>
+        {[["🎁","סה״כ מתנות",fmtShekel(sum),"#DFF6EC",gave.length?`מ-${gave.length} אורחים`:"עוד לא נרשמו"],["💌","נתנו מתנה",gave.length,"#FFE3EE",`מתוך ${list.length} ברשימה`],["📊","ממוצע למתנה",gave.length?fmtShekel(Math.round(sum/gave.length)):"—","#EFE6FF","לפי מה שנרשם"]].map(([ic,l,v,bg,sub])=>(
+          <div key={l} className="hm-stat" style={{"--bg":bg,cursor:"default"}}>
+            <span className="t"><i aria-hidden="true">{ic}</i>{l}</span>
+            <b dir="ltr" style={{fontSize:"clamp(22px,2.4vw,32px)",textAlign:"right",whiteSpace:"nowrap"}}>{v}</b><small>{sub}</small>
+          </div>))}
       </div>
-      {shown.map(g=>(
-        <Card key={g.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",marginBottom:6,flexWrap:"wrap"}}>
-          <div style={{flex:"1 1 140px",minWidth:0}}>
-            <div style={{fontWeight:800,fontSize:14,color:C.text}}>{g.name}</div>
-            <div style={{fontSize:11,color:C.muted}}>{g.arrived_at?"✓ הגיע":g.rsvp==="confirmed"?"אישר הגעה":g.rsvp==="declined"?"לא מגיע":"ממתין"}</div>
+      {came.length>0&&<div aria-hidden="true" style={{height:10,borderRadius:99,background:"#F1ECF6",overflow:"hidden",marginBottom:16}}><div style={{height:"100%",width:`${Math.round(cameGave/came.length*100)}%`,background:"linear-gradient(90deg,#3CC8A0,#25A55F)",borderRadius:99}}/></div>}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
+        <div style={{flex:"1 1 220px",background:"#fff",borderRadius:100,padding:"4px 6px 4px 16px",display:"flex",alignItems:"center",gap:8,boxShadow:"0 12px 26px -22px rgba(43,29,63,.6)"}}>
+          <span aria-hidden="true">🔍</span>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="חיפוש לפי שם" aria-label="חיפוש אורח" style={{flex:1,padding:"8px 4px",fontSize:15}} className="gf-search"/>
+        </div>
+        <div role="group" aria-label="סינון" style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {FILTERS.map(([v,l,n])=>(
+            <button key={v} onClick={()=>setOnly(v)} aria-pressed={only===v}
+              style={{background:only===v?"linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)":"#fff",color:only===v?"#fff":"#4A2C8F",border:"none",borderRadius:100,padding:"9px 14px",fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:only===v?"0 10px 22px -12px rgba(240,96,158,.7)":"0 10px 22px -18px rgba(43,29,63,.55)"}}>
+              {l} <span style={{opacity:.8,fontWeight:600}}>({n})</span>
+            </button>))}
+        </div>
+      </div>
+      {shown.map((g,i)=>{const gv=Number(g.gift)>0,stt=g.arrived_at?["✓ הגיע","#DFF6EC","#156B4A"]:g.rsvp==="confirmed"?["אישר הגעה","#E2F1FF","#1D5FA0"]:g.rsvp==="declined"?["לא מגיע","#FFE3EE","#A3245E"]:["ממתין","#FFF1D6","#7A4E00"];return(
+        <div key={g.id} className={`gf-row${gv?" on":""}`}>
+          <span className="gf-av" aria-hidden="true" style={{background:AV[(g.name||"").charCodeAt(0)%AV.length]}}>{(g.name||"?")[0]}</span>
+          <div style={{flex:"1 1 150px",minWidth:0}}>
+            <div style={{fontWeight:700,fontSize:15,color:"#2B1D3F",fontFamily:"'Fredoka','Heebo',sans-serif"}}>{g.name}</div>
+            <span className="gf-chip" style={{background:stt[1],color:stt[2]}}>{stt[0]}</span>
           </div>
-          <input key={"a"+g.id+g.gift} defaultValue={g.gift??""} inputMode="decimal" placeholder="₪ סכום" aria-label={`סכום מתנה של ${g.name}`}
-            onBlur={e=>{const v=e.target.value.replace(/[^\d.]/g,"");const n=v?Number(v):null;if(n!==(g.gift==null?null:Number(g.gift)))save(g,{gift:n});}}
-            style={{width:90,padding:"8px 10px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:14,fontFamily:"inherit",textAlign:"center"}}/>
+          <div className="gf-amt">
+            <input key={"a"+g.id+g.gift} defaultValue={g.gift??""} inputMode="decimal" placeholder="סכום" aria-label={`סכום מתנה של ${g.name}`}
+              onBlur={e=>{const v=e.target.value.replace(/[^\d.]/g,"");const n=v?Number(v):null;if(n!==(g.gift==null?null:Number(g.gift)))save(g,{gift:n});}}
+              style={{width:120,padding:"10px 28px 10px 12px",fontSize:15,fontWeight:700,textAlign:"center",color:"#156B4A"}}/>
+            <span aria-hidden="true">₪</span>
+          </div>
           <input key={"n"+g.id+(g.gift_note||"")} defaultValue={g.gift_note||""} placeholder="הערה (צ׳ק, Bit…)" aria-label={`הערה למתנה של ${g.name}`}
             onBlur={e=>{const v=e.target.value.trim();if(v!==(g.gift_note||""))save(g,{gift_note:v||null});}}
-            style={{flex:"1 1 120px",minWidth:0,padding:"8px 10px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:13,fontFamily:"inherit"}}/>
-        </Card>
-      ))}
-      {!shown.length&&<div style={{textAlign:"center",color:C.muted,fontSize:13,padding:20}}>אין אורחים להצגה</div>}
+            style={{flex:"1 1 150px",minWidth:0,padding:"10px 14px",fontSize:14}}/>
+        </div>);})}
+      {!shown.length&&<div style={{textAlign:"center",color:"#5E5470",fontSize:15,padding:28,background:"#fff",borderRadius:24}}>{q||only!=="all"?"אין אורחים שמתאימים לסינון":"עוד אין אורחים ברשימה"}</div>}
     </div>
   );
 }
@@ -11327,8 +11362,8 @@ const WIZ_CSS=`
 .wz-main{padding:26px 30px 28px;display:flex;flex-direction:column;min-width:0}
 .wz-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
 .wz-steps{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.9);border-radius:100px;padding:5px;box-shadow:0 12px 26px -20px rgba(43,29,63,.6);flex-wrap:wrap}
-.wz-step{min-width:38px;height:38px;border-radius:100px;border:none;background:#F6F1FB;color:#5E5470;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 12px;cursor:default}
-.wz-step.on{background:linear-gradient(120deg,#FFE4F0,#EFE4FF);color:#4A2C8F;box-shadow:inset 0 0 0 1.5px #E3CFF4}
+.wz-step{min-width:38px;height:36px;border-radius:100px;border:none;background:transparent;color:#6E6585;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 12px;cursor:default;white-space:nowrap}
+.wz-step.on{background:linear-gradient(120deg,#FFE4F0,#EFE4FF);color:#4A2C8F;font-weight:700;box-shadow:inset 0 0 0 1.5px #E3CFF4}
 .wz-step.done{background:#DFF6EC;color:#1F7A4D;cursor:pointer}
 .wz-x{width:40px;height:40px;border-radius:50%;border:none;background:#fff;color:#4A2C8F;font-size:18px;cursor:pointer;box-shadow:0 10px 22px -16px rgba(43,29,63,.6)}
 .wz-body{flex:1;animation:wzIn .35s cubic-bezier(0.23,1,0.32,1) both}
@@ -11385,7 +11420,7 @@ const WIZ_CSS=`
 `;
 function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate, onClose }) {
   const wedding=form.event_type==="wedding";
-  const steps=[{id:"type",l:"סוג האירוע"},...(wedding?[{id:"couple",l:"מי חוגגים?"}]:[]),{id:"names",l:"שמות"},{id:"when",l:"מתי ואיפה?"},{id:"finish",l:"סיום"}];
+  const steps=[{id:"type",l:"סוג האירוע"},...(wedding?[{id:"couple",l:"מי חוגגים?"}]:[]),{id:"names",l:"שמות"},{id:"when",l:"מתי ואיפה?"},{id:"design",l:"עיצוב ההזמנה"},{id:"finish",l:"סיום"}];
   const [i,setI]=useState(0),[tried,setTried]=useState(false);
   const idx=Math.min(i,steps.length-1),st=steps[idx];
   const k=eventKind(form);
@@ -11395,9 +11430,9 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
   const next=()=>{if(st.id==="names"&&!namesOk){setTried(true);return;}go(idx+1);};
   useEffect(()=>{const h=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[]);
   // תצוגה חיה
-  const tpl=(INVITE_TEMPLATES[form.event_type]||INVITE_TEMPLATES.other)[0];
   const typeImg=WIZ_TYPES.find(t=>t[0]===form.event_type)?.[3];
-  const cover=tpl?.img||typeImg;
+  const cover=coverImgOf(form.event_type,form.template_id)||typeImg;
+  const ivs=INVITE_STYLES.find(x=>x.id===(form.invite_style||"classic"))||INVITE_STYLES[0];
   const nameA=form.groom_name.trim()||(wedding?k.roles[0][1]:""),nameB=form.bride_name.trim()||(wedding?k.roles[1][1]:"");
   const dateStr=form.date?fmtDateHe(form.date,{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"התאריך יופיע כאן";
   return(
@@ -11410,7 +11445,7 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
               {steps.map((s2,j)=>(
                 <button key={s2.id} type="button" className={`wz-step${j===idx?" on":j<idx?" done":""}`} aria-current={j===idx?"step":undefined}
                   onClick={()=>j<idx&&go(j)} aria-label={`שלב ${j+1}: ${s2.l}${j<idx?" (הושלם)":""}`}>
-                  {j<idx?"✓":j===idx?s2.l:String(j+1).padStart(2,"0")}
+                  {j<idx?`✓ ${s2.l}`:s2.l}
                 </button>))}
             </nav>
             <button type="button" className="wz-x" onClick={onClose} aria-label="סגירה">×</button>
@@ -11480,6 +11515,15 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
               </div>
             </>}
 
+            {st.id==="design"&&<>
+              <h2>איך ההזמנה תיראה?</h2>
+              <p className="wz-sub">בוחרים תמונת פתיחה וסגנון. אפשר לשנות בכל רגע, וגם להעלות תמונה משלכם אחרי היצירה</p>
+              <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"0 0 8px"}}>🖼️ תמונת הפתיחה</div>
+              <InviteCoverPicker eventType={form.event_type} value={form.template_id} onChange={v=>set("template_id",v)}/>
+              <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"18px 0 8px"}}>🎨 סגנון ההזמנה</div>
+              <InviteStylePicker value={form.invite_style||"classic"} onChange={v=>set("invite_style",v)} img={coverImgOf(form.event_type,form.template_id)} title={wedding?`${nameA} & ${nameB}`:(form.groom_name.trim()||evName)}/>
+            </>}
+
             {st.id==="finish"&&<>
               <h2>כמעט סיימנו</h2>
               <p className="wz-sub">בודקים את השם ויוצרים את האירוע</p>
@@ -11500,7 +11544,7 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
           <div className="wz-acts">
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {idx>0?<button type="button" className="wz-btn g" onClick={()=>go(idx-1)}>חזרה</button>:<button type="button" className="wz-btn g" onClick={onClose}>ביטול</button>}
-              {st.id==="when"&&<button type="button" className="wz-btn s" onClick={()=>go(idx+1)}>דלג</button>}
+              {(st.id==="when"||st.id==="design")&&<button type="button" className="wz-btn s" onClick={()=>go(idx+1)}>דלג</button>}
             </div>
             {st.id!=="finish"
               ?<button type="button" className="wz-btn p" onClick={next}>המשך ←</button>
@@ -11518,11 +11562,11 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
             <div className="cv" style={{backgroundImage:cover?`url(${cover})`:undefined}}>
               <div className="nm">{wedding?<>{nameA}<i>&</i>{nameB}</>:(form.groom_name.trim()||evName||"שם האירוע")}</div>
             </div>
-            <div className="bd">
-              <div className="dt">{dateStr}</div>
+            <div className="bd" style={{background:ivs.id==="evening"?"#2A1A3E":ivs.card,color:ivs.ink}}>
+              <div className="dt" style={{fontFamily:ivs.font}}>{dateStr}</div>
               <div className="ln">{[form.reception_time&&`קבלת פנים ${form.reception_time}`,form.event_time&&`${wedding?"חופה":"תחילה"} ${form.event_time}`].filter(Boolean).join(" · ")||"השעות יופיעו כאן"}</div>
               <div className="ln">{form.venue?`📍 ${form.venue}`:"📍 המקום יופיע כאן"}</div>
-              <span className="pl">אישור הגעה</span>
+              <span className="pl" style={{background:ivs.accent,color:ivs.id==="evening"?"#241433":"#fff"}}>אישור הגעה</span>
             </div>
           </div>
           <small>התצוגה מתעדכנת בזמן אמת בזמן שממלאים</small>
@@ -11549,7 +11593,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
     setEvents(es=>es.filter(e=>e.id!==delEv.id));setDelEv(null);
   };
   const editEvent=ev=>{PENDING_SCREEN="settings";onSelect(ev);};
-  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",couple_type:"mf",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
+  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",couple_type:"mf",template_id:"classic",invite_style:"classic",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
   // שם אוטומטי לפי סוג האירוע והשמות (אם לא כתבו שם)
   const autoName=f=>{const g=f.groom_name.trim(),b=f.bride_name.trim();
     return f.event_type==="wedding"?(g&&b?`החתונה של ${g} ו${b}`:g||b?`החתונה של ${g||b}`:"")
@@ -11592,9 +11636,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
     if(form.host_phone&&!normPhone(form.host_phone)){alert("מספר הנייד לא תקין");return;}
     setCreating(true);
     const invite_code=Math.random().toString(36).slice(2,10);
-    const {couple_type,...rest}=form;
+    const {couple_type,invite_style,...rest}=form;
     const clean=Object.fromEntries(Object.entries(rest).map(([k,v])=>[k,typeof v==="string"?v.trim():v]).filter(([k,v])=>v!==""||k==="date"));
-    const extra=form.event_type==="wedding"&&couple_type&&couple_type!=="mf"?{settings_json:{coupleType:couple_type}}:{};
+    const sj={...(form.event_type==="wedding"&&couple_type&&couple_type!=="mf"?{coupleType:couple_type}:{}),...(invite_style&&invite_style!=="classic"?{inviteStyle:invite_style}:{})};
+    const extra=Object.keys(sj).length?{settings_json:sj}:{};
     const{data,error}=await sb.from("events").insert(eventRow({...clean,...extra,name:evName,user_id:user.id,invite_code,invite_active:true})).select().single();
     setCreating(false);
     if(error||!data){alert("יצירת האירוע נכשלה: "+(error?.message||"נסו שוב"));return;}
@@ -11818,8 +11863,10 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
                   border:"1px solid rgba(155,107,255,.08)",
                   animation:`fadeUp .4s ease ${i*.08}s both`,
                   transition:"all .2s",position:"relative",overflow:"hidden"}}>
-                {/* גרדיאנט עדין בפינה */}
-                <div style={{position:"absolute",top:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"radial-gradient(circle,rgba(155,107,255,.06) 0%,transparent 70%)"}}/>
+                {/* התמונה של ההזמנה (שהועלתה, או תמונת הפתיחה שנבחרה) */}
+                <div aria-hidden="true" style={{margin:"-28px -24px 16px",height:150,backgroundColor:"#F1EAFF",backgroundImage:`url(${ev.invite_image||coverImgOf(ev.event_type,ev.template_id)})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(28,16,40,.25))"}}/>
+                </div>
 
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:18}}>
                   <div style={{flex:1,minWidth:0}}>
