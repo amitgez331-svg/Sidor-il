@@ -1000,76 +1000,58 @@ function Countdown({ date }) {
 
 // ─── VENUE PAGE ───────────────────────────────────────────────────────────────
 function VenuePage({ onBack, onOpenAuth }) {
+  useEffect(()=>{window.scrollTo(0,0);},[]);
+  const wa=`${LP_WA}?text=${encodeURIComponent("שלום, אני מעוניין לשמוע על שיתוף פעולה עם Sidor-IL")}`;
+  const offers=[
+    {icon:"🪑",bg:"#FFEFF5",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע: ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
+    {icon:"✅",bg:"#E9FBF4",title:"אישורי הגעה דיגיטליים",desc:"שליחת הזמנות דיגיטליות ואישורי הגעה בוואטסאפ וב-SMS לכל האורחים."},
+    {icon:"📟",bg:"#F1EAFF",title:"כניסה בלי תורים",desc:"עמדת טאבלט שבה האורח מקליד את השם ומקבל פתק שולחן, או צוות הושבה מקצועי ביום האירוע."},
+    {icon:"📊",bg:"#FFF6E5",title:"כמה אירועים במקביל",desc:"מפיקים מנהלים את כל האירועים שלהם מחשבון אחד."},
+    {icon:"🏷️",bg:"#EAF4FF",title:"המותג שלכם בהזמנה",desc:"הלוגו, השם והטלפון שלכם מופיעים בדף ההזמנה של כל האורחים."},
+  ];
+  const steps=[["1","מקבלים קישור אישי","קישור עם הקוד שלכם, למשל sidoril.com/?ref=השם-שלכם"],["2","שולחים ללקוחות","בוואטסאפ, במייל אחרי סגירת האירוע, או כ-QR על דלפק הקבלה"],["3","מקבלים תגמול","כל לקוח שנרשם דרך הקישור נרשם על שמכם, והתגמול לפי מה שנסכם איתכם"]];
   return(
-    <div dir="rtl" style={{fontFamily:"'Heebo',sans-serif",background:C.bg,minHeight:"100vh"}}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
-      <SiteNav/>
-      {/* Header */}
-      <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
-        <div style={{position:"relative",zIndex:1}}>
-          <h1 style={{fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>🏢 אולמות ומפיקים</h1>
-          <p style={{fontSize:14,color:"rgba(255,255,255,.75)"}}>שיתוף פעולה עם Sidor-IL</p>
-          {onOpenAuth&&<button onClick={()=>onOpenAuth("producer")} style={{marginTop:14,background:"#fff",color:C.blue,border:"none",borderRadius:10,padding:"9px 16px",cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit"}}>🎬 כניסת מפיקים ←</button>}
+    <PublicPage pageKey="venue">
+      <PageHero crumbs={<><LpHomeCrumb onClick={onBack}/>{LP_SEP}<span>אולמות ומפיקים</span></>} title="אולמות ומפיקים"
+        lead="שיתוף פעולה עם Sidor-IL: הושבה, אישורי הגעה וכניסה בלי תורים ללקוחות שלכם, עם המותג שלכם, ותוכנית שותפים.">
+        <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+          {onOpenAuth&&<button type="button" className="lp-btn lp-white" onClick={()=>onOpenAuth("producer")} style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>כניסת מפיקים<LpGo/></button>}
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:17,minHeight:58}}>דברו איתנו בוואטסאפ</a>
         </div>
-      </div>
-
-      <div style={{padding:"24px 20px",maxWidth:640,margin:"0 auto"}}>
-        {/* מה אנחנו מציעים */}
-        <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:16}}>מה אנחנו מציעים?</div>
-        {[
-          {icon:"🪑",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע  -  ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
-          {icon:"✅",title:"אישורי הגעה דיגיטליים",desc:"שליחת הזמנות דיגיטליות ואישורי הגעה בוואטסאפ ו-SMS לכל האורחים."},
-          {icon:"📟",title:"כניסה בלי תורים",desc:"עמדת טאבלט שבה האורח מקליד את השם ומקבל פתק שולחן, או צוות הושבה מקצועי ביום האירוע."},
-          {icon:"📊",title:"כמה אירועים במקביל",desc:"מפיקים מנהלים את כל האירועים שלהם מחשבון אחד."},
-          {icon:"🏷️",title:"המותג שלכם בהזמנה",desc:"הלוגו, השם והטלפון שלכם מופיעים בדף ההזמנה של כל האורחים."},
-        ].map((item,i)=>(
-          <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",marginBottom:12,display:"flex",gap:14,alignItems:"flex-start"}}>
-            <div style={{width:44,height:44,borderRadius:12,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{item.icon}</div>
-            <div>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:4}}>{item.title}</div>
-              <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>{item.desc}</div>
-            </div>
-          </div>
-        ))}
-
-        {/* תוכנית שותפים: קישור הפניה אישי */}
-        <div style={{fontSize:18,fontWeight:800,color:C.text,margin:"24px 0 6px"}}>🤝 תוכנית שותפים</div>
-        <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:14}}>ממליצים על Sidor-IL לזוגות ולמשפחות שסוגרים אצלכם, ומקבלים תגמול על כל לקוח שמגיע דרככם.</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:10,marginBottom:20}}>
-          {[["1","מקבלים קישור אישי","קישור עם הקוד שלכם, למשל sidoril.com/?ref=השם-שלכם"],["2","שולחים ללקוחות","בוואטסאפ, במייל אחרי סגירת האירוע, או כ-QR על דלפק הקבלה"],["3","מקבלים תגמול","כל לקוח שנרשם דרך הקישור נרשם על שמכם, והתגמול לפי מה שנסכם איתכם"]].map(([n,t,d])=>(
-            <div key={n} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 16px"}}>
-              <div style={{width:30,height:30,borderRadius:"50%",background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14,marginBottom:8}}>{n}</div>
-              <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:4}}>{t}</div>
-              <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{d}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* צור קשר */}
-        <div style={{background:`linear-gradient(135deg,${C.blue},${C.blueM})`,borderRadius:20,padding:"24px 20px",marginTop:8,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:`repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)`,backgroundSize:"12px 12px"}}/>
-          <div style={{position:"relative",zIndex:1}}>
-            <div style={{fontSize:18,fontWeight:800,color:"#fff",marginBottom:6}}>מעוניינים בשיתוף פעולה?</div>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.75)",marginBottom:20,lineHeight:1.6}}>צרו איתנו קשר: נפתח לכם קישור שותף, ונספר על התגמול ועל החבילות לאולמות ולמפיקים.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <a href="https://wa.me/972526817102?text=שלום, אני מעוניין לשמוע על שיתוף פעולה עם Sidor-IL" target="_blank" rel="noopener"
-                style={{background:"#25D366",color:"#fff",borderRadius:12,padding:"13px 20px",fontSize:15,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:10,justifyContent:"center"}}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                שלח הודעה בוואטסאפ
-              </a>
-              <a href="mailto:sidoril2026@gmail.com?subject=שיתוף פעולה עם Sidor-IL"
-                style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"2px solid rgba(255,255,255,.3)",borderRadius:12,padding:"12px 20px",fontSize:15,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:10,justifyContent:"center"}}>
-                ✉️ שלח מייל
-              </a>
-              <div style={{textAlign:"center",color:"rgba(255,255,255,.6)",fontSize:13,marginTop:4}}>
-                📞 052-681-7102 · א׳-ה׳ 9:00-17:00
+      </PageHero>
+      <section className="lp-sec">
+        <div className="lp-wrap">
+          <LpTitle title="מה" accent="אנחנו מציעים" sub="הכלים שהזוגות והמשפחות שסוגרים אצלכם צריכים, במערכת אחת."/>
+          <div className="lp-cards">
+            {offers.map((o,i)=>(
+              <div key={o.title} className="lp-pcard2 lp-lift" data-reveal style={{"--d":`${(i%3*.07).toFixed(2)}s`}}>
+                <span className="lp-emo" style={{background:o.bg}} aria-hidden="true">{o.icon}</span>
+                <h3>{o.title}</h3>
+                <p>{o.desc}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+      <section className="lp-sheet" style={{background:"#FFF0F6"}}>
+        <div className="lp-wrap">
+          <LpTitle title="תוכנית" accent="שותפים" sub="ממליצים על Sidor-IL לזוגות ולמשפחות שסוגרים אצלכם, ומקבלים תגמול על כל לקוח שמגיע דרככם."/>
+          <ol className="lp-steps3">
+            {steps.map(([n,t,d],i)=>(
+              <li key={n} className="lp-pcard2" data-reveal style={{"--d":`${(i*.08).toFixed(2)}s`}}>
+                <span className="lp-stepnum" aria-hidden="true">{n}</span>
+                <h3>{t}</h3>
+                <p>{d}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+      <div style={{height:60}}/>
+      <LpCtaBand title="מעוניינים בשיתוף פעולה?" text="צרו איתנו קשר: נפתח לכם קישור שותף, ונספר על התגמול ועל החבילות לאולמות ולמפיקים."
+        primary={{href:wa,label:"שלחו הודעה בוואטסאפ",external:true}} secondary={{href:`mailto:sidoril2026@gmail.com?subject=${encodeURIComponent("שיתוף פעולה עם Sidor-IL")}`,label:"שלחו מייל"}}
+        note="052-681-7102 · א׳-ה׳ 9:00-17:00"/>
+    </PublicPage>
   );
 }
 
@@ -1617,6 +1599,77 @@ const LANDING_CSS=`
   .lp-cta3 .lp-bokeh{z-index:-1}
   @media(max-width:700px){.lp-cta3{margin:0 8px 40px;border-radius:36px;padding:76px 6vw}}
   .lp-wordmark{direction:ltr;text-align:center;font-weight:900;font-size:clamp(72px,17vw,250px);line-height:.8;letter-spacing:-.05em;margin:36px 0 0;background:linear-gradient(180deg,rgba(124,75,214,.34),rgba(124,75,214,0) 92%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;white-space:nowrap}
+  /* ─── v4: דפים ציבוריים (סוגי אירועים, מדריכים, מידע משפטי, אולמות) באותה שפה של דף הבית ─── */
+  .lp main section[id]{scroll-margin-top:84px}
+  .lp-phero{position:relative;z-index:1;overflow:hidden;isolation:isolate;padding:150px 6vw 96px;border-radius:0 0 56px 56px;background:#1E1233;color:#fff}
+  .lp-phero-tint{position:absolute;inset:0;background:radial-gradient(900px 520px at 85% 0%,rgba(155,107,255,.42),transparent 62%),radial-gradient(760px 520px at 0% 100%,rgba(240,96,158,.28),transparent 62%)}
+  .lp-phero.has-img .lp-phero-tint{background:linear-gradient(200deg,rgba(38,20,74,.86) 0%,rgba(70,38,122,.76) 55%,rgba(150,50,120,.66) 100%)}
+  .lp-phero-in{position:relative;z-index:2;max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:5vw}
+  .lp-phero-copy{flex:1;min-width:0}
+  .lp-phero-h1{font-size:clamp(34px,5vw,64px);line-height:1.08;margin-bottom:18px}
+  .lp-phero-lead{font-size:clamp(17px,1.5vw,20px);line-height:1.7;color:#EFE8F7;max-width:56ch;margin-bottom:28px}
+  .lp-phero-aside{flex:0 0 min(500px,46%)}
+  .lp-crumbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px;font-weight:700;color:#D9CFEA;margin-bottom:18px}
+  .lp-crumbs a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  .lp-hmeta{display:flex;gap:10px;flex-wrap:wrap}
+  .lp-hmeta span{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:700}
+  @media(max-width:960px){.lp-phero{padding:120px 5vw 70px;border-radius:0 0 36px 36px}.lp-phero-in{flex-direction:column;align-items:stretch}.lp-phero-aside{flex:none;width:100%;max-width:540px;margin:0 auto}}
+  .lp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+  .lp-pcard2{background:#fff;border-radius:28px;padding:24px 24px 26px;box-shadow:0 18px 44px -28px rgba(91,60,140,.4);display:flex;flex-direction:column;gap:10px;color:#2B1D3F;text-decoration:none}
+  .lp-pcard2 h3{font-size:20px;font-weight:900;line-height:1.3}
+  .lp-pcard2 p{font-size:16px;line-height:1.65;color:#3E3555}
+  .lp-emo{width:54px;height:54px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:25px;flex-shrink:0}
+  .lp-guides{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+  .lp-guides3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lp-gcard{display:flex;flex-direction:column;gap:10px;background:#fff;border-radius:28px;padding:24px;color:#2B1D3F;text-decoration:none;box-shadow:0 18px 44px -28px rgba(91,60,140,.4)}
+  .lp-gcard h2,.lp-gcard h3{font-size:19px;font-weight:900;line-height:1.35}
+  .lp-gcard p{font-size:15.5px;line-height:1.65;color:#3E3555}
+  .lp-gmeta{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;color:#5F5675}
+  .lp-gfeat{grid-column:span 2;background:linear-gradient(150deg,#2E1A55,#4A2C8F 55%,#8A3FA8);color:#fff}
+  .lp-gfeat h2{font-size:clamp(24px,2.4vw,32px)}
+  .lp-gfeat p{color:#E9E2F3;font-size:17px;max-width:46ch}
+  .lp-gfeat .lp-gmeta{color:#E2DAEE}
+  .lp-gfeat .lp-emo{background:rgba(255,255,255,.14)!important}
+  .lp-gfeat .lp-go{background:rgba(255,255,255,.2)}
+  @media(hover:hover) and (pointer:fine){.lp-gcard:hover .lp-go{transform:translateX(-3px)}}
+  .lp-gcard:focus-visible,.lp-chips a:focus-visible,.lp-toc a:focus-visible,.lp-tabs a:focus-visible,.lp-crumbs a:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  @media(max-width:1100px){.lp-guides,.lp-guides3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:640px){.lp-guides,.lp-guides3{grid-template-columns:1fr}.lp-gfeat{grid-column:auto}}
+  .lp-doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;align-items:start;max-width:1120px;margin:0 auto}
+  .lp-doc.one{grid-template-columns:minmax(0,1fr);max-width:860px}
+  .lp-toc{position:sticky;top:100px;font-size:14px}
+  .lp-toc b{display:block;font-size:14px;font-weight:900;color:#2B1D3F;margin-bottom:12px}
+  .lp-toc ol{list-style:none;margin:0;padding:0;border-right:2px solid #E6DDF0}
+  .lp-toc a{display:block;padding:8px 14px 8px 0;margin-right:-2px;border-right:2px solid transparent;color:#5F5675;text-decoration:none;line-height:1.45;transition:color 200ms ease,border-color 200ms ease}
+  .lp-toc a.on{color:#2B1D3F;font-weight:800;border-right-color:#F0609E}
+  @media(hover:hover) and (pointer:fine){.lp-toc a:hover{color:#2B1D3F}}
+  .lp-prose{background:#fff;border-radius:32px;padding:44px 48px;box-shadow:0 18px 44px -28px rgba(91,60,140,.35)}
+  .lp-prose section{margin-bottom:34px}
+  .lp-prose section:last-of-type{margin-bottom:24px}
+  .lp-prose h2{font-size:clamp(21px,2vw,26px);font-weight:900;line-height:1.3;margin-bottom:12px;color:#2B1D3F}
+  .lp-prose p{font-size:17px;line-height:1.9;color:#3E3555;white-space:pre-line}
+  .lp-prose p a{color:#4A2C8F;font-weight:700}
+  @media(max-width:960px){.lp-doc{grid-template-columns:1fr}.lp-toc{display:none}.lp-prose{padding:28px 22px;border-radius:26px}}
+  .lp-tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .lp-tabs a{min-height:44px;display:inline-flex;align-items:center;padding:0 18px;border-radius:999px;font-weight:800;font-size:15px;text-decoration:none;color:#fff;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.35);transition:background-color 200ms ease,color 200ms ease}
+  .lp-tabs a[aria-current="page"]{background:#fff;color:#2B1D3F;border-color:#fff}
+  @media(hover:hover) and (pointer:fine){.lp-tabs a:not([aria-current]):hover{background:rgba(255,255,255,.22)}}
+  .lp-chips{display:flex;gap:10px;flex-wrap:wrap}
+  .lp-chips a{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border-radius:999px;background:#fff;color:#2B1D3F;font-weight:800;font-size:15px;text-decoration:none;box-shadow:0 10px 24px -18px rgba(91,60,140,.55);transition:translate 250ms var(--ease-out),box-shadow 250ms var(--ease-out)}
+  @media(hover:hover) and (pointer:fine){.lp-chips a:hover{translate:0 -3px;box-shadow:0 16px 30px -18px rgba(91,60,140,.6)}}
+  .lp-h3x{font-size:clamp(22px,2.2vw,28px);font-weight:900;margin-bottom:16px}
+  .lp-steps3{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  .lp-stepnum{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#fff;background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)}
+  @media(max-width:860px){.lp-steps3{grid-template-columns:1fr}}
+  .lp-contact-box{margin-top:8px;padding:18px 22px;border-radius:22px;background:#F4EEFF;color:#2B1D3F;font-weight:700;font-size:15px;display:flex;gap:8px 18px;flex-wrap:wrap}
+  .lp-contact-box a{color:#4A2C8F}
+  .lp-ctanote{font-size:15px;margin-top:18px;color:#F1EAF8}
+  /* קישורים שנראים ככפתור או ככרטיס: הצבע שלהם, לא של הטקסט שמסביב (.lp a יורש צבע) */
+  .lp a.lp-white,.lp a.lp-ghost{color:#2B1D3F}
+  .lp a.lp-primary,.lp a.lp-glass-btn{color:#fff}
+  .lp a.lp-gcard,.lp a.lp-pcard2{color:#2B1D3F}
+  .lp a.lp-gcard.lp-gfeat{color:#fff}
+  .lp-phero-in.has-aside .lp-phero-h1{font-size:clamp(32px,4vw,54px)}
 `;
 
 // אייקונים בקו דק (בסגנון אחיד במקום אימוג'י)
@@ -1921,23 +1974,224 @@ const goLanding=(id,auth)=>{
   const url="/"+(id?"#"+id:"");
   if(window.location.pathname==="/"){history.replaceState(null,"",url);window.location.reload();}else window.location.href=url;
 };
-function SiteNav() {
-  const link=(id,l)=><a key={id} href={"/#"+id} className="lp-nav-link" onClick={e=>{e.preventDefault();goLanding(id);}}>{l}</a>;
-  return(<>
-    <style>{LANDING_CSS}</style>
-    <nav dir="rtl" style={{position:"sticky",top:0,zIndex:100,height:70,display:"flex",alignItems:"center",padding:"0 5vw",gap:14,fontFamily:"'Heebo',sans-serif",color:LP.ink,
-      background:"rgba(255,251,247,.97)",borderBottom:"1px solid #F0E8F4",boxShadow:"0 6px 24px -14px rgba(91,60,140,.25)"}}>
-      <a href="/" onClick={e=>{e.preventDefault();goLanding();}} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:LP.ink}}>
-        <SidorLogo size={40} id="navLogo"/>
-        <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
-      </a>
-      <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:18}}>{LANDING_SECTIONS.map(([id,l])=>link(id,l))}</div>
-      <div style={{flex:1}}/>
-      <button className="lp-btn lp-ghost lp-navbtn" onClick={()=>goLanding(null,"login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
-      <button className="lp-btn lp-primary lp-navbtn" onClick={()=>goLanding(null,"register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
-    </nav>
-  </>);
+// ─── דפים ציבוריים (סוגי אירועים, מדריכים, מידע משפטי, אולמות): אותה שפה, תפריט, תחתית ותנועה של דף הבית ───
+// הקישורים למקטעי דף הבית עוברים דרך goLanding (כדי שגם משתמש מחובר יראה את דף הבית)
+const WA_SVG_D="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z";
+const LP_WA="https://wa.me/972526817102";
+const LpWaFab=()=>(
+  <a href={LP_WA} target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
+    className="lp-wa-fab" style={{position:"fixed",bottom:20,left:20,background:"#0F7F40",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d={WA_SVG_D}/></svg>
+    <span className="lp-lg">לחץ לצ'אט</span>
+  </a>
+);
+// כותרת מקטע (כמו בדף הבית)
+const LpTitle=({title,accent,sub,dark=false,mb=52})=>(
+  <div data-reveal style={{marginBottom:mb,maxWidth:820}}>
+    <h2 className="lp-h2" style={dark?{color:LP.cream}:undefined}>{title} {accent&&<span className={dark?"lp-grad-light":"lp-grad"}>{accent}</span>}</h2>
+    {sub&&<p className="lp-sec-sub" style={dark?{color:"#E2DAEE"}:undefined}>{sub}</p>}
+  </div>
+);
+// פתיחה של דף פנימי: רקע כהה עם אורות רכים (ותמונה, אם יש), כותרת שעולה, ומה שצריך מתחתיה
+function PageHero({ crumbs, title, lead, img, aside, children }) {
+  return(
+    <section id="top" className={`lp-phero${img?" has-img":""}`}>
+      <div className="lp-hero-bg" aria-hidden="true">
+        {img&&<img className="lp-kb" src={img} alt=""/>}
+        <div className="lp-phero-tint"/>
+        <LpBokeh n={8}/>
+      </div>
+      <StringLights/>
+      <div className={`lp-phero-in${aside?" has-aside":""}`}>
+        <div className="lp-phero-copy">
+          {crumbs&&<nav aria-label="פירורי לחם" className="lp-crumbs lp-rise" style={{"--d":".05s"}}>{crumbs}</nav>}
+          <h1 className="lp-h1 lp-phero-h1"><span className="lp-line"><span style={{"--d":".12s"}}>{title}</span></span></h1>
+          {lead&&<p className="lp-phero-lead lp-rise" style={{"--d":".34s"}}>{lead}</p>}
+          {children&&<div className="lp-rise" style={{"--d":".46s"}}>{children}</div>}
+        </div>
+        {aside&&<div className="lp-phero-aside lp-rise-side" style={{"--d":".3s"}}>{aside}</div>}
+      </div>
+    </section>
+  );
 }
+// פס הסיום עם תמונה: כפתור ראשי + וואטסאפ
+function LpCtaBand({ title, text, primary, secondary, note }) {
+  const sec=secondary||{href:LP_WA,label:"דברו איתנו בוואטסאפ",external:true};
+  const ext=x=>x.external?{target:"_blank",rel:"noopener noreferrer"}:{};
+  return(
+    <section className="lp-cta3" aria-label={title}>
+      <img className="lp-kb" src="https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=1600&q=65&auto=format&fit=crop" alt="" loading="lazy"/>
+      <div className="lp-cta-tint" aria-hidden="true"/>
+      <LpBokeh n={7}/>
+      <div className="lp-wrap" style={{position:"relative"}}>
+        <h2 data-reveal style={{fontSize:"clamp(32px,5vw,64px)",fontWeight:900,marginBottom:14,letterSpacing:"-.025em",lineHeight:1.08}}>{title}</h2>
+        {text&&<p data-reveal style={{"--d":".08s",fontSize:19,marginBottom:32,lineHeight:1.65,maxWidth:"48ch"}}>{text}</p>}
+        <div data-reveal style={{"--d":".16s",display:"flex",gap:14,flexWrap:"wrap"}}>
+          <a href={primary.href} onClick={primary.onClick} {...ext(primary)} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:60}}>{primary.label}<LpGo/></a>
+          <a href={sec.href} {...ext(sec)} className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>{sec.label}</a>
+        </div>
+        {note&&<div className="lp-ctanote" data-reveal style={{"--d":".2s"}}>{note}</div>}
+      </div>
+    </section>
+  );
+}
+// תוכן העניינים של מדריך או מסמך: נדבק בצד, והחלק שקוראים עכשיו מסומן. לא משנה את הכתובת (חשוב בדפים שנפתחים עם #)
+function LpToc({ items, label="בדף הזה" }) {
+  const [on,setOn]=useState(items[0]?.id);
+  const key=items.map(i=>i.id).join();
+  useEffect(()=>{
+    setOn(items[0]?.id);
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setOn(e.target.id);}),{rootMargin:"-10% 0px -80% 0px"});
+    items.forEach(it=>{const el=document.getElementById(it.id);if(el)io.observe(el);});
+    return()=>io.disconnect();
+  },[key]);
+  const go=id=>e=>{e.preventDefault();setOn(id);document.getElementById(id)?.scrollIntoView({behavior:lpMotionOK()?"smooth":"auto",block:"start"});};
+  return(
+    <nav className="lp-toc" aria-label={label}>
+      <b>{label}</b>
+      <ol>{items.map(it=><li key={it.id}><a href={"#"+it.id} className={on===it.id?"on":undefined} aria-current={on===it.id?"location":undefined} onClick={go(it.id)}>{it.label}</a></li>)}</ol>
+    </nav>
+  );
+}
+// תחתית האתר — אחת לכל הדפים. בדף הבית הקישורים למקטעים הם עוגנים רגילים, בשאר הדפים עוברים לדף הבית
+function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
+  const sec=(id,label)=>({href:home?"#"+id:"/#"+id,label,onClick:home?undefined:e=>{e.preventDefault();goLanding(id);}});
+  const lg=(h,label)=>({href:home?h:"/"+h,label});
+  const legal=[lg("#/terms","תנאי שימוש"),lg("#/privacy","מדיניות פרטיות"),lg("#/accessibility","הצהרת נגישות"),lg("#/cancel","ביטול עסקה")];
+  const cols=[
+    ["האתר",[sec("how","איך זה עובד"),sec("features","יכולות"),sec("events","סוגי אירועים"),sec("pricing","מחירים וחבילות"),{href:"/guides",label:"מדריכים וטיפים"},sec("contact","צור קשר")]],
+    ["שירות",[{label:loggedIn?"האירועים שלי":"כניסה לחשבון",btn:()=>onAuth("login")},{label:"הרשמה חינם",btn:()=>onAuth("register")},{label:"כניסת מפיקים",btn:()=>onAuth("producer")},{label:"הצטרפות ספקים",btn:()=>onAuth("vendor")},{label:"לאולמות ומפיקים",btn:onVenue}]],
+    ["לפי אירוע",EVENT_LANDINGS.map(x=>({href:`/events/${x.slug}`,label:x.nav}))],
+    ["מידע משפטי",legal],
+  ];
+  return(
+    <footer style={{borderTop:"1px solid #EFE6F5",padding:"48px 6vw 0",background:"#F8F3FF",overflow:"hidden"}}>
+      <div style={{maxWidth:1120,margin:"0 auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:40,marginBottom:40}}>
+          <div style={{maxWidth:320}}>
+            <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:14}}>
+              <SidorLogo size={34} id="lpFootLogo"/>
+              <span style={{fontWeight:900,fontSize:18}}>Sidor-IL</span>
+            </div>
+            <p style={{fontSize:14,color:LP.muted,lineHeight:1.8}}>פלטפורמה ישראלית לסידורי הושבה חכמים, אישורי הגעה והזמנות דיגיטליות. בנויה עבור זוגות, משפחות ומפיקי אירועים.</p>
+            <InstallAppButton style={{marginTop:14,minHeight:44}}/>
+          </div>
+          {/* מפת אתר */}
+          <nav aria-label="מפת אתר" className="lp-foot" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
+            {cols.map(([head,links])=>(
+              <div key={head}>
+                <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>{head}</div>
+                <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:9,fontSize:14}}>
+                  {links.map(l=>(
+                    <li key={l.label}>{l.btn
+                      ?<button onClick={l.btn} style={{background:"none",border:"none",padding:0,color:LP.muted,fontSize:14,fontFamily:"inherit",cursor:"pointer",textAlign:"right"}}>{l.label}</button>
+                      :<a href={l.href} onClick={l.onClick} style={{color:LP.muted,textDecoration:"none"}}>{l.label}</a>}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <div>
+              <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
+              <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><LpIcon name="pin" color={LP.rose} size={18}/>השושנים 30, נוף הגליל</div>
+                <a href={LP_WA} target="_blank" rel="noopener noreferrer" style={{color:"#167A3E",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#167A3E" size={18}/>WhatsApp</a>
+                <a href="tel:0526817102" style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>052-681-7102</a>
+                <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}><LpIcon name="mail" color={LP.coral} size={18}/>sidoril2026@gmail.com</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+        <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
+          <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
+          <span className="lp-foot" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+            {legal.map(l=><a key={l.label} href={l.href} style={{textDecoration:"none"}}>{l.label}</a>)}
+            <button type="button" onClick={openCookieSettings} style={{background:"none",border:"none",padding:0,font:"inherit",color:"inherit",cursor:"pointer"}}>הגדרות עוגיות</button>
+          </span>
+          <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
+        </div>
+        <div className="lp-wordmark" aria-hidden="true" data-reveal>Sidor-IL</div>
+      </div>
+    </footer>
+  );
+}
+// מעטפת לכל דף ציבורי: התפריט הצף, תפריט הנייד, התוכן, התחתית וכפתור הוואטסאפ
+function PublicPage({ pageKey, children }) {
+  const [scrolled,setScrolled]=useState(false),[off,setOff]=useState(false),[menu,setMenu]=useState(false);
+  const [motion]=useState(lpMotionOK);
+  const rootRef=useRef(null),menuRef=useRef(null),burgerRef=useRef(null);
+  useEffect(()=>{
+    const fn=()=>{setScrolled(window.scrollY>40);setOff(window.scrollY>window.innerHeight*.7);};
+    fn();
+    window.addEventListener("scroll",fn,{passive:true});
+    return()=>window.removeEventListener("scroll",fn);
+  },[]);
+  useLpReveal(rootRef,pageKey);
+  useEffect(()=>{
+    if(!menu)return;
+    document.body.style.overflow="hidden";
+    const t=setTimeout(()=>menuRef.current?.querySelector("a,button")?.focus(),80);
+    const esc=e=>{if(e.key==="Escape")setMenu(false);};
+    window.addEventListener("keydown",esc);
+    return()=>{clearTimeout(t);document.body.style.overflow="";window.removeEventListener("keydown",esc);burgerRef.current?.focus({preventScroll:true});};
+  },[menu]);
+  const trapTab=e=>{
+    if(e.key!=="Tab"||!menuRef.current)return;
+    const f=[...menuRef.current.querySelectorAll("a,button")];if(!f.length)return;
+    const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  };
+  const toHome=id=>e=>{e.preventDefault();setMenu(false);goLanding(id||undefined);};
+  const auth=m=>()=>{setMenu(false);goLanding(null,m);};
+  return(
+    <div ref={rootRef} className={`lp${motion?" lp-motion":""}${off?" lp-hero-off":""}`} dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:LP.cream,color:LP.ink,minHeight:"100vh",overflowX:"hidden"}}>
+      <style>{LANDING_CSS}</style>
+      <a href="#main" className="lp-skip" onClick={e=>{e.preventDefault();document.getElementById("main")?.focus();}}>דלג לתוכן הראשי</a>
+      <nav className={`lp-nav${scrolled?"":" lp-nav-top"}`} style={{position:"fixed",top:12,right:"3vw",left:"3vw",zIndex:100,height:64,display:"flex",alignItems:"center",padding:"0 18px 0 12px",gap:12,borderRadius:100,
+        backgroundColor:scrolled?"rgba(255,255,255,.97)":"rgba(255,255,255,0)",boxShadow:scrolled?"0 16px 40px -20px rgba(60,35,110,.45)":"0 0 0 rgba(0,0,0,0)"}}>
+        <a href="/" onClick={toHome(null)} style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none",flexShrink:0,color:scrolled?LP.ink:"#fff"}}>
+          <SidorLogo size={40} id="navLogo"/>
+          <span style={{fontWeight:900,fontSize:21,letterSpacing:"-.02em"}}>Sidor-IL</span>
+        </a>
+        <div className="lp-hide-sm" style={{display:"flex",gap:2,marginRight:14}}>
+          {LP_NAV.map(([id,l])=><a key={id} href={"/#"+id} className="lp-nav-link" onClick={toHome(id)}>{l}</a>)}
+        </div>
+        <div style={{flex:1}}/>
+        <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={auth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
+        <button className={`lp-btn lp-navbtn ${scrolled?"lp-ghost":"lp-glass-btn"}`} onClick={auth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
+        <button className={`lp-btn lp-navbtn lp-hide-xs ${scrolled?"lp-primary":"lp-white"}`} onClick={auth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+        <button ref={burgerRef} type="button" className="lp-burger" aria-label="פתיחת התפריט" aria-expanded={menu} aria-controls="lp-menu" onClick={()=>setMenu(true)}><span/><span/><span/></button>
+      </nav>
+      <div className={`lp-menu${menu?" open":""}`} onClick={e=>{if(e.target===e.currentTarget)setMenu(false);}}>
+        <div id="lp-menu" ref={menuRef} className="lp-menu-sheet" role="dialog" aria-modal="true" aria-label="תפריט האתר" onKeyDown={trapTab}>
+          <div className="lp-menu-head">
+            <span style={{display:"flex",alignItems:"center",gap:10,fontWeight:900,fontSize:20}}><SidorLogo size={36} id="pubMenuLogo"/>Sidor-IL</span>
+            <button type="button" className="lp-menu-x" aria-label="סגירת התפריט" onClick={()=>setMenu(false)}>✕</button>
+          </div>
+          <ul>
+            {LP_NAV.map(([id,l],i)=>(
+              <li key={id} style={{"--d":`${(.08+i*.05).toFixed(2)}s`}}><a href={"/#"+id} onClick={toHome(id)}>{l}</a></li>
+            ))}
+            <li style={{"--d":".33s"}}><a href="/guides">מדריכים וטיפים</a></li>
+          </ul>
+          <div className="lp-menu-cta">
+            <button type="button" className="lp-btn lp-primary" onClick={auth("register")}>התחילו להושיב</button>
+            <button type="button" className="lp-btn lp-ghost" onClick={auth("login")}>כניסה לחשבון</button>
+          </div>
+          <div className="lp-menu-more">
+            <button type="button" className="lp-hero-link" onClick={auth("producer")}>כניסת מפיקים</button>
+            <button type="button" className="lp-hero-link" onClick={auth("vendor")}>ספקים: הצטרפות</button>
+          </div>
+        </div>
+      </div>
+      <main id="main" tabIndex={-1} style={{outline:"none"}}>{children}</main>
+      <SiteFooter onAuth={m=>goLanding(null,m)} onVenue={()=>goLanding(null,"venue")}/>
+      <LpWaFab/>
+    </div>
+  );
+}
+const LpHomeCrumb=({onClick})=><a href="/" onClick={e=>{e.preventDefault();onClick?onClick():goLanding();}}>דף הבית</a>;
+const LP_SEP=<span aria-hidden="true">›</span>;
 
 // ─── דף הבית: מערכת התנועה ───
 // אלמנטים עם data-reveal נכנסים בעדינות כשמגיעים אליהם (פעם אחת), ולולאות דקורטיביות (data-loop) רצות רק כשהן על המסך.
@@ -2132,6 +2386,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   // הגעה מהבר שבדפים הפנימיים: גלילה למקטע (#how...) ופתיחת כניסה/הרשמה אם נבחרה
   useEffect(()=>{
     let auth=null;try{auth=sessionStorage.getItem("sidor_open_auth");sessionStorage.removeItem("sidor_open_auth");}catch{}
+    // "לאולמות ומפיקים" מהתחתית של דף פנימי פותח כאן את דף האולמות
+    if(auth==="venue"){setVenuePage(true);return;}
     if(auth){onOpenAuth(auth);return;}
     const id=window.location.hash.slice(1);
     if(/^[a-z]+$/.test(id))setTimeout(()=>document.getElementById(id)?.scrollIntoView(),120);
@@ -2572,62 +2828,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </section>
 
-      {/* ─── FOOTER ──────────────────────────────────────────────── */}
-      <footer style={{borderTop:"1px solid #EFE6F5",padding:"48px 6vw 0",background:"#F8F3FF",overflow:"hidden"}}>
-        <div style={{maxWidth:1120,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:40,marginBottom:40}}>
-            <div style={{maxWidth:320}}>
-              <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:14}}>
-                <SidorLogo size={34} id="lpFootLogo"/>
-                <span style={{fontWeight:900,fontSize:18}}>Sidor-IL</span>
-              </div>
-              <p style={{fontSize:14,color:LP.muted,lineHeight:1.8}}>פלטפורמה ישראלית לסידורי הושבה חכמים, אישורי הגעה והזמנות דיגיטליות. בנויה עבור זוגות, משפחות ומפיקי אירועים.</p>
-              <InstallAppButton style={{marginTop:14,minHeight:44}}/>
-            </div>
-            {/* מפת אתר */}
-            <nav aria-label="מפת אתר" className="lp-foot" style={{display:"flex",gap:"28px 48px",flexWrap:"wrap"}}>
-              {[
-                ["האתר",[["#how","איך זה עובד"],["#features","יכולות"],["#events","סוגי אירועים"],["#pricing","מחירים וחבילות"],["/guides","מדריכים וטיפים"],["#contact","צור קשר"]]],
-                ["שירות",[[null,loggedIn?"האירועים שלי":"כניסה לחשבון",()=>onOpenAuth("login")],[null,"הרשמה חינם",()=>onOpenAuth("register")],[null,"כניסת מפיקים",()=>onOpenAuth("producer")],[null,"הצטרפות ספקים",()=>onOpenAuth("vendor")],[null,"לאולמות ומפיקים",()=>setVenuePage(true)]]],
-                ["לפי אירוע",EVENT_LANDINGS.map(x=>[`/events/${x.slug}`,x.nav])],
-                ["מידע משפטי",[["#/terms","תנאי שימוש"],["#/privacy","מדיניות פרטיות"],["#/accessibility","הצהרת נגישות"],["#/cancel","ביטול עסקה"]]],
-              ].map(([head,links])=>(
-                <div key={head}>
-                  <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>{head}</div>
-                  <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:9,fontSize:14}}>
-                    {links.map(([href,label,onClick])=>(
-                      <li key={label}>{href
-                        ?<a href={href} style={{color:LP.muted,textDecoration:"none"}}>{label}</a>
-                        :<button onClick={onClick} style={{background:"none",border:"none",padding:0,color:LP.muted,fontSize:14,fontFamily:"inherit",cursor:"pointer",textAlign:"right"}}>{label}</button>}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-              <div>
-                <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
-                <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><LpIcon name="pin" color={LP.rose} size={18}/>השושנים 30, נוף הגליל</div>
-                  <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" style={{color:"#167A3E",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#167A3E" size={18}/>WhatsApp</a>
-                  <a href="tel:0526817102" style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>052-681-7102</a>
-                  <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}><LpIcon name="mail" color={LP.coral} size={18}/>sidoril2026@gmail.com</a>
-                </div>
-              </div>
-            </nav>
-          </div>
-          <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
-            <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
-            <span className="lp-foot" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-              <a href="#/terms" style={{textDecoration:"none"}}>תנאי שימוש</a>
-              <a href="#/privacy" style={{textDecoration:"none"}}>מדיניות פרטיות</a>
-              <a href="#/accessibility" style={{textDecoration:"none"}}>הצהרת נגישות</a>
-              <a href="#/cancel" style={{textDecoration:"none"}}>ביטול עסקה</a>
-              <button type="button" onClick={openCookieSettings} style={{background:"none",border:"none",padding:0,font:"inherit",color:"inherit",cursor:"pointer"}}>הגדרות עוגיות</button>
-            </span>
-            <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
-          </div>
-          <div className="lp-wordmark" aria-hidden="true" data-reveal>Sidor-IL</div>
-        </div>
-      </footer>
+      {/* ─── FOOTER ─── */}
+      <SiteFooter home onAuth={onOpenAuth} onVenue={()=>setVenuePage(true)} loggedIn={loggedIn}/>
 
       {/* כפתור הרשמה דביק — נייד בלבד, אחרי הפתיחה */}
       <div className={`lp-sticky${pastHero?" on":""}`} aria-hidden={!pastHero}>
@@ -11951,32 +12153,39 @@ function CookieNotice() {
 function LegalPage({ kind }) {
   const page=LEGAL_PAGES[kind]||LEGAL_PAGES.privacy;
   useEffect(()=>{window.scrollTo(0,0);document.title=`${page.title} · Sidor-IL`;return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";};},[kind]);
-  const linkify=t=>t.split(/(https?:\/\/\S+|[\w.+-]+@[\w-]+\.[\w.]+)/g).map((p,i)=>/^https?:\/\//.test(p)?<a key={i} href={p} target="_blank" rel="noopener noreferrer" style={{color:C.blue}}>{p}</a>:/@/.test(p)&&/^[\w.+-]+@/.test(p)?<a key={i} href={"mailto:"+p} style={{color:C.blue}}>{p}</a>:p);
+  const linkify=t=>t.split(/(https?:\/\/\S+|[\w.+-]+@[\w-]+\.[\w.]+)/g).map((p,i)=>/^https?:\/\//.test(p)?<a key={i} href={p} target="_blank" rel="noopener noreferrer">{p}</a>:/@/.test(p)&&/^[\w.+-]+@/.test(p)?<a key={i} href={"mailto:"+p}>{p}</a>:p);
+  const toc=page.sections.map((s,i)=>({id:"l"+(i+1),label:s.title}));
+  const withToc=toc.length>2;
   return(
-    <div dir="rtl" lang="he" style={{fontFamily:"'Heebo',sans-serif",background:"#f9f9f9",minHeight:"100vh"}}>
-      <SiteNav/>
-      <header style={{background:"#fff",borderBottom:"1px solid #eee",padding:"12px 6vw",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-        <nav aria-label="מידע משפטי" style={{display:"flex",gap:14,fontSize:13,flexWrap:"wrap"}}>
+    <PublicPage pageKey={kind}>
+      <PageHero crumbs={<><LpHomeCrumb/>{LP_SEP}<span>מידע משפטי</span></>} title={page.title} lead={`עדכון אחרון: ${page.updated}`}>
+        <nav aria-label="מידע משפטי" className="lp-tabs">
           {Object.entries(LEGAL_ROUTES).map(([h,k])=>(
-            <a key={k} href={h} aria-current={k===kind?"page":undefined} style={{color:k===kind?"#1a1a1a":C.muted,fontWeight:k===kind?800:600,textDecoration:"none"}}>{LEGAL_PAGES[k].title}</a>
+            <a key={k} href={h} aria-current={k===kind?"page":undefined}>{LEGAL_PAGES[k].title}</a>
           ))}
         </nav>
-      </header>
-      <main style={{maxWidth:800,margin:"0 auto",padding:"48px 24px 80px"}}>
-        <h1 style={{fontSize:28,fontWeight:900,color:"#1a1a1a",marginBottom:8}}>{page.title}</h1>
-        <p style={{fontSize:13,color:"#5F5675",marginBottom:40}}>עדכון אחרון: {page.updated}</p>
-        {page.sections.map(({title,text})=>(
-          <section key={title} style={{marginBottom:32}}>
-            <h2 style={{fontSize:17,fontWeight:900,color:"#1a1a1a",marginBottom:10,borderRight:"3px solid "+C.blue,paddingRight:12}}>{title}</h2>
-            <p style={{fontSize:14,color:"#444",lineHeight:1.9,whiteSpace:"pre-line"}}>{linkify(text)}</p>
-            {kind==="privacy"&&title.startsWith("9.")&&<button type="button" onClick={openCookieSettings} className="sx-btn" style={{marginTop:10,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"9px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>שינוי הבחירה (הגדרות עוגיות)</button>}
-          </section>
-        ))}
-        <div style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 20px",marginTop:40,fontSize:13,color:C.blue,fontWeight:700}}>
-          📧 לשאלות: <a href="mailto:sidoril2026@gmail.com" style={{color:C.blue}}>sidoril2026@gmail.com</a> | 📞 <a href="tel:0526817102" style={{color:C.blue}}>052-681-7102</a>
+      </PageHero>
+      <section className="lp-sec">
+        <div className={`lp-doc${withToc?"":" one"}`}>
+          {withToc&&<LpToc items={toc}/>}
+          <article className="lp-prose" data-reveal>
+            {page.sections.map(({title,text},i)=>(
+              <section key={title} id={"l"+(i+1)}>
+                <h2>{title}</h2>
+                <p>{linkify(text)}</p>
+                {kind==="privacy"&&title.startsWith("9.")&&<button type="button" onClick={openCookieSettings} className="lp-btn lp-ghost" style={{marginTop:14,padding:"10px 20px",fontSize:15}}>שינוי הבחירה (הגדרות עוגיות)</button>}
+              </section>
+            ))}
+            <div className="lp-contact-box">
+              <span>לשאלות:</span>
+              <a href="mailto:sidoril2026@gmail.com">sidoril2026@gmail.com</a>
+              <a href="tel:0526817102">052-681-7102</a>
+              <a href={LP_WA} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            </div>
+          </article>
         </div>
-      </main>
-    </div>
+      </section>
+    </PublicPage>
   );
 }
 
@@ -12041,6 +12250,19 @@ const GUIDES=[
     {h:"לעשות את זה פשוט",p:"ב-Sidor-IL פותחים אירוע בר/בת מצווה, מייבאים את הרשימה, שולחים הזמנה עם קישור לאישור הגעה, ומושיבים על מפת האולם. ההושבה האוטומטית יודעת להפריד בין קבוצות, כמו ילדים ומבוגרים."},
   ]},
 ];
+// זמן קריאה משוער (כ-180 מילים לדקה)
+const guideMinutes=g=>Math.max(2,Math.round(g.sections.reduce((n,s)=>n+(s.h+" "+s.p).split(/\s+/).length,0)/180));
+const LP_TINTS=["#FFEFF5","#F1EAFF","#E9FBF4","#FFF6E5","#EAF4FF","#FFF0E8","#F4EEFF"];
+function GuideCard({ g, i=0, feat=false, H="h2" }) {
+  return(
+    <a href={`/guides/${g.slug}`} className={`lp-gcard lp-lift${feat?" lp-gfeat":""}`} data-reveal style={{"--d":`${(i%4*.07).toFixed(2)}s`}}>
+      <span className="lp-emo" style={{background:LP_TINTS[i%LP_TINTS.length]}} aria-hidden="true">{g.icon}</span>
+      <H>{g.title}</H>
+      <p>{g.desc}</p>
+      <span className="lp-gmeta"><span>{guideMinutes(g)} דקות קריאה</span><LpGo/></span>
+    </a>
+  );
+}
 function GuidesPage({ slug }) {
   const g=slug?GUIDES.find(x=>x.slug===slug):null;
   useEffect(()=>{
@@ -12052,56 +12274,60 @@ function GuidesPage({ slug }) {
     const c=document.querySelector('link[rel="canonical"]'),oldC=c?.getAttribute("href");c?.setAttribute("href",`https://www.sidoril.com/guides${g?"/"+g.slug:""}`);
     return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";if(old)m.setAttribute("content",old);if(oldC)c.setAttribute("href",oldC);};
   },[slug]);
-  const wrap={fontFamily:"'Heebo',sans-serif",background:"#FBF7FC",minHeight:"100vh",color:"#2B1D3F"};
-  const header=<SeoHeader/>;
-  const cta=(
-    <div style={{background:GRAD,borderRadius:20,padding:"24px 22px",color:"#fff",textAlign:"center",marginTop:36}}>
-      <div style={{fontSize:20,fontWeight:900,marginBottom:6}}>מתכננים אירוע?</div>
-      <div style={{fontSize:14,opacity:.92,marginBottom:14}}>סידור הושבה, אישורי הגעה, משימות ותקציב, הכל במקום אחד. בחינם להתחלה.</div>
-      <a href="/" style={{display:"inline-block",background:"#fff",color:"#9147D6",borderRadius:12,padding:"11px 24px",fontSize:15,fontWeight:900,textDecoration:"none"}}>פתחו אירוע ב-Sidor-IL ←</a>
-    </div>
+  const cta=<LpCtaBand title="מתכננים אירוע?" text="סידור הושבה, אישורי הגעה, משימות ותקציב, הכל במקום אחד. בחינם להתחלה."
+    primary={{href:"/",label:"פתחו אירוע ב-Sidor-IL",onClick:e=>{e.preventDefault();goLanding(null,"register");}}}/>;
+  if(slug&&!g)return(
+    <PublicPage pageKey="guide-404">
+      <PageHero crumbs={<><LpHomeCrumb/>{LP_SEP}<a href="/guides">מדריכים</a></>} title="המדריך לא נמצא" lead="אולי הקישור השתנה. כל המדריכים מחכים לכם כאן.">
+        <a href="/guides" className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>לכל המדריכים<LpGo/></a>
+      </PageHero>
+      <div style={{height:80}}/>
+    </PublicPage>
   );
-  if(slug&&!g)return(<div dir="rtl" lang="he" style={wrap}>{header}<main style={{maxWidth:760,margin:"0 auto",padding:"60px 24px",textAlign:"center"}}><h1 style={{fontSize:24}}>המדריך לא נמצא</h1><a href="/guides" style={{color:C.blue,fontWeight:800}}>לכל המדריכים</a></main></div>);
   if(!g)return(
-    <div dir="rtl" lang="he" style={wrap}>{header}
-      <main style={{maxWidth:900,margin:"0 auto",padding:"40px 24px 80px"}}>
-        <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 8px"}}>מדריכים לתכנון אירוע</h1>
-        <p style={{fontSize:15,color:C.muted,margin:"0 0 28px"}}>טיפים מעשיים לחתונה, בר/בת מצווה, ברית וכל אירוע: מה לעשות, מתי, ואיך לחסוך כאב ראש.</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:16}}>
-          {GUIDES.map(x=>(
-            <a key={x.slug} href={`/guides/${x.slug}`} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:18,padding:20,textDecoration:"none",color:"inherit",boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"}}>
-              <div style={{fontSize:30,marginBottom:8}}>{x.icon}</div>
-              <h2 style={{fontSize:17,fontWeight:900,margin:"0 0 6px",lineHeight:1.4}}>{x.title}</h2>
-              <p style={{fontSize:13,color:C.muted,margin:0,lineHeight:1.7}}>{x.desc}</p>
-            </a>
-          ))}
+    <PublicPage pageKey="guides">
+      <PageHero crumbs={<><LpHomeCrumb/>{LP_SEP}<span>מדריכים</span></>} title="מדריכים לתכנון אירוע"
+        lead="טיפים מעשיים לחתונה, בר/בת מצווה, ברית וכל אירוע: מה לעשות, מתי, ואיך לחסוך כאב ראש."/>
+      <section className="lp-sec">
+        <div className="lp-wrap">
+          <div className="lp-guides">
+            {GUIDES.map((x,i)=><GuideCard key={x.slug} g={x} i={i} feat={i===0}/>)}
+          </div>
         </div>
-        {cta}
-      </main>
-    </div>
+      </section>
+      {cta}
+    </PublicPage>
   );
-  const others=GUIDES.filter(x=>x.slug!==g.slug);
+  const others=GUIDES.filter(x=>x.slug!==g.slug).slice(0,3);
+  const toc=g.sections.map((s,i)=>({id:"s"+(i+1),label:s.h}));
   return(
-    <div dir="rtl" lang="he" style={wrap}>{header}
-      <main style={{maxWidth:760,margin:"0 auto",padding:"36px 24px 80px"}}>
-        <nav aria-label="פירורי לחם" style={{fontSize:13,color:C.muted,marginBottom:14}}><a href="/guides" style={{color:C.muted}}>מדריכים</a> › {g.title}</nav>
-        <article>
-          <h1 style={{fontSize:28,fontWeight:900,margin:"0 0 10px",lineHeight:1.3}}>{g.icon} {g.title}</h1>
-          <p style={{fontSize:16,color:"#5A4F70",lineHeight:1.8,margin:"0 0 26px"}}>{g.desc}</p>
-          {g.sections.map(s=>(
-            <section key={s.h} style={{marginBottom:24}}>
-              <h2 style={{fontSize:19,fontWeight:900,margin:"0 0 8px"}}>{s.h}</h2>
-              <p style={{fontSize:15,color:"#3E3555",lineHeight:1.9,margin:0,whiteSpace:"pre-line"}}>{s.p}</p>
-            </section>
-          ))}
-        </article>
-        {cta}
-        <div style={{marginTop:32}}>
-          <div style={{fontSize:15,fontWeight:900,marginBottom:10}}>עוד מדריכים</div>
-          {others.map(x=><a key={x.slug} href={`/guides/${x.slug}`} style={{display:"block",color:C.blue,fontWeight:700,fontSize:14,marginBottom:8}}>{x.icon} {x.title}</a>)}
+    <PublicPage pageKey={g.slug}>
+      <PageHero crumbs={<><LpHomeCrumb/>{LP_SEP}<a href="/guides">מדריכים</a>{LP_SEP}<span>{g.title}</span></>} title={g.title} lead={g.desc}>
+        <div className="lp-hmeta"><span><span aria-hidden="true">{g.icon}</span>{guideMinutes(g)} דקות קריאה</span><span>{g.sections.length} חלקים</span></div>
+      </PageHero>
+      <section className="lp-sec">
+        <div className="lp-doc">
+          <LpToc items={toc}/>
+          <article className="lp-prose" data-reveal>
+            {g.sections.map((s,i)=>(
+              <section key={s.h} id={"s"+(i+1)}>
+                <h2>{s.h}</h2>
+                <p>{s.p}</p>
+              </section>
+            ))}
+          </article>
         </div>
-      </main>
-    </div>
+      </section>
+      <section className="lp-sec" style={{paddingTop:0}} aria-label="עוד מדריכים">
+        <div className="lp-wrap">
+          <h2 className="lp-h3x" data-reveal>עוד מדריכים</h2>
+          <div className="lp-guides lp-guides3">
+            {others.map((x,i)=><GuideCard key={x.slug} g={x} i={i+1} H="h3"/>)}
+          </div>
+        </div>
+      </section>
+      {cta}
+    </PublicPage>
   );
 }
 
@@ -12128,11 +12354,8 @@ const EVENT_LANDINGS=[
     points:[["📋","רשימות מוזמנים","ייבוא מאקסל, חלוקה לפי חברה או מחלקה."],["💌","הזמנה ואישור הגעה","דף הזמנה מקצועי עם פרטי האירוע וקישור אישי לכל מוזמן."],["🗺️","הושבה לפי קבוצות","מפת אולם והושבה אוטומטית לפי חברה או צוות."],["📟","צ'ק-אין בכניסה","סריקת QR או עמדת טאבלט שבה האורח מקליד את השם ומקבל את השולחן."],["📊","נתונים בזמן אמת","כמה נרשמו, כמה הגיעו בפועל ומי חסר."]],
     faq:[["אפשר לנהל כמה אירועים במקביל?","כן, כל אירוע מנוהל בנפרד מאותו חשבון."],["יש שירות בשטח?","כן, אפשר להזמין צוות הושבה או עמדת טאבלט ליום האירוע."]]},
 ];
-function SeoHeader() {
-  return(
-    <SiteNav/>
-  );
-}
+const LP_EVENT_IMG={wedding:"photo-1775476793931-cb484f197760","bar-mitzvah":"photo-1792587716357-32a29eca7629",brit:"photo-1780925805396-aff84f9f955d",business:"photo-1768396855390-0728fa9c21e1"};
+const LP_EVENT_FOR={wedding:"לחתונה","bar-mitzvah":"לבר/בת מצווה",brit:"לברית",business:"לאירוע עסקי"};
 function EventLandingPage({ slug }) {
   const p=EVENT_LANDINGS.find(x=>x.slug===slug);
   useEffect(()=>{
@@ -12146,54 +12369,74 @@ function EventLandingPage({ slug }) {
     document.head.appendChild(ld);
     return()=>{document.title="Sidor-IL — סידורי הושבה ואישורי הגעה לחתונות ואירועים";if(old)m.setAttribute("content",old);if(oldC)c.setAttribute("href",oldC);ld.remove();};
   },[slug]);
-  const wrap={fontFamily:"'Heebo',sans-serif",background:"#FBF7FC",minHeight:"100vh",color:"#2B1D3F"};
-  if(!p)return(<div dir="rtl" lang="he" style={wrap}><SeoHeader/><main style={{maxWidth:760,margin:"0 auto",padding:"60px 24px",textAlign:"center"}}><h1 style={{fontSize:24}}>הדף לא נמצא</h1><a href="/" style={{color:C.blue,fontWeight:800}}>לדף הבית</a></main></div>);
-  const cta=(label)=>(
-    <a href={`/?ref=lp-${p.slug}`} style={{display:"inline-block",background:GRAD,color:"#fff",borderRadius:14,padding:"14px 28px",fontSize:16,fontWeight:900,textDecoration:"none",boxShadow:"0 14px 30px -12px rgba(240,96,158,.6)"}}>{label}</a>
+  if(!p)return(
+    <PublicPage pageKey="event-404">
+      <PageHero crumbs={<><LpHomeCrumb/></>} title="הדף לא נמצא" lead="אולי הקישור השתנה. אפשר לחזור לדף הבית או לבחור סוג אירוע.">
+        <div className="lp-chips">{EVENT_LANDINGS.map(x=><a key={x.slug} href={`/events/${x.slug}`}><span aria-hidden="true">{x.icon}</span>{x.nav}</a>)}</div>
+      </PageHero>
+      <div style={{height:80}}/>
+    </PublicPage>
   );
+  const start=`/?ref=lp-${p.slug}`;
+  const img=`https://images.unsplash.com/${LP_EVENT_IMG[p.slug]}?w=1800&q=70&auto=format&fit=crop`;
   return(
-    <div dir="rtl" lang="he" style={wrap}><SeoHeader/>
-      <main>
-        <section style={{maxWidth:900,margin:"0 auto",padding:"48px 24px 28px",textAlign:"center"}}>
-          <div style={{fontSize:46,marginBottom:8}}>{p.icon}</div>
-          <h1 style={{fontSize:"clamp(26px,5vw,38px)",fontWeight:900,margin:"0 0 14px",lineHeight:1.25}}>{p.title}</h1>
-          <p style={{fontSize:17,color:"#5A4F70",lineHeight:1.8,margin:"0 auto 24px",maxWidth:640}}>{p.lead}</p>
-          {cta("פתחו אירוע בחינם ←")}
-        </section>
-        <section style={{maxWidth:960,margin:"0 auto",padding:"10px 24px 20px"}}>
-          <h2 style={{fontSize:22,fontWeight:900,textAlign:"center",margin:"0 0 18px"}}>מה מקבלים</h2>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14}}>
-            {p.points.map(([i,h,t])=>(
-              <div key={h} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:18,padding:20,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"}}>
-                <div style={{fontSize:28,marginBottom:6}}>{i}</div>
-                <h3 style={{fontSize:16,fontWeight:900,margin:"0 0 6px"}}>{h}</h3>
-                <p style={{fontSize:14,color:C.muted,margin:0,lineHeight:1.7}}>{t}</p>
+    <PublicPage pageKey={p.slug}>
+      <PageHero img={img} crumbs={<><LpHomeCrumb/>{LP_SEP}<span>{p.nav}</span></>} title={p.title} lead={p.lead} aside={<HeroSeating/>}>
+        <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:18}}>
+          <a href={start} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:17,minHeight:58}}>פתחו אירוע בחינם<LpGo/></a>
+          <a href="#ev-what" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:17,minHeight:58}}>מה מקבלים</a>
+        </div>
+        <div className="lp-hero-cta" style={{display:"flex",gap:"6px 18px",flexWrap:"wrap",fontSize:15,color:"#fff",fontWeight:700}}>
+          {[`חינם עד ${FREE_SEATING_LIMIT} מוזמנים`,"בלי כרטיס אשראי","מתחילים תוך 2 דקות"].map(t=>(
+            <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6}}><LpIcon name="check" color="#8FF0D0" size={16}/>{t}</span>
+          ))}
+        </div>
+      </PageHero>
+      <section id="ev-what" className="lp-sec">
+        <div className="lp-wrap">
+          <LpTitle title="כל מה שצריך" accent={LP_EVENT_FOR[p.slug]} sub={p.desc}/>
+          <div className="lp-cards">
+            {p.points.map(([ic,h,t],k)=>(
+              <div key={h} className="lp-pcard2 lp-lift" data-reveal style={{"--d":`${(k%3*.07).toFixed(2)}s`}}>
+                <span className="lp-emo" style={{background:LP_TINTS[k%LP_TINTS.length]}} aria-hidden="true">{ic}</span>
+                <h3>{h}</h3>
+                <p>{t}</p>
               </div>
             ))}
           </div>
-        </section>
-        <section style={{maxWidth:760,margin:"0 auto",padding:"24px 24px 10px"}}>
-          <h2 style={{fontSize:22,fontWeight:900,margin:"0 0 14px"}}>שאלות נפוצות</h2>
-          {p.faq.map(([q,a])=>(
-            <details key={q} style={{background:"#fff",border:"1px solid #EFE6F5",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-              <summary style={{fontWeight:800,fontSize:15,cursor:"pointer"}}>{q}</summary>
-              <p style={{fontSize:14,color:"#3E3555",lineHeight:1.8,margin:"8px 0 0"}}>{a}</p>
-            </details>
-          ))}
-        </section>
-        <section style={{maxWidth:760,margin:"0 auto",padding:"24px 24px 70px",textAlign:"center"}}>
-          <div style={{background:GRAD,borderRadius:22,padding:"28px 22px",color:"#fff"}}>
-            <div style={{fontSize:21,fontWeight:900,marginBottom:6}}>מוכנים להתחיל?</div>
-            <div style={{fontSize:14,opacity:.92,marginBottom:16}}>פותחים אירוע תוך דקה, בלי כרטיס אשראי.</div>
-            <a href={`/?ref=lp-${p.slug}`} style={{display:"inline-block",background:"#fff",color:"#9147D6",borderRadius:12,padding:"12px 26px",fontSize:15,fontWeight:900,textDecoration:"none"}}>פתחו אירוע ב-Sidor-IL ←</a>
+        </div>
+      </section>
+      <section className="lp-sheet" style={{background:"#F6F3FF"}}>
+        <div className="lp-wrap">
+          <LpTitle title="מאקסל מבולגן" accent="למפה ברורה" sub="גררו את הידית ותראו את ההבדל: מימין הרשימה שכולם מכירים, משמאל מפת האולם של Sidor-IL."/>
+          <div data-reveal="scale"><CompareSlider/></div>
+          <div className="lp-cmp-cap">מסך אמיתי מהמערכת, עם נתוני דוגמה</div>
+        </div>
+      </section>
+      <section className="lp-sec">
+        <div className="lp-faq-wrap">
+          <LpTitle title="שאלות" accent="ותשובות" sub="מה שכדאי לדעת לפני שמתחילים." mb={0}/>
+          <div>
+            {p.faq.map(([q,a],i)=>(
+              <details key={q} className="lp-faq" data-reveal style={{"--d":`${(i*.05).toFixed(2)}s`}}>
+                <summary>{q}<span className="lp-faq-ic" aria-hidden="true">+</span></summary>
+                <p>{a}</p>
+              </details>
+            ))}
           </div>
-          <nav aria-label="סוגי אירועים" style={{marginTop:26,fontSize:14,display:"flex",gap:"8px 18px",flexWrap:"wrap",justifyContent:"center"}}>
-            {EVENT_LANDINGS.filter(x=>x.slug!==p.slug).map(x=><a key={x.slug} href={`/events/${x.slug}`} style={{color:C.blue,fontWeight:700}}>{x.icon} {x.nav}</a>)}
-            <a href="/guides" style={{color:C.blue,fontWeight:700}}>📚 מדריכים</a>
-          </nav>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+      <section className="lp-sec" style={{paddingTop:0}} aria-label="סוגי אירועים נוספים">
+        <div className="lp-wrap">
+          <h2 className="lp-h3x" data-reveal>עוד סוגי אירועים</h2>
+          <div className="lp-chips" data-reveal style={{"--d":".06s"}}>
+            {EVENT_LANDINGS.filter(x=>x.slug!==p.slug).map(x=><a key={x.slug} href={`/events/${x.slug}`}><span aria-hidden="true">{x.icon}</span>{x.nav}</a>)}
+            <a href="/guides"><span aria-hidden="true">📚</span>מדריכים</a>
+          </div>
+        </div>
+      </section>
+      <LpCtaBand title="מוכנים להתחיל?" text="פותחים אירוע תוך דקה, בלי כרטיס אשראי." primary={{href:start,label:"פתחו אירוע ב-Sidor-IL"}}/>
+    </PublicPage>
   );
 }
 
