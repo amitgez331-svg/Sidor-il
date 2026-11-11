@@ -11536,7 +11536,7 @@ function AddTableModal({ onConfirm, onClose }) {
 // ─── INVITE PAGE ──────────────────────────────────────────────────────────────
 const INVITE_TEMPLATES = {
   wedding: [
-    { id:"classic", name:"קלאסי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1613068431228-8cb6a1e92573?w=800&q=80", titleColor:"#fff", accent:"#E8C4FF" },
+    { id:"classic", name:"קלאסי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1592125661285-79820f2fdf7a?w=800&q=80", titleColor:"#fff", accent:"#E8C4FF" },
     { id:"romantic", name:"רומנטי", bg:"linear-gradient(160deg,#3d0a0a,#7a1f1f,#c45050)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&q=80", titleColor:"#fff", accent:"#FFB3B3" },
     { id:"elegant", name:"אלגנטי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
     { id:"natural", name:"טבעי", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1769812343890-4e406a33cfbe?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
@@ -11545,6 +11545,14 @@ const INVITE_TEMPLATES = {
     { id:"garden", name:"טקס בגן", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80", titleColor:"#fff", accent:"#C6F6D5" },
     { id:"rings", name:"טבעות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
     { id:"sea", name:"שקיעה בים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1629744418692-345355518e78?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"chandelier", name:"נברשת", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1703432287852-28f965fc3749?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"lightsgarden", name:"גן מואר", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1607861884586-c7cfaed16290?w=800&q=80", titleColor:"#fff", accent:"#FFE8A3" },
+    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1723832348105-2e69f948135a?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"goldgreen", name:"זהב וירוק", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1620022604911-126743712882?w=800&q=80", titleColor:"#fff", accent:"#E8C46A" },
+    { id:"white", name:"לבן", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1700142611715-8a023c5eb8c5?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"botanic", name:"בוטני", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1721176487015-5408ae0e9bc2?w=800&q=80", titleColor:"#fff", accent:"#C6F6D5" },
+    { id:"lanterns", name:"פנסים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1628024564458-b3dfcceb3f34?w=800&q=80", titleColor:"#fff", accent:"#FFD27A" },
+    { id:"aisle", name:"שביל נרות", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1641524967324-6c7882b4be80?w=800&q=80", titleColor:"#fff", accent:"#FFE0B2" },
     { id:"table", name:"שולחן חגיגי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
   ],
   bar_mitzvah: [
@@ -11553,6 +11561,8 @@ const INVITE_TEMPLATES = {
     { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
     { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
     { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"prayer", name:"תפילה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1638702919819-2bb988863024?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"kippah", name:"כיפה", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1643992017839-1ed8679d145d?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
   ],
   brit: [
     { id:"soft", name:"עדין", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
@@ -11560,12 +11570,14 @@ const INVITE_TEMPLATES = {
     { id:"sweet", name:"רך ומתוק", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1678192568478-9488ee55def6?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
     { id:"summer", name:"קיצי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1594150878496-a921e5af8907?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
     { id:"hug", name:"חיבוק", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1770831208183-92f98cf3845b?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"tinyhands", name:"ידיים קטנות", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1647650096640-c5c608e1d259?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
   ],
   business: [
     { id:"dark", name:"כהה", bg:"linear-gradient(160deg,#0a0a0a,#1a1a1a,#2a2a2a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
     { id:"navy", name:"כנס", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1574155088851-0c770818ba40?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
     { id:"hall", name:"אולם כנסים", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
     { id:"talk", name:"הרצאה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"stage", name:"במה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1670028514318-0ac718c0590d?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
   ],
   other: [
     { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#1B3A8C,#2952C8,#4A7AFF)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", titleColor:"#fff", accent:"#A0C4FF" },
@@ -11573,6 +11585,7 @@ const INVITE_TEMPLATES = {
     { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
     { id:"mic", name:"ערב חגיגי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
     { id:"hall", name:"אולם", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1723832348105-2e69f948135a?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
   ],
 };
 
