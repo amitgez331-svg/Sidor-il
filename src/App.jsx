@@ -2262,7 +2262,7 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
   );
 }
 // מעטפת לכל דף ציבורי: התפריט הצף, תפריט הנייד, התוכן, התחתית וכפתור הוואטסאפ
-function PublicPage({ pageKey, children }) {
+function PublicPage({ pageKey, children, actions }) {
   const [scrolled,setScrolled]=useState(false),[off,setOff]=useState(false),[menu,setMenu]=useState(false);
   const [motion]=useState(lpMotionOK);
   const rootRef=useRef(null),menuRef=useRef(null),burgerRef=useRef(null);
@@ -2304,9 +2304,11 @@ function PublicPage({ pageKey, children }) {
           {LP_NAV.map(([id,l])=><a key={id} href={"/#"+id} className="lp-nav-link" onClick={toHome(id)}>{l}</a>)}
         </div>
         <div style={{flex:1}}/>
+        {actions?actions(false):<>
         <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={auth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
         <button className="lp-btn lp-navbtn lp-ghost" onClick={auth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
         <button className="lp-btn lp-navbtn lp-hide-xs lp-primary" onClick={auth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
+        </>}
         <button ref={burgerRef} type="button" className="lp-burger" aria-label="פתיחת התפריט" aria-expanded={menu} aria-controls="lp-menu" onClick={()=>setMenu(true)}><span/><span/><span/></button>
       </nav>
       <div className={`lp-menu${menu?" open":""}`} onClick={e=>{if(e.target===e.currentTarget)setMenu(false);}}>
@@ -2321,6 +2323,7 @@ function PublicPage({ pageKey, children }) {
             ))}
             <li style={{"--d":".33s"}}><a href="/guides">מדריכים וטיפים</a></li>
           </ul>
+          {actions?<div className="lp-menu-cta">{actions(true)}</div>:<>
           <div className="lp-menu-cta">
             <button type="button" className="lp-btn lp-primary" onClick={auth("register")}>התחילו להושיב</button>
             <button type="button" className="lp-btn lp-ghost" onClick={auth("login")}>כניסה לחשבון</button>
@@ -2329,6 +2332,7 @@ function PublicPage({ pageKey, children }) {
             <button type="button" className="lp-hero-link" onClick={auth("producer")}>כניסת מפיקים</button>
             <button type="button" className="lp-hero-link" onClick={auth("vendor")}>ספקים: הצטרפות</button>
           </div>
+          </>}
         </div>
       </div>
       <main id="main" tabIndex={-1} style={{outline:"none"}}>{children}</main>
@@ -10905,54 +10909,87 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
   const status=p&&({pending:{bg:"#FFF8E8",b:"#F5DDA6",c:"#8A5A00",t:"⏳ הפרופיל ממתין לאישור",s:"נבדוק את הפרטים בדרך כלל תוך יום-יומיים, ואז הפרופיל יופיע ללקוחות."},
     approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#1F8F6C",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
     rejected:{bg:"#FFF5F5",b:"#FED7D7",c:"#C53030",t:"✗ הפרופיל לא אושר",s:p.reject_reason||"תקנו את הפרטים ושלחו שוב."}}[p.status]);
+  const navActs=inMenu=>(<>
+    <button type="button" className={inMenu?"lp-btn lp-primary":"lp-btn lp-navbtn lp-ghost"} onClick={onEvents} style={inMenu?undefined:{padding:"9px 20px",fontSize:14,minHeight:44}}>{inMenu?"האירועים שלי":<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>}</button>
+    <button type="button" className={inMenu?"lp-btn lp-ghost":"lp-nav-link lp-hide-sm"} onClick={onLogout} style={inMenu?undefined:{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>התנתקות</button>
+  </>);
   return(
-    <div dir="rtl" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",background:"linear-gradient(160deg,#FFF4EE 0%,#FFF7FB 45%,#F6F0FF 100%)"}}>
-      <header style={{background:"rgba(255,255,255,.94)",borderBottom:"1px solid rgba(155,107,255,.1)",padding:"0 20px",height:60,display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:50}}>
-        <SidorLogo size={34} id="supLogo"/>
-        <div style={{fontWeight:900,fontSize:17,color:"#2B1D3F",flex:1}}>אזור הספקים</div>
-        {onBackToLanding&&<button onClick={onBackToLanding} style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"6px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🏠 דף הבית</button>}
-        <button onClick={onLogout} style={{background:"none",border:"none",color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>התנתק</button>
-      </header>
-      <div style={{maxWidth:820,margin:"0 auto",padding:"22px 16px 60px"}}>
+    <PublicPage pageKey="vendor-area" actions={navActs}>
+      <style>{VD_CSS}</style>
+      <section className="vd-hero">
+        <span className="vd-blob a" aria-hidden="true"/><span className="vd-blob b" aria-hidden="true"/>
+        <div className="vd-in">
+          <h1>{!p?<>ברוכים הבאים, <span className="lp-grad">ספקים</span></>:<>אזור <span className="lp-grad">הספקים</span></>}</h1>
+          <p>{!p?"ממלאים פעם אחת את פרטי העסק, ואחרי אישור קצר שלנו אתם מופיעים לכל מי שמתכנן אירוע ב-Sidor-IL."
+            :"כאן מנהלים את הפרופיל של העסק: רואים איך הלקוחות רואים אתכם, מעדכנים פרטים ותמונות."}</p>
+          {!p&&<div className="vd-chips"><span>🆓 פרופיל עסק בחינם</span><span>💍 מול זוגות ומשפחות שמתכננים אירוע</span><span>⏱️ אישור בדרך כלל תוך יום-יומיים</span></div>}
+        </div>
+      </section>
+      <div className="vd-body">
         {p===undefined?<div style={{textAlign:"center",padding:60}}><Spinner size={34}/></div>
-        :!p||edit?<>
-          {!p&&<div style={{marginBottom:16}}>
-            <div style={{fontSize:24,fontWeight:900,color:"#2B1D3F"}}>ברוכים הבאים, ספקים! 🎉</div>
-            <div style={{fontSize:14,color:"#7A6F8C",marginTop:4,lineHeight:1.7}}>ממלאים פעם אחת את פרטי העסק, ואחרי אישור קצר שלנו אתם מופיעים לכל מי שמתכנן אירוע ב-Sidor-IL.</div>
-          </div>}
+        :!p||edit?<div className="vd-form">
           <SupplierForm user={user} profile={p} priv={priv} onSaved={()=>{setEdit(false);load();}} onCancel={p?()=>setEdit(false):null}/>
-        </>:<>
-          <div style={{background:status.bg,border:`1.5px solid ${status.b}`,borderRadius:18,padding:"14px 18px",marginBottom:16}}>
-            <div style={{fontSize:16,fontWeight:900,color:status.c}}>{status.t}</div>
-            <div style={{fontSize:13,color:"#3E3555",marginTop:3}}>{status.s}</div>
+        </div>:<>
+          <div className="vd-status" style={{background:status.bg,borderColor:status.b}}>
+            <b style={{color:status.c}}>{status.t}</b>
+            <span>{status.s}</span>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16,alignItems:"start"}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#7A6F8C",marginBottom:8}}>ככה הלקוחות רואים אתכם:</div>
+          <div className="vd-grid">
+            <div className="vd-card">
+              <div className="vd-h">ככה הלקוחות רואים אתכם</div>
               <SupplierCard v={p} onOpen={setOpen}/>
-              <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                <button onClick={()=>setEdit(true)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>✏️ עריכת הפרופיל</button>
-                <button onClick={()=>setOpen(p)} className="sx-btn" style={{flex:1,background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:12,padding:"11px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👁 תצוגה מלאה</button>
+              <div className="vd-acts">
+                <button onClick={()=>setEdit(true)} className="lp-btn lp-primary">✏️ עריכת הפרופיל</button>
+                <button onClick={()=>setOpen(p)} className="lp-btn lp-ghost">👁 תצוגה מלאה</button>
               </div>
-              <button onClick={removeProfile} style={{marginTop:10,background:"none",border:"none",padding:"6px 0",color:"#B42318",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>מחיקת הפרופיל מהמדריך</button>
+              <button onClick={removeProfile} className="vd-del">מחיקת הפרופיל מהמדריך</button>
             </div>
-            <div style={{background:"linear-gradient(135deg,#FFF6E2,#FFF0F6)",border:"1.5px solid #F3D08A",borderRadius:20,padding:"18px 20px"}}>
-              <div style={{fontSize:17,fontWeight:900,color:"#2B1D3F"}}>⭐ שדרוג לספק מוביל</div>
-              <div style={{fontSize:13,color:"#5A5070",lineHeight:1.8,margin:"6px 0 12px"}}>
-                • מופיעים ראשונים ברשימת הספקים<br/>• מופיעים בדף הבית של Sidor-IL<br/>• תג "ספק מוביל" בולט על הכרטיס
-              </div>
-              <button onClick={upgrade} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#25D366",color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}><WaIcon size={17}/> דברו איתנו על שדרוג</button>
+            <div className="vd-card vd-up">
+              <div className="vd-h">⭐ שדרוג לספק מוביל</div>
+              <ul><li>מופיעים ראשונים ברשימת הספקים</li><li>מופיעים בדף הבית של Sidor-IL</li><li>תג "ספק מוביל" בולט על הכרטיס</li></ul>
+              <button onClick={upgrade} className="vd-wa"><WaIcon size={17}/> דברו איתנו על שדרוג</button>
             </div>
           </div>
         </>}
-        <div style={{textAlign:"center",marginTop:26}}>
-          <button onClick={onEvents} style={{background:"none",border:"none",color:C.blue,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>📅 מתכננים גם אירוע? מעבר לאירועים שלי</button>
+        <div style={{textAlign:"center",marginTop:30}}>
+          <button onClick={onEvents} className="vd-link">📅 מתכננים גם אירוע? מעבר לאירועים שלי</button>
         </div>
       </div>
       <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
-    </div>
+    </PublicPage>
   );
 }
+// אזור הספקים: עיצוב בשפה של דף הבית
+const VD_CSS=`
+  .vd-hero{position:relative;overflow:hidden;isolation:isolate;margin:96px 2vw 30px;border-radius:44px;padding:60px 6vw;background:linear-gradient(150deg,#EFE4FF 0%,#FFE4F0 55%,#FFE9DC 100%)}
+  .vd-in{max-width:1120px;margin:0 auto}
+  .vd-hero h1{font:900 clamp(34px,4.6vw,58px)/1.08 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:0 0 14px;letter-spacing:-.02em}
+  .vd-hero p{font-size:18px;line-height:1.7;color:#3A2F50;max-width:56ch;margin:0}
+  .vd-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .vd-chips span{background:#fff;border-radius:999px;padding:10px 16px;font:700 14.5px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;box-shadow:0 12px 24px -16px rgba(60,35,110,.55)}
+  .vd-blob{position:absolute;z-index:-1;border-radius:50%;background:rgba(255,255,255,.55)}
+  .vd-blob.a{width:260px;height:260px;left:-60px;top:-80px}.vd-blob.b{width:140px;height:140px;left:22%;bottom:-50px}
+  .vd-body{max-width:900px;margin:0 auto 80px;padding:0 16px}
+  .vd-form > div{border-radius:32px!important;border:none!important;box-shadow:0 26px 54px -32px rgba(91,60,140,.5)!important;padding:30px!important}
+  .vd-form [style*="font-size: 13px"][style*="font-weight: 900"]{font-family:'Fredoka','Heebo',sans-serif!important;font-size:19px!important;font-weight:700!important;margin:6px 0 14px!important}
+  .vd-form input:not([type=file]):not([type=checkbox]),.vd-form select,.vd-form textarea{border-radius:16px!important;border:1.5px solid #E6DDF5!important;min-height:46px;color:#2B1D3F}
+  .vd-form input:focus,.vd-form select:focus,.vd-form textarea:focus{border-color:#9B6BFF!important;box-shadow:0 0 0 4px rgba(155,107,255,.16)}
+  .vd-form button{font-family:'Fredoka','Heebo',sans-serif}
+  .vd-status{border:1.5px solid;border-radius:24px;padding:16px 20px;margin-bottom:18px;display:flex;flex-direction:column;gap:3px}
+  .vd-status b{font:700 18px 'Fredoka','Heebo',sans-serif}
+  .vd-status span{font-size:14.5px;color:#3E3555}
+  .vd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;align-items:start}
+  .vd-card{background:#fff;border-radius:32px;padding:22px;box-shadow:0 26px 54px -34px rgba(91,60,140,.5)}
+  .vd-h{font:700 18px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin-bottom:12px}
+  .vd-acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .vd-acts .lp-btn{flex:1;min-height:46px;padding:0 16px;font-size:15px}
+  .vd-del{margin-top:12px;background:none;border:none;padding:6px 0;color:#B42318;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline}
+  .vd-up{background:linear-gradient(135deg,#FFF6E2,#FFF0F6)}
+  .vd-up ul{margin:0 0 16px;padding:0 18px 0 0;font-size:15px;line-height:1.9;color:#3A2F50}
+  .vd-wa{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;background:#1FA855;color:#fff;border:none;border-radius:999px;font:700 16px 'Fredoka','Heebo',sans-serif;cursor:pointer}
+  .vd-link{background:none;border:none;color:#5B2FA8;font:700 15px 'Fredoka','Heebo',sans-serif;cursor:pointer;text-decoration:underline}
+  @media(max-width:700px){.vd-hero{margin:86px 8px 20px;border-radius:32px;padding:34px 22px}.vd-hero p{font-size:16px}.vd-form > div{padding:18px!important;border-radius:26px!important}}
+`;
 
 function VendorsScreen({ user, event, mobile }) {
   const [tab,setTab]=useState("suppliers");
@@ -12510,7 +12547,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
   return(
     <div dir="rtl" className="evs" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",position:"relative",overflowX:"hidden",
-      background:"radial-gradient(760px 520px at 92% 0%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 30%,#FFE4F0 0%,rgba(255,228,240,0) 62%),radial-gradient(640px 440px at 50% 100%,#E2F6EE 0%,rgba(226,246,238,0) 60%),#FFFBF7"}}>
+      background:"radial-gradient(760px 520px at 92% 0%,#F7F2FF 0%,rgba(247,242,255,0) 62%),radial-gradient(680px 520px at 4% 30%,#FFF4F9 0%,rgba(255,244,249,0) 62%),radial-gradient(640px 440px at 50% 100%,#F1FBF6 0%,rgba(241,251,246,0) 60%),#FFFEFC"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @media(max-width:600px){.ev-top{right:8px!important;left:8px!important;padding:0 10px!important}.ev-wrap{padding:96px 14px 20px!important}.ev-hero{flex-direction:column;align-items:stretch!important;gap:18px;padding:26px 20px!important}.ev-hero button{width:100%;justify-content:center}}
         /* שפת העיצוב של דף הבית: גופן מעוגל, גלולות, כרטיסים רכים וצבע לכל סוג אירוע */
@@ -12518,9 +12555,12 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs{font-synthesis-weight:none}
         .evs h1 mark{color:inherit;padding:0 .12em;border-radius:.22em;background:linear-gradient(120deg,#FFD1E5,#FFB2D3)}
         .evs .ev-blobs i{position:absolute;border-radius:50%;pointer-events:none}
-        .evs .ev-photos{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(380px,1fr);opacity:.11;filter:saturate(.75);-webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 96%);mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 96%)}
-        .evs .ev-photos img{width:100%;height:100%;object-fit:cover;display:block}
-        @media(max-width:600px){.evs .ev-photos{grid-template-columns:1fr;grid-auto-rows:minmax(300px,1fr);opacity:.09}}
+        /* כותרת "האירועים שלי": תמונות בהירות של סוגי אירועים, נעלמות לכיוון הטקסט */
+        .evs .ev-hero{position:relative;overflow:hidden;isolation:isolate}
+        .evs .ev-hero > :not(.ev-hero-ph){position:relative;z-index:1}
+        .evs .ev-hero-ph{position:absolute;inset:0;z-index:0;display:flex;justify-content:flex-end;pointer-events:none;opacity:.34;filter:saturate(.8);-webkit-mask-image:linear-gradient(to right,#000 0%,rgba(0,0,0,.85) 28%,transparent 70%);mask-image:linear-gradient(to right,#000 0%,rgba(0,0,0,.85) 28%,transparent 70%)}
+        .evs .ev-hero-ph img{width:17%;height:100%;object-fit:cover;display:block}
+        @media(max-width:600px){.evs .ev-hero-ph{opacity:.26;-webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.7) 35%,transparent 80%);mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.7) 35%,transparent 80%)}.evs .ev-hero-ph img{width:25%}}
         .evs .ev-card{border-radius:28px!important;border:none!important;box-shadow:0 18px 44px -28px rgba(91,60,140,.45)!important;transition:translate 250ms cubic-bezier(0.23,1,0.32,1),box-shadow 250ms cubic-bezier(0.23,1,0.32,1)!important}
         @media(hover:hover) and (pointer:fine){.evs .ev-card:hover{translate:0 -5px;box-shadow:0 28px 56px -30px rgba(91,60,140,.55)!important}}
         .evs .ev-card:before{content:"";position:absolute;top:0;right:0;left:0;height:7px;background:var(--evc,#F0609E)}
@@ -12534,7 +12574,6 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs .sx-btn:focus-visible,.evs button:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
       `}</style>
       <div className="ev-blobs" aria-hidden="true" style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
-        <div className="ev-photos">{["1775476793931-cb484f197760","1792587545791-dbff25ac7905","1592125661285-79820f2fdf7a","1703432287852-28f965fc3749"].map(id=><img key={id} src={`https://images.unsplash.com/photo-${id}?w=900&q=55&auto=format&fit=crop`} alt="" loading="lazy" decoding="async"/>)}</div>
         <i style={{width:200,height:200,top:90,left:"8%",background:"radial-gradient(circle at 30% 30%,#fff,#E9DDFF 60%,#D9C6FF)",opacity:.6}}/>
         <i style={{width:110,height:110,top:320,right:"4%",background:"radial-gradient(circle at 30% 30%,#fff,#FFD6E8 60%,#FFB8D6)",opacity:.65}}/>
         <i style={{width:80,height:80,bottom:120,left:"30%",background:"radial-gradient(circle at 30% 30%,#fff,#CFF3E4 60%,#A8EBD2)",opacity:.7}}/>
@@ -12565,6 +12604,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
         {/* כותרת: באנר צבעוני בהיר */}
         <div className="ev-hero" style={{background:"linear-gradient(150deg,#E6D9FF 0%,#FFD3E6 55%,#FFE6C4 100%)",borderRadius:36,padding:"30px 36px",marginBottom:28,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 30px 70px -40px rgba(120,60,170,.6)",animation:"fadeUp .5s cubic-bezier(0.23,1,0.32,1) both"}}>
+          <div className="ev-hero-ph" aria-hidden="true">{["1775476793931-cb484f197760","1792587545791-dbff25ac7905","1510154221590-ff63e90a136f","1511578314322-379afb476865"].map(id=><img key={id} src={`https://images.unsplash.com/photo-${id}?w=500&q=60&auto=format&fit=crop`} alt="" loading="lazy" decoding="async"/>)}</div>
           <div>
             <h1 style={{fontSize:"clamp(28px,3.4vw,44px)",fontWeight:700,color:"#2B1D3F",margin:"0 0 8px",lineHeight:1.15}}>{isProducer?<>לוח <mark>המפיק</mark></>:<>האירועים <mark>שלי</mark></>}</h1>
             {/* משפט על הנתונים, לא על הממשק */}
@@ -13510,6 +13550,8 @@ function AdminDashboard({ user, onLogout }) {
     if(error)flash("❌ "+error.message);else{flash("הבקשה נדחתה");loadData();}
   };
 
+  // כניסה לאירוע של לקוח: נפתח בלשונית חדשה, כמו שהלקוח רואה אותו
+  const openEventAsAdmin=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);sessionStorage.removeItem("sidor_landing");}catch{}window.open("/","_blank");};
   const q=search.trim().toLowerCase();
   const fUsers=users.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||u.events.some(e=>e.name?.toLowerCase().includes(q)));
   const fEvents=events.filter(e=>!q||e.name?.toLowerCase().includes(q)||emailOf(e.user_id).toLowerCase().includes(q));
@@ -13778,6 +13820,7 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
                   <span style={chip(ev.invite_active?"#E9FBF4":"#FDECEE",ev.invite_active?C.success:C.danger)}>{ev.invite_active?"הזמנה פעילה":"כבויה"}</span>
                 </div>
+                <button onClick={()=>openEventAsAdmin(ev)} className="sx-btn" style={{alignSelf:"stretch",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,background:"#F4EEFF",color:"#5B2FA8",border:"1.5px solid #E2D4F5",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔍 כניסה לאירוע</button>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",fontSize:12}}>
                   <span style={chip(C.blueXL,C.text)}>📅 {ev.date?fmtDate(ev.date):"ללא תאריך"}</span>
                   <span style={chip(C.blueXL,C.text)}>🎊 {guestCount[ev.id]||0} אורחים</span>
@@ -13825,6 +13868,13 @@ function AdminDashboard({ user, onLogout }) {
                   <button onClick={()=>setCustFor(u.user_id)} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👤 כרטיס לקוח</button>
                   <button onClick={()=>setPwFor(u)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"5px 10px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔑 סיסמה חדשה</button>
                 </div>
+                {u.events.length>0&&<div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",background:"#FBF8FF",borderRadius:14,padding:"8px 10px",marginBottom:12}}>
+                  <span style={{fontSize:12,fontWeight:800,color:C.muted}}>כניסה לאירועים שלו:</span>
+                  {u.events.map(e=>(
+                    <button key={e.id} onClick={()=>openEventAsAdmin(e)} className="sx-btn" title="נפתח בלשונית חדשה" style={{background:"#fff",color:"#5B2FA8",border:"1.5px solid #E2D4F5",borderRadius:100,padding:"5px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",maxWidth:240,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>🔍 {e.name||"אירוע"}</button>
+                  ))}
+                  <button onClick={()=>{setSearch(u.email||"");setTab("events");}} style={{background:"none",border:"none",color:"#5B2FA8",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>יתרות ופרטי האירועים</button>
+                </div>}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
                   {[...ALL_PACKAGES,...(packages[u.user_id]||[]).filter(id=>!ALL_PACKAGES.some(p=>p.id===id)).map(id=>({id,name:LEGACY_PACKAGES[id]||id+" (ישן)",color:"#A0AEC0",icon:"🗄️"}))].map(pkg=>{
                     const hasIt=(packages[u.user_id]||[]).includes(pkg.id);
@@ -14510,5 +14560,11 @@ export default function App() {
   </>);
 
   return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px} @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout} onHome={()=>setShowLanding(true)}/><CookieNotice/></>);
+  <SeatingApp user={user} event={event} onBack={()=>selectEvent(null)} onUpdate={data=>setEvent(ev=>({...ev,...data}))} onLogout={logout} onHome={()=>setShowLanding(true)}/><CookieNotice/>
+  {isAdminUser(user)&&event.user_id&&event.user_id!==user.id&&(
+    <div role="status" dir="rtl" style={{position:"fixed",zIndex:400,bottom:14,left:"50%",translate:"-50% 0",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",justifyContent:"center",maxWidth:"calc(100vw - 24px)",background:"#2B1D3F",color:"#fff",borderRadius:100,padding:"8px 10px 8px 16px",fontFamily:"'Heebo',sans-serif",fontSize:13,fontWeight:700,boxShadow:"0 18px 40px -16px rgba(20,5,50,.7)"}}>
+      <span>👑 מצב אדמין: אירוע של לקוח. כל שינוי נשמר אצלו.</span>
+      <button onClick={()=>{selectEvent(null);window.location.href="/#/admin";}} style={{background:"#fff",color:"#2B1D3F",border:"none",borderRadius:100,padding:"6px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>חזרה לאדמין</button>
+    </div>
+  )}</>);
 }
