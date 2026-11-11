@@ -2413,96 +2413,104 @@ const STK_TONES=[
 // "ככה זה נראה מבפנים": 2 שורות של קוביות, בכל שורה קוביה אחת גדלה ומציגה את המסך, ובתורות הבאה בתור גדלה
 const TOUR_IC={home:"🏠",guests:"👥",seating:"🪑",sms:"📱",whatsapp:"💬",budget:"💰",gifts:"🎁",tasks:"✅",details:"📋",vendors:"💡"};
 const TOUR_CSS=`
-  .lp-gx{display:grid;gap:16px}
-  .lp-gx-row{display:flex;gap:14px;height:400px}
-  .lp-gx-t{position:relative;flex:1 1 0;min-width:0;border:none;padding:0;margin:0;border-radius:28px;overflow:hidden;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 18px 36px -28px rgba(60,35,110,.55);transition:flex-grow 750ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
-  .lp-gx-t.on{flex-grow:4.4;box-shadow:0 34px 64px -34px rgba(60,35,110,.7)}
-  .lp-gx-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
-  .lp-gx-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;text-align:center;transition:opacity 300ms ease}
-  .lp-gx-face i{font-style:normal;width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 14px 26px -14px rgba(43,29,63,.6)}
-  .lp-gx-face b{font:700 16px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;max-width:100%;overflow-wrap:anywhere}
-  .lp-gx-t.on .lp-gx-face{opacity:0;pointer-events:none}
-  .lp-gx-t:not(.on) .lp-gx-cap{opacity:0}
-  .lp-gx-cap{transition:opacity 300ms ease}
-  .lp-gx-t.on .lp-gx-cap{transition-delay:200ms}
-  .lp-gx-shot{position:absolute;top:22px;right:-118px;width:720px;max-width:none;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 26px 50px -30px rgba(43,29,63,.7),0 0 0 6px rgba(255,255,255,.55);transition:opacity 500ms ease}
-  .lp-gx-shot img{display:block;width:720px;height:450px;max-width:none}
-  .lp-gx-t:not(.on) .lp-gx-shot{opacity:0}
-  .lp-gx-t.on .lp-gx-shot{transition-delay:150ms}
-  .lp-gx-cap{position:absolute;inset:auto 0 0 0;padding:44px 20px 18px;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.94) 34%,#fff 100%)}
-  .lp-gx-tag{display:flex;align-items:center;gap:8px;font:700 16px/1.2 'Fredoka','Heebo',sans-serif;color:#2B1D3F;white-space:nowrap}
-  .lp-gx-tag i{font-style:normal;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 8px 16px -10px rgba(43,29,63,.6)}
-  .lp-gx-more{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 600ms cubic-bezier(0.77,0,0.175,1),opacity 300ms ease}
-  .lp-gx-more > .in{display:block;overflow:hidden;min-width:300px}
-  .lp-gx-t.on .lp-gx-more{grid-template-rows:1fr;opacity:1;transition-delay:0ms,250ms}
-  .lp-gx-more .h{display:block;font:700 23px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:10px 0 4px}
-  .lp-gx-more .p{display:block;font-size:15px;line-height:1.6;color:#3A2F50;margin:0;font-weight:600;max-width:44ch}
-  .lp-gx-bar{position:absolute;top:0;right:0;left:0;height:4px;background:rgba(255,255,255,.4);opacity:0}
-  .lp-gx-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
-  .lp-gx.auto .lp-gx-t.on .lp-gx-bar{opacity:1}
-  .lp-gx.auto .lp-gx-t.on .lp-gx-bar u{animation:lpGxBar var(--dur) linear both}
-  @keyframes lpGxBar{to{transform:scaleX(1)}}
-  .lp-gx-cap2{font-size:14px;color:#5F5675;margin-top:16px;text-align:center}
-  @media(prefers-reduced-motion:reduce){.lp-gx-t,.lp-gx-more,.lp-gx-shot{transition-duration:1ms!important}.lp-gx-bar{display:none}}
+  .lp-sq{display:grid;gap:18px;--c:clamp(112px,10.6vw,150px);--g:16px}
+  .lp-sq-row{display:flex;gap:var(--g);align-items:flex-start;min-height:430px}
+  .lp-sq-t{position:relative;flex:0 0 auto;width:var(--c);height:var(--c);border:none;padding:0;margin:0;border-radius:30px;overflow:hidden;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 18px 34px -26px rgba(60,35,110,.55);transition:width 650ms cubic-bezier(0.77,0,0.175,1),height 650ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
+  .lp-sq-t.on{width:calc(100% - 4 * var(--c) - 4 * var(--g));height:430px;background:#fff;box-shadow:0 34px 70px -36px rgba(60,35,110,.6),inset 0 0 0 1.5px #EFE6F7}
+  .lp-sq-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  @media(hover:hover) and (pointer:fine){.lp-sq-t:not(.on):hover{box-shadow:0 22px 40px -24px rgba(60,35,110,.65)}}
+  .lp-sq-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;text-align:center;transition:opacity 250ms ease}
+  .lp-sq-face i{font-style:normal;width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 12px 24px -14px rgba(43,29,63,.6)}
+  .lp-sq-face b{font:700 15.5px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;overflow-wrap:anywhere}
+  .lp-sq-t.on .lp-sq-face{opacity:0;pointer-events:none}
+  .lp-sq-in{position:absolute;inset:0;display:flex;flex-direction:column;padding:14px;opacity:0;transition:opacity 250ms ease}
+  .lp-sq-t.on .lp-sq-in{opacity:1;transition-delay:330ms}
+  .lp-sq-pic{flex:0 0 auto;border-radius:20px;padding:10px;background:linear-gradient(160deg,var(--a),var(--b))}
+  .lp-sq-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:12px;background:#fff;box-shadow:0 16px 30px -20px rgba(43,29,63,.6)}
+  .lp-sq-txt{padding:14px 8px 4px;min-width:0}
+  .lp-sq-tag{display:flex;align-items:center;gap:8px;font:700 14px 'Fredoka','Heebo',sans-serif;color:var(--t)}
+  .lp-sq-tag i{font-style:normal;font-size:16px}
+  .lp-sq-h{display:block;font:700 22px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:6px 0 4px}
+  .lp-sq-p{display:block;font-size:15px;line-height:1.6;color:#3A2F50;font-weight:600}
+  .lp-sq-bar{position:absolute;top:0;right:0;left:0;height:4px;z-index:2;opacity:0}
+  .lp-sq-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
+  .lp-sq.auto .lp-sq-t.on .lp-sq-bar{opacity:1}
+  .lp-sq.auto .lp-sq-t.on .lp-sq-bar u{animation:lpSqBar var(--dur) linear both}
+  @keyframes lpSqBar{to{transform:scaleX(1)}}
+  .lp-sq-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
+  .lp-sq-mob{display:none}
+  @media(prefers-reduced-motion:reduce){.lp-sq-t,.lp-sq-in,.lp-sq-face{transition-duration:1ms!important}.lp-sq-bar{display:none}}
   @media(max-width:900px){
-    .lp-gx{gap:10px}
-    .lp-gx-row{flex-direction:column;height:auto;gap:10px}
-    .lp-gx-t{flex:none;height:66px;border-radius:22px;transition:height 650ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
-    .lp-gx-t.on{height:340px}
-    .lp-gx-face{flex-direction:row;justify-content:flex-start;gap:12px;padding:0 14px}
-    .lp-gx-face i{width:40px;height:40px;font-size:19px}
-    .lp-gx-shot{top:74px;right:-92px;width:560px}
-    .lp-gx-shot img{width:560px;height:350px}
-    .lp-gx-cap{inset:0 0 auto 0;padding:15px 16px;background:none}
-    .lp-gx-t.on .lp-gx-cap{background:linear-gradient(180deg,#fff 70%,rgba(255,255,255,0))}
-    .lp-gx-more > .in{min-width:0}
-    .lp-gx-more .h{font-size:19px;margin-top:8px}
-    .lp-gx-more .p{font-size:14px}
-    .lp-gx-shot{top:auto;bottom:-130px}
-    .lp-gx-t.on{height:380px}
-    .lp-gx-bar{top:auto;bottom:0}
+    .lp-sq{display:none}
+    .lp-sq-mob{display:block}
+    .lp-sq-panel{background:#fff;border-radius:26px;padding:12px;box-shadow:0 26px 50px -32px rgba(60,35,110,.6),inset 0 0 0 1.5px #EFE6F7;margin-bottom:14px}
+    .lp-sq-panel .lp-sq-txt{padding:12px 6px 4px}
+    .lp-sq-panel .lp-sq-h{font-size:19px}
+    .lp-sq-panel .lp-sq-p{font-size:14px}
+    .lp-sq-fade{animation:lpSqFade 300ms ease both}
+    @keyframes lpSqFade{from{opacity:0}to{opacity:1}}
+    .lp-sq-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+    .lp-sq-mini{aspect-ratio:1;border:none;border-radius:18px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:700 10.5px/1.15 'Fredoka','Heebo',sans-serif;color:#2B1D3F;background:linear-gradient(160deg,var(--a),var(--b));cursor:pointer;text-align:center;transition:scale 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms ease}
+    .lp-sq-mini i{font-style:normal;font-size:19px}
+    .lp-sq-mini[aria-pressed="true"]{scale:1.06;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--t)}
   }
 `;
 function ProductTour(){
   const rows=[LP_TOUR.slice(0,5),LP_TOUR.slice(5,10)];
-  const [act,setAct]=useState([0,0]);
+  const [act,setAct]=useState([0,0]),[last,setLast]=useState(0);
   const [auto,setAuto]=useState(()=>lpMotionOK());
   const [hold,setHold]=useState(false),[seen,setSeen]=useState(false);
-  const boxRef=useRef(null),tick=useRef(0);
-  const DUR=2800;
-  // רץ רק כשהאזור במסך, בלי ריחוף/פוקוס, ורק עד שהמשתמש בוחר בעצמו
-  useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.35});io.observe(el);return()=>io.disconnect();},[]);
+  const boxRef=useRef(null),tick=useRef(0),actRef=useRef(act);
+  actRef.current=act;
+  const DUR=3000;
+  useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.3});io.observe(el);return()=>io.disconnect();},[]);
+  // בכל פעם קוביה אחרת גדלה: לסירוגין בשורה העליונה ובתחתונה
   useEffect(()=>{
     if(!auto||hold||!seen)return;
-    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;setAct(a=>{const n=[...a];n[r]=(n[r]+1)%5;return n;});},DUR);
+    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;const n=[...actRef.current];n[r]=(n[r]+1)%5;setAct(n);setLast(r*5+n[r]);},DUR);
     return()=>clearInterval(iv);
   },[auto,hold,seen]);
-  const show=(r,k)=>setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});
+  const show=(r,k)=>{setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});setLast(r*5+k);};
   const pick=(r,k)=>{setAuto(false);show(r,k);};
-  return(<>
+  const cur=LP_TOUR[last],ct=STK_TONES[last%STK_TONES.length];
+  const inner=(x,tone)=>(<>
+    <span className="lp-sq-pic" style={{"--a":tone.a,"--b":tone.b}}><img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/></span>
+    <span className="lp-sq-txt" style={{"--t":tone.t}}>
+      <span className="lp-sq-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
+      <span className="lp-sq-h">{x.t}</span>
+      <span className="lp-sq-p">{x.d}</span>
+    </span>
+  </>);
+  return(<div ref={boxRef}>
     <style>{TOUR_CSS}</style>
-    <div ref={boxRef} className={`lp-gx${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR*2}ms`}}
+    <div className={`lp-sq${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR*2}ms`}}
       onPointerEnter={e=>{if(e.pointerType==="mouse")setHold(true);}} onPointerLeave={()=>setHold(false)}
       onFocus={()=>setHold(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setHold(false);}}>
       {rows.map((row,r)=>(
-        <div key={r} className="lp-gx-row">
+        <div key={r} className="lp-sq-row">
           {row.map((x,k)=>{const on=act[r]===k;const tone=STK_TONES[(r*5+k)%STK_TONES.length];return(
-            <button key={x.id} type="button" className={`lp-gx-t${on?" on":""}`} aria-expanded={on} aria-label={`${x.tab}: ${x.t}`}
+            <button key={x.id} type="button" className={`lp-sq-t${on?" on":""}`} aria-expanded={on} aria-label={`${x.tab}: ${x.t}`}
               style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}}
               onClick={()=>pick(r,k)} onPointerEnter={e=>{if(e.pointerType==="mouse")show(r,k);}}>
-              <span className="lp-gx-bar" aria-hidden="true"><u key={on?`on${act[r]}`:"off"}/></span>
-              <span className="lp-gx-face" aria-hidden="true"><i>{TOUR_IC[x.id]}</i><b>{x.tab}</b></span>
-              <span className="lp-gx-shot" aria-hidden="true"><img src={`/landing/tour/${x.id}.jpg`} alt="" width="720" height="450" loading="lazy" decoding="async"/></span>
-              <span className="lp-gx-cap">
-                <span className="lp-gx-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
-                <span className="lp-gx-more"><span className="in"><span className="h">{x.t}</span><span className="p">{x.d}</span></span></span>
-              </span>
+              <span className="lp-sq-bar" aria-hidden="true"><u key={on?`on${act[r]}`:"off"}/></span>
+              <span className="lp-sq-face" aria-hidden="true"><i>{TOUR_IC[x.id]}</i><b>{x.tab}</b></span>
+              <span className="lp-sq-in">{inner(x,tone)}</span>
             </button>);})}
         </div>
       ))}
     </div>
-    <div className="lp-gx-cap2">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
-  </>);
+    {/* טלפון: לוח גדול למעלה, ומתחתיו 10 קוביות קטנות */}
+    <div className="lp-sq-mob">
+      <div className="lp-sq-panel lp-sq-fade" key={cur.id} style={{"--t":ct.t}} aria-live="polite">{inner(cur,ct)}</div>
+      <div className="lp-sq-grid" role="group" aria-label="מסכי המערכת">
+        {LP_TOUR.map((x,i)=>{const tone=STK_TONES[i%STK_TONES.length];return(
+          <button key={x.id} type="button" className="lp-sq-mini" aria-pressed={last===i} style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}} onClick={()=>pick(Math.floor(i/5),i%5)}>
+            <i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}
+          </button>);})}
+      </div>
+    </div>
+    <div className="lp-sq-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+  </div>);
 }
 
 // ספקים ומחירים: כותרת במרכז ותמונות של סוגי ספקים מסביב
