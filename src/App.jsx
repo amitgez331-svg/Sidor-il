@@ -2415,8 +2415,8 @@ const TOUR_IC={home:"🏠",guests:"👥",seating:"🪑",sms:"📱",whatsapp:"�
 const TOUR_CSS=`
   .lp-sq{display:grid;gap:16px}
   .lp-sq-row{display:flex;gap:14px;align-items:stretch}
-  .lp-sq-t{position:relative;flex:1 1 0;min-width:0;border:none;margin:0;padding:10px 10px 14px;border-radius:24px;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:#fff;display:flex;flex-direction:column;box-shadow:0 16px 32px -26px rgba(60,35,110,.55),inset 0 0 0 1.5px #EFE6F7;transition:flex-grow 600ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease,translate 300ms cubic-bezier(0.23,1,0.32,1)}
-  .lp-sq-t.on{flex-grow:1.32;translate:0 -6px;box-shadow:0 28px 50px -28px rgba(60,35,110,.65),inset 0 0 0 2px var(--t)}
+  .lp-sq-t{position:relative;flex:1 1 0;min-width:0;border:none;margin:0;padding:10px 10px 14px;border-radius:24px;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:#fff;display:flex;flex-direction:column;box-shadow:0 16px 32px -26px rgba(60,35,110,.55),inset 0 0 0 1.5px #EFE6F7;transition:flex-grow 480ms cubic-bezier(0.77,0,0.175,1),box-shadow 260ms ease,translate 260ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-sq-t.on{flex-grow:1.6;translate:0 -8px;box-shadow:0 28px 50px -28px rgba(60,35,110,.65),inset 0 0 0 2px var(--t)}
   .lp-sq-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
   .lp-sq-pic{display:block;border-radius:16px;padding:7px;background:linear-gradient(160deg,var(--a),var(--b))}
   .lp-sq-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:10px;background:#fff;box-shadow:0 10px 20px -14px rgba(43,29,63,.6)}
@@ -2436,7 +2436,7 @@ const TOUR_CSS=`
     .lp-sq{grid-template-columns:1fr 1fr;gap:12px}
     .lp-sq-row{display:contents}
     .lp-sq-t{padding:8px 8px 12px;border-radius:20px}
-    .lp-sq-t.on{translate:none;scale:1.03}
+    .lp-sq-t.on{translate:none;scale:1.05}
     .lp-sq-h{font-size:14.5px}
     .lp-sq-p{font-size:12.5px}
   }
@@ -2448,7 +2448,7 @@ function ProductTour(){
   const [hold,setHold]=useState(false),[seen,setSeen]=useState(false);
   const boxRef=useRef(null),tick=useRef(0),actRef=useRef(act);
   actRef.current=act;
-  const DUR=2600;
+  const DUR=1700;
   useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.3});io.observe(el);return()=>io.disconnect();},[]);
   // בכל פעם קוביה אחרת גדלה מעט: לסירוגין בשורה העליונה ובתחתונה
   useEffect(()=>{
