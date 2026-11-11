@@ -2384,6 +2384,80 @@ const XLS_ROWS=[
   ["נועה פרץ","052-•••-2742","לא","","","x"],
   ["יוסי מזרחי","052-•••-4113","2","?","פלוס 1?"],
 ];
+// סיור במערכת: צילום מסך אמיתי (נתוני דוגמה) לכל יכולת, בלשוניות
+const LP_TOUR=[
+  {id:"home",tab:"מסך האירוע",t:"כל האירוע במבט אחד",d:"ספירה לאחור, מצב אישורי ההגעה וקיצור לכל כלי, ישר כשנכנסים.",pts:["כמה אישרו, כמה ממתינים וכמה לא מגיעים","הזמנה דיגיטלית עם התמונה שבחרתם","השלב הבא שכדאי לעשות"]},
+  {id:"guests",tab:"ניהול אורחים",t:"רשימת מוזמנים אחת, מסודרת",d:"מייבאים מאקסל או מוסיפים ידנית, ועורכים כל שדה ישר בטבלה.",pts:["סינון לפי קרבה, שולחן, צפייה בהזמנה ושפה","שפת ההודעות לכל אורח בנפרד","מגיעים, ממתינים ולא מגיעים בצבעים"]},
+  {id:"seating",tab:"מפת אולם",t:"מפת האולם שלכם",d:"גוררים אורחים לשולחנות ורואים מיד כמה מקומות נשארו בכל שולחן.",pts:["שולחנות עגולים, מרובעים ושולחן אבירים","הושבה אוטומטית בלחיצה","מסך מלא לעבודה נוחה"]},
+  {id:"sms",tab:"SMS",t:"הזמנות ותזכורות ב-SMS",d:"בוחרים נוסח, רואים איך ההודעה תיראה בטלפון ושולחים לכולם או רק למי שעוד לא ענה.",pts:["3 סגנונות נוסח ב-6 שפות","כל אורח מקבל את ההודעה בשפה שלו","תצוגה מקדימה לפני שליחה"]},
+  {id:"whatsapp",tab:"WhatsApp",t:"הודעות WhatsApp אישיות",d:"אותו נוסח אישי, עם שם האורח וקישור להזמנה, ישר לוואטסאפ.",pts:["שליחה לקבוצות לפי שפה","קישור אישי לאישור הגעה","מעקב מי קיבל את ההודעה"]},
+  {id:"budget",tab:"תקציב",t:"התקציב בשליטה",d:"כל הוצאה, מקדמה ויתרה לתשלום במקום אחד, לפי קטגוריות.",pts:["כמה שולם וכמה נשאר","לאן הולך הכסף, לפי קטגוריה","ייצוא לאקסל"]},
+  {id:"gifts",tab:"מתנות",t:"רישום מתנות",d:"רושמים מה כל אורח נתן, ורואים את הסכום הכולל בסוף הערב.",pts:["סכום ואמצעי תשלום לכל אורח","סינון לפי מי שנרשם ומי שעוד לא","ייצוא לאקסל"]},
+  {id:"tasks",tab:"משימות",t:"רשימת משימות עד היום הגדול",d:"משימות לפי שלבים, עם תאריכים, כדי ששום דבר לא יישכח.",pts:["סימון משימה שבוצעה","תאריך יעד לכל משימה","אחוז התקדמות"]},
+  {id:"details",tab:"פרטי האירוע",t:"פרטי האירוע והעיצוב",d:"שמות, תאריך, מקום ועיצוב ההזמנה הדיגיטלית, מקום אחד לכל ההגדרות.",pts:["סגנונות עיצוב להזמנה","שיתוף ניהול האירוע עם בן או בת הזוג","תמונת פתיחה משלכם"]},
+  {id:"vendors",tab:"ספקים",t:"ספקים ומחירים מהקהילה",d:"מחירים אמיתיים ששילמו זוגות אחרים, לפי סוג ספק ואזור.",pts:["סינון לפי תחום ואזור","מחירים שדווחו על ידי משתמשים","פרטי הספק במקום אחד"]},
+];
+const TOUR_CSS=`
+  .lp-tour-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;margin:0 -2px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .lp-tour-tabs::-webkit-scrollbar{display:none}
+  .lp-tour-tab{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #E4DBF3;background:#fff;color:#2B1D3F;font:800 15px 'Fredoka','Heebo',sans-serif;cursor:pointer;transition:background-color 200ms ease,color 200ms ease,border-color 200ms ease,box-shadow 200ms ease}
+  .lp-tour-tab[aria-selected="true"]{background:linear-gradient(120deg,#F0609E,#9B6BFF);border-color:transparent;color:#fff;box-shadow:0 12px 26px -14px rgba(155,107,255,.8)}
+  @media(hover:hover) and (pointer:fine){.lp-tour-tab[aria-selected="false"]:hover{border-color:#C9B4F0;background:#FBF8FF}}
+  .lp-tour-tab:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  .lp-tour-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.15fr);gap:36px;align-items:center}
+  .lp-tour-txt h3{font:900 clamp(24px,2.6vw,32px)/1.2 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:0 0 10px}
+  .lp-tour-txt p{font-size:17px;line-height:1.7;color:#3E3555;margin:0 0 16px}
+  .lp-tour-txt ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .lp-tour-txt li{display:flex;gap:10px;align-items:flex-start;font-size:16px;font-weight:700;color:#2B1D3F;line-height:1.5}
+  .lp-tour-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:#3CC8A0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+  .lp-tour-shot{position:relative;border-radius:22px;overflow:hidden;background:#fff;border:1px solid #E7DEF5;box-shadow:0 44px 90px -46px rgba(60,35,110,.6)}
+  .lp-tour-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F6F1FB;border-bottom:1px solid #ECE3F7;direction:ltr}
+  .lp-tour-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
+  .lp-tour-bar span{margin-inline-start:10px;font:700 12px 'Heebo',sans-serif;color:#6B5F80}
+  .lp-tour-shot img{display:block;width:100%;height:auto;aspect-ratio:1440/900;background:#FBF8FF}
+  .lp-tour-in{animation:lpTourIn 240ms cubic-bezier(0.23,1,0.32,1)}
+  @keyframes lpTourIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.lp-tour-in{animation:lpTourFade 200ms ease}@keyframes lpTourFade{from{opacity:0}to{opacity:1}}}
+  .lp-tour-cap{font-size:14px;color:#5F5675;margin-top:12px;text-align:left}
+  @media(max-width:900px){.lp-tour-body{grid-template-columns:1fr;gap:20px}.lp-tour-txt{order:2}}
+`;
+function ProductTour(){
+  const [i,setI]=useState(0);
+  const refs=useRef([]);
+  const cur=LP_TOUR[i];
+  // טוענים מראש את המסך הבא כדי שהמעבר יהיה מיידי
+  useEffect(()=>{const n=LP_TOUR[(i+1)%LP_TOUR.length];const im=new Image();im.src=`/landing/tour/${n.id}.jpg`;},[i]);
+  const go=k=>{const n=(k+LP_TOUR.length)%LP_TOUR.length;setI(n);refs.current[n]?.focus();refs.current[n]?.scrollIntoView({block:"nearest",inline:"nearest"});};
+  const onKey=e=>{
+    if(e.key==="ArrowLeft"){e.preventDefault();go(i+1);}
+    else if(e.key==="ArrowRight"){e.preventDefault();go(i-1);}
+    else if(e.key==="Home"){e.preventDefault();go(0);}
+    else if(e.key==="End"){e.preventDefault();go(LP_TOUR.length-1);}
+  };
+  return(<>
+    <style>{TOUR_CSS}</style>
+    <div className="lp-tour-tabs" role="tablist" aria-label="מסכי המערכת" onKeyDown={onKey}>
+      {LP_TOUR.map((x,k)=>(
+        <button key={x.id} ref={el=>refs.current[k]=el} role="tab" id={`lp-tt-${x.id}`} aria-controls="lp-tour-panel" aria-selected={k===i} tabIndex={k===i?0:-1} className="lp-tour-tab" onClick={()=>setI(k)}>{x.tab}</button>
+      ))}
+    </div>
+    <div id="lp-tour-panel" role="tabpanel" aria-labelledby={`lp-tt-${cur.id}`} className="lp-tour-body">
+      <div className="lp-tour-txt lp-tour-in" key={"t"+cur.id}>
+        <h3>{cur.t}</h3>
+        <p>{cur.d}</p>
+        <ul>{cur.pts.map(p=><li key={p}>{p}</li>)}</ul>
+      </div>
+      <div>
+        <div className="lp-tour-shot">
+          <div className="lp-tour-bar" aria-hidden="true"><i/><i/><i/><span>sidoril.com</span></div>
+          <img key={"i"+cur.id} className="lp-tour-in" src={`/landing/tour/${cur.id}.jpg`} alt={`צילום מסך: ${cur.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/>
+        </div>
+        <div className="lp-tour-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+      </div>
+    </div>
+  </>);
+}
+
 function CompareSlider() {
   const boxRef=useRef(null),topRef=useRef(null),barRef=useRef(null),knobRef=useRef(null);
   const pos=useRef(50),hint=useRef([]),drag=useRef(null),touched=useRef(false);
@@ -2484,9 +2558,9 @@ function CompareSlider() {
 
 // איך זה עובד: במחשב הטקסט נגלל והמסך שלצידו מתחלף לפי השלב שבמרכז המסך. בנייד — כל שלב עם התמונה שלו
 const LP_STORY=[
-  {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp.jpg",kind:"phone",alt:"רשימת המוזמנים בנייד: מגיעים, ממתינים ולא מגיעים",chip:"36 מוזמנים נכנסו מהאקסל"},
+  {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp-v2.jpg",kind:"phone",alt:"רשימת המוזמנים בנייד: מגיעים, ממתינים ולא מגיעים",chip:"36 מוזמנים נכנסו מהאקסל"},
   {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating-v2.jpg",kind:"laptop",alt:"מפת האולם במחשב: שולחנות ממוספרים, במה ובר",chip:"שולחן 2 · משפחת החתן · 5/10"},
-  {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite.jpg",kind:"phone",alt:"דף ההזמנה בנייד, עם טופס אישור הגעה",chip:"היי רחל, השולחן שלך: 7"},
+  {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite-v2.jpg",kind:"phone",alt:"דף ההזמנה בנייד, עם טופס אישור הגעה",chip:"היי רחל, השולחן שלך: 7"},
 ];
 function HowStory() {
   const [act,setAct]=useState(0);
@@ -2682,7 +2756,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               <svg className="lp-spark" style={{bottom:24,left:-12,animationDelay:"1.2s"}} width="26" height="26" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill="#F0609E"/></svg>
               <div className="lp-mock" role="img" aria-label="מסכי Sidor-IL: מפת האולם במחשב ורשימת אישורי ההגעה בנייד">
                 <div className="lp-mock-tab"><div className="lp-frame"><img src="/landing/seating-v2.jpg" alt="" width="1440" height="655" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
-                <div className="lp-mock-phone"><div className="lp-frame"><img src="/landing/rsvp.jpg" alt="" width="390" height="760" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
+                <div className="lp-mock-phone"><div className="lp-frame"><img src="/landing/rsvp-v2.jpg" alt="" width="390" height="760" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
                 <span className="lp-bub b1" style={{"--d":"1s"}} aria-hidden="true"><i style={{background:LP.mint}}/>רחל כהן אישרה הגעה</span>
                 <span className="lp-bub b2" style={{"--d":"1.2s"}} aria-hidden="true"><i style={{background:LP.violet}}/>שולחן 2 · משפחת החתן · 5/10</span>
                 <span className="lp-bub b3" style={{"--d":"1.4s"}} aria-hidden="true"><i style={{background:LP.rose}}/>36 מוזמנים · 12 מגיעים</span>
@@ -2822,6 +2896,14 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               </div>
             );
           })()}
+        </div>
+      </section>
+
+      {/* ─── סיור במערכת: מסך אמיתי לכל יכולת ─── */}
+      <section id="tour" className="lp-sheet" style={{background:"#F6F3FF"}}>
+        <div className="lp-wrap">
+          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד. בחרו מסך ותראו בדיוק איך הוא עובד.")}
+          <div data-reveal><ProductTour/></div>
         </div>
       </section>
 
@@ -12628,6 +12710,66 @@ function AdminPasswordModal({ user, onClose }) {
   );
 }
 
+// ─── עיצוב האדמין: רקע בהיר, סרגל עליון צף ותפריט צד (כמו שאר האתר) ───
+const ADM_CSS=`
+.adm{min-height:100vh;background:radial-gradient(1100px 560px at 100% -10%,#FFE9F3 0%,transparent 60%),radial-gradient(900px 500px at 0% 0%,#EFE7FF 0%,transparent 55%),#FBF8FF;color:#2B1D3F;font-family:'Heebo',sans-serif}
+.adm h1,.adm h2,.adm h3,.adm button,.adm b,.adm strong,.adm [style*="font-weight: 900"],.adm [style*="font-weight: 800"]{font-family:'Fredoka','Heebo',sans-serif}
+.adm-top{position:sticky;top:12px;z-index:50;margin:12px 16px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid #EFE6F8;border-radius:20px;box-shadow:0 14px 34px -24px rgba(91,60,140,.55)}
+.adm-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.adm-logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#FFE3EE,#EDE3FF);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.adm-title{font:700 18px 'Fredoka','Heebo',sans-serif}
+.adm-sub{font-size:12px;color:#6B5F80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-search{flex:1 1 260px;max-width:420px;margin-inline-start:auto;display:flex;align-items:center;gap:8px;background:#F7F2FC;border:1px solid #EDE3F7;border-radius:999px;padding:0 14px;min-height:42px;transition:border-color 180ms ease,box-shadow 180ms ease}
+.adm-search input{flex:1;border:none;background:none;outline:none;font:inherit;font-size:14px;color:#2B1D3F;min-width:0}
+.adm-search:focus-within{border-color:#B79CF0;box-shadow:0 0 0 3px rgba(155,107,255,.18)}
+.adm-actions{display:flex;gap:8px}
+.adm-btn{min-height:42px;padding:0 14px;border-radius:999px;border:1px solid #E9DFF5;background:#fff;color:#2B1D3F;font-size:14px;font-weight:600;cursor:pointer;transition:background-color 180ms ease,border-color 180ms ease}
+.adm-btn.danger{color:#C53030}
+.adm-layout{display:grid;grid-template-columns:244px minmax(0,1fr);gap:22px;max-width:1360px;margin:0 auto;padding:22px 16px 48px}
+.adm-side{position:sticky;top:96px;align-self:start;display:flex;flex-direction:column;gap:14px;background:rgba(255,255,255,.72);border:1px solid #F0E8F7;border-radius:22px;padding:14px 10px;max-height:calc(100vh - 116px);overflow:auto}
+.adm-glabel{font-size:12px;font-weight:700;color:#6B5F80;padding:0 10px 6px}
+.adm-nav{width:100%;display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border:none;border-radius:14px;background:none;color:#2B1D3F;font-size:15px;font-weight:600;cursor:pointer;text-align:right;transition:background-color 160ms ease}
+.adm-nic{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#F6F1FB;font-size:15px;flex-shrink:0}
+.adm-nl{flex:1}
+.adm-nav.on{background:linear-gradient(120deg,#FFE6F0,#EFE6FF)}
+.adm-nav.on .adm-nic{background:#fff}
+@media(hover:hover) and (pointer:fine){.adm-nav:not(.on):hover{background:#FAF6FE}.adm-btn:hover{background:#FBF7FF;border-color:#CDB8F2}.adm-mini.ghost:hover{border-color:#CDB8F2}}
+.adm-nav:focus-visible,.adm-btn:focus-visible,.adm-mini:focus-visible,.adm-link:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
+.adm-cnt{min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:#EFE8F8;color:#5E5470;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.adm-cnt.alert{background:#D6336C;color:#fff}
+.adm-head{margin:2px 0 18px}
+.adm-head h1{font-size:28px;font-weight:700;margin:0;line-height:1.25}
+.adm-head p{font-size:14px;color:#6B5F80;margin-top:4px}
+.adm-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.adm-kpi{border-radius:20px;padding:16px 18px;border:1px solid rgba(255,255,255,.8)}
+.adm-kpi-top{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#3E3555}
+.adm-kpi-ic{width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+.adm-kpi-v{font:700 30px/1.1 'Fredoka','Heebo',sans-serif;margin:12px 0 4px}
+.adm-kpi-s{font-size:12.5px;color:#5E5470}
+.adm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.adm-card{background:#fff;border:1px solid #F0E8F7;border-radius:22px;padding:16px 18px;box-shadow:0 12px 30px -24px rgba(91,60,140,.5);min-width:0}
+.adm-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.adm-card-h h2{font-size:17px;font-weight:700;margin:0}
+.adm-link{background:none;border:none;color:#6D28D9;font-size:13px;font-weight:700;cursor:pointer;padding:6px;border-radius:8px}
+.adm-empty{padding:22px 8px;text-align:center;color:#6B5F80;font-size:14px}
+.adm-li{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid #F4EEF9}
+.adm-card-h+.adm-li{border-top:none}
+.adm-li-ic{width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--c,#9B6BFF) 12%,#fff);color:var(--c,#9B6BFF);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800}
+.adm-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#F0609E,#9B6BFF);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.adm-li-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.adm-li-t b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-li-t span{font-size:12px;color:#6B5F80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-days{width:48px;flex-shrink:0;text-align:center;background:#F6F1FB;border-radius:12px;padding:5px 0;font-size:11px;color:#6B5F80;line-height:1.2}
+.adm-days b{display:block;font-size:16px;color:#2B1D3F}
+.adm-bar{height:6px;border-radius:99px;background:#F1EAF8;margin-top:5px;overflow:hidden;max-width:240px}
+.adm-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3CC8A0,#7BD8B9)}
+.adm-mini{min-height:36px;padding:0 12px;border-radius:999px;border:none;background:linear-gradient(120deg,#E0447F,#8B5CF6);color:#fff;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+.adm-mini.ghost{background:#fff;color:#2B1D3F;border:1px solid #E9DFF5}
+.adm-row:hover{border-color:#D9C8F5!important;box-shadow:0 14px 30px -20px rgba(91,60,140,.55)!important}
+@media(max-width:1050px){.adm-grid2{grid-template-columns:1fr}}
+@media(max-width:860px){.adm-layout{grid-template-columns:1fr;padding-top:14px}.adm-side{position:static;flex-direction:row;overflow-x:auto;max-height:none;padding:8px;gap:4px;border-radius:18px}.adm-group{display:contents}.adm-glabel{display:none}.adm-nav{width:auto;flex-shrink:0;white-space:nowrap}.adm-top{position:relative;top:0;margin:8px 8px 0}.adm-search{order:3;max-width:none;flex-basis:100%}.adm-head h1{font-size:24px}.adm-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.adm-kpi{padding:14px}.adm-kpi-v{font-size:24px}.adm-li{flex-wrap:wrap}.adm-li-t{flex-basis:calc(100% - 60px)}}
+`;
+
 function AdminDashboard({ user, onLogout }) {
   const [users,setUsers]=useState([]);       // [{user_id,email,created_at,last_sign_in_at,events:[],guests:0}]
   const [events,setEvents]=useState([]);
@@ -12637,7 +12779,7 @@ function AdminDashboard({ user, onLogout }) {
   const [txs,setTxs]=useState([]);
   const [guestCount,setGuestCount]=useState({}); // {event_id: n}
   const [loading,setLoading]=useState(true);
-  const [tab,setTab]=useState("attention");
+  const [tab,setTab]=useState("overview");
   const [stats,setStats]=useState({});            // {event_id: {rows,people,confirmed,pending,seated,phones}}
   const [failedRuns,setFailedRuns]=useState([]);  // שליחות אוטומטיות שנכשלו / דולגו ב-14 הימים האחרונים
   const [custFor,setCustFor]=useState(null);      // כרטיס לקוח פתוח (user_id)
@@ -12775,7 +12917,7 @@ function AdminDashboard({ user, onLogout }) {
   const totalBalance=Object.values(balances).reduce((s,b)=>s+(b.balance||0),0);
   const totalGuests=Object.values(guestCount).reduce((s,n)=>s+n,0);
   const fmtDate=d=>d?new Date(d).toLocaleDateString("he-IL",{day:"numeric",month:"short",year:"2-digit"}):"—";
-  const card={background:"#fff",border:`1px solid ${C.border}`,borderRadius:18,boxShadow:"0 6px 20px -14px rgba(91,60,140,.35)"};
+  const card={background:"#fff",border:"1px solid #F0E8F7",borderRadius:20,boxShadow:"0 12px 30px -24px rgba(91,60,140,.5)"};
   const chip=(bg,fg)=>({background:bg,color:fg,borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800,whiteSpace:"nowrap"});
   // ─── צריך טיפול: מה דורש את תשומת הלב שלך עכשיו ───
   const day0=new Date();day0.setHours(0,0,0,0);
@@ -12798,42 +12940,27 @@ function AdminDashboard({ user, onLogout }) {
   });
   // פתיחת אירוע של לקוח (כאדמין) כדי לראות בדיוק מה הוא רואה
   const openEvent=ev=>{optSet("sidor_event_id",ev.id);optSet("sidor_last_screen",JSON.stringify({eventId:ev.id,screen:"home",view:"map"}));window.location.href="/";};
-  const TABS=[["attention","🔔 צריך טיפול",attention.filter(a=>a.lvl!=="info").length],["requests","🛒 בקשות SMS",pending.length],["wa_requests","💬 בקשות WhatsApp",waPendingReqs.length],["events","📅 אירועים ו-SMS",events.length],["users","👥 משתמשים וחבילות",users.length],["venues","🏛️ אולמות",null],["referrals","🎯 הפניות",Object.keys(refs).length],["reviews","⭐ המלצות",null],["suppliers","🏪 ספקים רשומים",null],["vendordata","💡 ספקים ומחירים",null],["backups","💾 גיבויים",null],["log","🧾 יומן SMS",null]];
+  // ─── עיצוב חדש: תפריט צד לפי נושאים + מסך סקירה ───
+  const weekAgo=Date.now()-7*864e5,monthAgo=Date.now()-30*864e5;
+  const newUsers=users.filter(u=>u.created_at&&new Date(u.created_at).getTime()>=weekAgo).length;
+  const newEvents=events.filter(e=>e.created_at&&new Date(e.created_at).getTime()>=weekAgo).length;
+  const income30=[...requests,...waRequests].filter(r=>r.status==="approved"&&new Date(r.handled_at||r.created_at).getTime()>=monthAgo).reduce((t,r)=>t+(+r.price||0),0);
+  const upcoming=events.filter(e=>{const d=daysTo(e.date);return d!==null&&d>=0&&d<=30;}).sort((a,b)=>a.date.localeCompare(b.date));
+  const recentUsers=[...users].filter(u=>u.created_at).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))).slice(0,5);
+  const urgent=attention.filter(a=>a.lvl!=="info");
+  const NAV=[
+    ["יומיומי",[["overview","🏠","סקירה",null],["attention","🔔","צריך טיפול",urgent.length],["requests","🛒","בקשות SMS",pending.length],["wa_requests","💬","בקשות WhatsApp",waPendingReqs.length]]],
+    ["לקוחות",[["events","📅","אירועים ויתרות",events.length],["users","👥","משתמשים וחבילות",users.length],["referrals","🎯","הפניות",Object.keys(refs).length]]],
+    ["תוכן ושותפים",[["venues","🏛️","אולמות",null],["suppliers","🏪","ספקים רשומים",null],["vendordata","💡","ספקים ומחירים",null],["reviews","⭐","המלצות",null]]],
+    ["מערכת",[["backups","💾","גיבויים",null],["log","🧾","יומן SMS",null]]],
+  ];
+  const ALERT_TABS=["attention","requests","wa_requests"];
+  const navItem=NAV.flatMap(g=>g[1]).find(x=>x[0]===tab)||NAV[0][1][0];
+  const SUBS={overview:"מה קורה במערכת עכשיו ומה מחכה לך",attention:"בקשות רכישה, שליחות אוטומטיות שנכשלו ואירועים ב-14 הימים הקרובים",requests:"אישור תשלום וטעינת הודעות SMS ללקוחות",wa_requests:"אישור תשלום וטעינת רשומות WhatsApp",events:"יתרות SMS ו-WhatsApp לכל אירוע",users:"חבילות, סיסמאות וכרטיס לקוח",referrals:"מי הגיע דרך קוד הפניה",venues:"האולמות במאגר",suppliers:"ספקים שנרשמו לאתר",vendordata:"מחירים שדיווחו המשתמשים",reviews:"ההמלצות שמוצגות באתר",backups:"שחזור אירוע מגיבוי",log:"60 התנועות האחרונות"};
+  const hello=(()=>{const h=new Date().getHours();return h<12?"בוקר טוב":h<17?"צהריים טובים":h<21?"ערב טוב":"לילה טוב";})();
   const TX_LABEL={admin:"הוספת אדמין",purchase:"רכישה",send:"שליחה",refund:"החזר"};
-
-  return(
-    <div dir="rtl" style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Heebo',sans-serif"}}>
-      <style>{`.adm-tab:hover{background:#fff!important;border-color:${C.blueL}!important}.adm-row:hover{border-color:${C.blueL}!important;box-shadow:0 10px 24px -16px rgba(91,60,140,.5)!important}`}</style>
-
-      {/* כותרת */}
-      <div style={{background:GRAD,color:"#fff",padding:"18px 24px 64px"}}>
-        <div style={{maxWidth:1180,margin:"0 auto",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-          <div style={{width:44,height:44,borderRadius:14,background:"rgba(255,255,255,.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🛡️</div>
-          <div style={{flex:1,minWidth:180}}>
-            <div style={{fontWeight:900,fontSize:22}}>ניהול Sidor-IL</div>
-            <div style={{fontSize:12,opacity:.9}}>{user.email}{updatedAt&&` · עודכן ${updatedAt.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`}</div>
-          </div>
-          <button onClick={()=>{window.location.hash="";}} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>→ לאתר</button>
-          <button onClick={refreshAll} className="sx-btn" style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"1px solid rgba(255,255,255,.4)",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 רענן</button>
-          <button onClick={onLogout} className="sx-btn" style={{background:"#fff",color:C.danger,border:"none",borderRadius:12,padding:"8px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>יציאה</button>
-        </div>
-      </div>
-
-      <div style={{maxWidth:1180,margin:"-46px auto 0",padding:"0 20px 40px"}}>
-        {/* נתונים */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginBottom:18}}>
-          {[["👥","משתמשים",users.length,C.blueL],["📅","אירועים",events.length,C.coral],["🎊","אורחים",totalGuests,C.gold],["📱","יתרת SMS כוללת",totalBalance,C.info],["🛒","בקשות ממתינות",pending.length,pending.length?C.danger:C.success]].map(([ic,l,v,c])=>(
-            <div key={l} style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
-              <div style={{width:44,height:44,borderRadius:14,background:c+"1F",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{ic}</div>
-              <div>
-                <div style={{fontSize:24,fontWeight:900,lineHeight:1,color:C.text}}>{loading?"…":v.toLocaleString()}</div>
-                <div style={{fontSize:12,color:C.muted,fontWeight:700,marginTop:3}}>{l}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* יתרה בספק (019) מול מה שנמכר ללקוחות */}
+  const lvlColor=l=>l==="red"?C.danger:l==="amber"?"#B45309":C.blue;
+  const providerCard=(
         <div style={{...card,padding:"14px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",
           borderRight:`4px solid ${!provider?C.border:provider.ok?(providerShort(1)>0?C.danger:C.success):C.gold}`}}>
           <div style={{width:44,height:44,borderRadius:14,background:C.blueXL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🏦</div>
@@ -12843,28 +12970,131 @@ function AdminDashboard({ user, onLogout }) {
               :provider.ok?<div style={{fontSize:13,color:C.muted}}>
                 יתרה ב-019: <b style={{color:C.text}}>{(provider.provider_balance??0).toLocaleString()}</b> ·
                 נמכרו ללקוחות ועוד לא נשלחו: <b style={{color:C.text}}>{(provider.committed??0).toLocaleString()}</b> ·
-                פנוי למכירה: <b style={{color:(provider.provider_balance-provider.committed)<0?C.danger:C.success}}>{((provider.provider_balance??0)-(provider.committed??0)).toLocaleString()}</b>
+                פנוי למכירה: <b style={{color:(provider.provider_balance-provider.committed)<0?"#B42318":"#1F7A4D"}}>{((provider.provider_balance??0)-(provider.committed??0)).toLocaleString()}</b>
               </div>
               :<div style={{fontSize:13,color:"#8A5A00"}}>{provider.configured===false?"⚠️ החיבור ל-019 עוד לא הוגדר (SMS019_USERNAME / SMS019_TOKEN)":`⚠️ ${provider.error||"019 החזיר שגיאה"}${provider.provider_status!=null?` (סטטוס ${provider.provider_status})`:""}`}</div>}
           </div>
           <button onClick={loadProvider} className="sx-btn" style={{background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>🔄 בדוק שוב</button>
         </div>
+  );
 
-        {/* טאבים + חיפוש */}
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
-          {TABS.map(([id,label,count])=>(
-            <button key={id} onClick={()=>setTab(id)} className={tab===id?"":"adm-tab"}
-              style={{background:tab===id?GRAD:"#fff",color:tab===id?"#fff":C.text,border:`1.5px solid ${tab===id?"transparent":C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:7,boxShadow:tab===id?`0 8px 18px -8px ${C.blueM}`:"none"}}>
-              {label}
-              {count!==null&&<span style={{background:tab===id?"rgba(255,255,255,.25)":((id==="requests"||id==="attention"||id==="wa_requests")&&count?"#FDECEE":C.blueXL),color:tab===id?"#fff":((id==="requests"||id==="attention"||id==="wa_requests")&&count?C.danger:C.muted),borderRadius:100,padding:"0 8px",fontSize:12}}>{count}</span>}
-            </button>
-          ))}
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 חיפוש לפי מייל או שם אירוע..."
-            style={{marginRight:"auto",minWidth:240,flex:"0 1 320px",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"9px 14px",fontSize:14,color:C.text,outline:"none",fontFamily:"inherit"}}/>
+  return(
+    <div dir="rtl" className="adm">
+      <style>{ADM_CSS}</style>
+      <header className="adm-top">
+        <div className="adm-brand">
+          <span className="adm-logo" aria-hidden="true">🛡️</span>
+          <div style={{minWidth:0}}>
+            <div className="adm-title">ניהול Sidor-IL</div>
+            <div className="adm-sub">{user.email}{updatedAt&&` · עודכן ${updatedAt.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})}`}</div>
+          </div>
         </div>
+        <label className="adm-search"><span aria-hidden="true">🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש לפי מייל או שם אירוע" aria-label="חיפוש לפי מייל או שם אירוע"/>
+        </label>
+        <div className="adm-actions">
+          <button onClick={()=>{window.location.hash="";}} className="adm-btn">לאתר</button>
+          <button onClick={refreshAll} className="adm-btn">🔄 רענון</button>
+          <button onClick={onLogout} className="adm-btn danger">יציאה</button>
+        </div>
+      </header>
 
+      <div className="adm-layout">
+        <nav className="adm-side" aria-label="תפריט ניהול">
+          {NAV.map(([g,items])=>(
+            <div key={g} className="adm-group">
+              <div className="adm-glabel">{g}</div>
+              {items.map(([id,ic,label,count])=>(
+                <button key={id} onClick={()=>setTab(id)} className={"adm-nav"+(tab===id?" on":"")} aria-current={tab===id?"page":undefined}>
+                  <span className="adm-nic" aria-hidden="true">{ic}</span>
+                  <span className="adm-nl">{label}</span>
+                  {count!==null&&count>0&&<span className={"adm-cnt"+(ALERT_TABS.includes(id)?" alert":"")}>{count.toLocaleString()}</span>}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <main className="adm-main">
+          <div className="adm-head">
+            <h1>{tab==="overview"?`${hello} 👋`:<><span aria-hidden="true">{navItem[1]}</span> {navItem[2]}</>}</h1>
+            <p>{SUBS[navItem[0]]}</p>
+          </div>
         {loading?(
           <div style={{textAlign:"center",padding:60}}><Spinner size={36}/></div>
+        ):tab==="overview"?(
+          <div>
+            <div className="adm-kpis">
+              {[["👥","משתמשים",users.length,newUsers?`+${newUsers} השבוע`:"אין חדשים השבוע","#F1EAFF"],
+                ["📅","אירועים",events.length,newEvents?`+${newEvents} השבוע`:"אין חדשים השבוע","#FFE9F2"],
+                ["🎊","אורחים במערכת",totalGuests,`${upcoming.length} אירועים ב-30 הימים הקרובים`,"#FFF4DE"],
+                ["📱","יתרת SMS אצל לקוחות",totalBalance,"נמכרו ועוד לא נשלחו","#E6F4FF"],
+                ["₪","הכנסות ב-30 יום",`₪${income30.toLocaleString()}`,"מבקשות רכישה שאושרו","#E6F8EF"]].map(([ic,l,v,sub,bg])=>(
+                <div key={l} className="adm-kpi" style={{background:bg}}>
+                  <div className="adm-kpi-top"><span className="adm-kpi-ic" aria-hidden="true">{ic}</span>{l}</div>
+                  <div className="adm-kpi-v">{typeof v==="number"?v.toLocaleString():v}</div>
+                  <div className="adm-kpi-s">{sub}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="adm-grid2">
+              <section className="adm-card" aria-labelledby="adm-h-att">
+                <div className="adm-card-h"><h2 id="adm-h-att">🔔 צריך טיפול</h2>{urgent.length>0&&<button className="adm-link" onClick={()=>setTab("attention")}>הכל ({urgent.length})</button>}</div>
+                {!urgent.length?<div className="adm-empty">✅ אין כרגע שום דבר שדורש טיפול</div>
+                  :urgent.slice(0,5).map((a,i)=>(
+                  <div key={i} className="adm-li" style={{"--c":lvlColor(a.lvl)}}>
+                    <span className="adm-li-ic" aria-hidden="true">{a.icon}</span>
+                    <div className="adm-li-t"><b>{a.text}</b>{(a.sub||a.ev)&&<span>{a.sub}{a.ev?`${a.sub?" · ":""}${emailOf(a.ev.user_id)}`:""}</span>}</div>
+                    {a.go&&<button className="adm-mini" onClick={a.go}>לטיפול</button>}
+                    {a.ev&&<button className="adm-mini ghost" onClick={()=>openEvent(a.ev)}>פתח אירוע</button>}
+                  </div>
+                ))}
+              </section>
+              <section className="adm-card" aria-labelledby="adm-h-up">
+                <div className="adm-card-h"><h2 id="adm-h-up">📅 אירועים ב-30 הימים הקרובים</h2><button className="adm-link" onClick={()=>setTab("events")}>כל האירועים</button></div>
+                {!upcoming.length?<div className="adm-empty">אין אירועים בחודש הקרוב</div>
+                  :upcoming.slice(0,6).map(ev=>{const st=stats[ev.id]||{},d=daysTo(ev.date),pct=st.people?Math.round((st.confirmed||0)/st.people*100):0;return(
+                  <div key={ev.id} className="adm-li">
+                    <span className="adm-days"><b>{d===0?"היום":d===1?"מחר":d}</b>{d>1?"ימים":""}</span>
+                    <div className="adm-li-t">
+                      <b>{ev.name}</b>
+                      <span>{fmtDate(ev.date)} · {st.people||0} מוזמנים · {pct}% אישרו</span>
+                      <div className="adm-bar" role="img" aria-label={`${pct}% אישרו הגעה`}><i style={{width:pct+"%"}}/></div>
+                    </div>
+                    <button className="adm-mini ghost" onClick={()=>setCustFor(ev.user_id)}>לקוח</button>
+                    <button className="adm-mini ghost" onClick={()=>openEvent(ev)}>פתח</button>
+                  </div>
+                );})}
+              </section>
+            </div>
+
+            {providerCard}
+
+            <div className="adm-grid2">
+              <section className="adm-card" aria-labelledby="adm-h-nu">
+                <div className="adm-card-h"><h2 id="adm-h-nu">👋 משתמשים חדשים</h2><button className="adm-link" onClick={()=>setTab("users")}>כל המשתמשים</button></div>
+                {!recentUsers.length?<div className="adm-empty">אין עדיין משתמשים</div>
+                  :recentUsers.map(u=>(
+                  <div key={u.user_id} className="adm-li">
+                    <span className="adm-av" aria-hidden="true">{(u.email||"?")[0].toUpperCase()}</span>
+                    <div className="adm-li-t"><b dir="ltr" style={{textAlign:"right"}}>{u.email||u.user_id}</b><span>הצטרף {fmtDate(u.created_at)} · {u.events.length} אירועים · {u.guests} אורחים</span></div>
+                    <button className="adm-mini ghost" onClick={()=>setCustFor(u.user_id)}>כרטיס לקוח</button>
+                  </div>
+                ))}
+              </section>
+              <section className="adm-card" aria-labelledby="adm-h-tx">
+                <div className="adm-card-h"><h2 id="adm-h-tx">🧾 תנועות SMS אחרונות</h2><button className="adm-link" onClick={()=>setTab("log")}>ליומן המלא</button></div>
+                {!txs.length?<div className="adm-empty">אין עדיין תנועות SMS</div>
+                  :txs.slice(0,5).map(t=>(
+                  <div key={t.id} className="adm-li">
+                    <span style={{...chip(t.amount>0?"#E9FBF4":"#FFF2F4",t.amount>0?"#1F7A4D":"#B42318"),minWidth:54,textAlign:"center"}}>{t.amount>0?"+":""}{t.amount}</span>
+                    <div className="adm-li-t"><b>{TX_LABEL[t.kind]||t.kind}{eventOf(t.event_id)?` · ${eventOf(t.event_id).name}`:""}</b><span>{t.note?`${t.note} · `:""}{new Date(t.created_at).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
+                  </div>
+                ))}
+              </section>
+            </div>
+          </div>
         ):tab==="attention"?(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {!attention.length&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין כרגע שום דבר שדורש טיפול</div><div style={{fontSize:13,marginTop:4}}>בודק: בקשות רכישה, שליחות אוטומטיות שנכשלו, ואירועים ב-14 הימים הקרובים</div></div>}
@@ -12911,6 +13141,7 @@ function AdminDashboard({ user, onLogout }) {
           </div>
         ):tab==="requests"?(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {providerCard}
             {pending.length===0&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין בקשות רכישה ממתינות</div></div>}
             {pending.map(r=>{const ev=eventOf(r.event_id);return(
               <div key={r.id} className="adm-row" style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",borderRight:`4px solid ${C.gold}`}}>
@@ -13038,6 +13269,7 @@ function AdminDashboard({ user, onLogout }) {
             ))}
           </div>
         )}
+        </main>
       </div>
 
       {/* חלון הוספת SMS */}
