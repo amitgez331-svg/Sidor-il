@@ -2406,8 +2406,8 @@ const STK_TONES=[
   {a:"#FFF3DA",b:"#FBE0A8",t:"#835500"},
 ];
 const TOUR_CSS=`
-  .lp-stk{position:relative}
-  .lp-stk-band{position:sticky;top:calc(92px + var(--k) * 10px);margin-top:36px}
+  .lp-stk{position:relative;padding-bottom:38vh}
+  .lp-stk-band{position:sticky;top:calc(92px + var(--k) * 10px);margin-top:48vh}
   .lp-stk-band:first-child{margin-top:0}
   .lp-stk-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.5fr);gap:52px;align-items:center;min-height:min(540px,calc(100vh - 150px));padding:52px 0 52px 0;padding-inline-start:60px;border-radius:44px;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 -22px 44px -34px rgba(60,35,110,.55),0 1px 0 rgba(255,255,255,.7) inset}
   .lp-stk-txt{position:relative;z-index:1}
@@ -2426,7 +2426,8 @@ const TOUR_CSS=`
   .lp-stk-shot img{display:block;width:100%;height:auto;aspect-ratio:1440/900;background:#FBF8FF}
   .lp-stk-cap{font-size:14px;color:#5F5675;margin-top:22px;text-align:center}
   @media(max-width:900px){
-    .lp-stk-band{top:calc(84px + var(--k) * 5px);margin-top:22px}
+    .lp-stk{padding-bottom:30vh}
+    .lp-stk-band{top:calc(84px + var(--k) * 5px);margin-top:42vh}
     .lp-stk-card{grid-template-columns:1fr;gap:20px;min-height:0;padding:22px 0 26px;padding-inline-start:22px;border-radius:32px}
     .lp-stk-txt{padding-inline-end:22px}
     .lp-stk-vis{order:-1}
@@ -2464,6 +2465,70 @@ function ProductTour(){
       );})}
     </div>
     <div className="lp-stk-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+  </>);
+}
+
+// ספקים ומחירים: "תמנון" — מחירי המנות במרכז, וכל סוג ספק בבועה משלו שמחוברת בזרוע
+const OCT_D=[[870,416],[653,551],[347,551],[130,416],[130,224],[347,89],[653,89],[870,224]];
+const OCT_M=[[339,362],[257,479],[143,479],[61,362],[61,198],[143,81],[257,81],[339,198]];
+const octPath=(cx,cy,[x,y],a)=>{const dx=x-cx,dy=y-cy,L=Math.hypot(dx,dy),px=-dy/L*a,py=dx/L*a;return `M${cx} ${cy}C${cx+dx/3+px} ${cy+dy/3+py} ${cx+2*dx/3-px} ${cy+2*dy/3-py} ${x} ${y}`;};
+const OCT_CSS=`
+  .lp-oct{position:relative;aspect-ratio:1000/640;max-width:1060px;margin:0 auto}
+  .lp-oct svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .lp-oct .lp-oct-svm{display:none}
+  .lp-oct-c{position:absolute;left:50%;top:50%;z-index:2;width:31%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5%;color:#fff;background:radial-gradient(circle at 34% 28%,#FF9CC3 0%,#F0609E 42%,#9B6BFF 100%);box-shadow:0 46px 90px -40px rgba(150,50,160,.8),0 0 0 14px rgba(255,255,255,.6),0 0 0 15px rgba(240,96,158,.18)}
+  .lp-oct-c h3{font:900 clamp(18px,1.9vw,24px)/1.15 'Fredoka','Heebo',sans-serif;margin:0 0 4px}
+  .lp-oct-c .lp-oct-k{font-size:14px;font-weight:700;opacity:.95}
+  .lp-oct-c .lp-oct-p{font:900 clamp(44px,5vw,66px)/1 'Fredoka','Heebo',sans-serif;margin:6px 0 2px;letter-spacing:-.02em}
+  .lp-oct-c .lp-oct-r{font-size:14px;font-weight:700;margin-bottom:10px}
+  .lp-oct-days{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+  .lp-oct-days span{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:800}
+  .lp-oct-b{position:absolute;z-index:2;left:calc(var(--x) * .1%);top:calc(var(--y) * .15625%);width:15.5%;aspect-ratio:1;translate:-50% -50%;border:none;border-radius:50%;cursor:pointer;font:inherit;color:#2B1D3F;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;
+    background:radial-gradient(circle at 32% 26%,#fff 0%,var(--a) 48%,var(--b) 100%);box-shadow:0 26px 46px -28px rgba(60,35,110,.65),0 0 0 7px rgba(255,255,255,.65),inset 0 -8px 18px -10px rgba(60,35,110,.25);transition:scale 200ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-oct-b .lp-oct-i{font-size:clamp(24px,2.6vw,34px);line-height:1}
+  .lp-oct-b b{font:800 clamp(13px,1.25vw,16px)/1.2 'Fredoka','Heebo',sans-serif}
+  .lp-oct-b small{font-size:12px;font-weight:700;color:var(--t)}
+  .lp-oct-b:focus-visible{outline:3px solid #9B6BFF;outline-offset:6px}
+  @media(hover:hover) and (pointer:fine){.lp-oct-b:hover{scale:1.07}}
+  @keyframes lpOctBob{50%{transform:translateY(-8px)}}
+  .lp-motion .lp-oct-b{animation:lpOctBob 6s ease-in-out infinite;animation-delay:calc(var(--i) * -.75s)}
+  .lp-oct-note{max-width:620px;margin:26px auto 0;text-align:center;font-size:16px;line-height:1.7;color:#3A2F50}
+  .lp-oct-note small{display:block;font-size:13px;color:#6B5F80;margin-top:4px}
+  .lp-oct-cta{display:flex;justify-content:center;margin-top:18px}
+  @media(max-width:760px){
+    .lp-oct{aspect-ratio:400/560;max-width:440px}
+    .lp-oct .lp-oct-svd{display:none}.lp-oct .lp-oct-svm{display:block}
+    .lp-oct-c{width:44%;padding:4%;box-shadow:0 30px 60px -30px rgba(150,50,160,.8),0 0 0 9px rgba(255,255,255,.6)}
+    .lp-oct-c h3{font-size:15px}.lp-oct-c .lp-oct-k,.lp-oct-days{display:none}
+    .lp-oct-c .lp-oct-p{font-size:38px}.lp-oct-c .lp-oct-r{font-size:11px;margin:0;white-space:nowrap}
+    .lp-oct-b{left:calc(var(--mx) * .25%);top:calc(var(--my) * .178571%);width:23%;padding:4px;box-shadow:0 18px 30px -20px rgba(60,35,110,.65),0 0 0 5px rgba(255,255,255,.65)}
+    .lp-oct-b .lp-oct-i{font-size:22px}.lp-oct-b b{font-size:12px}.lp-oct-b small{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){.lp-motion .lp-oct-b{animation:none}}
+`;
+function OctoVendors({onOpen}){
+  const cats=VENDOR_CATS.filter(c=>c[0]!=="other");
+  const tent=(pts,cx,cy,a,w)=>pts.map((p,k)=><path key={k} d={octPath(cx,cy,p,k%2?a:-a)} fill="none" stroke="url(#lpOctG)" strokeWidth={w} strokeLinecap="round" opacity=".55"/>);
+  const grad=<defs><linearGradient id="lpOctG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF8A65"/><stop offset=".5" stopColor="#F0609E"/><stop offset="1" stopColor="#9B6BFF"/></linearGradient></defs>;
+  return(<>
+    <style>{OCT_CSS}</style>
+    <div className="lp-oct">
+      <svg className="lp-oct-svd" viewBox="0 0 1000 640" aria-hidden="true">{grad}{tent(OCT_D,500,320,46,13)}</svg>
+      <svg className="lp-oct-svm" viewBox="0 0 400 560" aria-hidden="true">{grad}{tent(OCT_M,200,280,22,7)}</svg>
+      <div className="lp-oct-c">
+        <h3>מחירי מנות</h3>
+        <div className="lp-oct-k">באולם, לפי עיר ויום</div>
+        <div className="lp-oct-p lp-num">₪298</div>
+        <div className="lp-oct-r">למנה · טווח ₪265–345</div>
+        <div className="lp-oct-days"><span>א׳–ד׳ ₪265</span><span>חמישי ₪285</span><span>שישי ₪345</span></div>
+      </div>
+      {cats.map(([k,ic,l],i)=>{const tone=STK_TONES[i%STK_TONES.length];return(
+        <button key={k} type="button" className="lp-oct-b" onClick={onOpen} aria-label={`${l}: מחירים והמלצות`}
+          style={{"--x":OCT_D[i][0],"--y":OCT_D[i][1],"--mx":OCT_M[i][0],"--my":OCT_M[i][1],"--i":i,"--a":tone.a,"--b":tone.b,"--t":tone.t}}>
+          <span className="lp-oct-i" aria-hidden="true">{ic}</span><b>{l}</b><small>מחירים והמלצות</small>
+        </button>);})}
+    </div>
+    <p className="lp-oct-note">משווים את ההצעה שקיבלתם למה ששילמו זוגות אחרים באירועים דומים, וקוראים המלצות על כל סוג ספק.<small>* המספרים במרכז הם דוגמה להמחשה</small></p>
   </>);
 }
 
@@ -2920,49 +2985,11 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
         <div className="lp-wrap">
           {sectionTitle("ספקים ומחירים","כמה שילמו","זוגות אחרים?","מחירי מנות אמיתיים באולמות, והמלצות על ספקים — מהקהילה של Sidor-IL. משווים, מתמקחים וחוסכים.")}
-          <div data-reveal><FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/></div>
-          <div className="lp-ba" style={{display:"grid",gridTemplateColumns:"1.15fr 1fr",gap:22,alignItems:"stretch"}}>
-            {/* מחירי מנות */}
-            <div className="lp-card lp-lift" data-reveal style={{padding:"28px 26px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-                <div><h3 style={{fontSize:21,fontWeight:900}}>מחירי מנות והשוואה</h3><div style={{fontSize:15,color:LP.muted}}>לפי אולם, עיר ויום בשבוע</div></div>
-              </div>
-              {/* איור להמחשה */}
-              <div aria-label="דוגמה להשוואת מחיר" style={{background:"linear-gradient(170deg,#FFF7FB,#F7F1FF)",borderRadius:20,padding:16,border:"1px solid #F3E6F2"}}>
-                <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  {[["מחיר","₪298"],["טווח","₪265–345"],["דיווחים","4"]].map(([l,v])=>(
-                    <div key={l} style={{flex:1,background:"#fff",borderRadius:14,padding:"9px 11px",border:"1px solid #F0E8F8"}}><div style={{fontSize:11,color:LP.muted,fontWeight:700}}>{l}</div><div className="lp-num" style={{fontSize:18,fontWeight:900,color:LP.ink}}>{v}</div></div>
-                  ))}
-                </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                  {[["א׳–ד׳","₪265"],["חמישי","₪285"],["שישי","₪345"]].map(([g,v])=><span key={g} style={{background:"#F4EEFF",color:"#5B3C8C",borderRadius:100,padding:"4px 11px",fontSize:12,fontWeight:800}}>{g}: {v}</span>)}
-                </div>
-                <div style={{background:"#FFF5F5",border:"1px solid #FED7D7",borderRadius:14,padding:"11px 13px",fontSize:13.5,lineHeight:1.65,color:LP.ink}}>
-                  <b>ההצעה שלכם גבוהה ב-14%</b> מהמחיר המקובל. 💡 ציינו שבאירועים דומים שילמו כ-₪298 למנה, ובדקו אם יום אחר זול יותר.
-                </div>
-                <div style={{fontSize:11,color:LP.muted,marginTop:8}}>* דוגמה להמחשה</div>
-              </div>
-            </div>
-            {/* המלצות על ספקים */}
-            <div className="lp-card lp-lift" data-reveal style={{padding:"28px 26px","--d":".08s",display:"flex",flexDirection:"column"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-                <div><h3 style={{fontSize:21,fontWeight:900}}>המלצות על ספקים</h3><div style={{fontSize:15,color:LP.muted}}>אולמות, DJ, צלמים, קייטרינג ועוד</div></div>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:10,flex:1}}>
-                {[["🎧","DJ","4.7","3","\"הרחבה לא התרוקנה לרגע\""],["📸","צלם / וידאו","5.0","1","\"קיבלנו אלבום תוך חודש\""],["🏛️","אולם / גן","4.0","1","\"אוכל טוב ושירות אדיב\""]].map(([ic,cat,avg,n,q])=>(
-                  <div key={cat} style={{display:"flex",alignItems:"center",gap:12,background:"#FFFBF3",border:"1px solid #F3E6C8",borderRadius:16,padding:"11px 13px"}}>
-                    <span style={{width:38,height:38,borderRadius:12,background:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{ic}</span>
-                    <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:900}}>{cat}</div><div style={{fontSize:12,color:LP.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{q}</div></div>
-                    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:"#8A5A00"}}>★ {avg}</div><div style={{fontSize:13,color:LP.muted}}>{n} המלצות</div></div>
-                  </div>
-                ))}
-              </div>
-              <div style={{fontSize:11,color:LP.muted,margin:"8px 0 14px"}}>* דוגמה להמחשה · אפשר לפרסם עם שם או בעילום שם</div>
-              <button onClick={()=>onOpenAuth("vendors")} className="lp-btn lp-primary" style={{width:"100%",padding:"15px",fontSize:16}}>
-                {loggedIn?"לספקים ולמחירים":"נרשמים בחינם ומשווים"}
-              </button>
-            </div>
+          <OctoVendors onOpen={()=>onOpenAuth("vendors")}/>
+          <div className="lp-oct-cta">
+            <button onClick={()=>onOpenAuth("vendors")} className="lp-btn lp-primary" style={{padding:"15px 30px",fontSize:16}}>{loggedIn?"לספקים ולמחירים":"נרשמים בחינם ומשווים"}</button>
           </div>
+          <div style={{marginTop:56}}><FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/></div>
         </div>
       </section>
 
@@ -10093,6 +10120,38 @@ const uploadVendorImage=async(userId,file,max)=>{
 const waLink=p=>{const n=normPhone(p);return n?`https://wa.me/972${n.slice(1)}`:null;};
 const extLink=u=>!u?null:/^https?:\/\//i.test(u)?u:`https://${u}`;
 
+// בועת "הצטרפות ספקים" בדף הבית
+const JOIN_CSS=`
+  .lp-join{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:22px;max-width:980px;margin:0 auto;padding:22px 26px 22px 22px;border-radius:999px;color:#fff;
+    background:linear-gradient(250deg,#4E23A8 0%,#7F4DE8 42%,#D4458A 80%,#E8603F 100%);box-shadow:0 34px 70px -34px rgba(155,60,170,.85),0 0 0 8px rgba(255,255,255,.7),0 0 0 9px rgba(155,107,255,.25)}
+  .lp-join::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120px 80px at 18% 20%,rgba(255,255,255,.35),transparent 70%),radial-gradient(160px 90px at 82% 110%,rgba(255,255,255,.25),transparent 70%)}
+  .lp-join-dots i{position:absolute;z-index:-1;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4)}
+  .lp-join-dots i:nth-child(1){width:46px;height:46px;top:-14px;left:30%}
+  .lp-join-dots i:nth-child(2){width:18px;height:18px;bottom:10px;left:42%}
+  .lp-join-dots i:nth-child(3){width:28px;height:28px;top:14px;left:58%}
+  .lp-join-dots i:nth-child(4){width:12px;height:12px;bottom:18px;right:34%}
+  .lp-join-dots i:nth-child(5){width:64px;height:64px;bottom:-30px;left:20%}
+  .lp-join-ics{display:flex;flex-shrink:0}
+  .lp-join-ics span{width:58px;height:58px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 12px 24px -12px rgba(43,29,63,.6);border:3px solid rgba(255,255,255,.7)}
+  .lp-join-ics span+span{margin-inline-start:-16px}
+  .lp-join-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .lp-join-txt b{font:900 clamp(19px,2vw,24px)/1.2 'Fredoka','Heebo',sans-serif}
+  .lp-join-txt span{font-size:15.5px;line-height:1.5;opacity:.96}
+  .lp-join-btn{flex-shrink:0;min-height:52px;padding:0 26px;border:none;border-radius:999px;background:#fff;color:#2B1D3F;font:800 16px 'Fredoka','Heebo',sans-serif;cursor:pointer;box-shadow:0 14px 28px -14px rgba(43,29,63,.7);transition:scale 160ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-join-btn:active{scale:.97}
+  .lp-join-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  @media(hover:hover) and (pointer:fine){.lp-join-btn:hover{scale:1.04}}
+  @keyframes lpJoinFloat{50%{transform:translateY(-6px)}}
+  .lp-motion .lp-join-ics span{animation:lpJoinFloat 4.5s ease-in-out infinite}
+  .lp-motion .lp-join-ics span:nth-child(2){animation-delay:-1.5s}.lp-motion .lp-join-ics span:nth-child(3){animation-delay:-3s}
+  @media(prefers-reduced-motion:reduce){.lp-motion .lp-join-ics span{animation:none}}
+  @media(max-width:760px){
+    .lp-join{flex-direction:column;text-align:center;border-radius:36px;padding:26px 20px 22px;gap:14px}
+    .lp-join-ics span{width:50px;height:50px;font-size:23px}
+    .lp-join-btn{width:100%}
+  }
+`;
+
 // דף הבית: ספקים מובילים (מאושרים + מסומנים כמובילים), והזמנה לספקים להצטרף
 function FeaturedSuppliers({ onJoin }) {
   const [list,setList]=useState([]),[open,setOpen]=useState(null);
@@ -10108,9 +10167,12 @@ function FeaturedSuppliers({ onJoin }) {
           {list.map(v=><SupplierCard key={v.user_id} v={v} onOpen={setOpen}/>)}
         </div>
       </>}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap",background:"#FFFBF3",border:"1px solid #F3E6C8",borderRadius:16,padding:"12px 16px",fontSize:14,color:LP.ink}}>
-        <span>🏪 <b>צלמים, DJ, אולמות וספקים?</b> פרופיל עסק בחינם, מול זוגות ומשפחות שמתכננים אירוע</span>
-        <button onClick={onJoin} className="lp-btn lp-ghost" style={{padding:"9px 16px",fontSize:14,minHeight:44}}>הצטרפות ספקים ←</button>
+      <style>{JOIN_CSS}</style>
+      <div className="lp-join">
+        <span className="lp-join-dots" aria-hidden="true"><i/><i/><i/><i/><i/></span>
+        <span className="lp-join-ics" aria-hidden="true"><span>📸</span><span>🎧</span><span>🏛️</span></span>
+        <span className="lp-join-txt"><b>צלמים, DJ, אולמות וספקים?</b><span>פרופיל עסק בחינם, מול זוגות ומשפחות שמתכננים אירוע</span></span>
+        <button onClick={onJoin} className="lp-join-btn">הצטרפות ספקים ←</button>
       </div>
       <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
     </div>
