@@ -2451,7 +2451,7 @@ function CompareSlider() {
   return(
     <div className="lp-cmp" ref={boxRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       <div className="lp-cmp-after">
-        <img src="/landing/seating.jpg" alt="אחרי: מפת האולם ב-Sidor-IL, עם שולחנות ממוספרים ורשימת אורחים שממתינים להושבה" width="1440" height="655" loading="lazy" draggable="false"/>
+        <img src="/landing/seating-v2.jpg" alt="אחרי: מפת האולם ב-Sidor-IL, עם שולחנות ממוספרים ורשימת אורחים שממתינים להושבה" width="1440" height="655" loading="lazy" draggable="false"/>
         <span className="lp-cmp-tag after" aria-hidden="true">אחרי</span>
       </div>
       <div className="lp-cmp-before" ref={topRef} role="img" aria-label="לפני: רשימת מוזמנים באקסל, עם שורות מחוקות, סימני שאלה והערות בצד">
@@ -2485,7 +2485,7 @@ function CompareSlider() {
 // איך זה עובד: במחשב הטקסט נגלל והמסך שלצידו מתחלף לפי השלב שבמרכז המסך. בנייד — כל שלב עם התמונה שלו
 const LP_STORY=[
   {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp.jpg",kind:"phone",alt:"רשימת המוזמנים בנייד: מגיעים, ממתינים ולא מגיעים",chip:"36 מוזמנים נכנסו מהאקסל"},
-  {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating.jpg",kind:"laptop",alt:"מפת האולם במחשב: שולחנות ממוספרים, במה ובר",chip:"שולחן 2 · משפחת החתן · 5/10"},
+  {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating-v2.jpg",kind:"laptop",alt:"מפת האולם במחשב: שולחנות ממוספרים, במה ובר",chip:"שולחן 2 · משפחת החתן · 5/10"},
   {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite.jpg",kind:"phone",alt:"דף ההזמנה בנייד, עם טופס אישור הגעה",chip:"היי רחל, השולחן שלך: 7"},
 ];
 function HowStory() {
@@ -2681,7 +2681,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               <svg className="lp-spark" style={{top:-14,right:30}} width="34" height="34" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill="#FFD796"/></svg>
               <svg className="lp-spark" style={{bottom:24,left:-12,animationDelay:"1.2s"}} width="26" height="26" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill="#F0609E"/></svg>
               <div className="lp-mock" role="img" aria-label="מסכי Sidor-IL: מפת האולם במחשב ורשימת אישורי ההגעה בנייד">
-                <div className="lp-mock-tab"><div className="lp-frame"><img src="/landing/seating.jpg" alt="" width="1440" height="655" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
+                <div className="lp-mock-tab"><div className="lp-frame"><img src="/landing/seating-v2.jpg" alt="" width="1440" height="655" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
                 <div className="lp-mock-phone"><div className="lp-frame"><img src="/landing/rsvp.jpg" alt="" width="390" height="760" style={{display:"block",width:"100%",height:"auto"}}/></div></div>
                 <span className="lp-bub b1" style={{"--d":"1s"}} aria-hidden="true"><i style={{background:LP.mint}}/>רחל כהן אישרה הגעה</span>
                 <span className="lp-bub b2" style={{"--d":"1.2s"}} aria-hidden="true"><i style={{background:LP.violet}}/>שולחן 2 · משפחת החתן · 5/10</span>
@@ -7393,14 +7393,13 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
 
   // מסננים נוספים: קרבה, שיבוץ לשולחן, צפייה בהזמנה
   const [fRel,setFRel]=useState("all"),[fSeat,setFSeat]=useState("all"),[fView,setFView]=useState("all"),[fLang,setFLang]=useState("all");
-  // שפת ההודעות לכל אורח (ברירת מחדל עברית) — נשמרת באירוע: settings_json.guest_langs
-  const [gLangs,setGLangs]=useState(()=>event.settings_json?.guest_langs||{});
+  // שפת ההודעות לכל אורח (ברירת מחדל עברית) — נשמרת בעמודה guests.lang
+  const langOfG=g=>guestLangOf(event,g);
   const setGuestLang=async(g,l)=>{
-    const next={...gLangs};if(l==="he")delete next[g.id];else next[g.id]=l;
-    setGLangs(next);
-    const settings={...(event.settings_json||{}),guest_langs:next};event.settings_json=settings;
-    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
-    if(error)alert("❌ השפה לא נשמרה: "+error.message);
+    const{error}=await sb.from("guests").update({lang:l}).eq("id",g.id);
+    if(error){alert("❌ השפה לא נשמרה: "+error.message);return;}
+    const fix=x=>x.id===g.id?{...x,lang:l}:x;
+    setGuests(gs=>gs.map(fix));setTables(ts=>ts.map(t=>({...t,guests:(t.guests||[]).map(fix)})));
   };
   const anyFilter=fRel!=="all"||fSeat!=="all"||fView!=="all"||fLang!=="all"||filterRsvp!=="all"||!!search;
   const filtered=allGuests
@@ -7409,7 +7408,7 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
     .filter(g=>fRel==="all"||(g.relation||"ללא שיוך")===fRel)
     .filter(g=>fSeat==="all"||(fSeat==="seated"?!!g.table_id:!g.table_id))
     .filter(g=>fView==="all"||(fView==="viewed"?(g.views||0)>0:!(g.views>0)))
-    .filter(g=>fLang==="all"||(gLangs[g.id]||"he")===fLang);
+    .filter(g=>fLang==="all"||langOfG(g)===fLang);
 
   const updateRsvp=async(g,stage)=>{
     const patch=stagePatch(stage);
@@ -7676,8 +7675,8 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                     <QuickCell value={g.name} onSave={v=>quickSave(g,"name",v)} style={{flex:1,minWidth:0}}>
                       <span style={{display:"block",fontWeight:700,color:"#1A202C",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</span>
                     </QuickCell>
-                    <select value={gLangs[g.id]||"he"} onChange={e=>setGuestLang(g,e.target.value)} aria-label={`שפת ההודעות של ${g.name}`} title="שפת ההודעות"
-                      style={{flexShrink:0,border:"none",borderRadius:100,background:(gLangs[g.id]||"he")==="he"?"#F6F1FB":"#FFE6F0",padding:"3px 4px",fontSize:13,cursor:"pointer",fontFamily:"inherit",color:"#2B1D3F",maxWidth:58}}>
+                    <select value={langOfG(g)} onChange={e=>setGuestLang(g,e.target.value)} aria-label={`שפת ההודעות של ${g.name}`} title="שפת ההודעות"
+                      style={{flexShrink:0,border:"none",borderRadius:100,background:langOfG(g)==="he"?"#F6F1FB":"#FFE6F0",padding:"3px 4px",fontSize:13,cursor:"pointer",fontFamily:"inherit",color:"#2B1D3F",maxWidth:58}}>
                       {MSG_LANGS.map(([c,n,fl])=><option key={c} value={c}>{fl} {n}</option>)}
                     </select>
                   </div>
@@ -8634,11 +8633,11 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
 }
 
 // ─── שפות וטונים להודעות (SMS / וואטסאפ) ───
-// שפת כל אורח נשמרת ב-settings_json.guest_langs {guestId: "en"} — ברירת מחדל עברית
+// שפת כל אורח נשמרת בעמודה guests.lang (ותמיכה לאחור ב-settings_json.guest_langs) — ברירת מחדל עברית
 const MSG_LANGS=[["he","עברית","🇮🇱"],["en","English","🇺🇸"],["ru","Русский","🇷🇺"],["uk","Українська","🇺🇦"],["ar","العربية","🇸🇦"],["am","አማርኛ","🇪🇹"]];
 const MSG_TONES=[["classic","קלאסי ומרגש"],["warm","חם ואישי"],["fun","שמח וקליל"]];
 const MSG_LOCALE={he:"he-IL",en:"en-US",ru:"ru-RU",uk:"uk-UA",ar:"ar-u-nu-latn",am:"am-ET"};
-const guestLangOf=(event,g)=>{const l=event?.settings_json?.guest_langs?.[g?.id];return MSG_LANGS.some(x=>x[0]===l)?l:"he";};
+const guestLangOf=(event,g)=>{const ok=l=>MSG_LANGS.some(x=>x[0]===l);if(g?.lang&&ok(g.lang))return g.lang;const l=event?.settings_json?.guest_langs?.[g?.id];return ok(l)?l:"he";};
 // שם האירוע בתוך משפט, לפי סוג האירוע והשפה
 const MSG_EVENT={
   en:{wedding:"the wedding of {H}",bar_mitzvah:"the Bar/Bat Mitzvah of {G}",brit:"the Brit of {G}",other:"our celebration"},
@@ -8863,7 +8862,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
   const [smsBalance,setSmsBalance]=useState(null);
-  // טון + שפה: לכל אורח הנוסח בשפה שלו (settings_json.guest_langs), ברירת מחדל עברית
+  // טון + שפה: לכל אורח הנוסח בשפה שלו (guests.lang), ברירת מחדל עברית
   const [tone,setTone]=useState("classic"),[activeLang,setActiveLang]=useState("he"),[langEdits,setLangEdits]=useState({});
   const heClassicOf=id=>TEMPLATES.find(t=>t.id===id)?.text||"";
   const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate)));
@@ -9267,7 +9266,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
-  // טון + שפה: לכל אורח הנוסח בשפה שלו (settings_json.guest_langs), ברירת מחדל עברית
+  // טון + שפה: לכל אורח הנוסח בשפה שלו (guests.lang), ברירת מחדל עברית
   const [tone,setTone]=useState("classic"),[activeLang,setActiveLang]=useState("he"),[langEdits,setLangEdits]=useState({});
   const heClassicOf=id=>TEMPLATES.find(t=>t.id===id)?.text||"";
   const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate)));
