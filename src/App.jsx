@@ -1628,6 +1628,10 @@ const LANDING_CSS=`
   .lp-cta-tint{position:absolute;inset:0;z-index:-1;background:linear-gradient(120deg,rgba(150,40,110,.86),rgba(74,44,143,.86))}
   .lp-cta3 .lp-bokeh{z-index:-1}
   @media(max-width:700px){.lp-cta3{margin:0 8px 40px;border-radius:36px;padding:76px 6vw}}
+  .lp-wordband{position:relative;overflow:hidden;isolation:isolate;margin:0 0 28px;border-radius:36px;padding:34px 12px 22px;background:linear-gradient(120deg,#4E23A8 0%,#8A4FE0 48%,#E0569A 100%);box-shadow:0 30px 60px -34px rgba(91,40,150,.7)}
+  .lp-wordband::before{content:"";position:absolute;z-index:-1;inset:auto -10% -60% -10%;height:120%;background:radial-gradient(closest-side,rgba(255,255,255,.28),transparent)}
+  .lp-wordband .lp-wordmark{margin:0;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#fff;text-shadow:0 14px 34px rgba(40,10,80,.35)}
+  @media(max-width:700px){.lp-wordband{border-radius:26px;padding:22px 8px 14px}}
   .lp-wordmark{direction:ltr;text-align:center;font-weight:900;font-size:clamp(72px,17vw,250px);line-height:.8;letter-spacing:-.05em;margin:36px 0 0;background:linear-gradient(180deg,rgba(124,75,214,.34),rgba(124,75,214,0) 92%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;white-space:nowrap}
   /* ─── v4: דפים ציבוריים (סוגי אירועים, מדריכים, מידע משפטי, אולמות) באותה שפה של דף הבית ─── */
   .lp main section[id]{scroll-margin-top:84px}
@@ -2244,7 +2248,8 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
             </div>
           </nav>
         </div>
-        <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
+        <div className="lp-wordband" aria-hidden="true"><div className="lp-wordmark">Sidor-IL</div></div>
+        <div style={{borderTop:"1px solid #E9DFF3",paddingTop:20,paddingBottom:28,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,fontSize:13,color:LP.muted,alignItems:"center"}}>
           <span>© {new Date().getFullYear()} Sidor-IL · כל הזכויות שמורות</span>
           <span className="lp-foot" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
             {legal.map(l=><a key={l.label} href={l.href} style={{textDecoration:"none"}}>{l.label}</a>)}
@@ -2252,7 +2257,6 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
           </span>
           <span>🇮🇱 מערכת ישראלית · נבנתה עם ❤️</span>
         </div>
-        <div className="lp-wordmark" aria-hidden="true" data-reveal>Sidor-IL</div>
       </div>
     </footer>
   );
@@ -2421,7 +2425,7 @@ const TOUR_CSS=`
   .lp-stk-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:var(--t) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
   .lp-stk-vis{position:relative;margin-inline-end:-70px;justify-self:end;width:min(calc(100% + 70px),calc((min(540px,100vh - 150px) - 116px) * 1.6))}
   @media(min-width:901px) and (max-height:640px){.lp-stk-txt ul{display:none}.lp-stk-txt h3{font-size:30px}}
-  .lp-stk-shot{border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.9);box-shadow:0 46px 80px -40px rgba(43,29,63,.6),0 0 0 8px rgba(255,255,255,.45);rotate:var(--rot)}
+  .lp-stk-shot{border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.9);box-shadow:0 46px 80px -40px rgba(43,29,63,.6),0 0 0 8px rgba(255,255,255,.45)}
   .lp-stk-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F7F2FC;border-bottom:1px solid #EEE5F7;direction:ltr}
   .lp-stk-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
   .lp-stk-bar span{margin-inline-start:10px;font:700 12px 'Heebo',sans-serif;color:#6B5F80}
