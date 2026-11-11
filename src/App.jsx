@@ -2413,74 +2413,51 @@ const STK_TONES=[
 // "ככה זה נראה מבפנים": 2 שורות של קוביות, בכל שורה קוביה אחת גדלה ומציגה את המסך, ובתורות הבאה בתור גדלה
 const TOUR_IC={home:"🏠",guests:"👥",seating:"🪑",sms:"📱",whatsapp:"💬",budget:"💰",gifts:"🎁",tasks:"✅",details:"📋",vendors:"💡"};
 const TOUR_CSS=`
-  .lp-sq{display:grid;gap:18px;--c:clamp(112px,10.6vw,150px);--g:16px}
-  .lp-sq-row{display:flex;gap:var(--g);align-items:flex-start;min-height:430px}
-  .lp-sq-t{position:relative;flex:0 0 auto;width:var(--c);height:var(--c);border:none;padding:0;margin:0;border-radius:30px;overflow:hidden;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 18px 34px -26px rgba(60,35,110,.55);transition:width 650ms cubic-bezier(0.77,0,0.175,1),height 650ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
-  .lp-sq-t.on{width:calc(100% - 4 * var(--c) - 4 * var(--g));height:430px;background:#fff;box-shadow:0 34px 70px -36px rgba(60,35,110,.6),inset 0 0 0 1.5px #EFE6F7}
+  .lp-sq{display:grid;gap:16px}
+  .lp-sq-row{display:flex;gap:14px;align-items:stretch}
+  .lp-sq-t{position:relative;flex:1 1 0;min-width:0;border:none;margin:0;padding:10px 10px 14px;border-radius:24px;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:#fff;display:flex;flex-direction:column;box-shadow:0 16px 32px -26px rgba(60,35,110,.55),inset 0 0 0 1.5px #EFE6F7;transition:flex-grow 600ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease,translate 300ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-sq-t.on{flex-grow:1.32;translate:0 -6px;box-shadow:0 28px 50px -28px rgba(60,35,110,.65),inset 0 0 0 2px var(--t)}
   .lp-sq-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
-  @media(hover:hover) and (pointer:fine){.lp-sq-t:not(.on):hover{box-shadow:0 22px 40px -24px rgba(60,35,110,.65)}}
-  .lp-sq-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;text-align:center;transition:opacity 250ms ease}
-  .lp-sq-face i{font-style:normal;width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 12px 24px -14px rgba(43,29,63,.6)}
-  .lp-sq-face b{font:700 15.5px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;overflow-wrap:anywhere}
-  .lp-sq-t.on .lp-sq-face{opacity:0;pointer-events:none}
-  .lp-sq-in{position:absolute;inset:0;display:flex;flex-direction:column;padding:14px;opacity:0;transition:opacity 250ms ease}
-  .lp-sq-t.on .lp-sq-in{opacity:1;transition-delay:330ms}
-  .lp-sq-pic{flex:0 0 auto;border-radius:20px;padding:10px;background:linear-gradient(160deg,var(--a),var(--b))}
-  .lp-sq-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:12px;background:#fff;box-shadow:0 16px 30px -20px rgba(43,29,63,.6)}
-  .lp-sq-txt{padding:14px 8px 4px;min-width:0}
-  .lp-sq-tag{display:flex;align-items:center;gap:8px;font:700 14px 'Fredoka','Heebo',sans-serif;color:var(--t)}
-  .lp-sq-tag i{font-style:normal;font-size:16px}
-  .lp-sq-h{display:block;font:700 22px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:6px 0 4px}
-  .lp-sq-p{display:block;font-size:15px;line-height:1.6;color:#3A2F50;font-weight:600}
-  .lp-sq-bar{position:absolute;top:0;right:0;left:0;height:4px;z-index:2;opacity:0}
+  .lp-sq-pic{display:block;border-radius:16px;padding:7px;background:linear-gradient(160deg,var(--a),var(--b))}
+  .lp-sq-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:10px;background:#fff;box-shadow:0 10px 20px -14px rgba(43,29,63,.6)}
+  .lp-sq-txt{display:block;padding:10px 4px 0;min-width:0}
+  .lp-sq-tag{display:flex;align-items:center;gap:6px;font:700 13px 'Fredoka','Heebo',sans-serif;color:var(--t)}
+  .lp-sq-tag i{font-style:normal;font-size:15px}
+  .lp-sq-h{display:block;font:700 16px/1.3 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:5px 0 3px}
+  .lp-sq-p{display:block;font-size:13px;line-height:1.55;color:#3A2F50;font-weight:600}
+  .lp-sq-bar{position:absolute;top:0;right:22px;left:22px;height:3px;border-radius:0 0 3px 3px;overflow:hidden;opacity:0}
   .lp-sq-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
   .lp-sq.auto .lp-sq-t.on .lp-sq-bar{opacity:1}
   .lp-sq.auto .lp-sq-t.on .lp-sq-bar u{animation:lpSqBar var(--dur) linear both}
   @keyframes lpSqBar{to{transform:scaleX(1)}}
   .lp-sq-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
-  .lp-sq-mob{display:none}
-  @media(prefers-reduced-motion:reduce){.lp-sq-t,.lp-sq-in,.lp-sq-face{transition-duration:1ms!important}.lp-sq-bar{display:none}}
+  @media(prefers-reduced-motion:reduce){.lp-sq-t{transition-duration:1ms!important}.lp-sq-bar{display:none}}
   @media(max-width:900px){
-    .lp-sq{display:none}
-    .lp-sq-mob{display:block}
-    .lp-sq-panel{background:#fff;border-radius:26px;padding:12px;box-shadow:0 26px 50px -32px rgba(60,35,110,.6),inset 0 0 0 1.5px #EFE6F7;margin-bottom:14px}
-    .lp-sq-panel .lp-sq-txt{padding:12px 6px 4px}
-    .lp-sq-panel .lp-sq-h{font-size:19px}
-    .lp-sq-panel .lp-sq-p{font-size:14px}
-    .lp-sq-fade{animation:lpSqFade 300ms ease both}
-    @keyframes lpSqFade{from{opacity:0}to{opacity:1}}
-    .lp-sq-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-    .lp-sq-mini{aspect-ratio:1;border:none;border-radius:18px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:700 10.5px/1.15 'Fredoka','Heebo',sans-serif;color:#2B1D3F;background:linear-gradient(160deg,var(--a),var(--b));cursor:pointer;text-align:center;transition:scale 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms ease}
-    .lp-sq-mini i{font-style:normal;font-size:19px}
-    .lp-sq-mini[aria-pressed="true"]{scale:1.06;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--t)}
+    .lp-sq{grid-template-columns:1fr 1fr;gap:12px}
+    .lp-sq-row{display:contents}
+    .lp-sq-t{padding:8px 8px 12px;border-radius:20px}
+    .lp-sq-t.on{translate:none;scale:1.03}
+    .lp-sq-h{font-size:14.5px}
+    .lp-sq-p{font-size:12.5px}
   }
 `;
 function ProductTour(){
   const rows=[LP_TOUR.slice(0,5),LP_TOUR.slice(5,10)];
-  const [act,setAct]=useState([0,0]),[last,setLast]=useState(0);
+  const [act,setAct]=useState([0,0]);
   const [auto,setAuto]=useState(()=>lpMotionOK());
   const [hold,setHold]=useState(false),[seen,setSeen]=useState(false);
   const boxRef=useRef(null),tick=useRef(0),actRef=useRef(act);
   actRef.current=act;
-  const DUR=3000;
+  const DUR=2600;
   useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.3});io.observe(el);return()=>io.disconnect();},[]);
-  // בכל פעם קוביה אחרת גדלה: לסירוגין בשורה העליונה ובתחתונה
+  // בכל פעם קוביה אחרת גדלה מעט: לסירוגין בשורה העליונה ובתחתונה
   useEffect(()=>{
     if(!auto||hold||!seen)return;
-    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;const n=[...actRef.current];n[r]=(n[r]+1)%5;setAct(n);setLast(r*5+n[r]);},DUR);
+    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;const n=[...actRef.current];n[r]=(n[r]+1)%5;setAct(n);},DUR);
     return()=>clearInterval(iv);
   },[auto,hold,seen]);
-  const show=(r,k)=>{setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});setLast(r*5+k);};
+  const show=(r,k)=>setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});
   const pick=(r,k)=>{setAuto(false);show(r,k);};
-  const cur=LP_TOUR[last],ct=STK_TONES[last%STK_TONES.length];
-  const inner=(x,tone)=>(<>
-    <span className="lp-sq-pic" style={{"--a":tone.a,"--b":tone.b}}><img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/></span>
-    <span className="lp-sq-txt" style={{"--t":tone.t}}>
-      <span className="lp-sq-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
-      <span className="lp-sq-h">{x.t}</span>
-      <span className="lp-sq-p">{x.d}</span>
-    </span>
-  </>);
   return(<div ref={boxRef}>
     <style>{TOUR_CSS}</style>
     <div className={`lp-sq${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR*2}ms`}}
@@ -2489,25 +2466,19 @@ function ProductTour(){
       {rows.map((row,r)=>(
         <div key={r} className="lp-sq-row">
           {row.map((x,k)=>{const on=act[r]===k;const tone=STK_TONES[(r*5+k)%STK_TONES.length];return(
-            <button key={x.id} type="button" className={`lp-sq-t${on?" on":""}`} aria-expanded={on} aria-label={`${x.tab}: ${x.t}`}
+            <button key={x.id} type="button" className={`lp-sq-t${on?" on":""}`} aria-pressed={on}
               style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}}
               onClick={()=>pick(r,k)} onPointerEnter={e=>{if(e.pointerType==="mouse")show(r,k);}}>
               <span className="lp-sq-bar" aria-hidden="true"><u key={on?`on${act[r]}`:"off"}/></span>
-              <span className="lp-sq-face" aria-hidden="true"><i>{TOUR_IC[x.id]}</i><b>{x.tab}</b></span>
-              <span className="lp-sq-in">{inner(x,tone)}</span>
+              <span className="lp-sq-pic"><img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/></span>
+              <span className="lp-sq-txt">
+                <span className="lp-sq-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
+                <span className="lp-sq-h">{x.t}</span>
+                <span className="lp-sq-p">{x.d}</span>
+              </span>
             </button>);})}
         </div>
       ))}
-    </div>
-    {/* טלפון: לוח גדול למעלה, ומתחתיו 10 קוביות קטנות */}
-    <div className="lp-sq-mob">
-      <div className="lp-sq-panel lp-sq-fade" key={cur.id} style={{"--t":ct.t}} aria-live="polite">{inner(cur,ct)}</div>
-      <div className="lp-sq-grid" role="group" aria-label="מסכי המערכת">
-        {LP_TOUR.map((x,i)=>{const tone=STK_TONES[i%STK_TONES.length];return(
-          <button key={x.id} type="button" className="lp-sq-mini" aria-pressed={last===i} style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}} onClick={()=>pick(Math.floor(i/5),i%5)}>
-            <i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}
-          </button>);})}
-      </div>
     </div>
     <div className="lp-sq-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
   </div>);
@@ -3389,7 +3360,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── סיור במערכת: מסך אמיתי לכל יכולת ─── */}
       <section id="tour" className="lp-sheet" style={{background:"#FBF8FF"}}>
         <div className="lp-wrap">
-          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד. כל קוביה פותחת מסך אמיתי מהמערכת.")}
+          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד, עם המסך האמיתי של כל אחד מהם.")}
           <ProductTour/>
         </div>
       </section>
