@@ -4135,38 +4135,68 @@ const Stars=({value,onChange,size=22})=>(
       :<span key={n} aria-hidden="true" style={{fontSize:size,color:n<=value?"#F5B301":"#D9D3E3"}}>★</span>)}
   </div>
 );
-function TestimonialCard({ user, event }) {
-  const [mine,setMine]=useState(null),[rating,setRating]=useState(5),[text,setText]=useState(""),[busy,setBusy]=useState(false),[msg,setMsg]=useState("");
+// "דרגו אותנו": אותו דירוג נשמר באתר (מופיע אחרי אישור) ומתפרסם גם בגוגל בלחיצה, עם הטקסט מועתק ומספר הכוכבים
+const RATE_CSS=`
+.rt{background:linear-gradient(135deg,#FFF8E6 0%,#FFF1F6 100%);border:1.5px solid #F3E3C8;border-radius:28px;padding:20px 22px;box-shadow:0 22px 44px -26px rgba(91,60,140,.5);direction:rtl;font-family:'Heebo',sans-serif}
+.rt h3{margin:0;font-family:'Fredoka','Heebo',sans-serif;font-size:19px;font-weight:700;color:#2B1D3F}
+.rt .sub{margin:4px 0 12px;font-size:13.5px;line-height:1.55;color:#3A2F50;font-weight:600}
+.rt textarea,.rt input{width:100%;box-sizing:border-box;border:1.5px solid #EADBC4;border-radius:16px;background:#fff;padding:11px 14px;font-size:14px;font-family:inherit;color:#2B1D3F;outline:none}
+.rt textarea{min-height:84px;resize:vertical;margin:10px 0 8px}
+.rt textarea:focus,.rt input:focus{border-color:#9B6BFF;box-shadow:0 0 0 4px rgba(155,107,255,.16)}
+.rt .note{font-size:12px;color:#5E5470;margin:8px 0 12px;line-height:1.5}
+.rt .btn{min-height:46px;border:none;border-radius:100px;padding:0 22px;font-family:'Fredoka','Heebo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.rt .btn.p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff}
+.rt .btn.g{background:#fff;color:#1a73e8;box-shadow:inset 0 0 0 1.5px #D2E3FC}
+.rt .btn:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+.rt .done{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:10px 14px;font-size:14px;font-weight:700;color:#1F7A4D;margin:10px 0}
+.rt .steps{display:grid;gap:8px;margin:4px 0 12px}
+.rt .steps div{display:flex;gap:10px;align-items:center;font-size:13.5px;font-weight:600;color:#3A2F50}
+.rt .steps b{width:24px;height:24px;flex-shrink:0;border-radius:50%;background:#fff;color:#B4471F;display:inline-flex;align-items:center;justify-content:center;font-size:12px;box-shadow:inset 0 0 0 1.5px #F3D9C4}
+.rt .err{font-size:13px;color:#B42318;font-weight:700;margin-bottom:8px}
+`;
+function TestimonialCard({ user, event, style }) {
+  const [mine,setMine]=useState(null),[rating,setRating]=useState(5),[text,setText]=useState(""),[busy,setBusy]=useState(false),[msg,setMsg]=useState(""),[copied,setCopied]=useState(false);
   const defName=event.groom_name&&event.bride_name?`${event.groom_name} ו${event.bride_name}`:(event.groom_name||"");
   const [name,setName]=useState(defName);
-  useEffect(()=>{sb.from("testimonials").select("id,approved").eq("user_id",user.id).limit(1).then(({data})=>setMine(data?.[0]||false));},[user.id]);
+  useEffect(()=>{sb.from("testimonials").select("id,approved,text,rating").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).then(({data})=>setMine(data?.[0]||false),()=>setMine(false));},[user.id]);
   const send=async()=>{
-    if(text.trim().length<10){setMsg("❌ כתבו לפחות משפט אחד 🙂");return;}
-    setBusy(true);
+    if(text.trim().length<10){setMsg("כתבו לפחות משפט אחד 🙂");return;}
+    setBusy(true);setMsg("");
     const label={wedding:"חתונה",bar_mitzvah:"בר/ת מצווה",brit:"ברית",business:"אירוע עסקי"}[event.event_type]||"אירוע";
-    const{error}=await sb.from("testimonials").insert({name:(name.trim()||"לקוח/ה").slice(0,60),event_label:label,text:text.trim().slice(0,600),rating});
+    const row={name:(name.trim()||"לקוח/ה").slice(0,60),event_label:label,text:text.trim().slice(0,600),rating};
+    const{error}=await sb.from("testimonials").insert(row);
     setBusy(false);
-    if(error){setMsg("❌ "+error.message);return;}
-    setMine({approved:false});setMsg("");
+    if(error){setMsg("הדירוג לא נשמר: "+error.message);return;}
+    setMine({approved:false,text:row.text,rating});
+  };
+  // לגוגל: מעתיקים את אותו טקסט ופותחים את חלון הביקורת (גוגל לא מאפשר לפרסם בשם המשתמש)
+  const toGoogle=()=>{
+    const t=mine?.text||"";
+    const open=()=>window.open(GOOGLE_REVIEW_URL,"_blank","noopener,noreferrer");
+    if(t&&navigator.clipboard){navigator.clipboard.writeText(t).then(()=>{setCopied(true);open();},open);}else open();
   };
   if(mine===null)return null;
+  const r=mine?.rating||rating;
   return(
-    <div style={{background:"#fff",margin:"0 16px 12px",borderRadius:16,padding:"16px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-      <div style={{fontSize:14,fontWeight:900,color:"#1a1a1a",marginBottom:4}}>⭐ ספרו לנו איך היה</div>
+    <div className="rt" style={style}>
+      <style>{RATE_CSS}</style>
+      <h3>⭐ דרגו אותנו</h3>
       {mine?<>
-        <div style={{fontSize:13,color:"#276749",fontWeight:700}}>תודה רבה על ההמלצה! 💜 {mine.approved?"היא כבר מופיעה באתר.":"היא תופיע באתר אחרי שנאשר אותה."}</div>
-        <div style={{fontSize:12,color:"#666",margin:"10px 0 8px"}}>נשמח מאוד אם תכתבו אותה גם בגוגל, זה עוזר לזוגות אחרים למצוא אותנו 🙏</div>
-        <GoogleReviewButton/>
+        <div className="done">✓ {mine.approved?"הדירוג שלכם מופיע באתר שלנו. תודה! 💜":"הדירוג נשמר באתר שלנו, ויופיע אחרי אישור. תודה! 💜"}</div>
+        <div className="sub">נשמח שיופיע גם בגוגל, כדי שזוגות אחרים יראו אותו:</div>
+        <div className="steps">
+          <div><b>1</b>{copied?"הטקסט הועתק ✓":"נעתיק לכם את מה שכתבתם"}</div>
+          <div><b>2</b>בגוגל בוחרים {r} כוכבים ומדביקים את הטקסט</div>
+        </div>
+        <button type="button" className="btn g" onClick={toGoogle}><span style={{color:"#F4B400"}} aria-hidden="true">★</span> {copied?"פתיחת גוגל שוב":"פרסום אותו דירוג בגוגל"}</button>
       </>:<>
-        <div style={{fontSize:12,color:"#666",marginBottom:10}}>ההמלצה שלכם עוזרת לזוגות אחרים לבחור. אחרי אישור היא תופיע בדף הבית.</div>
-        <Stars value={rating} onChange={setRating} size={28}/>
-        <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={600} placeholder="מה הכי עזר לכם? (למשל: ההושבה האוטומטית חסכה לנו ערב שלם...)" aria-label="ההמלצה"
-          style={{width:"100%",minHeight:80,border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box",margin:"10px 0 8px"}}/>
-        <input value={name} onChange={e=>setName(e.target.value)} maxLength={60} placeholder="השם שיופיע (למשל: נועה ואיתי)" aria-label="שם להצגה"
-          style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 12px",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",marginBottom:10}}/>
-        {msg&&<div role="alert" style={{fontSize:12,color:"#C53030",fontWeight:700,marginBottom:8}}>{msg}</div>}
-        <div style={{fontSize:11,color:"#6E6585",marginBottom:8}}>בשליחה אתם מסכימים שנפרסם את ההמלצה באתר עם השם שבחרתם. אפשר לבקש להסיר אותה בכל עת.</div>
-        <button onClick={send} disabled={busy} style={{background:"#3A2464",color:"#fff",border:"none",borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{busy?"שולח...":"שלחו המלצה"}</button>
+        <div className="sub">כותבים פעם אחת: הדירוג נשמר כאן באתר, ומשם בלחיצה מפרסמים אותו גם בגוגל.</div>
+        <Stars value={rating} onChange={setRating} size={30}/>
+        <textarea value={text} onChange={e=>setText(e.target.value)} maxLength={600} placeholder="מה הכי עזר לכם? (למשל: ההושבה האוטומטית חסכה לנו ערב שלם...)" aria-label="חוות הדעת"/>
+        <input value={name} onChange={e=>setName(e.target.value)} maxLength={60} placeholder="השם שיופיע (למשל: נועה ואיתי)" aria-label="שם להצגה"/>
+        <div className="note">בשליחה אתם מסכימים שנפרסם את חוות הדעת באתר עם השם שבחרתם. אפשר לבקש להסיר אותה בכל עת.</div>
+        {msg&&<div role="alert" className="err">{msg}</div>}
+        <button type="button" className="btn p" onClick={send} disabled={busy}>{busy?"שומר...":"שליחת הדירוג"}</button>
       </>}
     </div>
   );
@@ -4235,6 +4265,7 @@ function LandingTestimonials() {
             </div>
           ))}
         </div>}
+        {items.length>0&&<a href={GOOGLE_PROFILE_URL} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:4,fontSize:15,fontWeight:800,color:"#1a73e8",textDecoration:"none"}}><span style={{color:"#F4B400"}} aria-hidden="true">★</span> קראו עלינו גם בגוגל</a>}
         {items.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16,marginTop:18}}>
           {items.map(t=>(
             <figure key={t.id} style={{margin:0,background:"#FBF8FD",border:"1px solid #EFE6F5",borderRadius:20,padding:20}}>
@@ -4383,7 +4414,7 @@ function MobileSettingsScreen({ user, event, sb, setGuests, setScreen }) {
       </div>
 
       <ProducerProfileCard user={user}/>
-      <TestimonialCard user={user} event={event}/>
+      <TestimonialCard user={user} event={event} style={{margin:"0 16px 12px"}}/>
       <InviteFriendsCard user={user}/>
 
       {/* שינוי סיסמה */}
@@ -4600,6 +4631,7 @@ function TasksScreen({ event }) {
 }
 // קישור לכתיבת ביקורת בפרופיל העסק בגוגל
 const GOOGLE_REVIEW_URL="https://g.page/r/CSW-aObv3rBVEBM/review";
+const GOOGLE_PROFILE_URL="https://g.page/r/CSW-aObv3rBVEBM";
 const GoogleReviewButton=({style})=>(
   <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer"
     style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#fff",color:"#1a73e8",border:"1.5px solid #D2E3FC",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:800,textDecoration:"none",fontFamily:"inherit",...style}}>
@@ -4992,16 +5024,6 @@ function HomeAutoSend({ event, records, onGo, style }) {
     </section>
   );
 }
-// מסך הבית: בקשה לחוות דעת בגוגל
-function HomeReviewCard({ style }) {
-  return(
-    <div className="hm-rev" style={style}>
-      <span className="s" aria-hidden="true">★★★★★</span>
-      <div><b>נהנים מ-Sidor-IL?</b><span>חוות דעת קצרה בגוגל עוזרת לזוגות אחרים למצוא אותנו.</span></div>
-      <GoogleReviewButton style={{minHeight:44,padding:"10px 16px",fontSize:14}}/>
-    </div>
-  );
-}
 function HomeRsvpDonut({ confirmed, declined, pending, total, onOpen }) {
   const a=total>0?confirmed/total*360:0,b=total>0?declined/total*360:0;
   const bg=total>0?`conic-gradient(#25A55F 0 ${a}deg,#E5566F ${a}deg ${a+b}deg,#E8A93A ${a+b}deg 360deg)`:"#F1ECF6";
@@ -5050,8 +5072,7 @@ function PostEventCard({ event, onGo, style }) {
         <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer" style={{...btn,background:"#25D366",color:"#fff",border:"none"}}><WaIcon size={15}/> שליחה בוואטסאפ</a>
         <button onClick={copy} style={btn}>{copied?"✓ הועתק":"📋 העתקת הנוסח"}</button>
         {!biz&&<button onClick={()=>onGo("gifts")} style={btn}>🎁 רישום מתנות</button>}
-        <button onClick={()=>onGo("user_settings")} style={btn}>💜 המלצה לאתר</button>
-        <GoogleReviewButton/>
+        <button onClick={()=>document.querySelector(".rt")?.scrollIntoView({behavior:"smooth",block:"center"})} style={btn}>⭐ דרגו אותנו</button>
       </div>
     </div>
   );
@@ -6366,7 +6387,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
         <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
         </div>
-        <div style={{padding:"0 14px 4px"}}><HomeReviewCard/></div>
+        <div style={{padding:"0 14px 4px"}}><TestimonialCard user={user} event={event}/></div>
 
         {/* ─── תפריט מהיר ─── */}
         <div style={{padding:"0 14px"}}>
@@ -6681,7 +6702,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <PostEventCard event={event} onGo={setScreen} style={{padding:"22px 24px"}}/>
                   <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px"}}/>
                   <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
-                  <HomeReviewCard/>
+                  <TestimonialCard user={user} event={event}/>
                 </div>
               </div>
 
