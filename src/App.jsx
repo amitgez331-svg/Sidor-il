@@ -2412,75 +2412,79 @@ const STK_TONES=[
 ];
 // "ככה זה נראה מבפנים": 2 שורות של קוביות, בכל שורה קוביה אחת גדלה ומציגה את המסך, ובתורות הבאה בתור גדלה
 const TOUR_IC={home:"🏠",guests:"👥",seating:"🪑",sms:"📱",whatsapp:"💬",budget:"💰",gifts:"🎁",tasks:"✅",details:"📋",vendors:"💡"};
+// שורה אחת רגועה של 5 קוביות: הפעילה גדלה ומציגה את המסך וההסבר, השאר קוביות קטנות עם אייקון ושם
+const TOUR_PICK=["home","guests","seating","sms","budget"];
 const TOUR_CSS=`
-  .lp-sq{display:grid;gap:16px}
-  .lp-sq-row{display:flex;gap:14px;align-items:stretch}
-  .lp-sq-t{position:relative;flex:1 1 0;min-width:0;border:none;margin:0;padding:10px 10px 14px;border-radius:24px;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:#fff;display:flex;flex-direction:column;box-shadow:0 16px 32px -26px rgba(60,35,110,.55),inset 0 0 0 1.5px #EFE6F7;transition:flex-grow 480ms cubic-bezier(0.77,0,0.175,1),box-shadow 260ms ease,translate 260ms cubic-bezier(0.23,1,0.32,1)}
-  .lp-sq-t.on{flex-grow:1.6;translate:0 -8px;box-shadow:0 28px 50px -28px rgba(60,35,110,.65),inset 0 0 0 2px var(--t)}
-  .lp-sq-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
-  .lp-sq-pic{display:block;border-radius:16px;padding:7px;background:linear-gradient(160deg,var(--a),var(--b))}
-  .lp-sq-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:10px;background:#fff;box-shadow:0 10px 20px -14px rgba(43,29,63,.6)}
-  .lp-sq-txt{display:block;padding:10px 4px 0;min-width:0}
-  .lp-sq-tag{display:flex;align-items:center;gap:6px;font:700 13px 'Fredoka','Heebo',sans-serif;color:var(--t)}
-  .lp-sq-tag i{font-style:normal;font-size:15px}
-  .lp-sq-h{display:block;font:700 16px/1.3 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:5px 0 3px}
-  .lp-sq-p{display:block;font-size:13px;line-height:1.55;color:#3A2F50;font-weight:600}
-  .lp-sq-bar{position:absolute;top:0;right:22px;left:22px;height:3px;border-radius:0 0 3px 3px;overflow:hidden;opacity:0}
-  .lp-sq-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
-  .lp-sq.auto .lp-sq-t.on .lp-sq-bar{opacity:1}
-  .lp-sq.auto .lp-sq-t.on .lp-sq-bar u{animation:lpSqBar var(--dur) linear both}
-  @keyframes lpSqBar{to{transform:scaleX(1)}}
-  .lp-sq-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
-  @media(prefers-reduced-motion:reduce){.lp-sq-t{transition-duration:1ms!important}.lp-sq-bar{display:none}}
+  .lp-pk{display:flex;gap:16px;align-items:flex-start;--c:clamp(128px,13.4vw,160px)}
+  .lp-pk-t{position:relative;flex:0 0 auto;width:var(--c);height:var(--c);border:none;margin:0;padding:0;border-radius:32px;overflow:hidden;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:#fff;box-shadow:0 18px 40px -28px rgba(60,35,110,.55),inset 0 0 0 1.5px #EFE6F7;transition:width 600ms cubic-bezier(0.77,0,0.175,1),height 600ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
+  .lp-pk-t.on{width:calc(100% - 4 * var(--c) - 64px);height:416px;box-shadow:0 34px 70px -38px rgba(60,35,110,.6),inset 0 0 0 1.5px #EFE6F7}
+  .lp-pk-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  @media(hover:hover) and (pointer:fine){.lp-pk-t:not(.on):hover{box-shadow:0 24px 44px -26px rgba(60,35,110,.6),inset 0 0 0 1.5px #E2D4F5}}
+  .lp-pk-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;text-align:center;transition:opacity 220ms ease}
+  .lp-pk-face i{font-style:normal;width:60px;height:60px;border-radius:20px;background:linear-gradient(160deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:27px}
+  .lp-pk-face b{font:700 16px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
+  .lp-pk-t.on .lp-pk-face{opacity:0;pointer-events:none}
+  .lp-pk-in{position:absolute;inset:0;display:flex;flex-direction:column;padding:14px;opacity:0;transition:opacity 220ms ease;min-width:340px}
+  .lp-pk-t.on .lp-pk-in{opacity:1;transition-delay:320ms}
+  .lp-pk-pic{display:block;border-radius:22px;padding:9px;background:linear-gradient(160deg,var(--a),var(--b))}
+  .lp-pk-pic img{display:block;width:100%;height:auto;aspect-ratio:1440/900;border-radius:13px;background:#fff;box-shadow:0 14px 28px -18px rgba(43,29,63,.6)}
+  .lp-pk-txt{display:block;padding:14px 8px 0}
+  .lp-pk-tag{display:flex;align-items:center;gap:8px;font:700 14px 'Fredoka','Heebo',sans-serif;color:var(--t)}
+  .lp-pk-h{display:block;font:700 21px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:5px 0 4px}
+  .lp-pk-p{display:block;font-size:14.5px;line-height:1.6;color:#3A2F50;font-weight:600}
+  .lp-pk-bar{position:absolute;top:0;right:28px;left:28px;height:3px;border-radius:0 0 3px 3px;overflow:hidden;opacity:0;z-index:2}
+  .lp-pk-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
+  .lp-pk.auto .lp-pk-t.on .lp-pk-bar{opacity:1}
+  .lp-pk.auto .lp-pk-t.on .lp-pk-bar u{animation:lpPkBar var(--dur) linear both}
+  @keyframes lpPkBar{to{transform:scaleX(1)}}
+  .lp-pk-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
+  @media(prefers-reduced-motion:reduce){.lp-pk-t,.lp-pk-in,.lp-pk-face{transition-duration:1ms!important}.lp-pk-bar{display:none}}
   @media(max-width:900px){
-    .lp-sq{grid-template-columns:1fr 1fr;gap:12px}
-    .lp-sq-row{display:contents}
-    .lp-sq-t{padding:8px 8px 12px;border-radius:20px}
-    .lp-sq-t.on{translate:none;scale:1.05}
-    .lp-sq-h{font-size:14.5px}
-    .lp-sq-p{font-size:12.5px}
+    .lp-pk{flex-direction:column;gap:10px}
+    .lp-pk-t{width:100%;height:72px;border-radius:24px}
+    .lp-pk-t.on{width:100%;height:362px}
+    .lp-pk-face{flex-direction:row;justify-content:flex-start;padding:0 14px}
+    .lp-pk-face i{width:46px;height:46px;font-size:22px;border-radius:16px}
+    .lp-pk-in{min-width:0;padding:12px}
+    .lp-pk-h{font-size:18px}
+    .lp-pk-p{font-size:14px}
   }
 `;
 function ProductTour(){
-  const rows=[LP_TOUR.slice(0,5),LP_TOUR.slice(5,10)];
-  const [act,setAct]=useState([0,0]);
+  const items=TOUR_PICK.map(id=>LP_TOUR.find(x=>x.id===id)).filter(Boolean);
+  const [act,setAct]=useState(0);
   const [auto,setAuto]=useState(()=>lpMotionOK());
   const [hold,setHold]=useState(false),[seen,setSeen]=useState(false);
-  const boxRef=useRef(null),tick=useRef(0),actRef=useRef(act);
-  actRef.current=act;
-  const DUR=1700;
+  const boxRef=useRef(null);
+  const DUR=2800;
   useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.3});io.observe(el);return()=>io.disconnect();},[]);
-  // בכל פעם קוביה אחרת גדלה מעט: לסירוגין בשורה העליונה ובתחתונה
   useEffect(()=>{
     if(!auto||hold||!seen)return;
-    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;const n=[...actRef.current];n[r]=(n[r]+1)%5;setAct(n);},DUR);
+    const iv=setInterval(()=>setAct(a=>(a+1)%items.length),DUR);
     return()=>clearInterval(iv);
-  },[auto,hold,seen]);
-  const show=(r,k)=>setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});
-  const pick=(r,k)=>{setAuto(false);show(r,k);};
+  },[auto,hold,seen,items.length]);
   return(<div ref={boxRef}>
     <style>{TOUR_CSS}</style>
-    <div className={`lp-sq${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR*2}ms`}}
+    <div className={`lp-pk${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR}ms`}}
       onPointerEnter={e=>{if(e.pointerType==="mouse")setHold(true);}} onPointerLeave={()=>setHold(false)}
       onFocus={()=>setHold(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setHold(false);}}>
-      {rows.map((row,r)=>(
-        <div key={r} className="lp-sq-row">
-          {row.map((x,k)=>{const on=act[r]===k;const tone=STK_TONES[(r*5+k)%STK_TONES.length];return(
-            <button key={x.id} type="button" className={`lp-sq-t${on?" on":""}`} aria-pressed={on}
-              style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}}
-              onClick={()=>pick(r,k)} onPointerEnter={e=>{if(e.pointerType==="mouse")show(r,k);}}>
-              <span className="lp-sq-bar" aria-hidden="true"><u key={on?`on${act[r]}`:"off"}/></span>
-              <span className="lp-sq-pic"><img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/></span>
-              <span className="lp-sq-txt">
-                <span className="lp-sq-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
-                <span className="lp-sq-h">{x.t}</span>
-                <span className="lp-sq-p">{x.d}</span>
-              </span>
-            </button>);})}
-        </div>
-      ))}
+      {items.map((x,k)=>{const on=act===k;const tone=STK_TONES[k%STK_TONES.length];return(
+        <button key={x.id} type="button" className={`lp-pk-t${on?" on":""}`} aria-expanded={on} aria-label={`${x.tab}: ${x.t}`}
+          style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}}
+          onClick={()=>{setAuto(false);setAct(k);}} onPointerEnter={e=>{if(e.pointerType==="mouse")setAct(k);}}>
+          <span className="lp-pk-bar" aria-hidden="true"><u key={on?`on${act}`:"off"}/></span>
+          <span className="lp-pk-face" aria-hidden="true"><i>{TOUR_IC[x.id]}</i><b>{x.tab}</b></span>
+          <span className="lp-pk-in">
+            <span className="lp-pk-pic"><img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/></span>
+            <span className="lp-pk-txt">
+              <span className="lp-pk-tag"><span aria-hidden="true">{TOUR_IC[x.id]}</span>{x.tab}</span>
+              <span className="lp-pk-h">{x.t}</span>
+              <span className="lp-pk-p">{x.d}</span>
+            </span>
+          </span>
+        </button>);})}
     </div>
-    <div className="lp-sq-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+    <div className="lp-pk-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
   </div>);
 }
 
@@ -4721,6 +4725,10 @@ const HOME_CSS=`
 .hm-stat b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:38px;font-weight:700;line-height:1.1;margin:10px 0 2px;color:#2B1D3F;font-variant-numeric:tabular-nums}
 .hm-stat small{font-size:13.5px;font-weight:700;color:#3A2F50}
 .hm-h2{font-size:21px;font-weight:700;color:#2B1D3F;margin:26px 4px 12px}
+.hm-sec{position:relative;background:rgba(255,255,255,.74);border:1.5px solid #EADFF6;border-radius:32px;padding:4px 18px 18px;margin-top:22px;box-shadow:0 24px 48px -36px rgba(91,60,140,.55)}
+.hm-sec > .hm-h2{display:flex;align-items:center;gap:10px;margin:16px 4px 14px}
+.hm-sec > .hm-h2::before{content:"";flex-shrink:0;width:6px;height:24px;border-radius:6px;background:linear-gradient(180deg,#F0609E,#9B6BFF)}
+.hm-sec-m{margin:18px 14px 0;padding:2px 12px 14px;border-radius:28px}
 .hm-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .hm-tile{background:#fff;border-radius:28px;padding:10px 10px 16px;border:1.5px solid #EADFF6;cursor:pointer;text-align:right;font-family:inherit;box-shadow:0 22px 44px -26px rgba(91,60,140,.6);transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
 @media(hover:hover) and (pointer:fine){.hm-tile:hover{translate:0 -4px;box-shadow:0 26px 50px -28px rgba(91,60,140,.6)}}
@@ -6389,8 +6397,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
         <style>{HOME_CSS}</style>
         <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/></div>
-        <h2 className="hm-h2" style={{margin:"20px 18px 10px"}}>האירוע במספרים</h2>
-        <div style={{padding:"0 14px"}}><EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/></div>
+        <section className="hm-sec hm-sec-m" aria-labelledby="hm-nums-m">
+          <h2 className="hm-h2" id="hm-nums-m">האירוע במספרים</h2>
+          <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+        </section>
         <div style={{padding:"0 14px"}}><HomeAutoSend event={event} records={allG.length} onGo={setScreen}/></div>
         <div style={{padding:"14px 14px 0",display:"grid",gap:12}}>
           <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
@@ -6404,8 +6414,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         <div style={{padding:"0 14px 4px"}}><TestimonialCard user={user} event={event}/></div>
 
         {/* ─── תפריט מהיר ─── */}
-        <div style={{padding:"0 14px"}}>
-          <h2 className="hm-h2" style={{margin:"20px 4px 10px"}}>פעולות מהירות</h2>
+        <div className="hm-sec hm-sec-m">
+          <h2 className="hm-h2">פעולות מהירות</h2>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {[
               {icon:"🪑",label:"סידורי הושבה",nav:"seating",bg:"#FFF1F6",color:"#9147D6"},
@@ -6702,10 +6712,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div>
               <style>{HOME_CSS}</style>
               <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/>
-              <h2 className="hm-h2">האירוע במספרים</h2>
-              <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-              <h2 className="hm-h2">קיצורי דרך</h2>
-              <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
+              <section className="hm-sec" aria-labelledby="hm-nums">
+                <h2 className="hm-h2" id="hm-nums">האירוע במספרים</h2>
+                <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+              </section>
+              <section className="hm-sec" aria-labelledby="hm-short">
+                <h2 className="hm-h2" id="hm-short">קיצורי דרך</h2>
+                <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
+              </section>
               <HomeAutoSend event={event} records={allG.length} onGo={setScreen}/>
               <div className="hm-grid">
                 <div style={{display:"grid",gap:18}}>
@@ -12504,6 +12518,9 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs{font-synthesis-weight:none}
         .evs h1 mark{color:inherit;padding:0 .12em;border-radius:.22em;background:linear-gradient(120deg,#FFD1E5,#FFB2D3)}
         .evs .ev-blobs i{position:absolute;border-radius:50%;pointer-events:none}
+        .evs .ev-photos{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(380px,1fr);opacity:.11;filter:saturate(.75);-webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 96%);mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 55%,transparent 96%)}
+        .evs .ev-photos img{width:100%;height:100%;object-fit:cover;display:block}
+        @media(max-width:600px){.evs .ev-photos{grid-template-columns:1fr;grid-auto-rows:minmax(300px,1fr);opacity:.09}}
         .evs .ev-card{border-radius:28px!important;border:none!important;box-shadow:0 18px 44px -28px rgba(91,60,140,.45)!important;transition:translate 250ms cubic-bezier(0.23,1,0.32,1),box-shadow 250ms cubic-bezier(0.23,1,0.32,1)!important}
         @media(hover:hover) and (pointer:fine){.evs .ev-card:hover{translate:0 -5px;box-shadow:0 28px 56px -30px rgba(91,60,140,.55)!important}}
         .evs .ev-card:before{content:"";position:absolute;top:0;right:0;left:0;height:7px;background:var(--evc,#F0609E)}
@@ -12517,6 +12534,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs .sx-btn:focus-visible,.evs button:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
       `}</style>
       <div className="ev-blobs" aria-hidden="true" style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
+        <div className="ev-photos">{["1775476793931-cb484f197760","1792587545791-dbff25ac7905","1592125661285-79820f2fdf7a","1703432287852-28f965fc3749"].map(id=><img key={id} src={`https://images.unsplash.com/photo-${id}?w=900&q=55&auto=format&fit=crop`} alt="" loading="lazy" decoding="async"/>)}</div>
         <i style={{width:200,height:200,top:90,left:"8%",background:"radial-gradient(circle at 30% 30%,#fff,#E9DDFF 60%,#D9C6FF)",opacity:.6}}/>
         <i style={{width:110,height:110,top:320,right:"4%",background:"radial-gradient(circle at 30% 30%,#fff,#FFD6E8 60%,#FFB8D6)",opacity:.65}}/>
         <i style={{width:80,height:80,bottom:120,left:"30%",background:"radial-gradient(circle at 30% 30%,#fff,#CFF3E4 60%,#A8EBD2)",opacity:.7}}/>
