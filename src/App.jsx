@@ -277,7 +277,15 @@ const COUPLE_TYPES={
   ff:{label:"כלה וכלה",emoji:"💍",a:"שם הכלה הראשונה",b:"שם הכלה השנייה",pa:"הורי הכלה הראשונה",pb:"הורי הכלה השנייה",roles:[["groom","הכלה הראשונה"],["bride","הכלה השנייה"]]},
 };
 const coupleOf=e=>COUPLE_TYPES[e?.couple_type||e?.settings_json?.coupleType]?(e.couple_type||e.settings_json.coupleType):"mf";
-const eventKind=e=>{const k=EVENT_KINDS[e?.event_type]||EVENT_KINDS.wedding;return k===EVENT_KINDS.wedding?{...k,...COUPLE_TYPES[coupleOf(e)]}:k;};
+// בבר/בת מצווה ובברית: בן או בת (settings_json.childGender, בטופס היצירה child_gender)
+const childOf=e=>{const v=e?.child_gender||e?.settings_json?.childGender;return v==="m"||v==="f"?v:"";};
+const CHILD_KINDS={
+  bar_mitzvah:{m:{people:"✡️ פרטי חתן המצווה",a:"שם חתן המצווה"},f:{people:"✡️ פרטי כלת המצווה",a:"שם כלת המצווה"}},
+  brit:{m:{people:"👶 פרטי הברית",a:"שם התינוק"},f:{people:"👶 פרטי שמחת הבת",a:"שם התינוקת"}},
+};
+const eventKind=e=>{const k=EVENT_KINDS[e?.event_type]||EVENT_KINDS.wedding;
+  if(k===EVENT_KINDS.wedding)return {...k,...COUPLE_TYPES[coupleOf(e)]};
+  const ck=CHILD_KINDS[e?.event_type]?.[childOf(e)];return ck?{...k,...ck}:k;};
 // בורר סוג הזוג (יצירת אירוע ופרטי האירוע)
 function CouplePicker({ value, onChange }) {
   return(
@@ -295,8 +303,8 @@ const eventWords=e=>{
   const t=EVENT_KINDS[e?.event_type]?e.event_type:"wedding";
   const g=String(e?.groom_name||"").trim(),b=String(e?.bride_name||"").trim(),n=String(e?.name||"").trim();
   const name=t==="wedding"?(g&&b?`חתונת ${g} ו${b}`:g||b?`חתונת ${g||b}`:"חתונתנו")
-    :t==="bar_mitzvah"?(g?`שמחת המצווה של ${g}`:n||"שמחת המצווה")
-    :t==="brit"?(g?`ברית המילה של ${g}`:n||"ברית המילה")
+    :t==="bar_mitzvah"?(g?`${childOf(e)==="f"?"בת המצווה":childOf(e)==="m"?"בר המצווה":"שמחת המצווה"} של ${g}`:n||"שמחת המצווה")
+    :t==="brit"?(g?`${childOf(e)==="f"?"שמחת הבת":"ברית המילה"} של ${g}`:n||(childOf(e)==="f"?"שמחת הבת":"ברית המילה"))
     :(n||"האירוע שלנו");
   const hosts=t==="wedding"?(g&&b?`${g} ו${b}`:g||b||n):(t==="bar_mitzvah"||t==="brit")?(String(e?.groom_father||"").trim()||g||n):(g||n);
   return {type:t,name,hosts,emoji:EVENT_KINDS[t].emoji,greeting:t==="wedding"?"ליום המאושר בחיינו":"לאירוע המיוחד שלנו"};
@@ -6965,6 +6973,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const [myRole,setMyRole]=useState(event.my_role||"groom");
   const [settings,setSettings]=useState({
     coupleType: coupleOf(event),
+    childGender: childOf(event)||"m",
     confetti: event.settings_json?.confetti??true,
     popupRsvp: event.settings_json?.popupRsvp??false,
     autoRsvp: event.settings_json?.autoRsvp??true,
@@ -6976,7 +6985,7 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     rsvpQ: rsvpQOf(event),
   });
   const setQ=patch=>setSettings(s=>({...s,rsvpQ:{...s.rsvpQ,...patch}}));
-  const kind=eventKind({...event,event_type:event.event_type,couple_type:settings.coupleType});
+  const kind=eventKind({...event,event_type:event.event_type,couple_type:settings.coupleType,child_gender:settings.childGender});
 
   // שמירה אוטומטית: כל שינוי נשמר כשנייה אחרי שמפסיקים להקליד, וגם ביציאה מהמסך.
   // השמירות רצות אחת אחרי השנייה ותמיד עם הנתונים העדכניים (latestRef)
@@ -7051,6 +7060,14 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:16,borderBottom:"1px solid #F7FAFC",paddingBottom:12}}>{kind.people}</div>
 
         {/* מי אני  -  רק בחתונה */}
+        {(event.event_type==="bar_mitzvah"||event.event_type==="brit")&&<div style={{marginBottom:16}}>
+          <div style={{fontSize:12,color:"#5F6B7D",fontWeight:700,marginBottom:8}}>בן או בת:</div>
+          <div role="radiogroup" aria-label="בן או בת" style={{display:"flex",gap:8}}>
+            {[["m",event.event_type==="brit"?"👦 ברית לבן":"👦 בר מצווה"],["f",event.event_type==="brit"?"👧 שמחת בת":"👧 בת מצווה"]].map(([v,l])=>{const on=settings.childGender===v;return(
+              <button key={v} type="button" role="radio" aria-checked={on} onClick={()=>setSettings(s=>({...s,childGender:v}))}
+                style={{flex:1,background:on?"#FFE6F0":"#fff",color:"#2B1D3F",border:`2px solid ${on?"#F0609E":"#EFE8F7"}`,borderRadius:100,padding:"10px 14px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Fredoka','Heebo',sans-serif"}}>{on?"✓ ":""}{l}</button>);})}
+          </div>
+        </div>}
         {(event.event_type||"wedding")==="wedding"&&<div style={{marginBottom:16}}>
           <div style={{fontSize:12,color:"#5F6B7D",fontWeight:700,marginBottom:8}}>בני הזוג:</div>
           <CouplePicker value={settings.coupleType} onChange={v=>setSettings(s=>({...s,coupleType:v}))}/>
@@ -7375,14 +7392,24 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
   const total=allGuests.reduce((s,g)=>s+(g.guest_count||1),0);
 
   // מסננים נוספים: קרבה, שיבוץ לשולחן, צפייה בהזמנה
-  const [fRel,setFRel]=useState("all"),[fSeat,setFSeat]=useState("all"),[fView,setFView]=useState("all");
-  const anyFilter=fRel!=="all"||fSeat!=="all"||fView!=="all"||filterRsvp!=="all"||!!search;
+  const [fRel,setFRel]=useState("all"),[fSeat,setFSeat]=useState("all"),[fView,setFView]=useState("all"),[fLang,setFLang]=useState("all");
+  // שפת ההודעות לכל אורח (ברירת מחדל עברית) — נשמרת באירוע: settings_json.guest_langs
+  const [gLangs,setGLangs]=useState(()=>event.settings_json?.guest_langs||{});
+  const setGuestLang=async(g,l)=>{
+    const next={...gLangs};if(l==="he")delete next[g.id];else next[g.id]=l;
+    setGLangs(next);
+    const settings={...(event.settings_json||{}),guest_langs:next};event.settings_json=settings;
+    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    if(error)alert("❌ השפה לא נשמרה: "+error.message);
+  };
+  const anyFilter=fRel!=="all"||fSeat!=="all"||fView!=="all"||fLang!=="all"||filterRsvp!=="all"||!!search;
   const filtered=allGuests
     .filter(g=>g.name.toLowerCase().includes(search.toLowerCase())||(g.phone&&g.phone.includes(search)))
     .filter(g=>filterRsvp==="all"||g.rsvp===filterRsvp||(filterRsvp==="pending"&&(!g.rsvp||g.rsvp==="pending")))
     .filter(g=>fRel==="all"||(g.relation||"ללא שיוך")===fRel)
     .filter(g=>fSeat==="all"||(fSeat==="seated"?!!g.table_id:!g.table_id))
-    .filter(g=>fView==="all"||(fView==="viewed"?(g.views||0)>0:!(g.views>0)));
+    .filter(g=>fView==="all"||(fView==="viewed"?(g.views||0)>0:!(g.views>0)))
+    .filter(g=>fLang==="all"||(gLangs[g.id]||"he")===fLang);
 
   const updateRsvp=async(g,stage)=>{
     const patch=stagePatch(stage);
@@ -7603,13 +7630,14 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
         <span style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:15,fontWeight:700,color:"#2B1D3F",marginLeft:4}}>🎚️ סינון:</span>
         {[["קרבה",fRel,setFRel,[["all","כל הקרבות"],...[...new Set([...Object.keys(customCats),...allGuests.map(g=>g.relation||"ללא שיוך")])].map(r=>[r,r])]],
           ["שולחן",fSeat,setFSeat,[["all","שולחן: הכל"],["seated","שובצו לשולחן"],["unseated","עוד לא שובצו"]]],
-          ["צפייה בהזמנה",fView,setFView,[["all","צפייה: הכל"],["viewed","צפו בהזמנה"],["not","לא צפו בהזמנה"]]]].map(([l,v,set,opts])=>(
+          ["צפייה בהזמנה",fView,setFView,[["all","צפייה: הכל"],["viewed","צפו בהזמנה"],["not","לא צפו בהזמנה"]]],
+          ["שפת ההודעות",fLang,setFLang,[["all","🌍 כל השפות"],...MSG_LANGS.map(([c,n,fl])=>[c,`${fl} ${n}`])]]].map(([l,v,set,opts])=>(
           <select key={l} aria-label={`סינון לפי ${l}`} value={v} onChange={e=>set(e.target.value)}
             style={{border:"none",borderRadius:100,padding:"9px 14px",fontSize:14,fontWeight:700,fontFamily:"inherit",cursor:"pointer",outline:"none",
               background:v!=="all"?"#FFE6F0":"#fff",color:"#2B1D3F",boxShadow:v!=="all"?"0 0 0 2px #F0609E":"0 10px 22px -18px rgba(43,29,63,.6)"}}>
             {opts.map(([ov,ol])=><option key={ov} value={ov}>{ol}</option>)}
           </select>))}
-        {anyFilter&&<button onClick={()=>{setFRel("all");setFSeat("all");setFView("all");setFilterRsvp("all");setSearch("");}}
+        {anyFilter&&<button onClick={()=>{setFRel("all");setFSeat("all");setFView("all");setFLang("all");setFilterRsvp("all");setSearch("");}}
           style={{background:"none",border:"none",color:"#B4236A",fontSize:14,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"inherit"}}>ניקוי הסינון</button>}
         <span style={{marginRight:"auto",fontSize:14,color:"#5E5470",fontWeight:600}}>{filtered.length} מתוך {allGuests.length} רשומות</span>
       </div>
@@ -7648,6 +7676,10 @@ function DesktopRsvpTable({ guests, tables, event, sb, loadAll, setGuests, setTa
                     <QuickCell value={g.name} onSave={v=>quickSave(g,"name",v)} style={{flex:1,minWidth:0}}>
                       <span style={{display:"block",fontWeight:700,color:"#1A202C",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</span>
                     </QuickCell>
+                    <select value={gLangs[g.id]||"he"} onChange={e=>setGuestLang(g,e.target.value)} aria-label={`שפת ההודעות של ${g.name}`} title="שפת ההודעות"
+                      style={{flexShrink:0,border:"none",borderRadius:100,background:(gLangs[g.id]||"he")==="he"?"#F6F1FB":"#FFE6F0",padding:"3px 4px",fontSize:13,cursor:"pointer",fontFamily:"inherit",color:"#2B1D3F",maxWidth:58}}>
+                      {MSG_LANGS.map(([c,n,fl])=><option key={c} value={c}>{fl} {n}</option>)}
+                    </select>
                   </div>
                 </td>
                 <td style={{padding:"11px 8px",textAlign:"center",fontWeight:800,fontSize:13,color:"#2D3748"}}>
@@ -8601,6 +8633,96 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
   );
 }
 
+// ─── שפות וטונים להודעות (SMS / וואטסאפ) ───
+// שפת כל אורח נשמרת ב-settings_json.guest_langs {guestId: "en"} — ברירת מחדל עברית
+const MSG_LANGS=[["he","עברית","🇮🇱"],["en","English","🇺🇸"],["ru","Русский","🇷🇺"],["uk","Українська","🇺🇦"],["ar","العربية","🇸🇦"],["am","አማርኛ","🇪🇹"]];
+const MSG_TONES=[["classic","קלאסי ומרגש"],["warm","חם ואישי"],["fun","שמח וקליל"]];
+const MSG_LOCALE={he:"he-IL",en:"en-US",ru:"ru-RU",uk:"uk-UA",ar:"ar-u-nu-latn",am:"am-ET"};
+const guestLangOf=(event,g)=>{const l=event?.settings_json?.guest_langs?.[g?.id];return MSG_LANGS.some(x=>x[0]===l)?l:"he";};
+// שם האירוע בתוך משפט, לפי סוג האירוע והשפה
+const MSG_EVENT={
+  en:{wedding:"the wedding of {H}",bar_mitzvah:"the Bar/Bat Mitzvah of {G}",brit:"the Brit of {G}",other:"our celebration"},
+  ru:{wedding:"свадьба {H}",bar_mitzvah:"бар/бат-мицва {G}",brit:"брит-мила {G}",other:"наш праздник"},
+  uk:{wedding:"весілля {H}",bar_mitzvah:"бар/бат-міцва {G}",brit:"бріт-міла {G}",other:"наше свято"},
+  ar:{wedding:"حفل زفاف {H}",bar_mitzvah:"بار/بات متسفا {G}",brit:"حفل بريت {G}",other:"مناسبتنا"},
+  am:{wedding:"የ{H} ሠርግ",bar_mitzvah:"የ{G} ባር/ባት ሚትስቫ",brit:"የ{G} ብሪት",other:"ዝግጅታችን"},
+};
+const MSG_TEXTS={
+  he:{
+    invite:{warm:"היי {שם} 💛\nנשמח כל כך שתהיו איתנו ב{E}.\n📅 {D} · 📍 {V}\nספרו לנו אם מגיעים: {קישור}",fun:"{שם}, יש חגיגה! 🎉\n{E} בדרך ואתם חייבים להיות שם!\n📅 {D} · 📍 {V}\nלחצו לאישור: {קישור}"},
+    reminder:{warm:"היי {שם} 💛 רק מוודאים, תהיו איתנו ב{E}?\nלאישור הגעה: {קישור}",fun:"{שם}, אל תשאירו אותנו במתח 😄 מגיעים ל{E}?\n{קישור}"},
+    table:{warm:"היי {שם} 💛 שמרנו לכם מקום בשולחן {שולחן}. מחכים לכם ב{E}!",fun:"{שם}, השולחן שלכם מוכן: {שולחן} 🪑🎉 נתראה ברחבה!"},
+    thanks:{warm:"{שם}, תודה מכל הלב שהייתם איתנו 💛 זה היה לנו חשוב מאוד. באהבה, {H}",fun:"{שם}, איזה ערב! 🎉 תודה שחגגתם איתנו! {H}"},
+  },
+  en:{
+    invite:{classic:"Dear {שם}, with great joy we invite you to {E}! {X}\n📅 {D}\n📍 {V}\nRSVP: {קישור}",warm:"Hi {שם} 💛 We'd love for you to celebrate {E} with us.\n📅 {D} · 📍 {V}\nLet us know you're coming: {קישור}",fun:"{שם}, party time! 🎉 {E} is coming up!\n📅 {D} · 📍 {V}\nTap to RSVP: {קישור}"},
+    reminder:{classic:"Dear {שם}, we have not yet received your RSVP for {E}.\nPlease let us know: {קישור}",warm:"Hi {שם} 💛 Just checking in. Will you join us at {E}?\nRSVP here: {קישור}",fun:"{שם}, don't leave us guessing 😄 Are you coming to {E}?\n{קישור}"},
+    table:{classic:"Dear {שם}, we look forward to seeing you at {E}.\nYour table: {שולחן}\n📍 {V}",warm:"Hi {שם} 💛 We saved you a seat at table {שולחן}. See you soon at {E}!",fun:"{שם}, your table is ready: {שולחן} 🪑🎉 See you on the dance floor!"},
+    thanks:{classic:"Dear {שם}, thank you for celebrating {E} with us. {H} {X}",warm:"{שם}, thank you so much for being with us 💛 It meant the world to us. With love, {H}",fun:"{שם}, what a night! 🎉 Thanks for celebrating with us! {H}"},
+  },
+  ru:{
+    invite:{classic:"Дорогой(ая) {שם}, с радостью приглашаем вас: {E}! {X}\n📅 {D}\n📍 {V}\nПодтвердите участие: {קישור}",warm:"{שם}, привет 💛 Будем счастливы видеть вас: {E}.\n📅 {D} · 📍 {V}\nОтветьте здесь: {קישור}",fun:"{שם}, праздник! 🎉 {E}!\n📅 {D} · 📍 {V}\nНажмите, чтобы ответить: {קישור}"},
+    reminder:{classic:"Дорогой(ая) {שם}, мы ещё не получили ваш ответ ({E}).\nПожалуйста, подтвердите: {קישור}",warm:"{שם}, привет 💛 Вы будете с нами? ({E})\nОтветьте здесь: {קישור}",fun:"{שם}, ждём ответа 😄 Придёте? ({E})\n{קישור}"},
+    table:{classic:"Дорогой(ая) {שם}, ждём вас! ({E})\nВаш стол: {שולחן}\n📍 {V}",warm:"{שם}, для вас готово место за столом {שולחן} 💛 До встречи!",fun:"{שם}, ваш стол: {שולחן} 🪑🎉 До встречи на танцполе!"},
+    thanks:{classic:"Дорогой(ая) {שם}, спасибо, что разделили с нами этот праздник. {H} {X}",warm:"{שם}, огромное спасибо, что были с нами 💛 С любовью, {H}",fun:"{שם}, это был отличный вечер! 🎉 Спасибо! {H}"},
+  },
+  uk:{
+    invite:{classic:"Дорогий(а) {שם}, з радістю запрошуємо вас: {E}! {X}\n📅 {D}\n📍 {V}\nПідтвердіть участь: {קישור}",warm:"{שם}, привіт 💛 Будемо щасливі бачити вас: {E}.\n📅 {D} · 📍 {V}\nВідповідайте тут: {קישור}",fun:"{שם}, свято! 🎉 {E}!\n📅 {D} · 📍 {V}\nНатисніть, щоб відповісти: {קישור}"},
+    reminder:{classic:"Дорогий(а) {שם}, ми ще не отримали вашої відповіді ({E}).\nБудь ласка, підтвердіть: {קישור}",warm:"{שם}, привіт 💛 Ви будете з нами? ({E})\nВідповідайте тут: {קישור}",fun:"{שם}, чекаємо на відповідь 😄 Прийдете? ({E})\n{קישור}"},
+    table:{classic:"Дорогий(а) {שם}, чекаємо на вас! ({E})\nВаш стіл: {שולחן}\n📍 {V}",warm:"{שם}, для вас готове місце за столом {שולחן} 💛 До зустрічі!",fun:"{שם}, ваш стіл: {שולחן} 🪑🎉 До зустрічі на танцполі!"},
+    thanks:{classic:"Дорогий(а) {שם}, дякуємо, що розділили з нами це свято. {H} {X}",warm:"{שם}, щиро дякуємо, що були з нами 💛 З любов'ю, {H}",fun:"{שם}, це був чудовий вечір! 🎉 Дякуємо! {H}"},
+  },
+  ar:{
+    invite:{classic:"عزيزي/عزيزتي {שם}، يسعدنا دعوتكم إلى {E}! {X}\n📅 {D}\n📍 {V}\nلتأكيد الحضور: {קישור}",warm:"مرحبًا {שם} 💛 يسعدنا جدًا أن تشاركونا {E}.\n📅 {D} · 📍 {V}\nأخبرونا هنا: {קישור}",fun:"{שם}، حان وقت الفرح! 🎉 {E}!\n📅 {D} · 📍 {V}\nاضغطوا للرد: {קישור}"},
+    reminder:{classic:"عزيزي/عزيزتي {שם}، لم نتلقَّ تأكيد حضوركم بعد إلى {E}.\nيرجى التأكيد: {קישור}",warm:"مرحبًا {שם} 💛 هل ستكونون معنا في {E}؟\nأخبرونا هنا: {קישור}",fun:"{שם}، ننتظر ردكم 😄 هل ستأتون إلى {E}؟\n{קישור}"},
+    table:{classic:"عزيزي/عزيزتي {שם}، بانتظاركم في {E}.\nطاولتكم: {שולחן}\n📍 {V}",warm:"{שם}، حجزنا لكم مكانًا على الطاولة {שולחן} 💛 نراكم قريبًا!",fun:"{שם}، طاولتكم جاهزة: {שולחן} 🪑🎉 نراكم على حلبة الرقص!"},
+    thanks:{classic:"عزيزي/عزيزتي {שם}، شكرًا لمشاركتكم فرحتنا. {H} {X}",warm:"{שם}، شكرًا جزيلًا لوجودكم معنا 💛 مع المحبة، {H}",fun:"{שם}، كانت ليلة رائعة! 🎉 شكرًا لكم! {H}"},
+  },
+  am:{
+    invite:{classic:"ውድ {שם}፣ ወደ {E} በደስታ እንጋብዝዎታለን! {X}\n📅 {D}\n📍 {V}\nመገኘትዎን ያረጋግጡ፦ {קישור}",warm:"ሰላም {שם} 💛 {E} ላይ ከእኛ ጋር ቢሆኑ በጣም ደስ ይለናል።\n📅 {D} · 📍 {V}\nእዚህ ይመልሱ፦ {קישור}",fun:"{שם}፣ የደስታ ጊዜ ነው! 🎉 {E}!\n📅 {D} · 📍 {V}\nለመመለስ ይጫኑ፦ {קישור}"},
+    reminder:{classic:"ውድ {שם}፣ ለ{E} የመገኘት ማረጋገጫዎ ገና አልደረሰንም።\nእባክዎ ያረጋግጡ፦ {קישור}",warm:"ሰላም {שם} 💛 {E} ላይ ከእኛ ጋር ይሆናሉ?\nእዚህ ይመልሱ፦ {קישור}",fun:"{שם}፣ መልስዎን እየጠበቅን ነው 😄 ወደ {E} ይመጣሉ?\n{קישור}"},
+    table:{classic:"ውድ {שם}፣ {E} ላይ እንጠብቅዎታለን።\nጠረጴዛዎ፦ {שולחן}\n📍 {V}",warm:"{שם}፣ በጠረጴዛ {שולחן} ቦታ ያዝንልዎ 💛 በቅርቡ እንገናኝ!",fun:"{שם}፣ ጠረጴዛዎ ዝግጁ ነው፦ {שולחן} 🪑🎉 በዳንስ እንገናኝ!"},
+    thanks:{classic:"ውድ {שם}፣ ደስታችንን ስላካፈሉን እናመሰግናለን። {H} {X}",warm:"{שם}፣ ከእኛ ጋር ስለነበሩ በጣም እናመሰግናለን 💛 በፍቅር፣ {H}",fun:"{שם}፣ ድንቅ ምሽት ነበር! 🎉 እናመሰግናለን! {H}"},
+  },
+};
+// בונה את הנוסח לסוג הודעה, טון ושפה. heClassic = הנוסח העברי הקלאסי של המסך (כולל נוסח אישי שנשמר)
+const buildMsgText=(event,type,tone,lang,heClassic)=>{
+  if(lang==="he"&&tone==="classic")return heClassic;
+  const ew=eventWords(event),k=EVENT_KINDS[event?.event_type]?event.event_type:"wedding";
+  const g=String(event?.groom_name||"").trim(),b=String(event?.bride_name||"").trim();
+  const hosts=k==="wedding"?(g&&b?`${g} & ${b}`:g||b||ew.hosts):(ew.hosts||g);
+  const evName=lang==="he"?ew.name:(MSG_EVENT[lang]?.[k]||MSG_EVENT[lang]?.other||"").replace("{H}",hosts).replace("{G}",g||hosts);
+  const d=event?.date?new Date(event.date):null;
+  let dateStr="";try{dateStr=d&&!isNaN(d)?d.toLocaleDateString(MSG_LOCALE[lang]||"he-IL",{weekday:"long",day:"numeric",month:"long"}):"";}catch{dateStr=d?d.toLocaleDateString():"";}
+  const tpl=MSG_TEXTS[lang]?.[type]?.[tone]||MSG_TEXTS.en[type]?.[tone]||heClassic;
+  let t=tpl.replace(/\{E\}/g,evName).replace(/\{H\}/g,hosts).replace(/\{X\}/g,ew.emoji).replace(/\{D\}/g,dateStr).replace(/\{V\}/g,event?.venue||"");
+  t=t.replace(/ · 📍 \n/g,"\n").replace(/\n📍 $/,"").replace(/📅  · /,"");
+  const gl=giftLink(event);
+  if(gl&&(type==="invite"||type==="table")&&!t.includes(gl))t+=`\n💝 ${gl}`;
+  return t;
+};
+// שורת בחירת טון ושפות התצוגה/העריכה (משותף ל-SMS ולוואטסאפ)
+function MsgToneLangBar({ tone, onTone, langs, activeLang, onLang, accent="#F0609E" }) {
+  return(
+    <div style={{display:"grid",gap:10,marginBottom:12}}>
+      <div role="radiogroup" aria-label="טון ההודעה" style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {MSG_TONES.map(([v,l])=>(
+          <button key={v} type="button" role="radio" aria-checked={tone===v} onClick={()=>onTone(v)}
+            style={{border:"none",borderRadius:100,padding:"8px 14px",fontSize:14,fontWeight:700,cursor:"pointer",background:tone===v?accent:"#fff",color:tone===v?"#fff":"#3E3555",boxShadow:tone===v?"none":"inset 0 0 0 1.5px #E6DDF5"}}>
+            {v==="classic"?"✨":v==="warm"?"💛":"🎉"} {l}
+          </button>))}
+      </div>
+      {langs.length>1&&<div role="tablist" aria-label="שפת הנוסח" style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {langs.map(([code,n])=>{const L=MSG_LANGS.find(x=>x[0]===code);return(
+          <button key={code} type="button" role="tab" aria-selected={activeLang===code} onClick={()=>onLang(code)}
+            style={{border:"none",borderRadius:100,padding:"6px 12px",fontSize:13,fontWeight:700,cursor:"pointer",background:activeLang===code?"#F6F0FF":"transparent",color:"#4A2C8F",boxShadow:activeLang===code?"inset 0 0 0 1.5px #C9B6F2":"none"}}>
+            {L[2]} {L[1]} <span style={{opacity:.75}}>({n})</span>
+          </button>);})}
+      </div>}
+    </div>
+  );
+}
+
 // בחירת נמענים (SMS / וואטסאפ): ברירת מחדל  -  אף קבוצה לא מסומנת. נשלח רק למה שמסומן
 const RECIPIENT_GROUPS=[
   {v:"all",      l:"כולם",      c:"#2B6CB0", match:()=>true},
@@ -8741,6 +8863,12 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
   const [smsBalance,setSmsBalance]=useState(null);
+  // טון + שפה: לכל אורח הנוסח בשפה שלו (settings_json.guest_langs), ברירת מחדל עברית
+  const [tone,setTone]=useState("classic"),[activeLang,setActiveLang]=useState("he"),[langEdits,setLangEdits]=useState({});
+  const heClassicOf=id=>TEMPLATES.find(t=>t.id===id)?.text||"";
+  const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate)));
+  const chooseTone=v=>{setTone(v);setLangEdits({});setMsgText(buildMsgText(event,selectedTemplate,v,"he",heClassicOf(selectedTemplate)));};
+
 
   useEffect(()=>{
     if(guests.length>0&&!previewGuest)setPreviewGuest(guests[0]);
@@ -8773,12 +8901,15 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
+  const langsUsed=Object.entries(withPhone.reduce((m,g)=>{const l=guestLangOf(event,g);m[l]=(m[l]||0)+1;return m;},{he:0})).sort((a,b)=>a[0]==="he"?-1:b[0]==="he"?1:b[1]-a[1]);
+  const byLang=list=>Object.entries(list.reduce((m,g)=>{const l=guestLangOf(event,g);(m[l]||=[]).push(g);return m;},{}));
+
   const tableOf=id=>{const t=tables.find(t=>t.id===id);return t?tableLabel(event.settings_json?.table_nums?.[id],t.name):"—";};
 
   // אותה החלפה כמו בשרת השליחה (קישור קצר אישי)
   const buildPreview=(g)=>{
     if(!g)return msgText;
-    return msgText
+    return textFor(guestLangOf(event,g))
       .replace(/{שם}/g,g.name.split(" ")[0])
       .replace(/{שם מלא}/g,g.name)
       .replace(/{קישור}/g,`${SHORT_LINK_HOST}${g.short_code||"xxxxxxx"}`)
@@ -8811,7 +8942,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
     setBuyPack(null);await loadBalance();
   };
 
-  const pickTemplate=(t)=>{setSelectedTemplate(t.id);setMsgText(t.text);};
+  const pickTemplate=(t)=>{setSelectedTemplate(t.id);setLangEdits({});setMsgText(buildMsgText(event,t.id,tone,"he",t.text));};
 
   const sendAll=async()=>{
     if(toSend.length===0){alert(sendTo.length?"אין אורחים עם מספר טלפון בקבוצה שנבחרה":"בחר למי לשלוח");return;}
@@ -8824,13 +8955,17 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
     let p=0;const iv=setInterval(()=>{p=Math.min(p+4,92);setProgress(p);},300);
     try{
       // השרת טוען את האורחים מהמסד, מוריד מהיתרה ושולח דרך 019
-      const{data,error}=await sb.functions.invoke("send-sms",{
-        body:{event_id:event.id,guest_ids:toSend.map(g=>g.id),message:msgText,inviteUrl}
-      });
-      let body=data;
-      if(error){try{body=await error.context?.json();}catch{body=null;}}
-      if(body?.results)setResults(body.results);
-      if(typeof body?.balance==="number")setSmsBalance(body.balance);
+      // שליחה לפי שפה: כל קבוצה מקבלת את הנוסח בשפה שלה
+      let error=null,body=null;const all=[];
+      for(const [lang,gs] of byLang(toSend)){
+        const r=await sb.functions.invoke("send-sms",{body:{event_id:event.id,guest_ids:gs.map(g=>g.id),message:textFor(lang),inviteUrl}});
+        error=r.error;body=r.data;
+        if(error){try{body=await error.context?.json();}catch{body=null;}}
+        if(body?.results)all.push(...body.results);
+        if(typeof body?.balance==="number")setSmsBalance(body.balance);
+        if(error||body?.error)break;
+      }
+      if(all.length)setResults(all);
       if(error||body?.error){
         alert("⚠️ "+(body?.error||error?.message||"שגיאה בשליחה")+(body?.needed?`\nנדרש: ${body.needed} | יתרה: ${body.balance}`:""));
       }else{setProgress(100);await markSent(toSend.map(g=>g.id),selectedTemplate);}
@@ -8946,19 +9081,21 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
                 <code key={v} style={{background:"#F6F0FF",color:"#4A2C8F",padding:"2px 9px",borderRadius:100,marginLeft:4,fontSize:12,fontFamily:"inherit",fontWeight:700}}>{v}</code>
               ))}
             </div>
-            <textarea id="sms-text" aria-label="נוסח ההודעה" value={msgText} onChange={e=>setMsgText(e.target.value)}
+            <MsgToneLangBar tone={tone} onTone={chooseTone} langs={langsUsed} activeLang={activeLang} onLang={setActiveLang} accent={"#B4236A"}/>
+            <textarea id="sms-text" aria-label="נוסח ההודעה" value={activeLang==="he"?msgText:textFor(activeLang)} onChange={e=>{const v=e.target.value;activeLang==="he"?setMsgText(v):setLangEdits(x=>({...x,[activeLang]:v}));}} dir={activeLang==="he"||activeLang==="ar"?"rtl":"ltr"}
               style={{width:"100%",minHeight:150,border:"1.5px solid #E6DDF5",borderRadius:20,padding:"14px 16px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
-                boxSizing:"border-box",direction:"rtl",color:C.text}}/>
+                boxSizing:"border-box",color:C.text}}/>
             {/* ספירת תווים */}
             <div style={{display:"flex",justifyContent:"space-between",gap:8,marginTop:6,fontSize:12,color:tooLong?"#B42318":"#5F5675",fontWeight:tooLong?800:400}}>
               <span>{longest.len}/{SMS_MAX} תווים{longest.name?` (הכי ארוכה: ${longest.name})`:""}</span>
               <span>{tooLong?`⚠️ קצר ב-${longest.len-SMS_MAX} תווים`:"✓ בתוך המגבלה"}</span>
             </div>
             <div style={{fontSize:12,color:"#5F5675",marginTop:4}}>הספירה כוללת את השם, השולחן והקישור האישי ({SHORT_LINK_HOST}…, {SHORT_LINK_HOST.length+7} תווים). אימוג'י = 2 תווים.</div>
-            <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={C.blueM} autoNote
+            {activeLang==="he"&&tone==="classic"&&<TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={C.blueM} autoNote
               onSave={t=>tooLong?(alert(`ההודעה ארוכה מ-${SMS_MAX} תווים. קצרו לפני השמירה.`),false):saveText(selectedTemplate,t)}
-              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>
+              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>}
+            {langsUsed.length>1&&<div style={{fontSize:12,color:"#5E5470",marginTop:8}}>🌍 כל אורח יקבל את ההודעה בשפה שנבחרה לו בניהול אורחים</div>}
           </div>
 
           {/* פילטר */}
@@ -9043,7 +9180,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
               </div>
               <div style={{padding:16}}>
                 <div style={{background:"#fff",borderRadius:"4px 20px 20px 20px",padding:"12px 16px",maxWidth:"90%",display:"inline-block",boxShadow:"0 10px 24px -18px rgba(43,29,63,.6)"}}>
-                  <div style={{fontSize:14,color:"#2B1D3F",lineHeight:1.8,whiteSpace:"pre-wrap",direction:"rtl"}}>
+                  <div style={{fontSize:14,color:"#2B1D3F",lineHeight:1.8,whiteSpace:"pre-wrap",direction:["he","ar"].includes(guestLangOf(event,previewGuest))?"rtl":"ltr"}}>
                     {buildPreview(previewGuest)}
                   </div>
                   <div style={{fontSize:12,color:"#5E5470",textAlign:"left",marginTop:6}}>
@@ -9130,6 +9267,12 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
   const [previewGuest,setPreviewGuest]=useState(null);
+  // טון + שפה: לכל אורח הנוסח בשפה שלו (settings_json.guest_langs), ברירת מחדל עברית
+  const [tone,setTone]=useState("classic"),[activeLang,setActiveLang]=useState("he"),[langEdits,setLangEdits]=useState({});
+  const heClassicOf=id=>TEMPLATES.find(t=>t.id===id)?.text||"";
+  const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate)));
+  const chooseTone=v=>{setTone(v);setLangEdits({});setMsgText(buildMsgText(event,selectedTemplate,v,"he",heClassicOf(selectedTemplate)));};
+
 
   // כשנוסח ההזמנה משתנה בפרטי האירוע  -  עדכן את ה-template
   useEffect(()=>{
@@ -9144,17 +9287,20 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
   const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
+  const langsUsed=Object.entries(withPhone.reduce((m,g)=>{const l=guestLangOf(event,g);m[l]=(m[l]||0)+1;return m;},{he:0})).sort((a,b)=>a[0]==="he"?-1:b[0]==="he"?1:b[1]-a[1]);
+  const byLang=list=>Object.entries(list.reduce((m,g)=>{const l=guestLangOf(event,g);(m[l]||=[]).push(g);return m;},{}));
+
 
   const buildPreview=(g)=>{
     if(!g)return msgText;
-    return msgText
+    return textFor(guestLangOf(event,g))
       .replace(/{שם}/g,g.name.split(" ")[0])
       .replace(/{שם מלא}/g,g.name)
       .replace(/{קישור}/g,`${inviteUrl}?g=${g.id}`)
       .replace(/{שולחן}/g,"3");
   };
 
-  const pickTemplate=(t)=>{setSelectedTemplate(t.id);setMsgText(t.text);};
+  const pickTemplate=(t)=>{setSelectedTemplate(t.id);setLangEdits({});setMsgText(buildMsgText(event,t.id,tone,"he",t.text));};
 
   const sendAll=async()=>{
     if(toSend.length===0){alert("אין אורחים לשליחה עם מספר טלפון");return;}
@@ -9163,15 +9309,18 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
     try{
       let p=0;
       const iv=setInterval(()=>{p=Math.min(p+3,92);setProgress(p);},400);
-      const{data,error}=await sb.functions.invoke("send-whatsapp",{
-        body:{guests:toSend.map(g=>({id:g.id,name:g.name,phone:g.phone})),message:msgText,inviteUrl}
-      });
+      // שליחה לפי שפה: כל קבוצה מקבלת את הנוסח בשפה שלה
+      const all=[];
+      for(const [lang,gs] of byLang(toSend)){
+        const{data,error}=await sb.functions.invoke("send-whatsapp",{body:{guests:gs.map(g=>({id:g.id,name:g.name,phone:g.phone})),message:textFor(lang),inviteUrl}});
+        if(error){clearInterval(iv);throw new Error(error.message);}
+        all.push(...(data?.results||[]));
+      }
       clearInterval(iv);
-      if(error)throw new Error(error.message);
       setProgress(100);
-      setResults(data?.results||[]);
+      setResults(all);
       // רק מי שההודעה אליו עברה (✓) — לפי הטלפון שחזר מהשרת
-      const okPhones=new Set((data?.results||[]).filter(r=>r.status?.includes("✓")).map(r=>r.phone));
+      const okPhones=new Set(all.filter(r=>r.status?.includes("✓")).map(r=>r.phone));
       await markSent(toSend.filter(g=>okPhones.has(g.phone)).map(g=>g.id),selectedTemplate);
     }catch(e){
       alert("שגיאה בשליחה: "+e.message);
@@ -9337,12 +9486,14 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
                 <code key={v} style={{background:"#E3F8EC",color:"#156B45",padding:"2px 9px",borderRadius:100,marginLeft:4,fontSize:12,fontWeight:700,fontFamily:"inherit"}}>{v}</code>
               ))}
             </div>
-            <textarea id="wa-text" aria-label="נוסח הודעת הוואטסאפ" value={msgText} onChange={e=>setMsgText(e.target.value)}
+            <MsgToneLangBar tone={tone} onTone={chooseTone} langs={langsUsed} activeLang={activeLang} onLang={setActiveLang} accent={"#0F7F40"}/>
+            <textarea id="wa-text" aria-label="נוסח הודעת הוואטסאפ" value={activeLang==="he"?msgText:textFor(activeLang)} onChange={e=>{const v=e.target.value;activeLang==="he"?setMsgText(v):setLangEdits(x=>({...x,[activeLang]:v}));}} dir={activeLang==="he"||activeLang==="ar"?"rtl":"ltr"}
               style={{width:"100%",minHeight:180,border:"1.5px solid #DCEBE2",borderRadius:20,padding:"14px 16px",
                 fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.8,
-                boxSizing:"border-box",direction:"rtl",color:C.text}}/>
-            <TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={WA_GREEN} onSave={t=>saveText(selectedTemplate,t)}
-              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>
+                boxSizing:"border-box",color:C.text}}/>
+            {activeLang==="he"&&tone==="classic"&&<TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={WA_GREEN} onSave={t=>saveText(selectedTemplate,t)}
+              onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>}
+            {langsUsed.length>1&&<div style={{fontSize:12,color:"#2F4F43",marginTop:8}}>🌍 כל אורח יקבל את ההודעה בשפה שנבחרה לו בניהול אורחים</div>}
           </div>
 
           {/* פילטר */}
@@ -9431,7 +9582,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
               {/* הודעה */}
               <div className="wa-chat" style={{padding:16,minHeight:380}}>
                 <div style={{background:"#fff",borderRadius:"4px 16px 16px 16px",padding:"10px 14px",maxWidth:"90%",boxShadow:"0 1px 3px rgba(0,0,0,.12)",display:"inline-block"}}>
-                  <div style={{fontSize:13,color:"#1A202C",lineHeight:1.8,whiteSpace:"pre-wrap",direction:"rtl"}}>
+                  <div style={{fontSize:13,color:"#1A202C",lineHeight:1.8,whiteSpace:"pre-wrap",direction:["he","ar"].includes(guestLangOf(event,previewGuest))?"rtl":"ltr"}}>
                     {buildPreview(previewGuest)}
                   </div>
                   <div style={{fontSize:10,color:"#6E6585",textAlign:"left",marginTop:6}}>
@@ -10736,26 +10887,43 @@ function AddTableModal({ onConfirm, onClose }) {
 // ─── INVITE PAGE ──────────────────────────────────────────────────────────────
 const INVITE_TEMPLATES = {
   wedding: [
-    { id:"classic",   name:"קלאסי",    bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", titleColor:"#fff", accent:"#E8C4FF" },
-    { id:"romantic",  name:"רומנטי",   bg:"linear-gradient(160deg,#3d0a0a,#7a1f1f,#c45050)", overlay:"rgba(0,0,0,.4)",  img:"https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80", titleColor:"#fff", accent:"#FFB3B3" },
-    { id:"elegant",   name:"אלגנטי",   bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.5)",  img:"https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"natural",   name:"טבעי",     bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)",  img:"https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
-    { id:"bright",    name:"בהיר",     bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(255,255,255,.2)", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", titleColor:"#2d0060", accent:"#7B2FBE" },
+    { id:"classic", name:"קלאסי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80", titleColor:"#fff", accent:"#E8C4FF" },
+    { id:"romantic", name:"רומנטי", bg:"linear-gradient(160deg,#3d0a0a,#7a1f1f,#c45050)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80", titleColor:"#fff", accent:"#FFB3B3" },
+    { id:"elegant", name:"אלגנטי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"natural", name:"טבעי", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
+    { id:"bright", name:"פרחוני", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"barn", name:"אולם כפרי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"garden", name:"טקס בגן", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80", titleColor:"#fff", accent:"#C6F6D5" },
+    { id:"rings", name:"טבעות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"sea", name:"שקיעה בים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"table", name:"שולחן חגיגי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
   ],
   bar_mitzvah: [
-    { id:"blue",      name:"כחול",     bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)",  img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
-    { id:"gold",      name:"זהב",      bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"blue", name:"כחול", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"gold", name:"משפחתי", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1792587716357-32a29eca7629?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
   ],
   brit: [
-    { id:"soft",      name:"עדין",     bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
-    { id:"pink",      name:"ורוד",     bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"soft", name:"עדין", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
+    { id:"pink", name:"משפחתי", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1780925805396-aff84f9f955d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"sweet", name:"רך ומתוק", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"summer", name:"קיצי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"hug", name:"חיבוק", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
   ],
   business: [
-    { id:"dark",      name:"כהה",      bg:"linear-gradient(160deg,#0a0a0a,#1a1a1a,#2a2a2a)", overlay:"rgba(0,0,0,.5)",  img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"navy",      name:"נייבי",    bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)",  img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"dark", name:"כהה", bg:"linear-gradient(160deg,#0a0a0a,#1a1a1a,#2a2a2a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"navy", name:"כנס", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1768396855390-0728fa9c21e1?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"hall", name:"אולם כנסים", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"talk", name:"הרצאה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
   ],
   other: [
-    { id:"party",     name:"מסיבה",    bg:"linear-gradient(160deg,#1B3A8C,#2952C8,#4A7AFF)", overlay:"rgba(0,0,0,.4)",  img:"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", titleColor:"#fff", accent:"#A0C4FF" },
+    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#1B3A8C,#2952C8,#4A7AFF)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", titleColor:"#fff", accent:"#A0C4FF" },
+    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"mic", name:"ערב חגיגי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"hall", name:"אולם", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
   ],
 };
 
@@ -11420,7 +11588,8 @@ const WIZ_CSS=`
 `;
 function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate, onClose }) {
   const wedding=form.event_type==="wedding";
-  const steps=[{id:"type",l:"סוג האירוע"},...(wedding?[{id:"couple",l:"מי חוגגים?"}]:[]),{id:"names",l:"שמות"},{id:"when",l:"מתי ואיפה?"},{id:"design",l:"עיצוב ההזמנה"},{id:"finish",l:"סיום"}];
+  const kid=form.event_type==="bar_mitzvah"||form.event_type==="brit";
+  const steps=[{id:"type",l:"סוג האירוע"},...(wedding?[{id:"couple",l:"מי חוגגים?"}]:[]),...(kid?[{id:"child",l:"בן או בת?"}]:[]),{id:"names",l:"שמות"},{id:"when",l:"מתי ואיפה?"},{id:"design",l:"עיצוב ההזמנה"},{id:"finish",l:"סיום"}];
   const [i,setI]=useState(0),[tried,setTried]=useState(false);
   const idx=Math.min(i,steps.length-1),st=steps[idx];
   const k=eventKind(form);
@@ -11474,6 +11643,17 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
                   <button key={id} type="button" role="radio" aria-checked={(form.couple_type||"mf")===id} className="wz-cp" onClick={()=>set("couple_type",id)}>
                     <span className="ic" aria-hidden="true">{WIZ_COUPLE_ICON[id]}</span>
                     <span className="lb">{c.label}</span>
+                  </button>))}
+              </div>
+            </>}
+
+            {st.id==="child"&&<>
+              <h2>{form.event_type==="brit"?"נולד בן או נולדה בת?":"בר מצווה או בת מצווה?"}</h2>
+              <p className="wz-sub">לפי הבחירה יתאימו השדות, שם האירוע וההודעות</p>
+              <div className="wz-couple" role="radiogroup" aria-label="בן או בת" style={{gridTemplateColumns:"repeat(2,1fr)"}}>
+                {[["m",form.event_type==="brit"?"ברית לבן":"בר מצווה","👦"],["f",form.event_type==="brit"?"שמחת בת / בריתה":"בת מצווה","👧"]].map(([v,l,ic])=>(
+                  <button key={v} type="button" role="radio" aria-checked={(form.child_gender||"m")===v} className="wz-cp" onClick={()=>set("child_gender",v)}>
+                    <span className="ic" aria-hidden="true">{ic}</span><span className="lb">{l}</span>
                   </button>))}
               </div>
             </>}
@@ -11593,11 +11773,11 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
     setEvents(es=>es.filter(e=>e.id!==delEv.id));setDelEv(null);
   };
   const editEvent=ev=>{PENDING_SCREEN="settings";onSelect(ev);};
-  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",couple_type:"mf",template_id:"classic",invite_style:"classic",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
+  const [form,setForm]=useState({name:"",date:"",event_type:"wedding",couple_type:"mf",child_gender:"m",template_id:"classic",invite_style:"classic",groom_name:"",bride_name:"",venue:"",venue_address:"",event_time:"",reception_time:"",groom_father:"",bride_father:"",host_phone:""});
   // שם אוטומטי לפי סוג האירוע והשמות (אם לא כתבו שם)
   const autoName=f=>{const g=f.groom_name.trim(),b=f.bride_name.trim();
     return f.event_type==="wedding"?(g&&b?`החתונה של ${g} ו${b}`:g||b?`החתונה של ${g||b}`:"")
-      :f.event_type==="bar_mitzvah"?(g?`בר/ת המצווה של ${g}`:""):f.event_type==="brit"?(g?`הברית של ${g}`:""):g;};
+      :f.event_type==="bar_mitzvah"?(g?`${f.child_gender==="f"?"בת המצווה":f.child_gender==="m"?"בר המצווה":"בר/ת המצווה"} של ${g}`:""):f.event_type==="brit"?(g?`${f.child_gender==="f"?"שמחת הבת":"הברית"} של ${g}`:""):g;};
   const evName=form.name.trim()||autoName(form);
 
   // נתונים לכל אירוע (אישרו / הושבו / יתרת SMS) + האם המשתמש מפיק
@@ -11636,9 +11816,9 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
     if(form.host_phone&&!normPhone(form.host_phone)){alert("מספר הנייד לא תקין");return;}
     setCreating(true);
     const invite_code=Math.random().toString(36).slice(2,10);
-    const {couple_type,invite_style,...rest}=form;
+    const {couple_type,invite_style,child_gender,...rest}=form;
     const clean=Object.fromEntries(Object.entries(rest).map(([k,v])=>[k,typeof v==="string"?v.trim():v]).filter(([k,v])=>v!==""||k==="date"));
-    const sj={...(form.event_type==="wedding"&&couple_type&&couple_type!=="mf"?{coupleType:couple_type}:{}),...(invite_style&&invite_style!=="classic"?{inviteStyle:invite_style}:{})};
+    const sj={...(form.event_type==="wedding"&&couple_type&&couple_type!=="mf"?{coupleType:couple_type}:{}),...(invite_style&&invite_style!=="classic"?{inviteStyle:invite_style}:{}),...((form.event_type==="bar_mitzvah"||form.event_type==="brit")&&child_gender?{childGender:child_gender}:{})};
     const extra=Object.keys(sj).length?{settings_json:sj}:{};
     const{data,error}=await sb.from("events").insert(eventRow({...clean,...extra,name:evName,user_id:user.id,invite_code,invite_active:true})).select().single();
     setCreating(false);
