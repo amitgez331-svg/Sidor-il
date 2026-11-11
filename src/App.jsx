@@ -2680,6 +2680,108 @@ function FeatureArc({onStart}){
   </>);
 }
 
+// "מאקסל מבולגן למפה ברורה": האקסל מצד אחד, המפה מהצד השני, ושמות האורחים עוברים ביניהם בלולאה
+const XM_ROWS=[["משה טל","6049","2"],["יעל שגיא","7420","לא",1],["אלון קפלן","3791","2"],["דנה וייס","","אולי",2],["ניל אורן","1533","לא ענה"],["רחל כהן","0000","1"],["דוד לוי","1371","2"],["משה פרץ","2742","לא",1]];
+const XM_CSS=`
+  .lp-xm{display:grid;grid-template-columns:minmax(0,1fr) 150px minmax(0,1.12fr);align-items:center;gap:0;max-width:1120px;margin:0 auto}
+  .lp-xm-xl{position:relative;background:#fff;border-radius:18px;overflow:visible;box-shadow:0 34px 70px -40px rgba(43,29,63,.55);rotate:2deg;filter:saturate(.85)}
+  .lp-xm-xl-h{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;background:#1F7A4D;color:#fff;border-radius:18px 18px 0 0;font:700 13px 'Heebo',sans-serif;direction:ltr;justify-content:flex-end}
+  .lp-xm-xl-h i{font-style:normal;width:22px;height:22px;border-radius:5px;background:#fff;color:#1F7A4D;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px}
+  .lp-xm-xl table{width:100%;border-collapse:collapse;font-size:13px;color:#2B1D3F;table-layout:fixed}
+  .lp-xm-xl th{background:#F1F3F2;font-weight:700;color:#5F6B66;height:28px;border:1px solid #E1E5E3}
+  .lp-xm-xl td{height:30px;border:1px solid #E6E9E7;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  .lp-xm-xl td.n{width:30px;text-align:center;background:#F7F8F7;color:#8A938F;font-size:11px}
+  .lp-xm-xl tr.x td:not(.n){text-decoration:line-through;color:#A39FAD}
+  .lp-xm-xl tr.y td:not(.n){background:#FFF6B8}
+  .lp-xm-note{position:absolute;z-index:2;background:#FFE680;color:#5A4500;font:700 13px/1.35 'Heebo',sans-serif;padding:9px 12px;border-radius:4px;box-shadow:0 10px 20px -12px rgba(90,69,0,.7);max-width:150px}
+  .lp-xm-note.a{top:84px;left:-22px;rotate:-6deg;background:#FFC9DD;color:#7A1F48}
+  .lp-xm-note.b{bottom:-18px;right:24px;rotate:4deg}
+  .lp-xm-flow{position:relative;height:300px;display:flex;align-items:center;justify-content:center}
+  .lp-xm-flow > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .lp-xm-dash{stroke-dasharray:6 8}
+  .lp-xm-logo{position:relative;z-index:2;width:66px;height:66px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 36px -18px rgba(155,107,255,.9),0 0 0 8px rgba(255,255,255,.6)}
+  .lp-xm-chip{position:absolute;z-index:3;left:50%;top:var(--y);translate:-50% -50%;white-space:nowrap;background:#fff;border-radius:999px;padding:6px 12px;font:800 12.5px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;box-shadow:0 10px 22px -12px rgba(60,35,110,.65);display:inline-flex;align-items:center;gap:6px}
+  .lp-xm-chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+  .lp-xm-map{background:#fff;border-radius:26px;padding:12px;box-shadow:0 40px 80px -40px rgba(60,35,110,.6),0 0 0 8px rgba(255,255,255,.55)}
+  .lp-xm-map-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 8px 10px;font:800 14px 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
+  .lp-xm-map-h span{font:800 12px 'Heebo',sans-serif;color:#1F7A4D;background:#E3F6EC;border-radius:999px;padding:4px 10px}
+  .lp-xm-map svg{display:block;width:100%;height:auto;border-radius:18px;background:radial-gradient(circle at 50% 35%,#FFF3F8,#F3ECFF 80%)}
+  .lp-xm-ch{transform-box:fill-box;transform-origin:center}
+  .lp-xm-pts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1120px;margin:56px auto 0}
+  .lp-xm-pt{background:#fff;border-radius:22px;padding:18px 20px;box-shadow:0 18px 40px -30px rgba(60,35,110,.55)}
+  .lp-xm-pt s{display:block;font-size:14.5px;color:#8B8499;margin-bottom:6px}
+  .lp-xm-pt b{display:flex;gap:8px;align-items:flex-start;font:800 16.5px/1.4 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
+  .lp-xm-pt b::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:1px;border-radius:50%;background:#3CC8A0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+
+  @keyframes lpXmFly{0%{opacity:0;transform:translateX(72px) scale(.9)}14%{opacity:1;transform:translateX(48px) scale(1)}80%{opacity:1;transform:translateX(-48px) scale(1)}94%,100%{opacity:0;transform:translateX(-72px) scale(.9)}}
+  @keyframes lpXmFlyV{0%{opacity:0;transform:translateY(-46px) scale(.9)}14%{opacity:1;transform:translateY(-30px) scale(1)}80%{opacity:1;transform:translateY(30px) scale(1)}94%,100%{opacity:0;transform:translateY(46px) scale(.9)}}
+  @keyframes lpXmDash{to{stroke-dashoffset:-28}}
+  @keyframes lpXmFill{0%{opacity:0;transform:scale(.3)}5%{opacity:1;transform:scale(1)}84%{opacity:1;transform:scale(1)}92%,100%{opacity:0;transform:scale(1)}}
+  @keyframes lpXmPulse{50%{box-shadow:0 18px 36px -18px rgba(240,96,158,.95),0 0 0 14px rgba(255,255,255,.35)}}
+  .lp-motion .lp-xm-chip{animation:lpXmFly 4.5s cubic-bezier(0.77,0,0.175,1) var(--d) infinite both}
+  .lp-motion .lp-xm-dash{animation:lpXmDash 1.2s linear infinite}
+  .lp-motion .lp-xm-ch{animation:lpXmFill 9s cubic-bezier(0.23,1,0.32,1) var(--d,0s) infinite both}
+  .lp-motion .lp-xm-logo{animation:lpXmPulse 2.4s ease-in-out infinite}
+  @media(prefers-reduced-motion:reduce){.lp-xm *{animation:none!important}.lp-xm-chip{opacity:1!important}}
+
+  @media(max-width:900px){
+    .lp-xm{grid-template-columns:1fr;gap:0;max-width:560px}
+    .lp-xm-xl{rotate:1deg}
+    .lp-xm-note.a{left:-6px;top:auto;bottom:40px}
+    .lp-xm-flow{height:150px}
+    .lp-xm-flow > svg{display:none}
+    .lp-xm-chip{left:var(--x);top:50%}
+    .lp-motion .lp-xm-chip{animation-name:lpXmFlyV}
+    .lp-xm-pts{grid-template-columns:1fr;gap:12px;margin-top:40px}
+  }
+  @media(max-width:520px){.lp-xm-xl td:nth-child(3),.lp-xm-xl th:nth-child(3){display:none}}
+`;
+function ExcelToMap(){
+  const chair=(x,y,d,c,dl)=>(
+    <g key={`${x.toFixed(1)}-${y.toFixed(1)}`} transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${d})`}>
+      <rect x="-5.5" y="-4" width="11" height="8" rx="3.5" fill="#E9E2F3"/>
+      <rect className="lp-xm-ch" style={{"--d":`${dl.toFixed(2)}s`}} x="-5.5" y="-4" width="11" height="8" rx="3.5" fill={c}/>
+    </g>);
+  const T=[[70,96,LP.rose,"1"],[180,96,LP.violet,"2"],[290,96,LP.mint,"3"],[70,196,LP.sky,"4"],[180,196,LP.gold,"5"],[290,196,LP.coral,"6"]];
+  return(<>
+    <style>{XM_CSS}</style>
+    <div className="lp-xm">
+      <div className="lp-xm-xl" aria-label="לפני: קובץ אקסל של מוזמנים, עם שורות מחוקות, פתקים ותשובות לא ברורות" role="img">
+        <div className="lp-xm-xl-h">מוזמנים_סופי_סופי (3).xlsx<i>X</i></div>
+        <table aria-hidden="true"><thead><tr><th className="n"></th><th>שם</th><th>טלפון</th><th>מגיעים?</th></tr></thead>
+          <tbody>{XM_ROWS.map(([n,p,c,t],i)=><tr key={n} className={t===1?"x":t===2?"y":undefined}><td className="n">{i+2}</td><td>{n}</td><td dir="ltr">{p?`052-•••-${p}`:""}</td><td>{c}</td></tr>)}</tbody>
+        </table>
+        <div className="lp-xm-note a" aria-hidden="true">עוד 46 לא ענו...</div>
+        <div className="lp-xm-note b" aria-hidden="true">סבתא צריכה כיסא ליד היציאה!</div>
+      </div>
+      <div className="lp-xm-flow" aria-hidden="true">
+        <svg viewBox="0 0 150 300" preserveAspectRatio="none"><path className="lp-xm-dash" d="M150 150 C110 80 40 220 0 150" fill="none" stroke="#C9B4F0" strokeWidth="2.5" strokeLinecap="round"/></svg>
+        <div className="lp-xm-logo"><SidorLogo size={42} id="xmLogo"/></div>
+        {[["דנה וייס",LP.rose,"22%","30%",0],["אלון קפלן",LP.violet,"78%","50%",1.5],["רחל כהן",LP.mint,"50%","70%",3]].map(([n,c,y,x,d])=>(
+          <span key={n} className="lp-xm-chip" style={{"--c":c,"--y":y,"--x":x,"--d":`${d}s`}}><i/>{n}</span>
+        ))}
+      </div>
+      <div className="lp-xm-map">
+        <div className="lp-xm-map-h">מפת האולם<span>✓ כולם במקום</span></div>
+        <svg viewBox="0 0 360 260" role="img" aria-label="אחרי: מפת אולם עם 6 שולחנות שמתמלאים באורחים">
+          <rect x="120" y="14" width="120" height="24" rx="12" fill="#FFE3EE" stroke="#F3B6CF"/>
+          <text x="180" y="30" textAnchor="middle" fontSize="11" fontWeight="900" fill="#B13B72" fontFamily="Heebo">במה</text>
+          {T.map(([cx,cy,c,n],ti)=>(<g key={n}>
+            {Array.from({length:8}).map((_,i)=>{const d=i*45,a=d*Math.PI/180;return chair(cx+33*Math.sin(a),cy-33*Math.cos(a),d,c,.25+ti*.7+i*.06);})}
+            <circle cx={cx} cy={cy} r="22" fill="#fff" stroke={c} strokeOpacity=".55" strokeWidth="1.5"/>
+            <text x={cx} y={cy+5} textAnchor="middle" fontSize="14" fontWeight="900" fill={LP.ink} fontFamily="Heebo">{n}</text>
+          </g>))}
+        </svg>
+      </div>
+    </div>
+    <div className="lp-xm-pts">
+      {[["5 גרסאות של אותו קובץ","רשימה אחת שכולם עורכים"],["פתקים על מי יושב ליד מי","קבוצות וצבעים על המפה"],["סופרים כיסאות ביד","רואים מיד כמה מקומות נשארו"]].map(([a,b])=>(
+        <div key={a} className="lp-xm-pt" data-reveal><s>{a}</s><b>{b}</b></div>
+      ))}
+    </div>
+  </>);
+}
+
 function CompareSlider() {
   const boxRef=useRef(null),topRef=useRef(null),barRef=useRef(null),knobRef=useRef(null);
   const pos=useRef(50),hint=useRef([]),drag=useRef(null),touched=useRef(false);
@@ -2998,9 +3100,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── לפני / אחרי ─── */}
       <section id="before" className="lp-before">
         <div className="lp-wrap">
-          {sectionTitle("","מאקסל מבולגן","למפה ברורה","גררו את הידית ותראו את ההבדל: מימין הרשימה שכולם מכירים, משמאל מפת האולם של Sidor-IL.")}
-          <div data-reveal="scale"><CompareSlider/></div>
-          <div className="lp-cmp-cap" data-reveal style={{"--d":".1s"}}>מסך אמיתי מהמערכת, עם נתוני דוגמה</div>
+          {sectionTitle("","מאקסל מבולגן","למפה ברורה","מעלים את הרשימה שכבר יש לכם, ו-Sidor-IL הופכת אותה למפת אולם מסודרת, שבה רואים מי יושב איפה.")}
+          <ExcelToMap/>
         </div>
       </section>
 
@@ -13777,9 +13878,8 @@ function EventLandingPage({ slug }) {
       </section>
       <section className="lp-sheet" style={{background:"#F6F3FF"}}>
         <div className="lp-wrap">
-          <LpTitle title="מאקסל מבולגן" accent="למפה ברורה" sub="גררו את הידית ותראו את ההבדל: מימין הרשימה שכולם מכירים, משמאל מפת האולם של Sidor-IL."/>
-          <div data-reveal="scale"><CompareSlider/></div>
-          <div className="lp-cmp-cap">מסך אמיתי מהמערכת, עם נתוני דוגמה</div>
+          <LpTitle title="מאקסל מבולגן" accent="למפה ברורה" sub="מעלים את הרשימה שכבר יש לכם, ו-Sidor-IL הופכת אותה למפת אולם מסודרת, שבה רואים מי יושב איפה."/>
+          <ExcelToMap/>
         </div>
       </section>
       <section className="lp-sheet" style={{background:"#FFF9E6"}}>
@@ -14018,8 +14118,8 @@ export default function App() {
         if(user){setIsVendor(true);setVendorEvents(false);selectEvent(null);}else setAuthMode("vendor");
         return;
       }
-      // "האירועים שלי" (מחובר): תמיד לאירועים, גם לספק — לא לאזור הספקים
-      if(mode==="login"&&user)setVendorEvents(true);
+      // "האירועים שלי" (מחובר): תמיד לרשימת האירועים (לא ישר לאירוע האחרון), גם לספק — לא לאזור הספקים
+      if(mode==="login"&&user){setVendorEvents(true);selectEvent(null);}
       if(!user)setAuthMode(mode);
     }} onLogout={user?logout:null} loggedIn={!!user}/>
     {authMode&&<AuthDrawer mode={authMode} onClose={()=>setAuthMode(null)} onAuth={u=>{setUser(u);setAuthMode(null);setShowLanding(false);}}/>}
