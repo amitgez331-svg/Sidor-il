@@ -2397,64 +2397,73 @@ const LP_TOUR=[
   {id:"details",tab:"פרטי האירוע",t:"פרטי האירוע והעיצוב",d:"שמות, תאריך, מקום ועיצוב ההזמנה הדיגיטלית, מקום אחד לכל ההגדרות.",pts:["סגנונות עיצוב להזמנה","שיתוף ניהול האירוע עם בן או בת הזוג","תמונת פתיחה משלכם"]},
   {id:"vendors",tab:"ספקים",t:"ספקים ומחירים מהקהילה",d:"מחירים אמיתיים ששילמו זוגות אחרים, לפי סוג ספק ואזור.",pts:["סינון לפי תחום ואזור","מחירים שדווחו על ידי משתמשים","פרטי הספק במקום אחד"]},
 ];
+// הצצה למערכת: כרטיסים צבעוניים שנערמים אחד על השני בגלילה (sticky), מסך אמיתי בכל כרטיס
+const STK_TONES=[
+  {a:"#FFE8F1",b:"#FCCFE2",t:"#B0306B"},
+  {a:"#EFE7FF",b:"#DCCBFF",t:"#6339CC"},
+  {a:"#FFEDE4",b:"#FFD3BF",t:"#A8441C"},
+  {a:"#E0F6EC",b:"#C2EBD8",t:"#1A6F4C"},
+  {a:"#FFF3DA",b:"#FBE0A8",t:"#835500"},
+];
 const TOUR_CSS=`
-  .lp-tour-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;margin:0 -2px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .lp-tour-tabs::-webkit-scrollbar{display:none}
-  .lp-tour-tab{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #E4DBF3;background:#fff;color:#2B1D3F;font:800 15px 'Fredoka','Heebo',sans-serif;cursor:pointer;transition:background-color 200ms ease,color 200ms ease,border-color 200ms ease,box-shadow 200ms ease}
-  .lp-tour-tab[aria-selected="true"]{background:linear-gradient(120deg,#F0609E,#9B6BFF);border-color:transparent;color:#fff;box-shadow:0 12px 26px -14px rgba(155,107,255,.8)}
-  @media(hover:hover) and (pointer:fine){.lp-tour-tab[aria-selected="false"]:hover{border-color:#C9B4F0;background:#FBF8FF}}
-  .lp-tour-tab:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
-  .lp-tour-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.15fr);gap:36px;align-items:center}
-  .lp-tour-txt h3{font:900 clamp(24px,2.6vw,32px)/1.2 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:0 0 10px}
-  .lp-tour-txt p{font-size:17px;line-height:1.7;color:#3E3555;margin:0 0 16px}
-  .lp-tour-txt ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-  .lp-tour-txt li{display:flex;gap:10px;align-items:flex-start;font-size:16px;font-weight:700;color:#2B1D3F;line-height:1.5}
-  .lp-tour-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:#3CC8A0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
-  .lp-tour-shot{position:relative;border-radius:22px;overflow:hidden;background:#fff;border:1px solid #E7DEF5;box-shadow:0 44px 90px -46px rgba(60,35,110,.6)}
-  .lp-tour-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F6F1FB;border-bottom:1px solid #ECE3F7;direction:ltr}
-  .lp-tour-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
-  .lp-tour-bar span{margin-inline-start:10px;font:700 12px 'Heebo',sans-serif;color:#6B5F80}
-  .lp-tour-shot img{display:block;width:100%;height:auto;aspect-ratio:1440/900;background:#FBF8FF}
-  .lp-tour-in{animation:lpTourIn 240ms cubic-bezier(0.23,1,0.32,1)}
-  @keyframes lpTourIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  @media(prefers-reduced-motion:reduce){.lp-tour-in{animation:lpTourFade 200ms ease}@keyframes lpTourFade{from{opacity:0}to{opacity:1}}}
-  .lp-tour-cap{font-size:14px;color:#5F5675;margin-top:12px;text-align:left}
-  @media(max-width:900px){.lp-tour-body{grid-template-columns:1fr;gap:20px}.lp-tour-txt{order:2}}
+  .lp-stk{position:relative}
+  .lp-stk-band{position:sticky;top:calc(92px + var(--k) * 10px);margin-top:36px}
+  .lp-stk-band:first-child{margin-top:0}
+  .lp-stk-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.5fr);gap:52px;align-items:center;min-height:min(540px,calc(100vh - 150px));padding:52px 0 52px 0;padding-inline-start:60px;border-radius:44px;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 -22px 44px -34px rgba(60,35,110,.55),0 1px 0 rgba(255,255,255,.7) inset}
+  .lp-stk-txt{position:relative;z-index:1}
+  .lp-stk-tag{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:999px;background:#fff;color:var(--t);font:800 14px/1 'Fredoka','Heebo',sans-serif;box-shadow:0 10px 22px -14px rgba(60,35,110,.55)}
+  .lp-stk-tag i{width:8px;height:8px;border-radius:50%;background:var(--t)}
+  .lp-stk-txt h3{font:900 clamp(28px,3.1vw,44px)/1.14 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:18px 0 12px;letter-spacing:-.01em;text-wrap:balance}
+  .lp-stk-txt p{font-size:18px;line-height:1.7;color:#3A2F50;margin:0 0 20px;max-width:44ch}
+  .lp-stk-txt ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .lp-stk-txt li{display:flex;gap:10px;align-items:flex-start;font-size:16px;font-weight:700;color:#2B1D3F;line-height:1.5}
+  .lp-stk-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:var(--t) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+  .lp-stk-vis{position:relative;margin-inline-end:-70px}
+  .lp-stk-shot{border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.9);box-shadow:0 46px 80px -40px rgba(43,29,63,.6),0 0 0 8px rgba(255,255,255,.45);rotate:var(--rot)}
+  .lp-stk-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F7F2FC;border-bottom:1px solid #EEE5F7;direction:ltr}
+  .lp-stk-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
+  .lp-stk-bar span{margin-inline-start:10px;font:700 12px 'Heebo',sans-serif;color:#6B5F80}
+  .lp-stk-shot img{display:block;width:100%;height:auto;aspect-ratio:1440/900;background:#FBF8FF}
+  .lp-stk-cap{font-size:14px;color:#5F5675;margin-top:22px;text-align:center}
+  @media(max-width:900px){
+    .lp-stk-band{top:calc(84px + var(--k) * 5px);margin-top:22px}
+    .lp-stk-card{grid-template-columns:1fr;gap:20px;min-height:0;padding:22px 0 26px;padding-inline-start:22px;border-radius:32px}
+    .lp-stk-txt{padding-inline-end:22px}
+    .lp-stk-vis{order:-1}
+    .lp-stk-txt h3{font-size:26px;margin:14px 0 8px}
+    .lp-stk-txt p{font-size:16px;margin-bottom:14px}
+    .lp-stk-txt ul{gap:6px}
+    .lp-stk-txt li{font-size:15px}
+    .lp-stk-vis{margin-inline-end:-36px}
+    .lp-stk-shot{rotate:0deg;border-radius:16px;box-shadow:0 30px 50px -30px rgba(43,29,63,.6),0 0 0 6px rgba(255,255,255,.45)}
+    .lp-stk-bar{height:24px}
+  }
+  @media(max-width:900px) and (max-height:700px){.lp-stk-txt ul{display:none}}
 `;
 function ProductTour(){
-  const [i,setI]=useState(0);
-  const refs=useRef([]);
-  const cur=LP_TOUR[i];
-  // טוענים מראש את המסך הבא כדי שהמעבר יהיה מיידי
-  useEffect(()=>{const n=LP_TOUR[(i+1)%LP_TOUR.length];const im=new Image();im.src=`/landing/tour/${n.id}.jpg`;},[i]);
-  const go=k=>{const n=(k+LP_TOUR.length)%LP_TOUR.length;setI(n);refs.current[n]?.focus();refs.current[n]?.scrollIntoView({block:"nearest",inline:"nearest"});};
-  const onKey=e=>{
-    if(e.key==="ArrowLeft"){e.preventDefault();go(i+1);}
-    else if(e.key==="ArrowRight"){e.preventDefault();go(i-1);}
-    else if(e.key==="Home"){e.preventDefault();go(0);}
-    else if(e.key==="End"){e.preventDefault();go(LP_TOUR.length-1);}
-  };
   return(<>
     <style>{TOUR_CSS}</style>
-    <div className="lp-tour-tabs" role="tablist" aria-label="מסכי המערכת" onKeyDown={onKey}>
-      {LP_TOUR.map((x,k)=>(
-        <button key={x.id} ref={el=>refs.current[k]=el} role="tab" id={`lp-tt-${x.id}`} aria-controls="lp-tour-panel" aria-selected={k===i} tabIndex={k===i?0:-1} className="lp-tour-tab" onClick={()=>setI(k)}>{x.tab}</button>
-      ))}
+    <div className="lp-stk">
+      {LP_TOUR.map((x,k)=>{const tone=STK_TONES[k%STK_TONES.length];return(
+        <article key={x.id} className="lp-stk-band" aria-labelledby={`lp-stk-${x.id}`} style={{"--k":k,"--a":tone.a,"--b":tone.b,"--t":tone.t,"--rot":k%2?"1.2deg":"-1.2deg"}}>
+          <div className="lp-stk-card">
+            <div className="lp-stk-txt">
+              <span className="lp-stk-tag"><i aria-hidden="true"/>{x.tab}</span>
+              <h3 id={`lp-stk-${x.id}`}>{x.t}</h3>
+              <p>{x.d}</p>
+              <ul>{x.pts.map(p=><li key={p}>{p}</li>)}</ul>
+            </div>
+            <div className="lp-stk-vis">
+              <div className="lp-stk-shot">
+                <div className="lp-stk-bar" aria-hidden="true"><i/><i/><i/><span>sidoril.com</span></div>
+                <img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/>
+              </div>
+            </div>
+          </div>
+        </article>
+      );})}
     </div>
-    <div id="lp-tour-panel" role="tabpanel" aria-labelledby={`lp-tt-${cur.id}`} className="lp-tour-body">
-      <div className="lp-tour-txt lp-tour-in" key={"t"+cur.id}>
-        <h3>{cur.t}</h3>
-        <p>{cur.d}</p>
-        <ul>{cur.pts.map(p=><li key={p}>{p}</li>)}</ul>
-      </div>
-      <div>
-        <div className="lp-tour-shot">
-          <div className="lp-tour-bar" aria-hidden="true"><i/><i/><i/><span>sidoril.com</span></div>
-          <img key={"i"+cur.id} className="lp-tour-in" src={`/landing/tour/${cur.id}.jpg`} alt={`צילום מסך: ${cur.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/>
-        </div>
-        <div className="lp-tour-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
-      </div>
-    </div>
+    <div className="lp-stk-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
   </>);
 }
 
@@ -2900,10 +2909,10 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── סיור במערכת: מסך אמיתי לכל יכולת ─── */}
-      <section id="tour" className="lp-sheet" style={{background:"#F6F3FF"}}>
+      <section id="tour" className="lp-sheet" style={{background:"#FBF8FF"}}>
         <div className="lp-wrap">
-          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד. בחרו מסך ותראו בדיוק איך הוא עובד.")}
-          <div data-reveal><ProductTour/></div>
+          {sectionTitle("","ככה זה נראה","מבפנים","גוללים ורואים את המסכים של המערכת, אחד אחרי השני. כל הכלים לאירוע במקום אחד.")}
+          <ProductTour/>
         </div>
       </section>
 
