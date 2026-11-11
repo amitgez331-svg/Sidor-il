@@ -2410,67 +2410,98 @@ const STK_TONES=[
   {a:"#E0F6EC",b:"#C2EBD8",t:"#1A6F4C"},
   {a:"#FFF3DA",b:"#FBE0A8",t:"#835500"},
 ];
+// "ככה זה נראה מבפנים": 2 שורות של קוביות, בכל שורה קוביה אחת גדלה ומציגה את המסך, ובתורות הבאה בתור גדלה
+const TOUR_IC={home:"🏠",guests:"👥",seating:"🪑",sms:"📱",whatsapp:"💬",budget:"💰",gifts:"🎁",tasks:"✅",details:"📋",vendors:"💡"};
 const TOUR_CSS=`
-  .lp-stk{position:relative;padding-bottom:38vh}
-  .lp-stk-band{position:sticky;top:calc(88px + var(--k) * 6px);margin-top:48vh}
-  .lp-stk-band:first-child{margin-top:0}
-  .lp-stk-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.5fr);gap:52px;align-items:center;height:min(540px,calc(100vh - 150px));height:min(540px,calc(100svh - 150px));padding:40px 0;padding-inline-start:60px;border-radius:44px;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 -22px 44px -34px rgba(60,35,110,.55),0 1px 0 rgba(255,255,255,.7) inset}
-  .lp-stk-txt{position:relative;z-index:1}
-  .lp-stk-tag{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:999px;background:#fff;color:var(--t);font:800 14px/1 'Fredoka','Heebo',sans-serif;box-shadow:0 10px 22px -14px rgba(60,35,110,.55)}
-  .lp-stk-tag i{width:8px;height:8px;border-radius:50%;background:var(--t)}
-  .lp-stk-txt h3{font:900 clamp(28px,3.1vw,44px)/1.14 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:18px 0 12px;letter-spacing:-.01em;text-wrap:balance}
-  .lp-stk-txt p{font-size:18px;line-height:1.7;color:#3A2F50;margin:0 0 20px;max-width:44ch}
-  .lp-stk-txt ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-  .lp-stk-txt li{display:flex;gap:10px;align-items:flex-start;font-size:16px;font-weight:700;color:#2B1D3F;line-height:1.5}
-  .lp-stk-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:var(--t) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
-  .lp-stk-vis{position:relative;margin-inline-end:-70px;justify-self:end;width:min(calc(100% + 70px),calc((min(540px,100vh - 150px) - 116px) * 1.6))}
-  @media(min-width:901px) and (max-height:640px){.lp-stk-txt ul{display:none}.lp-stk-txt h3{font-size:30px}}
-  .lp-stk-shot{border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.9);box-shadow:0 46px 80px -40px rgba(43,29,63,.6),0 0 0 8px rgba(255,255,255,.45)}
-  .lp-stk-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F7F2FC;border-bottom:1px solid #EEE5F7;direction:ltr}
-  .lp-stk-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
-  .lp-stk-bar span{margin-inline-start:10px;font:700 12px 'Heebo',sans-serif;color:#6B5F80}
-  .lp-stk-shot img{display:block;width:100%;height:auto;aspect-ratio:1440/900;background:#FBF8FF}
-  .lp-stk-cap{font-size:14px;color:#5F5675;margin-top:22px;text-align:center}
+  .lp-gx{display:grid;gap:16px}
+  .lp-gx-row{display:flex;gap:14px;height:400px}
+  .lp-gx-t{position:relative;flex:1 1 0;min-width:0;border:none;padding:0;margin:0;border-radius:28px;overflow:hidden;cursor:pointer;text-align:right;font-family:inherit;color:#2B1D3F;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 18px 36px -28px rgba(60,35,110,.55);transition:flex-grow 750ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
+  .lp-gx-t.on{flex-grow:4.4;box-shadow:0 34px 64px -34px rgba(60,35,110,.7)}
+  .lp-gx-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+  .lp-gx-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;text-align:center;transition:opacity 300ms ease}
+  .lp-gx-face i{font-style:normal;width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 14px 26px -14px rgba(43,29,63,.6)}
+  .lp-gx-face b{font:700 16px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;max-width:100%;overflow-wrap:anywhere}
+  .lp-gx-t.on .lp-gx-face{opacity:0;pointer-events:none}
+  .lp-gx-t:not(.on) .lp-gx-cap{opacity:0}
+  .lp-gx-cap{transition:opacity 300ms ease}
+  .lp-gx-t.on .lp-gx-cap{transition-delay:200ms}
+  .lp-gx-shot{position:absolute;top:22px;right:-118px;width:720px;max-width:none;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 26px 50px -30px rgba(43,29,63,.7),0 0 0 6px rgba(255,255,255,.55);transition:opacity 500ms ease}
+  .lp-gx-shot img{display:block;width:720px;height:450px;max-width:none}
+  .lp-gx-t:not(.on) .lp-gx-shot{opacity:0}
+  .lp-gx-t.on .lp-gx-shot{transition-delay:150ms}
+  .lp-gx-cap{position:absolute;inset:auto 0 0 0;padding:44px 20px 18px;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.94) 34%,#fff 100%)}
+  .lp-gx-tag{display:flex;align-items:center;gap:8px;font:700 16px/1.2 'Fredoka','Heebo',sans-serif;color:#2B1D3F;white-space:nowrap}
+  .lp-gx-tag i{font-style:normal;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 8px 16px -10px rgba(43,29,63,.6)}
+  .lp-gx-more{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 600ms cubic-bezier(0.77,0,0.175,1),opacity 300ms ease}
+  .lp-gx-more > .in{display:block;overflow:hidden;min-width:300px}
+  .lp-gx-t.on .lp-gx-more{grid-template-rows:1fr;opacity:1;transition-delay:0ms,250ms}
+  .lp-gx-more .h{display:block;font:700 23px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:10px 0 4px}
+  .lp-gx-more .p{display:block;font-size:15px;line-height:1.6;color:#3A2F50;margin:0;font-weight:600;max-width:44ch}
+  .lp-gx-bar{position:absolute;top:0;right:0;left:0;height:4px;background:rgba(255,255,255,.4);opacity:0}
+  .lp-gx-bar u{display:block;height:100%;width:100%;background:var(--t);transform-origin:right;transform:scaleX(0)}
+  .lp-gx.auto .lp-gx-t.on .lp-gx-bar{opacity:1}
+  .lp-gx.auto .lp-gx-t.on .lp-gx-bar u{animation:lpGxBar var(--dur) linear both}
+  @keyframes lpGxBar{to{transform:scaleX(1)}}
+  .lp-gx-cap2{font-size:14px;color:#5F5675;margin-top:16px;text-align:center}
+  @media(prefers-reduced-motion:reduce){.lp-gx-t,.lp-gx-more,.lp-gx-shot{transition-duration:1ms!important}.lp-gx-bar{display:none}}
   @media(max-width:900px){
-    .lp-stk{padding-bottom:30vh}
-    .lp-stk-band{top:calc(84px + var(--k) * 5px);margin-top:42vh}
-    .lp-stk-card{grid-template-columns:1fr;gap:20px;min-height:0;height:auto;padding:22px 0 26px;padding-inline-start:22px;border-radius:32px}
-    .lp-stk-txt{padding-inline-end:22px}
-    .lp-stk-vis{order:-1}
-    .lp-stk-txt h3{font-size:26px;margin:14px 0 8px}
-    .lp-stk-txt p{font-size:16px;margin-bottom:14px}
-    .lp-stk-txt ul{gap:6px}
-    .lp-stk-txt li{font-size:15px}
-    .lp-stk-vis{margin-inline-end:-36px;width:auto;justify-self:stretch}
-    .lp-stk-shot{rotate:0deg;border-radius:16px;box-shadow:0 30px 50px -30px rgba(43,29,63,.6),0 0 0 6px rgba(255,255,255,.45)}
-    .lp-stk-bar{height:24px}
+    .lp-gx{gap:10px}
+    .lp-gx-row{flex-direction:column;height:auto;gap:10px}
+    .lp-gx-t{flex:none;height:66px;border-radius:22px;transition:height 650ms cubic-bezier(0.77,0,0.175,1),box-shadow 300ms ease}
+    .lp-gx-t.on{height:340px}
+    .lp-gx-face{flex-direction:row;justify-content:flex-start;gap:12px;padding:0 14px}
+    .lp-gx-face i{width:40px;height:40px;font-size:19px}
+    .lp-gx-shot{top:74px;right:-92px;width:560px}
+    .lp-gx-shot img{width:560px;height:350px}
+    .lp-gx-cap{inset:0 0 auto 0;padding:15px 16px;background:none}
+    .lp-gx-t.on .lp-gx-cap{background:linear-gradient(180deg,#fff 70%,rgba(255,255,255,0))}
+    .lp-gx-more > .in{min-width:0}
+    .lp-gx-more .h{font-size:19px;margin-top:8px}
+    .lp-gx-more .p{font-size:14px}
+    .lp-gx-shot{top:auto;bottom:-130px}
+    .lp-gx-t.on{height:380px}
+    .lp-gx-bar{top:auto;bottom:0}
   }
-  @media(max-width:900px) and (max-height:700px){.lp-stk-txt ul{display:none}}
 `;
 function ProductTour(){
+  const rows=[LP_TOUR.slice(0,5),LP_TOUR.slice(5,10)];
+  const [act,setAct]=useState([0,0]);
+  const [auto,setAuto]=useState(()=>lpMotionOK());
+  const [hold,setHold]=useState(false),[seen,setSeen]=useState(false);
+  const boxRef=useRef(null),tick=useRef(0);
+  const DUR=2800;
+  // רץ רק כשהאזור במסך, בלי ריחוף/פוקוס, ורק עד שהמשתמש בוחר בעצמו
+  useEffect(()=>{const el=boxRef.current;if(!el||!window.IntersectionObserver)return;const io=new IntersectionObserver(([e])=>setSeen(e.isIntersecting),{threshold:.35});io.observe(el);return()=>io.disconnect();},[]);
+  useEffect(()=>{
+    if(!auto||hold||!seen)return;
+    const iv=setInterval(()=>{const r=tick.current%2;tick.current++;setAct(a=>{const n=[...a];n[r]=(n[r]+1)%5;return n;});},DUR);
+    return()=>clearInterval(iv);
+  },[auto,hold,seen]);
+  const show=(r,k)=>setAct(a=>{if(a[r]===k)return a;const n=[...a];n[r]=k;return n;});
+  const pick=(r,k)=>{setAuto(false);show(r,k);};
   return(<>
     <style>{TOUR_CSS}</style>
-    <div className="lp-stk">
-      {LP_TOUR.map((x,k)=>{const tone=STK_TONES[k%STK_TONES.length];return(
-        <article key={x.id} className="lp-stk-band" aria-labelledby={`lp-stk-${x.id}`} style={{"--k":k,"--a":tone.a,"--b":tone.b,"--t":tone.t,"--rot":k%2?"1.2deg":"-1.2deg"}}>
-          <div className="lp-stk-card">
-            <div className="lp-stk-txt">
-              <span className="lp-stk-tag"><i aria-hidden="true"/>{x.tab}</span>
-              <h3 id={`lp-stk-${x.id}`}>{x.t}</h3>
-              <p>{x.d}</p>
-              <ul>{x.pts.map(p=><li key={p}>{p}</li>)}</ul>
-            </div>
-            <div className="lp-stk-vis">
-              <div className="lp-stk-shot">
-                <div className="lp-stk-bar" aria-hidden="true"><i/><i/><i/><span>sidoril.com</span></div>
-                <img src={`/landing/tour/${x.id}.jpg`} alt={`צילום מסך: ${x.tab} ב-Sidor-IL`} width="1440" height="900" loading="lazy" decoding="async"/>
-              </div>
-            </div>
-          </div>
-        </article>
-      );})}
+    <div ref={boxRef} className={`lp-gx${auto&&!hold&&seen?" auto":""}`} style={{"--dur":`${DUR*2}ms`}}
+      onPointerEnter={e=>{if(e.pointerType==="mouse")setHold(true);}} onPointerLeave={()=>setHold(false)}
+      onFocus={()=>setHold(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setHold(false);}}>
+      {rows.map((row,r)=>(
+        <div key={r} className="lp-gx-row">
+          {row.map((x,k)=>{const on=act[r]===k;const tone=STK_TONES[(r*5+k)%STK_TONES.length];return(
+            <button key={x.id} type="button" className={`lp-gx-t${on?" on":""}`} aria-expanded={on} aria-label={`${x.tab}: ${x.t}`}
+              style={{"--a":tone.a,"--b":tone.b,"--t":tone.t}}
+              onClick={()=>pick(r,k)} onPointerEnter={e=>{if(e.pointerType==="mouse")show(r,k);}}>
+              <span className="lp-gx-bar" aria-hidden="true"><u key={on?`on${act[r]}`:"off"}/></span>
+              <span className="lp-gx-face" aria-hidden="true"><i>{TOUR_IC[x.id]}</i><b>{x.tab}</b></span>
+              <span className="lp-gx-shot" aria-hidden="true"><img src={`/landing/tour/${x.id}.jpg`} alt="" width="720" height="450" loading="lazy" decoding="async"/></span>
+              <span className="lp-gx-cap">
+                <span className="lp-gx-tag"><i aria-hidden="true">{TOUR_IC[x.id]}</i>{x.tab}</span>
+                <span className="lp-gx-more"><span className="in"><span className="h">{x.t}</span><span className="p">{x.d}</span></span></span>
+              </span>
+            </button>);})}
+        </div>
+      ))}
     </div>
-    <div className="lp-stk-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+    <div className="lp-gx-cap2">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
   </>);
 }
 
@@ -3350,7 +3381,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── סיור במערכת: מסך אמיתי לכל יכולת ─── */}
       <section id="tour" className="lp-sheet" style={{background:"#FBF8FF"}}>
         <div className="lp-wrap">
-          {sectionTitle("","ככה זה נראה","מבפנים","גוללים ורואים את המסכים של המערכת, אחד אחרי השני. כל הכלים לאירוע במקום אחד.")}
+          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד. כל קוביה פותחת מסך אמיתי מהמערכת.")}
           <ProductTour/>
         </div>
       </section>
