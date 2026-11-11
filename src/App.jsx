@@ -2407,9 +2407,9 @@ const STK_TONES=[
 ];
 const TOUR_CSS=`
   .lp-stk{position:relative;padding-bottom:38vh}
-  .lp-stk-band{position:sticky;top:calc(92px + var(--k) * 10px);margin-top:48vh}
+  .lp-stk-band{position:sticky;top:calc(88px + var(--k) * 6px);margin-top:48vh}
   .lp-stk-band:first-child{margin-top:0}
-  .lp-stk-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.5fr);gap:52px;align-items:center;min-height:min(540px,calc(100vh - 150px));padding:52px 0 52px 0;padding-inline-start:60px;border-radius:44px;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 -22px 44px -34px rgba(60,35,110,.55),0 1px 0 rgba(255,255,255,.7) inset}
+  .lp-stk-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.5fr);gap:52px;align-items:center;height:min(540px,calc(100vh - 150px));height:min(540px,calc(100svh - 150px));padding:40px 0;padding-inline-start:60px;border-radius:44px;background:linear-gradient(160deg,var(--a) 0%,var(--b) 100%);box-shadow:0 -22px 44px -34px rgba(60,35,110,.55),0 1px 0 rgba(255,255,255,.7) inset}
   .lp-stk-txt{position:relative;z-index:1}
   .lp-stk-tag{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:999px;background:#fff;color:var(--t);font:800 14px/1 'Fredoka','Heebo',sans-serif;box-shadow:0 10px 22px -14px rgba(60,35,110,.55)}
   .lp-stk-tag i{width:8px;height:8px;border-radius:50%;background:var(--t)}
@@ -2418,7 +2418,8 @@ const TOUR_CSS=`
   .lp-stk-txt ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
   .lp-stk-txt li{display:flex;gap:10px;align-items:flex-start;font-size:16px;font-weight:700;color:#2B1D3F;line-height:1.5}
   .lp-stk-txt li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:50%;background:var(--t) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
-  .lp-stk-vis{position:relative;margin-inline-end:-70px}
+  .lp-stk-vis{position:relative;margin-inline-end:-70px;justify-self:end;width:min(calc(100% + 70px),calc((min(540px,100vh - 150px) - 116px) * 1.6))}
+  @media(min-width:901px) and (max-height:640px){.lp-stk-txt ul{display:none}.lp-stk-txt h3{font-size:30px}}
   .lp-stk-shot{border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.9);box-shadow:0 46px 80px -40px rgba(43,29,63,.6),0 0 0 8px rgba(255,255,255,.45);rotate:var(--rot)}
   .lp-stk-bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:#F7F2FC;border-bottom:1px solid #EEE5F7;direction:ltr}
   .lp-stk-bar i{width:10px;height:10px;border-radius:50%;background:#E3D6F2}
@@ -2428,14 +2429,14 @@ const TOUR_CSS=`
   @media(max-width:900px){
     .lp-stk{padding-bottom:30vh}
     .lp-stk-band{top:calc(84px + var(--k) * 5px);margin-top:42vh}
-    .lp-stk-card{grid-template-columns:1fr;gap:20px;min-height:0;padding:22px 0 26px;padding-inline-start:22px;border-radius:32px}
+    .lp-stk-card{grid-template-columns:1fr;gap:20px;min-height:0;height:auto;padding:22px 0 26px;padding-inline-start:22px;border-radius:32px}
     .lp-stk-txt{padding-inline-end:22px}
     .lp-stk-vis{order:-1}
     .lp-stk-txt h3{font-size:26px;margin:14px 0 8px}
     .lp-stk-txt p{font-size:16px;margin-bottom:14px}
     .lp-stk-txt ul{gap:6px}
     .lp-stk-txt li{font-size:15px}
-    .lp-stk-vis{margin-inline-end:-36px}
+    .lp-stk-vis{margin-inline-end:-36px;width:auto;justify-self:stretch}
     .lp-stk-shot{rotate:0deg;border-radius:16px;box-shadow:0 30px 50px -30px rgba(43,29,63,.6),0 0 0 6px rgba(255,255,255,.45)}
     .lp-stk-bar{height:24px}
   }
@@ -2468,67 +2469,65 @@ function ProductTour(){
   </>);
 }
 
-// ספקים ומחירים: "תמנון" — מחירי המנות במרכז, וכל סוג ספק בבועה משלו שמחוברת בזרוע
-const OCT_D=[[870,416],[653,551],[347,551],[130,416],[130,224],[347,89],[653,89],[870,224]];
-const OCT_M=[[339,362],[257,479],[143,479],[61,362],[61,198],[143,81],[257,81],[339,198]];
-const octPath=(cx,cy,[x,y],a)=>{const dx=x-cx,dy=y-cy,L=Math.hypot(dx,dy),px=-dy/L*a,py=dx/L*a;return `M${cx} ${cy}C${cx+dx/3+px} ${cy+dy/3+py} ${cx+2*dx/3-px} ${cy+2*dy/3-py} ${x} ${y}`;};
-const OCT_CSS=`
-  .lp-oct{position:relative;aspect-ratio:1000/640;max-width:1060px;margin:0 auto}
-  .lp-oct svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-  .lp-oct .lp-oct-svm{display:none}
-  .lp-oct-c{position:absolute;left:50%;top:50%;z-index:2;width:31%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5%;color:#fff;background:radial-gradient(circle at 34% 28%,#FF9CC3 0%,#F0609E 42%,#9B6BFF 100%);box-shadow:0 46px 90px -40px rgba(150,50,160,.8),0 0 0 14px rgba(255,255,255,.6),0 0 0 15px rgba(240,96,158,.18)}
-  .lp-oct-c h3{font:900 clamp(18px,1.9vw,24px)/1.15 'Fredoka','Heebo',sans-serif;margin:0 0 4px}
-  .lp-oct-c .lp-oct-k{font-size:14px;font-weight:700;opacity:.95}
-  .lp-oct-c .lp-oct-p{font:900 clamp(44px,5vw,66px)/1 'Fredoka','Heebo',sans-serif;margin:6px 0 2px;letter-spacing:-.02em}
-  .lp-oct-c .lp-oct-r{font-size:14px;font-weight:700;margin-bottom:10px}
-  .lp-oct-days{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
-  .lp-oct-days span{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:800}
-  .lp-oct-b{position:absolute;z-index:2;left:calc(var(--x) * .1%);top:calc(var(--y) * .15625%);width:15.5%;aspect-ratio:1;translate:-50% -50%;border:none;border-radius:50%;cursor:pointer;font:inherit;color:#2B1D3F;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;
-    background:radial-gradient(circle at 32% 26%,#fff 0%,var(--a) 48%,var(--b) 100%);box-shadow:0 26px 46px -28px rgba(60,35,110,.65),0 0 0 7px rgba(255,255,255,.65),inset 0 -8px 18px -10px rgba(60,35,110,.25);transition:scale 200ms cubic-bezier(0.23,1,0.32,1)}
-  .lp-oct-b .lp-oct-i{font-size:clamp(24px,2.6vw,34px);line-height:1}
-  .lp-oct-b b{font:800 clamp(13px,1.25vw,16px)/1.2 'Fredoka','Heebo',sans-serif}
-  .lp-oct-b small{font-size:12px;font-weight:700;color:var(--t)}
-  .lp-oct-b:focus-visible{outline:3px solid #9B6BFF;outline-offset:6px}
-  @media(hover:hover) and (pointer:fine){.lp-oct-b:hover{scale:1.07}}
-  @keyframes lpOctBob{50%{transform:translateY(-8px)}}
-  .lp-motion .lp-oct-b{animation:lpOctBob 6s ease-in-out infinite;animation-delay:calc(var(--i) * -.75s)}
-  .lp-oct-note{max-width:620px;margin:26px auto 0;text-align:center;font-size:16px;line-height:1.7;color:#3A2F50}
-  .lp-oct-note small{display:block;font-size:13px;color:#6B5F80;margin-top:4px}
-  .lp-oct-cta{display:flex;justify-content:center;margin-top:18px}
-  @media(max-width:760px){
-    .lp-oct{aspect-ratio:400/560;max-width:440px}
-    .lp-oct .lp-oct-svd{display:none}.lp-oct .lp-oct-svm{display:block}
-    .lp-oct-c{width:44%;padding:4%;box-shadow:0 30px 60px -30px rgba(150,50,160,.8),0 0 0 9px rgba(255,255,255,.6)}
-    .lp-oct-c h3{font-size:15px}.lp-oct-c .lp-oct-k,.lp-oct-days{display:none}
-    .lp-oct-c .lp-oct-p{font-size:38px}.lp-oct-c .lp-oct-r{font-size:11px;margin:0;white-space:nowrap}
-    .lp-oct-b{left:calc(var(--mx) * .25%);top:calc(var(--my) * .178571%);width:23%;padding:4px;box-shadow:0 18px 30px -20px rgba(60,35,110,.65),0 0 0 5px rgba(255,255,255,.65)}
-    .lp-oct-b .lp-oct-i{font-size:22px}.lp-oct-b b{font-size:12px}.lp-oct-b small{display:none}
+// ספקים ומחירים: כותרת במרכז ותמונות של סוגי ספקים מסביב
+const VR_U=id=>`https://images.unsplash.com/photo-${id}?w=480&h=480&q=70&auto=format&fit=crop`;
+const VR_TILES=[
+  {id:"1519225421980-715cb0215aed",l:"אולמות וגנים",p:"t1"},
+  {id:"1414235077428-338989a2e8c0",l:"קייטרינג",p:"t2"},
+  {id:"1623783356340-95375aac85ce",l:"צלמים",p:"m1"},
+  {id:"1571266028243-d220c6a7edbf",l:"תקליטנים",p:"m2"},
+  {id:"1521543832500-49e69fb2bea2",l:"עיצוב ופרחים",p:"b1"},
+  {id:"1535254973040-607b474cb50d",l:"עוגות וקינוחים",p:"b2"},
+];
+const VR_CSS=`
+  .lp-vr{position:relative;min-height:900px;display:flex;align-items:center;justify-content:center}
+  .lp-vr-c{position:relative;z-index:2;max-width:500px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .lp-vr-c h2{margin:0 0 14px}
+  .lp-vr-c p{font-size:18px;line-height:1.7;color:#3A2F50;margin:0 0 22px}
+  .lp-vr-price{display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;padding:12px 18px;margin-bottom:22px;box-shadow:0 18px 40px -26px rgba(60,35,110,.55);text-align:right}
+  .lp-vr-price b{font:900 34px/1 'Fredoka','Heebo',sans-serif;background:linear-gradient(120deg,#F0609E,#9B6BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-vr-price span{font-size:14px;line-height:1.45;color:#3A2F50}
+  .lp-vr-price small{display:block;font-size:12px;color:#6B5F80}
+  .lp-vr-t{position:absolute;z-index:1;width:clamp(160px,14.5vw,212px);aspect-ratio:1;border:none;padding:0;cursor:pointer;border-radius:30px;overflow:hidden;background:#EFE6F5;box-shadow:0 30px 60px -32px rgba(43,29,63,.65),0 0 0 6px #fff;rotate:var(--r);transition:rotate 220ms cubic-bezier(0.23,1,0.32,1),scale 220ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-vr-t img{width:100%;height:100%;object-fit:cover;display:block}
+  .lp-vr-t::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(30,14,50,.78) 100%)}
+  .lp-vr-t span{position:absolute;z-index:1;bottom:14px;right:16px;left:16px;text-align:right;color:#fff;font:800 17px/1.2 'Fredoka','Heebo',sans-serif}
+  .lp-vr-t:focus-visible{outline:3px solid #9B6BFF;outline-offset:6px}
+  @media(hover:hover) and (pointer:fine){.lp-vr-t:hover{rotate:0deg;scale:1.04}}
+  .lp-vr-t1{top:0;right:20%;--r:-4deg}.lp-vr-t2{top:0;left:20%;--r:4deg}
+  .lp-vr-m1{top:50%;right:0;translate:0 -50%;--r:3deg}.lp-vr-m2{top:50%;left:0;translate:0 -50%;--r:-3deg}
+  .lp-vr-b1{bottom:0;right:20%;--r:4deg}.lp-vr-b2{bottom:0;left:20%;--r:-4deg}
+  @keyframes lpVrBob{50%{transform:translateY(-8px)}}
+  .lp-motion .lp-vr-t{animation:lpVrBob 7s ease-in-out infinite;animation-delay:calc(var(--i) * -1.1s)}
+  @media(prefers-reduced-motion:reduce){.lp-motion .lp-vr-t{animation:none}}
+  .lp-vr-note{font-size:13px;color:#6B5F80;margin-top:12px}
+  @media(max-width:1100px){.lp-vr-t1,.lp-vr-b1{right:16%}.lp-vr-t2,.lp-vr-b2{left:16%}}
+  @media(max-width:900px){
+    .lp-vr{min-height:0;flex-direction:column;gap:28px}
+    .lp-vr-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%}
+    .lp-vr-t{position:relative;inset:auto!important;translate:none!important;width:100%;border-radius:20px;box-shadow:0 18px 34px -22px rgba(43,29,63,.6),0 0 0 4px #fff}
+    .lp-vr-t span{font-size:13px;bottom:9px;right:10px;left:10px}
+    .lp-vr-c p{font-size:16px}
   }
-  @media(prefers-reduced-motion:reduce){.lp-motion .lp-oct-b{animation:none}}
 `;
-function OctoVendors({onOpen}){
-  const cats=VENDOR_CATS.filter(c=>c[0]!=="other");
-  const tent=(pts,cx,cy,a,w)=>pts.map((p,k)=><path key={k} d={octPath(cx,cy,p,k%2?a:-a)} fill="none" stroke="url(#lpOctG)" strokeWidth={w} strokeLinecap="round" opacity=".55"/>);
-  const grad=<defs><linearGradient id="lpOctG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF8A65"/><stop offset=".5" stopColor="#F0609E"/><stop offset="1" stopColor="#9B6BFF"/></linearGradient></defs>;
+function VendorRing({onOpen,cta}){
   return(<>
-    <style>{OCT_CSS}</style>
-    <div className="lp-oct">
-      <svg className="lp-oct-svd" viewBox="0 0 1000 640" aria-hidden="true">{grad}{tent(OCT_D,500,320,46,13)}</svg>
-      <svg className="lp-oct-svm" viewBox="0 0 400 560" aria-hidden="true">{grad}{tent(OCT_M,200,280,22,7)}</svg>
-      <div className="lp-oct-c">
-        <h3>מחירי מנות</h3>
-        <div className="lp-oct-k">באולם, לפי עיר ויום</div>
-        <div className="lp-oct-p lp-num">₪298</div>
-        <div className="lp-oct-r">למנה · טווח ₪265–345</div>
-        <div className="lp-oct-days"><span>א׳–ד׳ ₪265</span><span>חמישי ₪285</span><span>שישי ₪345</span></div>
+    <style>{VR_CSS}</style>
+    <div className="lp-vr">
+      <div className="lp-vr-c">
+        <h2 className="lp-h2">מוצאים את <span className="lp-grad">הספק המושלם</span></h2>
+        <p>מחירי מנות אמיתיים באולמות, ומחירים והמלצות על צלמים, תקליטנים, פרחים ועוד, מזוגות שכבר עשו את זה. משווים ובוחרים בביטחון.</p>
+        <div className="lp-vr-price"><b className="lp-num">₪298</b><span>מחיר מקובל למנה באולם<small>טווח ₪265–345 · דוגמה להמחשה</small></span></div>
+        <button onClick={onOpen} className="lp-btn lp-primary" style={{padding:"15px 32px",fontSize:16}}>{cta}</button>
       </div>
-      {cats.map(([k,ic,l],i)=>{const tone=STK_TONES[i%STK_TONES.length];return(
-        <button key={k} type="button" className="lp-oct-b" onClick={onOpen} aria-label={`${l}: מחירים והמלצות`}
-          style={{"--x":OCT_D[i][0],"--y":OCT_D[i][1],"--mx":OCT_M[i][0],"--my":OCT_M[i][1],"--i":i,"--a":tone.a,"--b":tone.b,"--t":tone.t}}>
-          <span className="lp-oct-i" aria-hidden="true">{ic}</span><b>{l}</b><small>מחירים והמלצות</small>
-        </button>);})}
+      <div className="lp-vr-tiles">
+        {VR_TILES.map((t,i)=>(
+          <button key={t.id} type="button" className={`lp-vr-t lp-vr-${t.p}`} style={{"--i":i}} onClick={onOpen} aria-label={`${t.l}: מחירים והמלצות`}>
+            <img src={VR_U(t.id)} alt="" loading="lazy" decoding="async" width="240" height="240"/><span>{t.l}</span>
+          </button>
+        ))}
+      </div>
     </div>
-    <p className="lp-oct-note">משווים את ההצעה שקיבלתם למה ששילמו זוגות אחרים באירועים דומים, וקוראים המלצות על כל סוג ספק.<small>* המספרים במרכז הם דוגמה להמחשה</small></p>
   </>);
 }
 
@@ -2984,11 +2983,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── ספקים ומחירים מהקהילה (פיצ'ר למשתמשים רשומים) ─── */}
       <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
         <div className="lp-wrap">
-          {sectionTitle("ספקים ומחירים","כמה שילמו","זוגות אחרים?","מחירי מנות אמיתיים באולמות, והמלצות על ספקים — מהקהילה של Sidor-IL. משווים, מתמקחים וחוסכים.")}
-          <OctoVendors onOpen={()=>onOpenAuth("vendors")}/>
-          <div className="lp-oct-cta">
-            <button onClick={()=>onOpenAuth("vendors")} className="lp-btn lp-primary" style={{padding:"15px 30px",fontSize:16}}>{loggedIn?"לספקים ולמחירים":"נרשמים בחינם ומשווים"}</button>
-          </div>
+          <VendorRing onOpen={()=>onOpenAuth("vendors")} cta={loggedIn?"לספקים ולמחירים":"נרשמים בחינם ומשווים"}/>
           <div style={{marginTop:56}}><FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/></div>
         </div>
       </section>
