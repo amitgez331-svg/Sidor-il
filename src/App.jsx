@@ -5588,7 +5588,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [viewTip,setViewTipRaw]=useState(()=>{try{return !localStorage.getItem("sidor_view_tip");}catch{return false;}});
   const setViewTip=v=>{setViewTipRaw(v);if(!v)optSet("sidor_view_tip","1");};
   const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
-  const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x,y}).eq("id",id);
+  const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x:Math.round(x),y:Math.round(y)}).eq("id",id);
 
   // ─── ביטול פעולה (↩): שיבוץ/הוצאת אורחים, הושבה אוטומטית, הזזה ויישור שולחנות ───
   const [undoStack,setUndoStack]=useState([]);
@@ -5711,7 +5711,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const [,,,y1]=contentBox();
     return {x:Math.round(r[0]+HALL_MARGIN-off[0]),y:Math.round(y1+40-off[1])};
   };
-  const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data}=await sb.from("tables").insert({name:name.trim(),type,seats,x:spot.x,y:spot.y,event_id:event.id}).select().single();if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setSaving(false);setModal(null);};
+  // x/y בטבלה הם מספרים שלמים — מעגלים (באירוע ריק המיקום הפנוי יוצא עם שבר והשמירה נכשלה)
+  const doAddTable=async(name,type)=>{if(!name?.trim())return;setSaving(true);const seats=TABLE_TYPES[type].defaultSeats;const spot=freeSpot(type);const{data,error}=await sb.from("tables").insert({name:name.trim(),type,seats,x:Math.round(spot.x),y:Math.round(spot.y),event_id:event.id}).select().single();setSaving(false);if(error){alert("❌ השולחן לא נוסף: "+error.message);return;}if(data)setTables(ts=>[...ts,{...data,guests:[]}]);setModal(null);};
   // ─── תבניות אולם: שמירת מפת השולחנות (וגם במה/בר/כניסה) וטעינה לאירוע אחר באותו אולם ───
   const [tplOpen,setTplOpen]=useState(false),[tpls,setTpls]=useState(null);
   const saveTemplate=async()=>{
