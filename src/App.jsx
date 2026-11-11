@@ -2525,7 +2525,7 @@ function CompareSlider() {
   return(
     <div className="lp-cmp" ref={boxRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       <div className="lp-cmp-after">
-        <img src="/landing/seating-v2.jpg" alt="אחרי: מפת האולם ב-Sidor-IL, עם שולחנות ממוספרים ורשימת אורחים שממתינים להושבה" width="1440" height="655" loading="lazy" draggable="false"/>
+        <img src="/landing/seating-v3.jpg" alt="אחרי: מסך סידורי ההושבה ב-Sidor-IL, עם סרגל הכלים, מפת האולם ורשימת האורחים שממתינים להושבה" width="1600" height="800" loading="lazy" draggable="false"/>
         <span className="lp-cmp-tag after" aria-hidden="true">אחרי</span>
       </div>
       <div className="lp-cmp-before" ref={topRef} role="img" aria-label="לפני: רשימת מוזמנים באקסל, עם שורות מחוקות, סימני שאלה והערות בצד">
