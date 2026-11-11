@@ -4545,6 +4545,14 @@ ${AP_CSS}
 let hmT0=0;const hmFirst=()=>{const n=Date.now();if(!hmT0)hmT0=n;return n-hmT0<1500;};
 // פרטי האירוע: כרטיס לכל נושא עם פס צבע משלו, שדות מעוגלים וגופן מעוגל לכותרות
 const ED_CSS=`
+.ed .ed-inv{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FFF6FA;border-radius:20px;padding:12px}
+.ed .ed-inv-url{flex:1 1 260px;min-width:0;background:#fff;border-radius:14px;padding:11px 14px;font-size:13.5px;font-weight:600;color:#5B3C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.ed .ed-inv-btns{display:flex;gap:8px;flex-wrap:wrap}
+.ed .ed-inv-btns button{min-height:44px;padding:0 16px;border:none;border-radius:100px;background:linear-gradient(120deg,#F0609E,#9B6BFF);color:#fff;font:700 14px 'Fredoka','Heebo',sans-serif;cursor:pointer}
+.ed .ed-inv-btns button.wa{background:#1FA855}
+.ed .ed-inv-btns button:last-child{background:#fff;color:#5B3C8C;box-shadow:inset 0 0 0 1.5px #E6DDF5}
+.ed .ed-inv-btns button.ok{background:#1F7A4D}
+@media(max-width:700px){.ed .ed-inv-btns{width:100%}.ed .ed-inv-btns button{flex:1 1 auto;padding:0 10px}}
 .ed .ed-share > *{border-radius:28px!important;border:none!important;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)!important;margin-bottom:18px!important;background:linear-gradient(180deg,#FFF1D6 0%,#FFF8EA 45%,#fff 100%)!important}
 .ed .ed-share button{border-radius:100px!important}
 .ed .ed-card{background:linear-gradient(180deg,var(--t) 0,var(--t) 64px,#fff 64px)!important;padding-top:20px!important}
@@ -5157,6 +5165,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
+  // "הזמנה דיגיטלית" נפתחת בתוך פרטי האירוע (אין מסך נפרד)
+  useEffect(()=>{if(screen==="invite")setScreen("settings");},[screen]);
   // מעבר למסך אחר (או כניסה לאירוע) תמיד מתחיל מלמעלה — בנייד הגלילה של המסך הקודם נשארה והמסך החדש נפתח באמצע/בתחתית
   useEffect(()=>{try{window.scrollTo(0,0);}catch{}},[screen]);
   // להושבה: רק מי שלא סימן "לא מגיע" (מי שלא מגיע לא מופיע ברשימת הממתינים ולא נכנס להושבה האוטומטית)
@@ -7245,6 +7255,12 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
   const [myRole,setMyRole]=useState(event.my_role||"groom");
+  // קישור ההזמנה לאורחים (נוצר קוד אם עוד אין)
+  const [inviteCode,setInviteCode]=useState(event.invite_code||"");
+  const [linkCopied,setLinkCopied]=useState(false);
+  useEffect(()=>{if(!event.invite_code){const code=Math.random().toString(36).slice(2,10);sb.from("events").update({invite_code:code}).eq("id",event.id).then(({error})=>{if(!error){event.invite_code=code;setInviteCode(code);}});}},[event.id]);
+  const inviteUrl=inviteCode?`${window.location.origin}/#/invite/${inviteCode}`:"";
+  const copyInvite=()=>{if(!inviteUrl)return;navigator.clipboard.writeText(inviteUrl).then(()=>{setLinkCopied(true);setTimeout(()=>setLinkCopied(false),2000);},()=>{});};
   const [settings,setSettings]=useState({
     coupleType: coupleOf(event),
     childGender: childOf(event)||"m",
@@ -7329,8 +7345,17 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
 
       {/* סגנון ההזמנה הדיגיטלית */}
       <div className="ed-card" style={{"--t":"#FFE6F0",background:"#fff",borderRadius:28,padding:"24px",marginBottom:18,boxShadow:"0 18px 40px -28px rgba(91,60,140,.5)"}}>
-        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4}}>🎨 סגנון ההזמנה הדיגיטלית</div>
-        <div style={{fontSize:12,color:"#5E5470",margin:"0 0 14px"}}>הסגנון של הדף שהאורחים פותחים. נשמר אוטומטית.</div>
+        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4}}>💌 הזמנה דיגיטלית</div>
+        <div style={{fontSize:13,color:"#5E5470",margin:"0 0 14px"}}>הקישור שהאורחים מקבלים, הסגנון ותמונת הפתיחה. הכל נשמר אוטומטית.</div>
+        <div className="ed-inv">
+          <div className="ed-inv-url" dir="ltr">{inviteUrl||"טוען..."}</div>
+          <div className="ed-inv-btns">
+            <button type="button" onClick={copyInvite} className={linkCopied?"ok":undefined}>{linkCopied?"✓ הועתק":"📋 העתקת הקישור"}</button>
+            <button type="button" onClick={()=>inviteUrl&&shareInviteWA(event,inviteUrl)} className="wa">💬 WhatsApp</button>
+            <button type="button" onClick={()=>inviteUrl&&window.open(inviteUrl,"_blank","noopener")}>👁️ צפייה בהזמנה</button>
+          </div>
+        </div>
+        <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"20px 0 10px"}}>🎨 סגנון ההזמנה</div>
         <InviteStylePicker value={settings.inviteStyle} onChange={id=>setSettings(s=>({...s,inviteStyle:id}))} img={coverImgOf(event.event_type,form.template_id)} title={form.bride_name&&form.groom_name?`${form.groom_name} & ${form.bride_name}`:form.name}/>
         <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"20px 0 10px"}}>🖼️ תמונת הפתיחה</div>
         <InviteCoverPicker eventType={event.event_type} value={form.template_id} onChange={id=>setForm(f=>({...f,template_id:id}))}/>
