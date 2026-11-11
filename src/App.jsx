@@ -7327,6 +7327,15 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
         </div>
       </div>
 
+      {/* סגנון ההזמנה הדיגיטלית */}
+      <div className="ed-card" style={{"--t":"#FFE6F0",background:"#fff",borderRadius:28,padding:"24px",marginBottom:18,boxShadow:"0 18px 40px -28px rgba(91,60,140,.5)"}}>
+        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4}}>🎨 סגנון ההזמנה הדיגיטלית</div>
+        <div style={{fontSize:12,color:"#5E5470",margin:"0 0 14px"}}>הסגנון של הדף שהאורחים פותחים. נשמר אוטומטית.</div>
+        <InviteStylePicker value={settings.inviteStyle} onChange={id=>setSettings(s=>({...s,inviteStyle:id}))} img={coverImgOf(event.event_type,form.template_id)} title={form.bride_name&&form.groom_name?`${form.groom_name} & ${form.bride_name}`:form.name}/>
+        <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"20px 0 10px"}}>🖼️ תמונת הפתיחה</div>
+        <InviteCoverPicker eventType={event.event_type} value={form.template_id} onChange={id=>setForm(f=>({...f,template_id:id}))}/>
+      </div>
+
       <div className="ed-share"><ShareEventCard event={event} user={user}/></div>
 
       {/* מי אני + שמות */}
@@ -7577,15 +7586,6 @@ function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
               style={{width:"100%",border:"1.5px solid #E2E8F0",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
           </div>
         )}
-      </div>
-
-      {/* סגנון ההזמנה הדיגיטלית */}
-      <div className="ed-card" style={{"--t":"#FFE6F0",background:"#fff",borderRadius:28,padding:"24px",marginBottom:18,boxShadow:"0 18px 40px -28px rgba(91,60,140,.5)"}}>
-        <div style={{fontSize:15,fontWeight:800,color:"#1A202C",marginBottom:4}}>🎨 סגנון ההזמנה הדיגיטלית</div>
-        <div style={{fontSize:12,color:"#5E5470",margin:"0 0 14px"}}>הסגנון של הדף שהאורחים פותחים. נשמר אוטומטית.</div>
-        <InviteStylePicker value={settings.inviteStyle} onChange={id=>setSettings(s=>({...s,inviteStyle:id}))} img={coverImgOf(event.event_type,form.template_id)} title={form.bride_name&&form.groom_name?`${form.groom_name} & ${form.bride_name}`:form.name}/>
-        <div style={{fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:16,fontWeight:700,color:"#2B1D3F",margin:"20px 0 10px"}}>🖼️ תמונת הפתיחה</div>
-        <InviteCoverPicker eventType={event.event_type} value={form.template_id} onChange={id=>setForm(f=>({...f,template_id:id}))}/>
       </div>
 
       {/* הגדרות נוספות */}
