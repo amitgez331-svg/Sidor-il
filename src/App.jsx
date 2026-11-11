@@ -2481,7 +2481,18 @@ const VR_TILES=[
   {id:"1535254973040-607b474cb50d",l:"עוגות וקינוחים",p:"b2"},
 ];
 const VR_CSS=`
-  .lp-vr{position:relative;min-height:900px;display:flex;align-items:center;justify-content:center}
+  .lp-vr{position:relative;min-height:1030px;display:flex;align-items:center;justify-content:center}
+  .lp-vr-hall{width:100%;max-width:420px;background:#fff;border-radius:26px;padding:16px 18px;margin-bottom:22px;text-align:right;box-shadow:0 26px 54px -30px rgba(60,35,110,.6),0 0 0 6px rgba(255,255,255,.6)}
+  .lp-vr-hall-top{display:flex;justify-content:space-between;align-items:center;font:800 15px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin-bottom:10px}
+  .lp-vr-hall-top small{font:700 12px 'Heebo',sans-serif;color:#6B5F80;background:#F4EEFF;border-radius:999px;padding:3px 9px}
+  .lp-vr-hall-mid{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .lp-vr-hall-mid b{font:900 46px/1 'Fredoka','Heebo',sans-serif;background:linear-gradient(120deg,#F0609E,#9B6BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-vr-hall-mid span{font-size:15px;font-weight:700;color:#2B1D3F;line-height:1.4}
+  .lp-vr-hall-mid small{display:block;font-size:13px;font-weight:600;color:#6B5F80}
+  .lp-vr-days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .lp-vr-days span{background:#F7F2FF;border-radius:14px;padding:8px 6px;text-align:center;font-size:13px;font-weight:700;color:#5B3C8C}
+  .lp-vr-days b{display:block;font:900 18px 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
+  .lp-vr-tip{background:#FFF4F7;border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.55;color:#7A1F48;font-weight:600}
   .lp-vr-c{position:relative;z-index:2;max-width:500px;text-align:center;display:flex;flex-direction:column;align-items:center}
   .lp-vr-c h2{margin:0 0 14px}
   .lp-vr-c p{font-size:18px;line-height:1.7;color:#3A2F50;margin:0 0 22px}
@@ -2516,9 +2527,14 @@ function VendorRing({onOpen,cta}){
     <style>{VR_CSS}</style>
     <div className="lp-vr">
       <div className="lp-vr-c">
-        <h2 className="lp-h2">מוצאים את <span className="lp-grad">הספק המושלם</span></h2>
-        <p>מחירי מנות אמיתיים באולמות, ומחירים והמלצות על צלמים, תקליטנים, פרחים ועוד, מזוגות שכבר עשו את זה. משווים ובוחרים בביטחון.</p>
-        <div className="lp-vr-price"><b className="lp-num">₪298</b><span>מחיר מקובל למנה באולם<small>טווח ₪265–345 · דוגמה להמחשה</small></span></div>
+        <h2 className="lp-h2">כמה שילמו <span className="lp-grad">זוגות אחרים?</span></h2>
+        <p>מחירי מנות באולמות, ומחירים והמלצות על צלמים, תקליטנים, פרחים ועוד. משווים לפני שסוגרים.</p>
+        <div className="lp-vr-hall" aria-label="דוגמה: מחיר מנה באולם">
+          <div className="lp-vr-hall-top"><span>🏛️ מחיר מנה באולם</span><small>דוגמה להמחשה</small></div>
+          <div className="lp-vr-hall-mid"><b className="lp-num">₪298</b><span>המחיר המקובל<small>טווח ₪265–345 · 4 דיווחים</small></span></div>
+          <div className="lp-vr-days"><span>א׳–ד׳ <b>₪265</b></span><span>חמישי <b>₪285</b></span><span>שישי <b>₪345</b></span></div>
+          <div className="lp-vr-tip">💡 ההצעה שלכם גבוהה ב-14% מהמקובל? בדקו אם יום אחר זול יותר.</div>
+        </div>
         <button onClick={onOpen} className="lp-btn lp-primary" style={{padding:"15px 32px",fontSize:16}}>{cta}</button>
       </div>
       <div className="lp-vr-tiles">
@@ -2782,6 +2798,201 @@ function ExcelToMap(){
   </>);
 }
 
+// "בכל מכשיר": מחשב וטלפון עם מסכים אמיתיים, אישור הגעה בטלפון שמתעדכן גם במחשב
+const DEV_CSS=`
+  .lp-dev{position:relative;overflow:hidden;isolation:isolate;margin:0 2vw 28px;border-radius:56px;padding:90px 6vw;color:#fff;background:linear-gradient(125deg,#3F1D8F 0%,#7646D9 48%,#D2508F 100%)}
+  .lp-dev::before,.lp-dev::after{content:"";position:absolute;z-index:-1;border-radius:50%;filter:blur(40px);opacity:.55}
+  .lp-dev::before{width:420px;height:420px;background:#FF8AC0;left:-120px;bottom:-160px}
+  .lp-dev::after{width:360px;height:360px;background:#8FD3FF;right:30%;top:-180px;opacity:.35}
+  .lp-dev-in{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.15fr);gap:48px;align-items:center}
+  .lp-dev-txt h2{font:900 clamp(34px,4.2vw,56px)/1.08 'Fredoka','Heebo',sans-serif;margin:0 0 16px;letter-spacing:-.02em}
+  .lp-dev-txt h2 span{background:linear-gradient(120deg,#FFD3E6,#FFE7B8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-dev-txt > p{font-size:18px;line-height:1.7;margin:0 0 24px;color:rgba(255,255,255,.92);max-width:46ch}
+  .lp-dev-pts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}
+  .lp-dev-pt{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:14px 12px;display:flex;flex-direction:column;gap:8px}
+  .lp-dev-pt i{font-style:normal;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .lp-dev-pt b{font:800 15px/1.3 'Fredoka','Heebo',sans-serif}
+  .lp-dev-pt span{font-size:13px;line-height:1.5;color:rgba(255,255,255,.85)}
+  .lp-dev-cta{display:inline-flex;align-items:center;min-height:54px;padding:0 30px;border:none;border-radius:999px;background:#fff;color:#4A2C8F;font:800 17px 'Fredoka','Heebo',sans-serif;cursor:pointer;box-shadow:0 18px 36px -18px rgba(20,5,50,.8);transition:scale 160ms cubic-bezier(0.23,1,0.32,1)}
+  .lp-dev-acts{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .lp-dev-acts .sx-btn small{display:block;font:600 11px 'Heebo',sans-serif;color:rgba(255,255,255,.75)}
+  .lp-dev-ic{font-size:22px}
+  .lp-dev-note{margin-top:12px;font-size:13.5px;color:rgba(255,255,255,.82)}
+  .lp-dev-cta:active{scale:.97}.lp-dev-cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  @media(hover:hover) and (pointer:fine){.lp-dev-cta:hover{scale:1.04}}
+  .lp-dev-stage{position:relative;aspect-ratio:600/440}
+  .lp-dev-lap{position:absolute;top:4%;right:0;width:86%}
+  .lp-dev-scr{border:10px solid #1C1430;border-bottom-width:14px;border-radius:20px 20px 6px 6px;overflow:hidden;background:#fff;box-shadow:0 40px 70px -34px rgba(10,0,30,.8)}
+  .lp-dev-scr img{display:block;width:100%;height:auto;aspect-ratio:1440/900}
+  .lp-dev-base{height:16px;margin:0 -7%;background:linear-gradient(180deg,#E9E3F2,#B9AFCB);border-radius:0 0 18px 18px;position:relative}
+  .lp-dev-base::after{content:"";position:absolute;top:0;left:50%;translate:-50% 0;width:18%;height:6px;border-radius:0 0 8px 8px;background:#A89EBB}
+  .lp-dev-ph{position:absolute;left:2%;bottom:0;width:25%;border:7px solid #1C1430;border-radius:30px;overflow:hidden;background:#fff;box-shadow:0 34px 60px -26px rgba(10,0,30,.85)}
+  .lp-dev-ph img{display:block;width:100%;height:auto;aspect-ratio:1170/2280;object-fit:cover}
+  .lp-dev-ph::before{content:"";position:absolute;z-index:1;top:6px;left:50%;translate:-50% 0;width:34%;height:9px;border-radius:9px;background:#1C1430}
+  .lp-dev-sync{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+  .lp-dev-sync path{stroke-dasharray:5 8}
+  .lp-dev-toast{position:absolute;z-index:3;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;background:#fff;color:#2B1D3F;border-radius:14px;padding:8px 12px;font:800 13px 'Fredoka','Heebo',sans-serif;box-shadow:0 16px 30px -16px rgba(10,0,30,.8)}
+  .lp-dev-toast i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:#1F7A4D}
+  .lp-dev-t1{left:0;bottom:66%}
+  .lp-dev-t2{right:6%;top:0}
+  .lp-dev-t2 i{background:#9B6BFF}
+  @keyframes lpDevFloat{50%{transform:translateY(-8px)}}
+  @keyframes lpDevFloat2{50%{transform:translateY(6px)}}
+  @keyframes lpDevT1{0%,6%{opacity:0;transform:translateY(8px) scale(.94)}12%,78%{opacity:1;transform:none}86%,100%{opacity:0;transform:none}}
+  @keyframes lpDevT2{0%,34%{opacity:0;transform:translateY(8px) scale(.94)}40%,80%{opacity:1;transform:none}88%,100%{opacity:0;transform:none}}
+  @keyframes lpDevDash{to{stroke-dashoffset:-26}}
+  .lp-motion .lp-dev-lap{animation:lpDevFloat 7s ease-in-out infinite}
+  .lp-motion .lp-dev-ph{animation:lpDevFloat2 6s ease-in-out infinite}
+  .lp-motion .lp-dev-t1{animation:lpDevT1 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-dev-t2{animation:lpDevT2 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-dev-sync path{animation:lpDevDash 1.1s linear infinite}
+  @media(prefers-reduced-motion:reduce){.lp-dev *{animation:none!important}}
+  @media(max-width:900px){
+    .lp-dev{margin:0 8px 20px;border-radius:36px;padding:56px 5vw 44px}
+    .lp-dev-in{grid-template-columns:1fr;gap:34px}
+    .lp-dev-pts{grid-template-columns:1fr;gap:8px}
+    .lp-dev-pt{flex-direction:row;align-items:center;padding:10px 12px}
+    .lp-dev-pt span{display:none}
+    .lp-dev-txt > p{font-size:16px}
+    .lp-dev-toast{font-size:11.5px;padding:6px 9px}
+  }
+`;
+function DevicesSection({onStart}){
+  const moving=lpMotionOK();
+  return(<section className="lp-dev" aria-labelledby="lp-dev-h">
+    <style>{DEV_CSS}</style>
+    <div className="lp-dev-in">
+      <div className="lp-dev-txt">
+        <h2 id="lp-dev-h">האירוע איתכם <span>בכל מכשיר</span></h2>
+        <p>מתחילים במחשב בבית וממשיכים מהטלפון בדרך לאולם. כל שינוי נשמר מיד, ומחכה לכם בכל מכשיר, גם אצל בן או בת הזוג.</p>
+        <div className="lp-dev-pts">
+          <div className="lp-dev-pt"><i aria-hidden="true">📲</i><b>אפליקציה ישר מהאתר</b><span>בלי חנות אפליקציות: מתקינים מכאן, והאייקון מופיע במסך הבית</span></div>
+          <div className="lp-dev-pt"><i aria-hidden="true">🔄</i><b>הכל נשמר בענן</b><span>אותו אירוע, מעודכן, בכל מקום שתתחברו</span></div>
+          <div className="lp-dev-pt"><i aria-hidden="true">👫</i><b>ניהול בשניים</b><span>משתפים את האירוע ועובדים עליו יחד</span></div>
+        </div>
+        <div className="lp-dev-acts">
+          <button type="button" className="lp-dev-cta" onClick={onStart}>מתחילים בחינם</button>
+          <InstallAppButton label={<><span className="lp-dev-ic" aria-hidden="true">📲</span><span><small>להורדה מהאתר</small>האפליקציה של Sidor-IL</span></>} style={{background:"#1C1430",color:"#fff",border:"1.5px solid rgba(255,255,255,.35)",borderRadius:999,minHeight:54,padding:"0 22px",gap:10,fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:15,textAlign:"right",lineHeight:1.15}}/>
+        </div>
+        <div className="lp-dev-note">בלי חנות אפליקציות: עובד באייפון, באנדרואיד ובמחשב</div>
+      </div>
+      <div className="lp-dev-stage" aria-hidden="true">
+        <svg className="lp-dev-sync" viewBox="0 0 600 440" preserveAspectRatio="none">
+          <path d="M110 150 C150 60 240 40 300 90" fill="none" stroke="rgba(255,255,255,.75)" strokeWidth="3" strokeLinecap="round"/>
+          {moving&&<circle r="6" fill="#FFE7B8"><animateMotion dur="2.4s" repeatCount="indefinite" path="M110 150 C150 60 240 40 300 90"/></circle>}
+        </svg>
+        <div className="lp-dev-lap">
+          <div className="lp-dev-scr"><img src="/landing/tour/home.jpg" alt="" width="1440" height="900" loading="lazy" decoding="async"/></div>
+          <div className="lp-dev-base"/>
+        </div>
+        <div className="lp-dev-ph"><img src="/landing/rsvp-v2.jpg" alt="" width="1170" height="2280" loading="lazy" decoding="async"/></div>
+        <div className="lp-dev-toast lp-dev-t1"><i>✓</i>דנה כהן אישרה הגעה</div>
+        <div className="lp-dev-toast lp-dev-t2"><i>↻</i>עודכן גם במחשב</div>
+      </div>
+    </div>
+  </section>);
+}
+
+// "מהרשימה לאולם ב-3 צעדים": הנפשה לכל צעד — מוסיפים אנשי קשר, מסדרים בשולחן, שולחים לאורחים
+const SA_CSS=`
+  .lp-sa{align-items:flex-end!important;padding-top:0!important}
+  .lp-sa-ph{position:relative;width:200px;height:236px;background:#fff;border:7px solid #1C1430;border-bottom:none;border-radius:30px 30px 0 0;overflow:hidden;box-shadow:0 30px 50px -30px rgba(43,29,63,.7);padding:16px 10px 0;direction:rtl;text-align:right}
+  .lp-sa-ph::before{content:"";position:absolute;top:5px;left:50%;translate:-50% 0;width:56px;height:8px;border-radius:8px;background:#1C1430}
+  .lp-sa-hd{font:800 13px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:4px 4px 8px;display:flex;justify-content:space-between;align-items:center}
+  .lp-sa-hd small{font:700 10.5px 'Heebo',sans-serif;color:#6B5F80}
+  .lp-sa-row{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #F3EEF8}
+  .lp-sa-av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:800 12px 'Heebo',sans-serif;color:#fff;background:var(--c);flex-shrink:0}
+  .lp-sa-row b{flex:1;font-size:12.5px;font-weight:700;color:#2B1D3F}
+  .lp-sa-tg{position:relative;width:26px;height:26px;flex-shrink:0}
+  .lp-sa-tg span{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900}
+  .lp-sa-plus{background:#F1EAFF;color:#6339CC}
+  .lp-sa-ok{background:#1F7A4D;color:#fff;opacity:0}
+  .lp-sa-toast{position:absolute;bottom:10px;right:10px;left:10px;background:#2B1D3F;color:#fff;border-radius:12px;padding:8px 10px;font:800 12px 'Fredoka','Heebo',sans-serif;text-align:center}
+  .lp-sa-map{position:relative;width:86%;height:228px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 30px 50px -30px rgba(43,29,63,.7);overflow:hidden}
+  .lp-sa-map svg{position:absolute;inset:0;width:100%;height:100%}
+  .lp-sa-wait{position:absolute;bottom:0;right:0;left:0;height:58px;background:#F7F2FF;border-top:1px solid #ECE3F7;display:flex;align-items:center;gap:6px;padding:0 10px;direction:rtl}
+  .lp-sa-wait em{font-style:normal;font:700 11px 'Heebo',sans-serif;color:#6B5F80}
+  .lp-sa-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border-radius:999px;padding:5px 9px;font:800 11.5px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;box-shadow:0 6px 14px -8px rgba(60,35,110,.6);white-space:nowrap}
+  .lp-sa-chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+  .lp-sa-drag{position:absolute;z-index:2;bottom:16px;left:24px}
+  .lp-sa-cur{position:absolute;left:-6px;bottom:-12px;width:18px;height:18px}
+  .lp-sa-cnt{position:relative;display:inline-block;width:28px;height:14px}
+  .lp-sa-cnt span{position:absolute;inset:0;text-align:center}
+  .lp-sa-cnt .b{opacity:0}
+  .lp-sa-ch{background:#F4FAF7}
+  .lp-sa-ch .lp-sa-hd{color:#167A3E}
+  .lp-sa-msg{margin:8px 2px 0;max-width:86%;background:#fff;border-radius:14px 14px 14px 4px;padding:8px 10px;font-size:12px;line-height:1.5;color:#2B1D3F;box-shadow:0 6px 16px -10px rgba(31,122,77,.6)}
+  .lp-sa-msg em{font-style:normal;display:block;text-align:left;font-size:10px;color:#8B8499}
+  .lp-sa-msg.me{margin-right:auto;margin-left:2px;border-radius:14px 14px 4px 14px;background:#DFF6E8}
+  .lp-sa-plane{position:absolute;z-index:3;width:30px;height:30px;left:-34px;bottom:30px}
+  .lp-sa-sent{position:absolute;bottom:10px;right:10px;left:10px;background:#1FA855;color:#fff;border-radius:12px;padding:8px 10px;font:800 12px 'Fredoka','Heebo',sans-serif;text-align:center}
+
+  @keyframes lpSaPlus{0%{opacity:1}4%,72%{opacity:0}78%,100%{opacity:1}}
+  @keyframes lpSaOk{0%{opacity:0;transform:scale(.4)}4%,72%{opacity:1;transform:scale(1)}78%,100%{opacity:0;transform:scale(1)}}
+  @keyframes lpSaToast{0%,52%{opacity:0;transform:translateY(10px)}58%,86%{opacity:1;transform:none}92%,100%{opacity:0;transform:none}}
+  @keyframes lpSaDrag{0%,12%{opacity:1;transform:translate(0,0) scale(1)}46%{opacity:1;transform:translate(var(--dx),var(--dy)) scale(.9)}52%,90%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.6)}91%{opacity:0;transform:translate(0,0) scale(1)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+  @keyframes lpSaSeat{0%,46%{opacity:0;transform:scale(.3)}52%,90%{opacity:1;transform:scale(1)}96%,100%{opacity:0;transform:scale(1)}}
+  @keyframes lpSaA{0%,48%{opacity:1}52%,92%{opacity:0}96%,100%{opacity:1}}
+  @keyframes lpSaB{0%,48%{opacity:0}52%,92%{opacity:1}96%,100%{opacity:0}}
+  @keyframes lpSaPlane{0%{opacity:0;transform:translate(0,0) rotate(-10deg)}6%{opacity:1}22%{opacity:1;transform:translate(150px,-150px) rotate(-10deg)}26%,100%{opacity:0;transform:translate(170px,-170px) rotate(-10deg)}}
+  @keyframes lpSaMsg{0%,18%{opacity:0;transform:translateY(10px) scale(.96)}24%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:none}}
+  @keyframes lpSaTick{0%,38%{color:#8B8499}44%,100%{color:#2F9BDA}}
+  @keyframes lpSaRep{0%,50%{opacity:0;transform:translateY(10px) scale(.96)}56%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:none}}
+  .lp-sa-ch{transform-box:fill-box;transform-origin:center}
+  .lp-motion .lp-sa-plus{animation:lpSaPlus 6s ease var(--d) infinite both}
+  .lp-motion .lp-sa-ok{animation:lpSaOk 6s cubic-bezier(0.23,1,0.32,1) var(--d) infinite both}
+  .lp-motion .lp-sa-toast{animation:lpSaToast 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-sa-drag{animation:lpSaDrag 6s cubic-bezier(0.77,0,0.175,1) infinite both}
+  .lp-motion .lp-sa-seat{transform-box:fill-box;transform-origin:center;animation:lpSaSeat 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-sa-cnt .a{animation:lpSaA 6s linear infinite both}
+  .lp-motion .lp-sa-cnt .b{animation:lpSaB 6s linear infinite both}
+  .lp-motion .lp-sa-plane{animation:lpSaPlane 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-sa-msg.me{animation:lpSaMsg 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-sa-msg.me em{animation:lpSaTick 6s linear infinite both}
+  .lp-motion .lp-sa-msg.rep{animation:lpSaRep 6s cubic-bezier(0.23,1,0.32,1) infinite both}
+  .lp-motion .lp-sa-sent{animation:lpSaToast 6s cubic-bezier(0.23,1,0.32,1) .4s infinite both}
+  @media(prefers-reduced-motion:reduce){.lp-sa *{animation:none!important}}
+  .lp-sa-noanim .lp-sa-ok{opacity:1}.lp-sa-noanim .lp-sa-plus{opacity:0}
+`;
+function HowStepArt({i}){
+  if(i===0)return(
+    <div className="lp-sa-ph">
+      <div className="lp-sa-hd">📇 אנשי קשר<small>בוחרים מי מוזמן</small></div>
+      {[["דנה כהן",LP.rose],["יוסי לוי",LP.violet],["רחל אברהם",LP.mint],["משפחת טל",LP.gold]].map(([n,c],k)=>(
+        <div key={n} className="lp-sa-row" style={{"--c":c,"--d":`${(.5+k*.6).toFixed(1)}s`}}>
+          <span className="lp-sa-av">{n[0]}</span><b>{n}</b>
+          <span className="lp-sa-tg"><span className="lp-sa-plus">+</span><span className="lp-sa-ok">✓</span></span>
+        </div>
+      ))}
+      <div className="lp-sa-toast">✓ 4 מוזמנים נוספו לרשימה</div>
+    </div>);
+  if(i===1){
+    const seats=(cx,cy,c,n,extra)=>Array.from({length:8}).map((_,k)=>{const a=k*45*Math.PI/180,x=cx+30*Math.sin(a),y=cy-30*Math.cos(a);const on=k<n;const tgt=extra&&k===n;return <circle key={k} className={tgt?"lp-sa-seat":undefined} cx={x.toFixed(1)} cy={y.toFixed(1)} r="6" fill={on||tgt?c:"#E9E2F3"}/>;});
+    return(
+      <div className="lp-sa-map">
+        <svg viewBox="0 0 260 228" aria-hidden="true">
+          <rect x="85" y="10" width="90" height="20" rx="10" fill="#FFE3EE"/><text x="130" y="24" textAnchor="middle" fontSize="10" fontWeight="900" fill="#B13B72" fontFamily="Heebo">במה</text>
+          {seats(72,92,LP.rose,6,false)}<circle cx="72" cy="92" r="19" fill="#fff" stroke={LP.rose} strokeOpacity=".5"/><text x="72" y="96" textAnchor="middle" fontSize="12" fontWeight="900" fill={LP.ink} fontFamily="Heebo">1</text>
+          {seats(188,92,LP.violet,4,true)}<circle cx="188" cy="92" r="19" fill="#fff" stroke={LP.violet} strokeOpacity=".5"/><text x="188" y="96" textAnchor="middle" fontSize="12" fontWeight="900" fill={LP.ink} fontFamily="Heebo">2</text>
+        </svg>
+        <div style={{position:"absolute",top:132,left:"58%",font:"800 11px 'Heebo',sans-serif",color:"#6339CC",background:"#F1EAFF",borderRadius:99,padding:"2px 8px"}}><span className="lp-sa-cnt"><span className="a">4/8</span><span className="b">5/8</span></span></div>
+        <div className="lp-sa-wait"><em>ממתינים:</em><span className="lp-sa-chip" style={{"--c":LP.mint}}><i/>אלון</span></div>
+        <div className="lp-sa-drag" style={{"--dx":"96px","--dy":"-128px"}}>
+          <span className="lp-sa-chip" style={{"--c":LP.violet}}><i/>רחל כהן</span>
+          <svg className="lp-sa-cur" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l13 7-6 1.5L9.5 18z" fill="#2B1D3F" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+        </div>
+      </div>);
+  }
+  return(
+    <div className="lp-sa-ph lp-sa-ch">
+      <div className="lp-sa-hd">💬 Sidor-IL<small>הודעה לאורחים</small></div>
+      <div className="lp-sa-msg me">היי רחל! 🎉 מחכים לך הערב.<br/><b>השולחן שלך: 7</b><em>19:02 ✓✓</em></div>
+      <div className="lp-sa-msg rep">תודה! נתראה 💃</div>
+      <div className="lp-sa-sent">📤 נשלח לכל האורחים</div>
+      <svg className="lp-sa-plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-7 18-2.5-7.5z" fill="#fff" stroke="#1FA855" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+    </div>);
+}
+
 function CompareSlider() {
   const boxRef=useRef(null),topRef=useRef(null),barRef=useRef(null),knobRef=useRef(null);
   const pos=useRef(50),hint=useRef([]),drag=useRef(null),touched=useRef(false);
@@ -2882,9 +3093,9 @@ function CompareSlider() {
 
 // איך זה עובד: במחשב הטקסט נגלל והמסך שלצידו מתחלף לפי השלב שבמרכז המסך. בנייד — כל שלב עם התמונה שלו
 const LP_STORY=[
-  {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp-v2.jpg",kind:"phone",alt:"רשימת המוזמנים בנייד: מגיעים, ממתינים ולא מגיעים",chip:"36 מוזמנים נכנסו מהאקסל"},
-  {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating-v2.jpg",kind:"laptop",alt:"מפת האולם במחשב: שולחנות ממוספרים, במה ובר",chip:"שולחן 2 · משפחת החתן · 5/10"},
-  {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite-v2.jpg",kind:"phone",alt:"דף ההזמנה בנייד, עם טופס אישור הגעה",chip:"היי רחל, השולחן שלך: 7"},
+  {t:"מעלים את המוזמנים",d:"מייבאים מאקסל או מוסיפים ידנית, ומסמנים קבוצות: משפחה קרובה, חברים מהצבא, עבודה.",c:LP.rose,img:"/landing/rsvp-v2.jpg",kind:"phone",alt:"איור: מוסיפים אנשי קשר לרשימת המוזמנים",chip:"36 מוזמנים נכנסו מהאקסל"},
+  {t:"מסדרים את השולחנות",d:"בונים את מפת האולם וגוררים אורחים לשולחנות, או לוחצים על AI ומקבלים סידור מלא תוך שניות.",c:LP.violet,img:"/landing/seating-v2.jpg",kind:"laptop",alt:"איור: גוררים אורח לשולחן במפת האולם",chip:"שולחן 2 · משפחת החתן · 5/10"},
+  {t:"האורחים יודעים איפה לשבת",d:"שולחים לכל אורח את מספר השולחן ב-SMS או WhatsApp, ומדפיסים כרטיסי הושבה לכניסה.",c:LP.mint,img:"/landing/invite-v2.jpg",kind:"phone",alt:"איור: הודעה לאורח עם מספר השולחן שלו",chip:"היי רחל, השולחן שלך: 7"},
 ];
 function HowStory() {
   const [act,setAct]=useState(0);
@@ -3112,9 +3323,9 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <div className="lp-steprow">
             {LP_STORY.map((s,i)=>(
               <div key={i} className="lp-stepcard lp-lift" data-reveal style={{"--d":`${(i*.08).toFixed(2)}s`,"--c":s.c}}>
-                <div className={`lp-stepart ${s.kind}`} style={{background:["linear-gradient(160deg,#FFE3EF,#FFC9DF)","linear-gradient(160deg,#EBDFFF,#DDC7FF)","linear-gradient(160deg,#E7F5EC,#C9E9D8)"][i]}}>
-                  <div className="lp-frame"><img src={s.img} alt={s.alt} loading="lazy"/></div>
-                  <span className="lp-stepchip" aria-hidden="true">{s.chip}</span>
+                <div className="lp-stepart lp-sa" role="img" aria-label={s.alt} style={{background:["linear-gradient(160deg,#FFE3EF,#FFC9DF)","linear-gradient(160deg,#EBDFFF,#DDC7FF)","linear-gradient(160deg,#E7F5EC,#C9E9D8)"][i]}}>
+                  {i===0&&<style>{SA_CSS}</style>}
+                  <HowStepArt i={i}/>
                 </div>
                 <div className="lp-stepbody">
                   <span className="lp-stepnum2" aria-hidden="true">{i+1}</span>
@@ -3139,6 +3350,9 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <ProductTour/>
         </div>
       </section>
+
+      {/* ─── בכל מכשיר, מכל מקום ─── */}
+      <DevicesSection onStart={()=>onOpenAuth("register")}/>
 
       {/* ─── ספקים ומחירים מהקהילה (פיצ'ר למשתמשים רשומים) ─── */}
       <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
@@ -4401,6 +4615,30 @@ const thankYouText=event=>{
 };
 // ─── מסך הבית של האירוע: סגנון בהיר וצבעוני (גלולות, בועות, גופן מעוגל) בצבעי המותג ───
 const HOME_CSS=`
+.hm-auto{background:#fff;border-radius:28px;padding:22px 24px;margin-top:18px;border:1.5px solid #EADFF6;box-shadow:0 22px 44px -26px rgba(91,60,140,.6)}
+.hm-auto h2{margin:0;font-size:19px;font-weight:700;color:#2B1D3F}
+.hm-auto > p{margin:4px 0 0;font-size:14px;color:#3A2F50;font-weight:600}
+.hm-auto-tl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.hm-auto-tl div{background:#FBF8FF;border-radius:18px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.hm-auto-tl i{font-style:normal;font-size:18px}
+.hm-auto-tl b{font-family:'Fredoka','Heebo',sans-serif;font-size:14.5px;font-weight:700;color:#2B1D3F}
+.hm-auto-tl small{font-size:12.5px;font-weight:600;color:#5E5470}
+.hm-auto-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hm-auto-opt{border:2px solid var(--b);border-radius:22px;padding:16px 18px;background:var(--bg);text-align:right;cursor:pointer;font-family:inherit;color:#2B1D3F;display:flex;flex-direction:column;gap:5px;transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
+@media(hover:hover) and (pointer:fine){.hm-auto-opt:hover{translate:0 -3px;box-shadow:0 18px 34px -22px rgba(60,35,110,.6)}}
+.hm-auto-opt:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+.hm-auto-opt .top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700}
+.hm-auto-opt .top em{font-style:normal;font-size:12px;font-weight:700;color:#fff;background:var(--c);border-radius:100px;padding:3px 10px}
+.hm-auto-opt .pr{font-family:'Fredoka','Heebo',sans-serif;font-size:22px;font-weight:700;color:var(--c)}
+.hm-auto-opt .pr small{font-size:13px;color:#3A2F50;font-weight:600}
+.hm-auto-opt .d{font-size:13.5px;line-height:1.55;color:#3A2F50;font-weight:600}
+.hm-auto-opt .go{margin-top:6px;align-self:flex-start;font-family:'Fredoka','Heebo',sans-serif;font-size:14px;font-weight:700;color:#fff;background:var(--c);border-radius:100px;padding:8px 16px}
+.hm-rev{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#FFF8E6,#FFF1F6);border-radius:28px;padding:18px 22px}
+.hm-rev .s{font-size:22px;letter-spacing:2px;color:#E8A317}
+.hm-rev div{flex:1;min-width:180px}
+.hm-rev b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700;color:#2B1D3F}
+.hm-rev span{font-size:13.5px;color:#3A2F50;font-weight:600}
+@media(max-width:760px){.hm-auto{padding:18px 16px}.hm-auto-tl{grid-template-columns:1fr 1fr}.hm-auto-opts{grid-template-columns:1fr}}
 .hm{font-synthesis-weight:none}
 .hm h1,.hm h2,.hm h3,.hm .hm-f,.hm button{font-family:'Fredoka','Heebo',sans-serif}
 .hm-hero{position:relative;overflow:hidden;border-radius:36px;padding:30px 34px;color:#2B1D3F;background:linear-gradient(150deg,#EFE4FF 0%,#FFE4F0 55%,#FFE9DC 100%);box-shadow:0 30px 70px -44px rgba(155,107,255,.7);display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
@@ -4430,28 +4668,28 @@ const HOME_CSS=`
 .hm-inv.e{background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px #fff;color:#4A2C8F;flex-direction:column;gap:8px;font-size:15px;font-weight:700;text-align:center;padding:16px}
 .hm-inv.e i{font-style:normal;width:52px;height:52px;border-radius:50%;background:#fff;color:#F0609E;display:flex;align-items:center;justify-content:center;font-size:26px}
 .hm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.hm-stat{border-radius:26px;padding:18px 18px 16px;background:var(--bg);text-align:right;border:none;cursor:pointer;font-family:inherit;transition:translate 200ms cubic-bezier(0.23,1,0.32,1)}
+.hm-stat{border-radius:26px;padding:18px 18px 16px;background:var(--bg);text-align:right;border:none;cursor:pointer;font-family:inherit;box-shadow:0 18px 36px -24px rgba(60,35,110,.55),inset 0 0 0 1.5px rgba(43,29,63,.09);transition:translate 200ms cubic-bezier(0.23,1,0.32,1)}
 @media(hover:hover) and (pointer:fine){.hm-stat:hover{translate:0 -3px}}
-.hm-stat .t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#2B1D3F}
+.hm-stat .t{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:#2B1D3F}
 .hm-stat .t i{font-style:normal;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
 .hm-stat b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:38px;font-weight:700;line-height:1.1;margin:10px 0 2px;color:#2B1D3F;font-variant-numeric:tabular-nums}
-.hm-stat small{font-size:13px;font-weight:600;color:#4A4060}
+.hm-stat small{font-size:13.5px;font-weight:700;color:#3A2F50}
 .hm-h2{font-size:21px;font-weight:700;color:#2B1D3F;margin:26px 4px 12px}
 .hm-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.hm-tile{background:#fff;border-radius:28px;padding:10px 10px 16px;border:none;cursor:pointer;text-align:right;font-family:inherit;box-shadow:0 18px 40px -28px rgba(91,60,140,.5);transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
+.hm-tile{background:#fff;border-radius:28px;padding:10px 10px 16px;border:1.5px solid #EADFF6;cursor:pointer;text-align:right;font-family:inherit;box-shadow:0 22px 44px -26px rgba(91,60,140,.6);transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
 @media(hover:hover) and (pointer:fine){.hm-tile:hover{translate:0 -4px;box-shadow:0 26px 50px -28px rgba(91,60,140,.6)}}
 .hm-tile .art{height:84px;border-radius:20px;background:var(--bg);display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;overflow:hidden}
 .hm-tile .art i{font-style:normal;width:50px;height:50px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 10px 20px -12px rgba(43,29,63,.5)}
 .hm-tile .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 8px}
-.hm-tile .row span{font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700;color:#2B1D3F}
+.hm-tile .row span{font-family:'Fredoka','Heebo',sans-serif;font-size:18px;font-weight:800;color:#2B1D3F}
 .hm-tile .row b{font-family:'Fredoka','Heebo',sans-serif;font-size:17px;font-weight:700;color:#2B1D3F;font-variant-numeric:tabular-nums}
-.hm-tile small{display:block;padding:4px 8px 0;font-size:13px;color:#5E5470;font-weight:600}
+.hm-tile small{display:block;padding:4px 8px 0;font-size:13.5px;color:#3A2F50;font-weight:700}
 .hm-tile .bar{height:6px;border-radius:99px;background:#F1ECF6;margin:10px 8px 0;overflow:hidden}
 .hm-tile .bar u{display:block;height:100%;border-radius:99px;background:var(--c)}
 .hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:18px}
-.hm-cardw > *{border-radius:28px!important;border:none!important;box-shadow:0 18px 40px -28px rgba(91,60,140,.5)!important}
+.hm-cardw > *{border-radius:28px!important;border:1.5px solid #EADFF6!important;box-shadow:0 22px 44px -26px rgba(91,60,140,.6)!important}
 .hm-cardw > * > div:first-child > div > div:first-child,.hm-cardw h2{font-family:'Fredoka','Heebo',sans-serif}
-.hm-rsvp{background:#fff;border-radius:28px;padding:22px 24px;box-shadow:0 18px 40px -28px rgba(91,60,140,.5);display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+.hm-rsvp{background:#fff;border-radius:28px;padding:22px 24px;border:1.5px solid #EADFF6;box-shadow:0 22px 44px -26px rgba(91,60,140,.6);display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
 .hm-rsvp h2{grid-column:1/-1;margin:0;font-size:19px;font-weight:700;color:#2B1D3F;display:flex;justify-content:space-between;align-items:center}
 .hm-donut{width:132px;height:132px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .hm-donut div{width:98px;height:98px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
@@ -4722,6 +4960,45 @@ function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
           <small style={t.go==="tasks"&&late?{color:"#B42318"}:undefined}>{t.s}</small>
           {t.bar!==undefined&&<div className="bar" aria-hidden="true"><u style={{width:`${t.bar}%`}}/></div>}
         </button>))}
+    </div>
+  );
+}
+// מסך הבית: בחירת חבילה לשליחה מתוזמנת (המחירים מהחבילות הקיימות) + 4 המועדים לפי תאריך האירוע
+function HomeAutoSend({ event, records, onGo, style }) {
+  const d0=event.date?new Date(event.date):null;
+  const when=off=>{if(!d0)return "לפי תאריך האירוע";const d=new Date(d0);d.setDate(d.getDate()+off);return d.toLocaleDateString("he-IL",{day:"numeric",month:"short"});};
+  const waEst=records>0?fmtShekel(Math.round(records*WA_RECORD_PRICE*100)/100):null;
+  return(
+    <section className="hm-auto" aria-labelledby="hm-auto-h" style={style}>
+      <h2 id="hm-auto-h">⏰ שליחה מתוזמנת</h2>
+      <p>בוחרים חבילה, וההודעות יוצאות לבד במועדים האלה:</p>
+      <div className="hm-auto-tl">
+        {SCHEDULE_DEFAULTS.map(r=>(<div key={r.id}><i aria-hidden="true">{r.icon}</i><b>{r.desc}</b><small>{r.label} · {when(r.offset)}</small></div>))}
+      </div>
+      <div className="hm-auto-opts">
+        <button type="button" className="hm-auto-opt" style={{"--b":"#BDEBD0","--bg":"#F2FBF6","--c":"#167A3E"}} onClick={()=>onGo("packages")}>
+          <span className="top">💬 WhatsApp אוטומטי<em>4 סבבים</em></span>
+          <span className="pr">{fmtShekel(WA_RECORD_PRICE)} <small>לרשומה</small></span>
+          <span className="d">4 הודעות אוטומטיות לכל אורח, מההזמנה ועד התודה.{waEst?<> לאירוע שלכם, {records} רשומות: כ-{waEst}.</>:null}</span>
+          <span className="go">בחירת החבילה</span>
+        </button>
+        <button type="button" className="hm-auto-opt" style={{"--b":"#DCCBFF","--bg":"#F8F4FF","--c":"#6339CC"}} onClick={()=>onGo("packages")}>
+          <span className="top">📱 SMS בתזמון<em>אתם קובעים</em></span>
+          <span className="pr">{fmtShekel(SMS_UNIT_PRICE)} <small>להודעה</small></span>
+          <span className="d">קונים כמה הודעות שצריך, ובוחרים במסך ה-SMS מתי כל סבב יוצא.</span>
+          <span className="go">בחירת החבילה</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+// מסך הבית: בקשה לחוות דעת בגוגל
+function HomeReviewCard({ style }) {
+  return(
+    <div className="hm-rev" style={style}>
+      <span className="s" aria-hidden="true">★★★★★</span>
+      <div><b>נהנים מ-Sidor-IL?</b><span>חוות דעת קצרה בגוגל עוזרת לזוגות אחרים למצוא אותנו.</span></div>
+      <GoogleReviewButton style={{minHeight:44,padding:"10px 16px",fontSize:14}}/>
     </div>
   );
 }
@@ -6073,12 +6350,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       const checksPct=Math.round(checksDone/checks.length*100);
 
       return(
-      <div className={`hm${hmFirst()?" hm-anim":""}`} style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"radial-gradient(760px 520px at 92% 0%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),#FFFBF7",minHeight:"100vh",paddingBottom:80}}>
+      <div className={`hm${hmFirst()?" hm-anim":""}`} style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"radial-gradient(760px 520px at 92% 0%,#F8F3FF 0%,rgba(248,243,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFF4F9 0%,rgba(255,244,249,0) 62%),#FFFEFC",minHeight:"100vh",paddingBottom:80}}>
 
         <style>{HOME_CSS}</style>
         <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/></div>
         <h2 className="hm-h2" style={{margin:"20px 18px 10px"}}>האירוע במספרים</h2>
         <div style={{padding:"0 14px"}}><EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/></div>
+        <div style={{padding:"0 14px"}}><HomeAutoSend event={event} records={allG.length} onGo={setScreen}/></div>
         <div style={{padding:"14px 14px 0",display:"grid",gap:12}}>
           <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
           {checksPct<100&&<HomeSteps checks={checks} nextStep={nextStep} onGo={setScreen}/>}
@@ -6088,6 +6366,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
         <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
         </div>
+        <div style={{padding:"0 14px 4px"}}><HomeReviewCard/></div>
 
         {/* ─── תפריט מהיר ─── */}
         <div style={{padding:"0 14px"}}>
@@ -6369,7 +6648,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <div className={["whatsapp","gifts","tasks","checkin","vendors","packages","user_settings","invite","import","contacts","add"].includes(screen)?"ap":undefined} style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",minWidth:0,background:"radial-gradient(760px 520px at 92% 0%,#F3EAFF 0%,rgba(243,234,255,0) 62%),radial-gradient(680px 520px at 4% 50%,#FFEAF3 0%,rgba(255,234,243,0) 62%),#FFFBF7"}}>
 
       {screen==="home"&&(
-      <div className={`hm${hmFirst()?" hm-anim":""}`} style={{flex:1,overflowY:"auto",background:"radial-gradient(760px 520px at 92% 0%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),#FFFBF7",padding:"24px 28px 40px",direction:"rtl"}}>
+      <div className={`hm${hmFirst()?" hm-anim":""}`} style={{flex:1,overflowY:"auto",background:"radial-gradient(760px 520px at 92% 0%,#F8F3FF 0%,rgba(248,243,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFF4F9 0%,rgba(255,244,249,0) 62%),#FFFEFC",padding:"24px 28px 40px",direction:"rtl"}}>
         {(()=>{
           const allG=[...guests,...tables.flatMap(t=>t.guests||[])];
           const confirmed=allG.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -6392,6 +6671,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
               <h2 className="hm-h2">קיצורי דרך</h2>
               <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
+              <HomeAutoSend event={event} records={allG.length} onGo={setScreen}/>
               <div className="hm-grid">
                 <div style={{display:"grid",gap:18}}>
                   <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
@@ -6401,6 +6681,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <PostEventCard event={event} onGo={setScreen} style={{padding:"22px 24px"}}/>
                   <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px"}}/>
                   <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
+                  <HomeReviewCard/>
                 </div>
               </div>
 
