@@ -70,7 +70,9 @@ const REF_KEY="sidor_ref";
 // נכנסו דרך "כניסת מפיקים" (בלשונית הזו): פותחים את לוח המפיק ולא את האירוע האחרון
 const PRODUCER_ENTRY_KEY="sidor_producer_entry";
 // סוג החשבון שנבחר בהרשמה ("vendor" = ספק). נשמר במכשיר כדי לשרוד גם כניסה עם Google
-const ACCOUNT_KEY="sidor_account";
+const ACCOUNT_KEY="sidor_account"; // ישן: בחירת "ספק" בהרשמה. כבר לא בשימוש, נמחק בכניסה
+const JOIN_WA_URL=()=>`https://wa.me/972526817102?text=${encodeURIComponent("היי, אני ספק / מפיק אירועים ואשמח להצטרף ל-Sidor-IL. אפשר פרטים?")}`;
+const openJoin=()=>{try{window.open(JOIN_WA_URL(),"_blank","noopener,noreferrer");}catch{}};
 // ─── הסכמה לאחסון לא חיוני (באנר העוגיות) ───
 // "all" = אישור · "essential" = דחייה · כל ערך אחר = עוד לא נבחר (כמו דחייה: לא שומרים דברים לא חיוניים).
 // חיוני תמיד: ההתחברות, הבחירה הזו, ומצב הניווט בלשונית. לא חיוני: הפניה, חזרה למסך האחרון, הגדרות תצוגה ונגישות.
@@ -1045,7 +1047,7 @@ function VenuePage({ onBack, onOpenAuth }) {
       <PageHero crumbs={<><LpHomeCrumb onClick={onBack}/>{LP_SEP}<span>אולמות ומפיקים</span></>} title="אולמות ומפיקים"
         lead="שיתוף פעולה עם Sidor-IL: הושבה, אישורי הגעה וכניסה בלי תורים ללקוחות שלכם, עם המותג שלכם, ותוכנית שותפים.">
         <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-          {onOpenAuth&&<button type="button" className="lp-btn lp-primary" onClick={()=>onOpenAuth("producer")} style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>כניסת מפיקים<LpGo/></button>}
+          {onOpenAuth&&<button type="button" className="lp-btn lp-primary" onClick={()=>onOpenAuth("login")} style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>כניסה לחשבון<LpGo/></button>}
           <a href={wa} target="_blank" rel="noopener noreferrer" className="lp-btn lp-ghost" style={{padding:"13px 30px",fontSize:18,minHeight:58}}>דברו איתנו בוואטסאפ</a>
         </div>
       </PageHero>
@@ -2207,7 +2209,7 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
   const legal=[lg("#/terms","תנאי שימוש"),lg("#/privacy","מדיניות פרטיות"),lg("#/accessibility","הצהרת נגישות"),lg("#/cancel","ביטול עסקה")];
   const cols=[
     ["האתר",[sec("how","איך זה עובד"),sec("features","יכולות"),sec("events","סוגי אירועים"),sec("pricing","מחירים וחבילות"),{href:"/guides",label:"מדריכים וטיפים"},sec("contact","צור קשר")]],
-    ["שירות",[{label:loggedIn?"האירועים שלי":"כניסה לחשבון",btn:()=>onAuth("login")},{label:"הרשמה חינם",btn:()=>onAuth("register")},{label:"כניסת מפיקים",btn:()=>onAuth("producer")},{label:"הצטרפות ספקים",btn:()=>onAuth("vendor")},{label:"לאולמות ומפיקים",btn:onVenue}]],
+    ["שירות",[{label:loggedIn?"האירועים שלי":"כניסה לחשבון",btn:()=>onAuth("login")},{label:"הרשמה חינם",btn:()=>onAuth("register")},{label:"ספקים ומפיקים: הצטרפות",href:JOIN_WA_URL(),ext:true},{label:"לאולמות ומפיקים",btn:onVenue}]],
     ["לפי אירוע",EVENT_LANDINGS.map(x=>({href:`/events/${x.slug}`,label:x.nav}))],
     ["מידע משפטי",legal],
   ];
@@ -2233,7 +2235,7 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
                   {links.map(l=>(
                     <li key={l.label}>{l.btn
                       ?<button onClick={l.btn} style={{background:"none",border:"none",padding:0,color:LP.muted,fontSize:14,fontFamily:"inherit",cursor:"pointer",textAlign:"right"}}>{l.label}</button>
-                      :<a href={l.href} onClick={l.onClick} style={{color:LP.muted,textDecoration:"none"}}>{l.label}</a>}</li>
+                      :<a href={l.href} onClick={l.onClick} {...(l.ext?{target:"_blank",rel:"noopener noreferrer"}:{})} style={{color:LP.muted,textDecoration:"none"}}>{l.label}</a>}</li>
                   ))}
                 </ul>
               </div>
@@ -2305,7 +2307,6 @@ function PublicPage({ pageKey, children, actions }) {
         </div>
         <div style={{flex:1}}/>
         {actions?actions(false):<>
-        <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={auth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
         <button className="lp-btn lp-navbtn lp-ghost" onClick={auth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>כניסה</button>
         <button className="lp-btn lp-navbtn lp-hide-xs lp-primary" onClick={auth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
         </>}
@@ -2329,8 +2330,7 @@ function PublicPage({ pageKey, children, actions }) {
             <button type="button" className="lp-btn lp-ghost" onClick={auth("login")}>כניסה לחשבון</button>
           </div>
           <div className="lp-menu-more">
-            <button type="button" className="lp-hero-link" onClick={auth("producer")}>כניסת מפיקים</button>
-            <button type="button" className="lp-hero-link" onClick={auth("vendor")}>ספקים: הצטרפות</button>
+            <button type="button" className="lp-hero-link" onClick={openJoin}>ספקים ומפיקים: הצטרפות</button>
           </div>
           </>}
         </div>
@@ -3236,7 +3236,6 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           ))}
         </div>
         <div style={{flex:1}}/>
-        <button className="lp-nav-link lp-hide-sm lp-hide-md" onClick={()=>onOpenAuth("producer")} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>כניסת מפיקים</button>
         <button className="lp-btn lp-navbtn lp-ghost" onClick={()=>onOpenAuth("login")} style={{padding:"9px 20px",fontSize:14,minHeight:44}}>{loggedIn?<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>:"כניסה"}</button>
         <button className="lp-btn lp-navbtn lp-hide-xs lp-primary" onClick={()=>onOpenAuth("register")} style={{padding:"10px 20px",fontSize:14,minHeight:44}}><span className="lp-lg">התחילו להושיב</span><span className="lp-sm">התחילו</span></button>
         <button ref={burgerRef} type="button" className="lp-burger" aria-label="פתיחת התפריט" aria-expanded={menu} aria-controls="lp-menu" onClick={()=>setMenu(true)}><span/><span/><span/></button>
@@ -3259,8 +3258,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
             <button type="button" className="lp-btn lp-ghost" onClick={go(()=>onOpenAuth("login"))}>{loggedIn?"האירועים שלי":"כניסה לחשבון"}</button>
           </div>
           <div className="lp-menu-more">
-            <button type="button" className="lp-hero-link" onClick={go(()=>onOpenAuth("producer"))}>כניסת מפיקים</button>
-            <button type="button" className="lp-hero-link" onClick={go(()=>onOpenAuth("vendor"))}>ספקים: הצטרפות</button>
+            <button type="button" className="lp-hero-link" onClick={go(openJoin)}>ספקים ומפיקים: הצטרפות</button>
           </div>
         </div>
       </div>
@@ -3299,8 +3297,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
               ))}
             </div>
             <div className="lp-hero-cta lp-rise" style={{"--d":".8s",display:"flex",alignItems:"center",gap:"2px 20px",flexWrap:"wrap"}}>
-              <button onClick={()=>onOpenAuth("producer")} className="lp-hero-link">מפיקי אירועים</button>
-              <button onClick={()=>onOpenAuth("vendor")} className="lp-hero-link">ספקים: הצטרפות</button>
+              <button onClick={openJoin} className="lp-hero-link">ספקים ומפיקים: הצטרפות</button>
               <InstallAppButton label="הורדת האפליקציה" style={{background:"none",border:"none",borderRadius:0,padding:"12px 2px",fontSize:15,color:"#4A2C8F",textDecoration:"underline",textUnderlineOffset:4}}/>
             </div>
           </div>
@@ -3380,7 +3377,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
         <div className="lp-wrap">
           <VendorRing onOpen={()=>onOpenAuth("vendors")} cta={loggedIn?"לספקים ולמחירים":"נרשמים בחינם ומשווים"}/>
-          <div style={{marginTop:56}}><FeaturedSuppliers onJoin={()=>onOpenAuth("vendor")}/></div>
+          <div style={{marginTop:56}}><FeaturedSuppliers onJoin={openJoin}/></div>
         </div>
       </section>
 
@@ -3544,13 +3541,8 @@ const authServerUp=async()=>{
 };
 
 function AuthDrawer({ mode:initMode, onClose, onAuth }) {
-  // "producer" = כניסת מפיקים: אותה כניסה, עם כותרת משלה (אחריה נפתח לוח המפיק)
-  const producer=initMode==="producer";
-  // "vendor" = הצטרפות ספקים: הרשמה כספק (אחרי הכניסה נפתח אזור הספקים)
-  const [acct,setAcctRaw]=useState(()=>{if(initMode==="vendor")return "vendor";try{return localStorage.getItem(ACCOUNT_KEY)==="vendor"?"vendor":"private";}catch{return "private";}});
-  const setAcct=v=>{setAcctRaw(v);try{v==="vendor"?localStorage.setItem(ACCOUNT_KEY,"vendor"):localStorage.removeItem(ACCOUNT_KEY);}catch{}};
-  useEffect(()=>{if(initMode==="vendor")setAcct("vendor");},[]);
-  const [mode,setMode]=useState(producer?"login":initMode==="vendor"?"register":initMode);
+  // כניסה אחת לכולם. חשבון ספק / מפיק נפתח אחרי שמפעילים אותו באדמין
+  const [mode,setMode]=useState(initMode==="register"||initMode==="reset"?initMode:"login");
   const [email,setEmail]=useState("");
   const [pass,setPass]=useState("");
   const [err,setErr]=useState("");
@@ -3599,10 +3591,9 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
     return()=>{window.removeEventListener("keydown",esc);clearTimeout(t);};
   },[]);
 
-  const vendor=acct==="vendor";
-  const title=producer?["כניסת","מפיקים"]:vendor?(mode==="register"?["הצטרפות","ספקים"]:["כניסת","ספקים"]):mode==="register"?["בואו נושיב את","כולם"]:mode==="reset"?["שחזור","סיסמה"]:["ברוכים","השבים"];
-  const sub=producer?"כל האירועים שלכם, ההתקדמות והנתונים במקום אחד":vendor?"צלמים, DJ, אולמות ועוד: פרופיל עסק שזוגות ומשפחות רואים":mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":mode==="reset"?"נשלח לכם קישור לאיפוס הסיסמה":"היכנסו כדי להמשיך בסידור ההושבה";
-  const icon=producer?"🎬":vendor?"🏪":"🪑";
+  const title=mode==="register"?["בואו נושיב את","כולם"]:mode==="reset"?["שחזור","סיסמה"]:["ברוכים","השבים"];
+  const sub=mode==="register"?"פותחים חשבון בחינם ומתחילים לסדר את האולם":mode==="reset"?"נשלח לכם קישור לאיפוס הסיסמה":"אותה כניסה לאירועים, למפיקים ולספקים";
+  const icon="🪑";
   const okMsg=err.startsWith("✅");
   return(<>
     <style>{`
@@ -3648,17 +3639,6 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
         <h2>{title[0]} <mark>{title[1]}</mark></h2>
         <div style={{fontSize:15,color:"#5F5675",marginTop:6}}>{sub}</div>
       </div>
-      {/* סוג החשבון: פרטי (מתכננים אירוע) או ספק — כל אחד בצבע משלו */}
-      {!producer&&mode!=="reset"&&<div role="radiogroup" aria-label="סוג החשבון" className="ad-acct">
-        {[["private","📅","מתכננים אירוע","חתונה, בר מצווה, ברית…","#F1EAFF","#9B6BFF"],["vendor","🏪","ספק / בעל עסק","צלם, DJ, אולם, קייטרינג…","#FFF0E0","#FF8A65"]].map(([v,ic,t,s,bg,bd])=>(
-          <button key={v} type="button" role="radio" aria-checked={acct===v} onClick={()=>setAcct(v)} style={{background:acct===v?bg:"#fff",borderColor:acct===v?bd:"#EFE8F7"}}>
-            <div style={{fontSize:22}} aria-hidden="true">{ic}</div>
-            <div className="ad-f" style={{fontSize:15,fontWeight:700,color:"#2B1D3F"}}>{t}</div>
-            <div style={{fontSize:12,color:"#5F5675"}}>{s}</div>
-          </button>
-        ))}
-      </div>}
-
       {mode==="reset"?(
         resetSent?(
           <div style={{textAlign:"center",padding:"10px 0 6px"}}>
@@ -4299,69 +4279,6 @@ function LandingTestimonials() {
         </div>}
       </div>
     </section>
-  );
-}
-
-// ─── הצטרפות כמפיק: חשבון שנכנס דרך "כניסת מפיקים" ועוד לא מפיק. הבקשה נשמרת בפרופיל המפיק, ואחרי שנפעיל — לוח המפיק נפתח ───
-function ProducerJoin({ user, onSkip, onLogout }) {
-  const [prof,setProf]=useState(undefined),[f,setF]=useState({brand_name:"",phone:"",per_year:"",notes:""}),[busy,setBusy]=useState(false),[err,setErr]=useState("");
-  useEffect(()=>{sb.from("producer_profiles").select("brand_name,phone").eq("user_id",user.id).maybeSingle().then(({data})=>{setProf(data||null);if(data)setF(x=>({...x,brand_name:data.brand_name||"",phone:data.phone||""}));},()=>setProf(null));},[user.id]);
-  const waText=()=>`שלום, אני מפיק/ת אירועים ומבקש/ת חשבון מפיק ב-Sidor-IL.\nשם העסק: ${f.brand_name||"-"}\nנייד: ${f.phone||"-"}\nמייל: ${user.email||"-"}${f.per_year?`\nאירועים בשנה: ${f.per_year}`:""}${f.notes?`\n${f.notes}`:""}`;
-  const send=async()=>{
-    setErr("");
-    if(f.brand_name.trim().length<2)return setErr("נא למלא את שם העסק או ההפקה");
-    if(!normPhone(f.phone))return setErr("נא למלא נייד תקין, כדי שנוכל לחזור אליכם");
-    setBusy(true);
-    const{error}=await sb.from("producer_profiles").upsert({user_id:user.id,brand_name:f.brand_name.trim(),phone:f.phone.trim(),updated_at:new Date().toISOString()});
-    setBusy(false);
-    if(error)return setErr("הבקשה לא נשלחה: "+error.message);
-    setProf({brand_name:f.brand_name.trim(),phone:f.phone.trim()});
-  };
-  const navActs=inMenu=>(<>
-    <button type="button" className={inMenu?"lp-btn lp-primary":"lp-btn lp-navbtn lp-ghost"} onClick={onSkip} style={inMenu?undefined:{padding:"9px 20px",fontSize:14,minHeight:44}}>{inMenu?"האירועים שלי":<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>}</button>
-    <button type="button" className={inMenu?"lp-btn lp-ghost":"lp-nav-link lp-hide-sm"} onClick={onLogout} style={inMenu?undefined:{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>התנתקות</button>
-  </>);
-  const inp={width:"100%",boxSizing:"border-box",border:"1.5px solid #E6DDF5",borderRadius:16,padding:"11px 14px",fontSize:15,fontFamily:"inherit",outline:"none",background:"#fff",color:"#2B1D3F",minHeight:48};
-  const lbl=(t,req)=><div style={{fontSize:13,fontWeight:800,color:"#3E3555",marginBottom:6}}>{t}{req&&<span style={{color:"#C53030"}}> *</span>}</div>;
-  return(
-    <PublicPage pageKey="producer-join" actions={navActs}>
-      <style>{VD_CSS}</style>
-      <section className="vd-hero">
-        <span className="vd-blob a" aria-hidden="true"/><span className="vd-blob b" aria-hidden="true"/>
-        <div className="vd-in">
-          <h1>{prof?<>הבקשה <span className="lp-grad">התקבלה</span></>:<>חשבון <span className="lp-grad">מפיק</span></>}</h1>
-          <p>{prof?"ניצור איתכם קשר בקרוב. אחרי שנפעיל את החשבון, לוח המפיק ייפתח לכם כאן אוטומטית בכניסה הבאה."
-            :"החשבון הזה עוד לא מוגדר כחשבון מפיק. משאירים פרטים, אנחנו חוזרים אליכם ומפעילים לכם את לוח המפיק."}</p>
-          {!prof&&<div className="vd-chips"><span>📊 לוח בקרה לכל האירועים</span><span>⚠️ מה דורש טיפול בכל אירוע</span><span>🏷️ המיתוג שלכם בהזמנה לאורחים</span></div>}
-        </div>
-      </section>
-      <div className="vd-body">
-        {prof===undefined?<div style={{textAlign:"center",padding:60}}><Spinner size={34}/></div>
-        :prof?<div className="vd-card" style={{textAlign:"center"}}>
-          <div style={{fontSize:44,marginBottom:6}} aria-hidden="true">🎬</div>
-          <div className="vd-h" style={{marginBottom:6}}>{prof.brand_name}</div>
-          <div style={{fontSize:15,color:"#3A2F50",marginBottom:18,direction:"ltr"}}>{prof.phone}</div>
-          <a className="vd-wa" style={{textDecoration:"none",maxWidth:380,margin:"0 auto"}} href={`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(waText())}`} target="_blank" rel="noopener noreferrer"><WaIcon size={17}/> רוצים לזרז? שלחו לנו בוואטסאפ</a>
-          <div className="vd-acts" style={{maxWidth:380,margin:"14px auto 0"}}>
-            <button type="button" className="lp-btn lp-ghost" onClick={()=>setProf(null)}>עדכון הפרטים</button>
-            <button type="button" className="lp-btn lp-primary" onClick={onSkip}>להמשיך לאירועים שלי</button>
-          </div>
-        </div>
-        :<div className="vd-card">
-          <div className="vd-h">🎬 פרטי ההפקה</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginBottom:14}}>
-            <div>{lbl("שם העסק / ההפקה",true)}<input value={f.brand_name} onChange={e=>setF({...f,brand_name:e.target.value})} maxLength={60} placeholder="למשל: הפקות אור" style={inp}/></div>
-            <div>{lbl("נייד ליצירת קשר",true)}<input value={f.phone} onChange={e=>setF({...f,phone:e.target.value})} inputMode="tel" placeholder="050-0000000" style={{...inp,direction:"ltr",textAlign:"right"}}/></div>
-            <div>{lbl("כמה אירועים בשנה, בערך")}<select value={f.per_year} onChange={e=>setF({...f,per_year:e.target.value})} style={inp}><option value="">בחרו…</option><option>עד 10</option><option>11-30</option><option>31-60</option><option>יותר מ-60</option></select></div>
-          </div>
-          <div style={{marginBottom:16}}>{lbl("משהו שחשוב לנו לדעת?")}<textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} maxLength={400} rows={3} placeholder="סוגי אירועים, אולמות שאתם עובדים איתם..." style={{...inp,resize:"vertical",minHeight:90}}/></div>
-          {err&&<div role="alert" style={{fontSize:14,color:"#B42318",fontWeight:700,marginBottom:12}}>{err}</div>}
-          <button type="button" className="lp-btn lp-primary" onClick={send} disabled={busy} style={{width:"100%",minHeight:52,fontSize:16}}>{busy?"שולח...":"שליחת בקשה לחשבון מפיק"}</button>
-          <div style={{fontSize:12.5,color:"#5E5470",marginTop:10,lineHeight:1.6}}>שם העסק והנייד נשמרים בחשבון שלכם, ויופיעו בתחתית ההזמנה לאורחים אחרי ההפעלה (אפשר לכבות את זה בהגדרות).</div>
-        </div>}
-        {prof===null&&<div style={{textAlign:"center",marginTop:30}}><button onClick={onSkip} className="vd-link">📅 להמשיך בינתיים לאירועים שלי</button></div>}
-      </div>
-    </PublicPage>
   );
 }
 
@@ -10778,7 +10695,7 @@ function FeaturedSuppliers({ onJoin }) {
         <span className="lp-join-dots" aria-hidden="true"><i/><i/><i/><i/><i/></span>
         <span className="lp-join-ics" aria-hidden="true"><span>📸</span><span>🎧</span><span>🏛️</span></span>
         <span className="lp-join-txt"><b>צלמים, DJ, אולמות וספקים?</b><span>פרופיל עסק בחינם, מול זוגות ומשפחות שמתכננים אירוע</span></span>
-        <button onClick={onJoin} className="lp-join-btn">הצטרפות ספקים ←</button>
+        <button onClick={onJoin} className="lp-join-btn">דברו איתנו על הצטרפות ←</button>
       </div>
       <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
     </div>
@@ -11130,7 +11047,7 @@ function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
       {err&&<div role="alert" style={{marginTop:12,background:"#FFF5F5",border:"1px solid #FED7D7",color:"#C53030",borderRadius:12,padding:"9px 12px",fontSize:13,fontWeight:700}}>{err}</div>}
       <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>
         <button onClick={save} disabled={!!busy} className="sx-btn sx-btn-primary" style={{flex:"1 1 200px",background:GRAD,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",opacity:busy?.6:1}}>
-          {busy==="save"?"שומר…":profile?"💾 שמירת השינויים":"🚀 שליחה לאישור"}
+          {busy==="save"?"שומר…":profile?"💾 שמירת השינויים":"🚀 פרסום הפרופיל"}
         </button>
         {onCancel&&<button onClick={onCancel} style={{background:"#fff",color:"#3A2464",border:"1.5px solid #E6DDF5",borderRadius:14,padding:"13px 18px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>}
       </div>
@@ -11176,9 +11093,9 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
         <span className="vd-blob a" aria-hidden="true"/><span className="vd-blob b" aria-hidden="true"/>
         <div className="vd-in">
           <h1>{!p?<>ברוכים הבאים, <span className="lp-grad">ספקים</span></>:<>אזור <span className="lp-grad">הספקים</span></>}</h1>
-          <p>{!p?"ממלאים פעם אחת את פרטי העסק, ואחרי אישור קצר שלנו אתם מופיעים לכל מי שמתכנן אירוע ב-Sidor-IL."
+          <p>{!p?"ממלאים פעם אחת את פרטי העסק, והפרופיל עולה מיד לכל מי שמתכנן אירוע ב-Sidor-IL."
             :"כאן מנהלים את הפרופיל של העסק: רואים איך הלקוחות רואים אתכם, מעדכנים פרטים ותמונות."}</p>
-          {!p&&<div className="vd-chips"><span>🆓 פרופיל עסק בחינם</span><span>💍 מול זוגות ומשפחות שמתכננים אירוע</span><span>⏱️ אישור בדרך כלל תוך יום-יומיים</span></div>}
+          {!p&&<div className="vd-chips"><span>🆓 פרופיל עסק בחינם</span><span>💍 מול זוגות ומשפחות שמתכננים אירוע</span><span>⚡ הפרופיל עולה מיד</span></div>}
         </div>
       </section>
       <div className="vd-body">
@@ -12836,7 +12753,6 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#f0e6ff,#e6f0ff,#e6fff0)"}}><Spinner size={40} color="#9147D6"/></div>);
 
-  if(producerEntry&&statsReady&&!isProducer)return <ProducerJoin user={user} onSkip={()=>setProducerEntry(false)} onLogout={onLogout}/>;
   return(
     <div dir="rtl" className="evs" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",position:"relative",overflowX:"hidden",
       background:"radial-gradient(760px 520px at 92% 0%,#F7F2FF 0%,rgba(247,242,255,0) 62%),radial-gradient(680px 520px at 4% 30%,#FFF4F9 0%,rgba(255,244,249,0) 62%),radial-gradient(640px 440px at 50% 100%,#F1FBF6 0%,rgba(241,251,246,0) 60%),#FFFEFC"}}>
@@ -13190,6 +13106,7 @@ const ALL_PACKAGES=[
   {id:"staff",name:"צוות הושבה",color:"#7C3AED",icon:"👥"},
   {id:"kiosk",name:"עמדת טאבלט",color:"#2B6CB0",icon:"📟"},
   {id:"producer",name:"חשבון מפיק",color:"#0E7490",icon:"🎬"},
+  {id:"vendor",name:"חשבון ספק",color:"#C2410C",icon:"🏪"},
 ];
 // חבילות ישנות שעוד רשומות אצל משתמשים — מוצגות רק אצל מי שיש לו, כדי שאפשר יהיה להסיר
 const LEGACY_PACKAGES={whatsapp:"WhatsApp (ישן)",vip:"VIP (ישן)",reception:"עמדת קבלת פנים (ישן)",production:"הפקת אירוע (ישן)",seating:"הושבה (ישן)"};
@@ -13373,8 +13290,10 @@ function AdminSuppliers({ card }) {
     setLeadN((c.data||[]).reduce((m,l)=>{const x=m[l.vendor_id]||(m[l.vendor_id]={n:0,won:0});x.n++;if(l.status==="won")x.won++;return m;},{}));
   };
   useEffect(()=>{load();},[]);
+  // יש ספקים שעלו אוטומטית ולא נבדקו: פותחים עליהם
+  useEffect(()=>{if(rows&&show==="pending"&&!rows.some(v=>v.status==="pending")&&rows.some(v=>v.admin_seen===false&&v.status==="approved"))setShow("fresh");},[rows]);
   const upd=async(v,patch)=>{const{error}=await sb.from("vendor_profiles").update(patch).eq("user_id",v.user_id);if(error)setErr(error.message);else load();};
-  const reject=v=>{const r=window.prompt(`סיבת הדחייה ל"${v.business_name}" (הספק יראה אותה):`,"חסרים פרטים");if(r==null)return;upd(v,{status:"rejected",reject_reason:r.trim().slice(0,300)||null});};
+  const reject=v=>{const r=window.prompt(`סיבת הדחייה ל"${v.business_name}" (הספק יראה אותה):`,"חסרים פרטים");if(r==null)return;upd(v,{status:"rejected",admin_seen:true,reject_reason:r.trim().slice(0,300)||null});};
   const feature=v=>{
     if(isFeatured(v)){upd(v,{featured:false,featured_until:null});return;}
     const d=window.prompt("ספק מוביל לכמה ימים?","30");const n=parseInt(d,10);if(!n||n<1)return;
@@ -13382,13 +13301,13 @@ function AdminSuppliers({ card }) {
   };
   const del=async v=>{if(!window.confirm(`למחוק לצמיתות את הספק "${v.business_name}"?`))return;const{error}=await sb.from("vendor_profiles").delete().eq("user_id",v.user_id);if(error)setErr(error.message);else load();};
   if(!rows)return <div style={card}><Spinner/></div>;
-  const counts={pending:rows.filter(v=>v.status==="pending").length,approved:rows.filter(v=>v.status==="approved").length,rejected:rows.filter(v=>v.status==="rejected").length};
-  const list=rows.filter(v=>show==="featured"?isFeatured(v):v.status===show);
+  const counts={fresh:rows.filter(v=>v.admin_seen===false&&v.status==="approved").length,pending:rows.filter(v=>v.status==="pending").length,approved:rows.filter(v=>v.status==="approved").length,rejected:rows.filter(v=>v.status==="rejected").length};
+  const list=rows.filter(v=>show==="featured"?isFeatured(v):show==="fresh"?v.admin_seen===false&&v.status==="approved":v.status===show);
   const b={border:"none",borderRadius:9,padding:"7px 12px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
   return(
     <div style={card}>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-        {[["pending",`⏳ ממתינים (${counts.pending})`],["approved",`✓ מאושרים (${counts.approved})`],["featured",`⭐ מובילים (${rows.filter(isFeatured).length})`],["rejected",`✗ נדחו (${counts.rejected})`]].map(([k,l])=>(
+        {[...(counts.fresh?[["fresh",`🆕 עלו אוטומטית (${counts.fresh})`]]:[]),["pending",`⏳ ממתינים (${counts.pending})`],["approved",`✓ מאושרים (${counts.approved})`],["featured",`⭐ מובילים (${rows.filter(isFeatured).length})`],["rejected",`✗ נדחו (${counts.rejected})`]].map(([k,l])=>(
           <button key={k} onClick={()=>setShow(k)} style={{...b,background:show===k?"#2B1D3F":"#F4EEFC",color:show===k?"#fff":"#2B1D3F"}}>{l}</button>
         ))}
       </div>
@@ -13398,7 +13317,7 @@ function AdminSuppliers({ card }) {
         <div key={v.user_id} style={{display:"flex",gap:12,alignItems:"flex-start",borderTop:"1px solid #F0EAF7",padding:"12px 0",flexWrap:"wrap"}}>
           {v.logo_url?<img src={v.logo_url} alt="" style={{width:48,height:48,borderRadius:12,objectFit:"cover"}}/>:<span style={{width:48,height:48,borderRadius:12,background:"#F6F0FF",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{cat.icon}</span>}
           <div style={{flex:"1 1 240px",minWidth:0}}>
-            <div style={{fontSize:15,fontWeight:900}}>{v.business_name} <span style={{fontSize:12,color:"#6E6585",fontWeight:600}}>· {cat.label}{v.region?` · ${SUPPLIER_REGION[v.region]}`:""}</span></div>
+            <div style={{fontSize:15,fontWeight:900}}>{v.admin_seen===false&&<span style={{background:"#F0609E",color:"#fff",borderRadius:100,padding:"1px 8px",fontSize:11,fontWeight:900,marginLeft:6}}>חדש</span>}{v.business_name} <span style={{fontSize:12,color:"#6E6585",fontWeight:600}}>· {cat.label}{v.region?` · ${SUPPLIER_REGION[v.region]}`:""}</span></div>
             <div style={{fontSize:12,color:"#555",marginTop:2,direction:"ltr",textAlign:"right"}}>{v.phone}{v.email?` · ${v.email}`:""}</div>
             <div style={{fontSize:12,color:p?(validIsraeliId(p.business_id)?"#1F8F6C":"#C53030"):"#C53030",marginTop:2,fontWeight:700}}>
               🧾 {p?`${BUSINESS_TYPES.find(([k])=>k===p.business_type)?.[1]||""} ${p.business_id} ${validIsraeliId(p.business_id)?"(ספרת ביקורת תקינה)":"(ספרת ביקורת לא תקינה!)"}`:"חסרים פרטים עסקיים"}
@@ -13407,7 +13326,8 @@ function AdminSuppliers({ card }) {
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             <button onClick={()=>setOpen(v)} style={{...b,background:"#F4EEFC",color:"#2B1D3F"}}>👁 צפייה</button>
-            {v.status!=="approved"&&<button onClick={()=>upd(v,{status:"approved",reject_reason:null,verified:!!p&&validIsraeliId(p.business_id)})} style={{...b,background:"#E9FBF4",color:"#1F8F6C"}}>✓ אישור</button>}
+            {v.admin_seen===false&&v.status==="approved"&&<button onClick={()=>upd(v,{admin_seen:true,verified:v.verified||(!!p&&validIsraeliId(p.business_id))})} style={{...b,background:"#E9FBF4",color:"#1F8F6C"}}>✓ ראיתי, תקין</button>}
+            {v.status!=="approved"&&<button onClick={()=>upd(v,{status:"approved",admin_seen:true,reject_reason:null,verified:!!p&&validIsraeliId(p.business_id)})} style={{...b,background:"#E9FBF4",color:"#1F8F6C"}}>✓ אישור</button>}
             {v.status!=="rejected"&&<button onClick={()=>reject(v)} style={{...b,background:"#FFF6E2",color:"#8A5A00"}}>✗ דחייה</button>}
             {v.status==="approved"&&<button onClick={()=>upd(v,{verified:!v.verified})} style={{...b,background:"#F0F9FF",color:"#0E7490"}}>{v.verified?"הסר \"עסק רשום\"":"✓ עסק רשום"}</button>}
             {v.status==="approved"&&<button onClick={()=>feature(v)} style={{...b,background:isFeatured(v)?"#FFF0F6":"#FFF6E2",color:isFeatured(v)?"#B13B72":"#8A5A00"}}>{isFeatured(v)?"⭐ הסר מוביל":"⭐ מוביל"}</button>}
@@ -13737,7 +13657,7 @@ function AdminDashboard({ user, onLogout }) {
     sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
     sb.rpc("admin_list_referrals").then(({data})=>setRefs(Object.fromEntries((data||[]).map(r=>[r.user_id,r.ref])))).catch(()=>{});
     sb.from("producer_profiles").select("user_id,brand_name,phone,updated_at").then(({data})=>setProducerProfs(data||[])).catch(()=>{});
-    sb.from("vendor_profiles").select("user_id,business_name,category,phone,created_at").eq("status","pending").then(({data})=>setPendingVendors(data||[])).catch(()=>{});
+    sb.from("vendor_profiles").select("user_id,business_name,category,phone,status,admin_seen,created_at").or("status.eq.pending,admin_seen.eq.false").then(({data})=>setPendingVendors((data||[]).filter(v=>v.status!=="rejected"))).catch(()=>{});
     const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
@@ -13855,8 +13775,10 @@ function AdminDashboard({ user, onLogout }) {
   const attention=[];
   if(pending.length)attention.push({lvl:"red",icon:"🛒",text:`${pending.length} בקשות רכישת SMS ממתינות לאישור`,go:()=>setTab("requests")});
   if(waPendingReqs.length)attention.push({lvl:"red",icon:"💬",text:`${waPendingReqs.length} בקשות רכישת WhatsApp ממתינות לאישור`,go:()=>setTab("wa_requests")});
-  // ספק חדש שנרשם ומחכה לאישור (מאשרים בלשונית "ספקים")
-  if(pendingVendors.length)attention.push({lvl:"red",icon:"🏪",text:pendingVendors.length===1?`ספק חדש מחכה לאישור · ${pendingVendors[0].business_name}`:`${pendingVendors.length} ספקים חדשים מחכים לאישור`,sub:pendingVendors.slice(0,3).map(v=>v.business_name).join(" · ")+' · מאשרים בלשונית "ספקים"',go:()=>setTab("suppliers")});
+  // ספקים: ממתינים לאישור, וספקים מופעלים שנפתחו אוטומטית ועוד לא סומנו "ראיתי" (בלשונית "ספקים")
+  {const pend=pendingVendors.filter(v=>v.status==="pending"),auto=pendingVendors.filter(v=>v.status==="approved");
+  if(pend.length)attention.push({lvl:"red",icon:"🏪",text:pend.length===1?`ספק חדש מחכה לאישור · ${pend[0].business_name}`:`${pend.length} ספקים חדשים מחכים לאישור`,sub:pend.slice(0,3).map(v=>v.business_name).join(" · ")+' · מאשרים בלשונית "ספקים"',go:()=>setTab("suppliers")});
+  if(auto.length)attention.push({lvl:"red",icon:"🏪",text:auto.length===1?`ספק חדש עלה לאתר · ${auto[0].business_name}`:`${auto.length} ספקים חדשים עלו לאתר`,sub:auto.slice(0,3).map(v=>v.business_name).join(" · ")+' · אושרו אוטומטית. בודקים ומסמנים "ראיתי" בלשונית "ספקים"',go:()=>setTab("suppliers")});}
   // בקשת חשבון מפיק: יש פרופיל מפיק אבל עוד אין חבילת מפיק. מפעילים ב"משתמשים וחבילות" ← "חשבון מפיק"
   producerProfs.filter(pp=>!(packages[pp.user_id]||[]).includes("producer")).forEach(pp=>{const em=(users.find(u=>u.user_id===pp.user_id)||{}).email||"";
     attention.push({lvl:"red",icon:"🎬",text:`בקשת חשבון מפיק · ${pp.brand_name||em||"משתמש"}`,sub:`${pp.phone||""}${em?" · "+em:""} · מפעילים ב"משתמשים וחבילות"`,go:()=>{setSearch(em);setTab("users");}});});
@@ -14682,9 +14604,9 @@ export default function App() {
   },[user?.id,event?.id]);
   useEffect(()=>{
     if(!user){setIsVendor(false);return;}
-    let intent=false;try{intent=localStorage.getItem(ACCOUNT_KEY)==="vendor";}catch{}
-    if(intent){setIsVendor(true);return;}
-    sb.from("vendor_profiles").select("user_id").eq("user_id",user.id).maybeSingle().then(({data})=>setIsVendor(!!data),()=>{});
+    try{localStorage.removeItem(ACCOUNT_KEY);}catch{}
+    Promise.all([sb.from("vendor_profiles").select("user_id").eq("user_id",user.id).maybeSingle(),sb.from("user_packages").select("package_id").eq("user_id",user.id).eq("package_id","vendor")])
+      .then(([a,b])=>setIsVendor(!!a.data||!!(b.data||[]).length),()=>{});
   },[user?.id]);
 
   const selectEvent=(ev)=>{
@@ -14819,18 +14741,12 @@ export default function App() {
     {/* משתמש מחובר שחזר לדף הבית: כפתורי הכניסה מחזירים אותו ישר למערכת */}
     <LandingPage onOpenAuth={mode=>{
       setShowLanding(false);
-      // כניסת מפיקים: תמיד ללוח האירועים (לא לאירוע האחרון), גם אחרי חזרה מכניסה עם גוגל
-      if(mode==="producer"){try{sessionStorage.setItem(PRODUCER_ENTRY_KEY,"1");}catch{}selectEvent(null);}
+      // הצטרפות ספקים / מפיקים: פנייה אלינו בוואטסאפ (אין הרשמה נפרדת)
+      if(mode==="join"||mode==="producer"||mode==="vendor"){openJoin();return;}
       // "לספקים ולמחירים": מחובר עם אירוע פתוח — ישר למסך הספקים של האירוע; לא מחובר — הרשמה
       if(mode==="vendors"){
         if(user&&event)PENDING_SCREEN="vendors";
         if(!user)setAuthMode("register");
-        return;
-      }
-      // "הצטרפות ספקים": מחובר — ישר לאזור הספקים; לא מחובר — הרשמה כספק
-      if(mode==="vendor"){
-        try{localStorage.setItem(ACCOUNT_KEY,"vendor");}catch{}
-        if(user){setIsVendor(true);setVendorEvents(false);selectEvent(null);}else setAuthMode("vendor");
         return;
       }
       // "האירועים שלי" (מחובר): תמיד לרשימת האירועים (לא ישר לאירוע האחרון), גם לספק — לא לאזור הספקים
