@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect, Fragment } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://zcfosfaazvljnzipyzon.supabase.co";
@@ -4299,6 +4299,69 @@ function LandingTestimonials() {
         </div>}
       </div>
     </section>
+  );
+}
+
+// ─── הצטרפות כמפיק: חשבון שנכנס דרך "כניסת מפיקים" ועוד לא מפיק. הבקשה נשמרת בפרופיל המפיק, ואחרי שנפעיל — לוח המפיק נפתח ───
+function ProducerJoin({ user, onSkip, onLogout }) {
+  const [prof,setProf]=useState(undefined),[f,setF]=useState({brand_name:"",phone:"",per_year:"",notes:""}),[busy,setBusy]=useState(false),[err,setErr]=useState("");
+  useEffect(()=>{sb.from("producer_profiles").select("brand_name,phone").eq("user_id",user.id).maybeSingle().then(({data})=>{setProf(data||null);if(data)setF(x=>({...x,brand_name:data.brand_name||"",phone:data.phone||""}));},()=>setProf(null));},[user.id]);
+  const waText=()=>`שלום, אני מפיק/ת אירועים ומבקש/ת חשבון מפיק ב-Sidor-IL.\nשם העסק: ${f.brand_name||"-"}\nנייד: ${f.phone||"-"}\nמייל: ${user.email||"-"}${f.per_year?`\nאירועים בשנה: ${f.per_year}`:""}${f.notes?`\n${f.notes}`:""}`;
+  const send=async()=>{
+    setErr("");
+    if(f.brand_name.trim().length<2)return setErr("נא למלא את שם העסק או ההפקה");
+    if(!normPhone(f.phone))return setErr("נא למלא נייד תקין, כדי שנוכל לחזור אליכם");
+    setBusy(true);
+    const{error}=await sb.from("producer_profiles").upsert({user_id:user.id,brand_name:f.brand_name.trim(),phone:f.phone.trim(),updated_at:new Date().toISOString()});
+    setBusy(false);
+    if(error)return setErr("הבקשה לא נשלחה: "+error.message);
+    setProf({brand_name:f.brand_name.trim(),phone:f.phone.trim()});
+  };
+  const navActs=inMenu=>(<>
+    <button type="button" className={inMenu?"lp-btn lp-primary":"lp-btn lp-navbtn lp-ghost"} onClick={onSkip} style={inMenu?undefined:{padding:"9px 20px",fontSize:14,minHeight:44}}>{inMenu?"האירועים שלי":<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>}</button>
+    <button type="button" className={inMenu?"lp-btn lp-ghost":"lp-nav-link lp-hide-sm"} onClick={onLogout} style={inMenu?undefined:{background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14}}>התנתקות</button>
+  </>);
+  const inp={width:"100%",boxSizing:"border-box",border:"1.5px solid #E6DDF5",borderRadius:16,padding:"11px 14px",fontSize:15,fontFamily:"inherit",outline:"none",background:"#fff",color:"#2B1D3F",minHeight:48};
+  const lbl=(t,req)=><div style={{fontSize:13,fontWeight:800,color:"#3E3555",marginBottom:6}}>{t}{req&&<span style={{color:"#C53030"}}> *</span>}</div>;
+  return(
+    <PublicPage pageKey="producer-join" actions={navActs}>
+      <style>{VD_CSS}</style>
+      <section className="vd-hero">
+        <span className="vd-blob a" aria-hidden="true"/><span className="vd-blob b" aria-hidden="true"/>
+        <div className="vd-in">
+          <h1>{prof?<>הבקשה <span className="lp-grad">התקבלה</span></>:<>חשבון <span className="lp-grad">מפיק</span></>}</h1>
+          <p>{prof?"ניצור איתכם קשר בקרוב. אחרי שנפעיל את החשבון, לוח המפיק ייפתח לכם כאן אוטומטית בכניסה הבאה."
+            :"החשבון הזה עוד לא מוגדר כחשבון מפיק. משאירים פרטים, אנחנו חוזרים אליכם ומפעילים לכם את לוח המפיק."}</p>
+          {!prof&&<div className="vd-chips"><span>📊 לוח בקרה לכל האירועים</span><span>⚠️ מה דורש טיפול בכל אירוע</span><span>🏷️ המיתוג שלכם בהזמנה לאורחים</span></div>}
+        </div>
+      </section>
+      <div className="vd-body">
+        {prof===undefined?<div style={{textAlign:"center",padding:60}}><Spinner size={34}/></div>
+        :prof?<div className="vd-card" style={{textAlign:"center"}}>
+          <div style={{fontSize:44,marginBottom:6}} aria-hidden="true">🎬</div>
+          <div className="vd-h" style={{marginBottom:6}}>{prof.brand_name}</div>
+          <div style={{fontSize:15,color:"#3A2F50",marginBottom:18,direction:"ltr"}}>{prof.phone}</div>
+          <a className="vd-wa" style={{textDecoration:"none",maxWidth:380,margin:"0 auto"}} href={`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(waText())}`} target="_blank" rel="noopener noreferrer"><WaIcon size={17}/> רוצים לזרז? שלחו לנו בוואטסאפ</a>
+          <div className="vd-acts" style={{maxWidth:380,margin:"14px auto 0"}}>
+            <button type="button" className="lp-btn lp-ghost" onClick={()=>setProf(null)}>עדכון הפרטים</button>
+            <button type="button" className="lp-btn lp-primary" onClick={onSkip}>להמשיך לאירועים שלי</button>
+          </div>
+        </div>
+        :<div className="vd-card">
+          <div className="vd-h">🎬 פרטי ההפקה</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,marginBottom:14}}>
+            <div>{lbl("שם העסק / ההפקה",true)}<input value={f.brand_name} onChange={e=>setF({...f,brand_name:e.target.value})} maxLength={60} placeholder="למשל: הפקות אור" style={inp}/></div>
+            <div>{lbl("נייד ליצירת קשר",true)}<input value={f.phone} onChange={e=>setF({...f,phone:e.target.value})} inputMode="tel" placeholder="050-0000000" style={{...inp,direction:"ltr",textAlign:"right"}}/></div>
+            <div>{lbl("כמה אירועים בשנה, בערך")}<select value={f.per_year} onChange={e=>setF({...f,per_year:e.target.value})} style={inp}><option value="">בחרו…</option><option>עד 10</option><option>11-30</option><option>31-60</option><option>יותר מ-60</option></select></div>
+          </div>
+          <div style={{marginBottom:16}}>{lbl("משהו שחשוב לנו לדעת?")}<textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} maxLength={400} rows={3} placeholder="סוגי אירועים, אולמות שאתם עובדים איתם..." style={{...inp,resize:"vertical",minHeight:90}}/></div>
+          {err&&<div role="alert" style={{fontSize:14,color:"#B42318",fontWeight:700,marginBottom:12}}>{err}</div>}
+          <button type="button" className="lp-btn lp-primary" onClick={send} disabled={busy} style={{width:"100%",minHeight:52,fontSize:16}}>{busy?"שולח...":"שליחת בקשה לחשבון מפיק"}</button>
+          <div style={{fontSize:12.5,color:"#5E5470",marginTop:10,lineHeight:1.6}}>שם העסק והנייד נשמרים בחשבון שלכם, ויופיעו בתחתית ההזמנה לאורחים אחרי ההפעלה (אפשר לכבות את זה בהגדרות).</div>
+        </div>}
+        {prof===null&&<div style={{textAlign:"center",marginTop:30}}><button onClick={onSkip} className="vd-link">📅 להמשיך בינתיים לאירועים שלי</button></div>}
+      </div>
+    </PublicPage>
   );
 }
 
@@ -8971,133 +9034,130 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
     window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
   };
 
+  // פאנל הפרטים: נפתח מתחת לשורה של הריבוע שנבחר
+  const panelRef=useRef(null);
+  useEffect(()=>{if(selectedPkg&&panelRef.current)setTimeout(()=>panelRef.current?.scrollIntoView({behavior:"smooth",block:"nearest"}),60);},[selectedPkg?.id]);
+  const clean=t=>String(t).replace(/^(✅|💬|📞|⚠️|❌)\s*/,"");
+  const owned=pkg=>pkg.id==="free"||(pkg.id==="basic"&&baseOwned);
   return(
-    <div style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
-
-      {/* כותרת */}
-      <div style={{background:"linear-gradient(120deg,#F0609E,#9B6BFF)",padding:"20px 20px 28px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,opacity:.06,backgroundImage:"repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)",backgroundSize:"12px 12px"}}/>
-        <div style={{position:"relative",zIndex:1}}>
-          <div style={{fontSize:13,color:"rgba(255,255,255,.7)",marginBottom:4}}>שדרג את האירוע שלך</div>
-          <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>📦 חבילות Sidor-IL</div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.65)",marginTop:6}}>בחר את החבילה שמתאימה לך</div>
-        </div>
+    <div className="pk" style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",paddingBottom:80}}>
+      <style>{PK_CSS}</style>
+      <div className="pk-hero">
+        <span className="pk-bub a" aria-hidden="true"/><span className="pk-bub b" aria-hidden="true"/>
+        <h1>חבילות <span>Sidor-IL</span></h1>
+        <p>בוחרים רק מה שצריך. כל הכלים הבסיסיים פתוחים בחינם, ומוסיפים הושבה, הודעות או שירות ביום האירוע.</p>
       </div>
 
-      <div style={{padding:16}}>
-        {packages.map((pkg)=>{
+      <div className="pk-grid">
+        {packages.map(pkg=>{
           const isOpen=selectedPkg?.id===pkg.id;
-          return(
-            <div key={pkg.id}
-              style={{background:"#fff",border:`2px solid ${isOpen?pkg.color:pkg.featured?"#CBD5E0":"#E2E8F0"}`,
-                borderRadius:18,marginBottom:12,overflow:"hidden",
-                boxShadow:isOpen?`0 4px 20px ${pkg.color}33`:pkg.featured?"0 2px 12px rgba(0,0,0,.08)":"none",
-                transition:"all .2s"}}>
-
-              {/* ראש כרטיס */}
-              <div onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}
-                style={{padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-                <div style={{width:46,height:46,borderRadius:13,background:pkg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
-                  {pkg.icon}
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{fontWeight:900,fontSize:15,color:"#1a1a1a"}}>{pkg.name}</div>
-                    {pkg.badge&&<span style={{fontSize:10,fontWeight:800,background:pkg.color,color:"#fff",padding:"2px 8px",borderRadius:100}}>{pkg.badge}</span>}
-                    {pkg.featured&&<span style={{fontSize:10,fontWeight:800,background:"#FEF3C7",color:"#B45309",padding:"2px 8px",borderRadius:100}}>⭐ הכי פופולרי</span>}
-                  </div>
-                  <div style={{fontSize:12,color:"#6E6585",marginTop:2}}>{pkg.desc}</div>
-                </div>
-                <div style={{textAlign:"center",flexShrink:0}}>
-                  <div style={{fontSize:18,fontWeight:900,color:pkg.color}}>{pkg.priceLabel}</div>
-                  {pkg.price===0&&<div style={{fontSize:10,color:"#6E6585"}}>תמיד</div>}
-                </div>
+          return(<Fragment key={pkg.id}>
+            <div className={`pk-card${isOpen?" on":""}${pkg.featured?" feat":""}`} style={{"--c":pkg.id==="auto"?"#178A45":pkg.color}}>
+              {pkg.featured&&<span className="pk-pop">⭐ הכי פופולרי</span>}
+              <div className="pk-top">
+                <span className="pk-ic" aria-hidden="true">{pkg.icon}</span>
+                {pkg.badge&&<span className="pk-badge">{pkg.badge}</span>}
               </div>
-
-              {/* תוכן מורחב */}
-              {isOpen&&(
-                <div style={{padding:"0 16px 16px",borderTop:"1px solid #f0f0f0"}}>
-
-                  {/* הערה לחבילות שדורשות מתקדמת */}
-                  {pkg.note&&(
-                    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"10px 12px",marginBottom:14,marginTop:14,fontSize:12,color:"#B45309",fontWeight:700}}>
-                      ⚠️ {pkg.note}
-                    </div>
-                  )}
-
-                  {/* פיצ'רים */}
-                  <div style={{marginTop:pkg.note?0:14,marginBottom:16}}>
-                    {pkg.features.map(f=>(
-                      <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:f.startsWith("❌")?"#999":"#1a1a1a",marginBottom:7,textDecoration:f.startsWith("❌")?"line-through":"none"}}>
-                        {f}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* בחירת כמות לחבילות הודעות WhatsApp ו-VIP */}
-                  {pkg.tiers&&(
-                    <div style={{marginBottom:14}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>בחר כמות אורחים:</div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,maxHeight:200,overflowY:"auto"}}>
-                        {pkg.tiers.map(([label,price])=>(
-                          <div key={label} onClick={e=>{e.stopPropagation();setSelectedTier(selectedTier?.[0]===label?null:[label,price]);}}
-                            style={{border:`1.5px solid ${selectedTier?.[0]===label?pkg.color:"#E2E8F0"}`,borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",background:selectedTier?.[0]===label?pkg.color+"11":"#fff",cursor:"pointer"}}>
-                            <span style={{fontSize:12,color:"#666"}}>{label} רשומות</span>
-                            <span style={{fontSize:13,fontWeight:800,color:pkg.color}}>₪{price.toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* הודעות WhatsApp: מד + כמות רשומות × 1.8, 4 סבבים */}
-                  {pkg.waPicker&&(
-                    <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
-                        callOn={!!callOn.auto} onCallOn={v=>setCallOn(c=>({...c,auto:v}))}
-                        onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
-                    </div>
-                  )}
-                  {/* בחירת כמות SMS: מד + כמות, סה״כ לפי מחיר להודעה */}
-                  {pkg.smsPicker&&(
-                    <div style={{marginBottom:14}}>
-                      <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
-                        callOn={!!callOn.sms} onCallOn={v=>setCallOn(c=>({...c,sms:v}))} callRecords={callRecs} onCallRecords={setCallRecs}/>
-                    </div>
-                  )}
-
-                  {/* כפתור */}
-                  {pkg.id==="free"||(pkg.id==="basic"&&baseOwned)?(
-                    <div style={{background:"#F0FFF4",border:"1px solid #9AE6B4",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#276749",fontWeight:700}}>
-                      {pkg.id==="free"?"✅ פתוחה לכל חשבון":"✅ כבר ברשותך"}
-                    </div>
-                  ):(
-                    <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}}
-                      disabled={!!pkg.tiers&&!selectedTier}
-                      style={{width:"100%",background:pkg.tiers&&!selectedTier?"#E2E8F0":`linear-gradient(135deg,${pkg.color},${pkg.color}CC)`,
-                        color:pkg.tiers&&!selectedTier?"#999":"#fff",
-                        border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:700,
-                        cursor:pkg.tiers&&!selectedTier?"not-allowed":"pointer",fontFamily:"inherit",
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
-                      {pkg.waPicker?` - ${fmtShekel(waSum())}`:pkg.smsPicker?` - ${fmtShekel(smsSum())}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
-                    </button>
-                  )}
-                </div>
-              )}
+              <h3>{pkg.name}</h3>
+              <div className="pk-price">{pkg.priceLabel}{pkg.price===0&&<small> · תמיד</small>}</div>
+              <p className="pk-desc">{pkg.desc}</p>
+              <ul className="pk-feats">{pkg.features.filter(x=>!x.startsWith("⚠️")&&!x.startsWith("📞")).slice(0,3).map(x=><li key={x}>{clean(x)}</li>)}</ul>
+              {owned(pkg)
+                ?<div className="pk-own">{pkg.id==="free"?"✓ פתוחה לכל חשבון":"✓ כבר ברשותך"}</div>
+                :<button type="button" className="pk-btn" aria-expanded={isOpen} onClick={()=>{setSelectedPkg(isOpen?null:pkg);setSelectedTier(null);}}>{isOpen?"סגירה":"בחירה"}</button>}
             </div>
-          );
+            {isOpen&&(
+              <div ref={panelRef} className="pk-panel" style={{"--c":pkg.id==="auto"?"#178A45":pkg.color}}>
+                <div className="pk-panel-h"><span aria-hidden="true">{pkg.icon}</span>{pkg.name}<small>{pkg.priceLabel}</small></div>
+                {pkg.note&&<div className="pk-note">⚠️ {pkg.note}</div>}
+                <ul className="pk-all">{pkg.features.map(x=><li key={x} className={x.startsWith("⚠️")?"warn":x.startsWith("📞")?"plus":undefined}>{clean(x)}</li>)}</ul>
+                {pkg.tiers&&(
+                  <div style={{marginBottom:14}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#666",marginBottom:8}}>בחר כמות אורחים:</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,maxHeight:200,overflowY:"auto"}}>
+                      {pkg.tiers.map(([label,price])=>(
+                        <div key={label} onClick={e=>{e.stopPropagation();setSelectedTier(selectedTier?.[0]===label?null:[label,price]);}}
+                          style={{border:`1.5px solid ${selectedTier?.[0]===label?pkg.color:"#E2E8F0"}`,borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",background:selectedTier?.[0]===label?pkg.color+"11":"#fff",cursor:"pointer"}}>
+                          <span style={{fontSize:12,color:"#666"}}>{label} רשומות</span>
+                          <span style={{fontSize:13,fontWeight:800,color:pkg.color}}>₪{price.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {pkg.waPicker&&(
+                  <div style={{marginBottom:14}}>
+                    <SmsQuantityPicker value={selectedTier?.[0]||waDefault} color={pkg.color} baseFee={smsBase} unitPrice={WA_RECORD_PRICE} unitWord="רשומות" question="כמה רשומות (אורחים) באירוע?"
+                      callOn={!!callOn.auto} onCallOn={v=>setCallOn(c=>({...c,auto:v}))}
+                      onChange={q=>setSelectedTier([q,smsTotal(q,smsBase,WA_RECORD_PRICE)])}/>
+                  </div>
+                )}
+                {pkg.smsPicker&&(
+                  <div style={{marginBottom:14}}>
+                    <SmsQuantityPicker value={selectedTier?.[0]||300} color={pkg.color} baseFee={smsBase} onChange={q=>setSelectedTier([q,smsTotal(q,smsBase)])}
+                      callOn={!!callOn.sms} onCallOn={v=>setCallOn(c=>({...c,sms:v}))} callRecords={callRecs} onCallRecords={setCallRecs}/>
+                  </div>
+                )}
+                <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}} disabled={!!pkg.tiers&&!selectedTier} className="pk-buy">
+                  {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
+                  {pkg.waPicker?` - ${fmtShekel(waSum())}`:pkg.smsPicker?` - ${fmtShekel(smsSum())}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
+                </button>
+              </div>
+            )}
+          </Fragment>);
         })}
-
-        {/* תשלום */}
-        <div style={{background:"#EEF2FF",border:"1px solid #E9D9F7",borderRadius:14,padding:"14px 16px",textAlign:"center",marginTop:8}}>
-          <div style={{fontSize:12,color:"#555",marginBottom:4}}>💳 תשלום מאובטח</div>
-          <div style={{fontSize:11,color:"#6E6585"}}>Apple Pay · Google Pay · Bit · Visa · Mastercard</div>
-        </div>
       </div>
+
+      <div className="pk-pay">💳 תשלום מאובטח · Apple Pay · Google Pay · Bit · Visa · Mastercard</div>
     </div>
   );
 }
+// מסך החבילות: ריבועים בשפת העיצוב של מסך הבית
+const PK_CSS=`
+.pk{padding:18px 20px 80px}
+.pk h1,.pk h3,.pk button,.pk-price,.pk-panel-h{font-family:'Fredoka','Heebo',sans-serif}
+.pk-hero{position:relative;overflow:hidden;isolation:isolate;border-radius:32px;padding:28px 30px;margin-bottom:20px;background:linear-gradient(150deg,#EFE4FF 0%,#FFE4F0 55%,#FFE9DC 100%);box-shadow:0 30px 70px -44px rgba(155,107,255,.7)}
+.pk-hero h1{margin:0 0 6px;font-size:clamp(24px,2.6vw,32px);font-weight:700;color:#2B1D3F}
+.pk-hero h1 span{background:linear-gradient(120deg,#F0609E,#9B6BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pk-hero p{margin:0;font-size:15px;line-height:1.65;color:#3A2F50;max-width:60ch;font-weight:600}
+.pk-bub{position:absolute;z-index:-1;border-radius:50%;background:rgba(255,255,255,.55)}
+.pk-bub.a{width:180px;height:180px;left:-40px;top:-60px}.pk-bub.b{width:90px;height:90px;left:24%;bottom:-36px}
+.pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;grid-auto-flow:row dense}
+.pk-card{position:relative;background:#fff;border-radius:28px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:6px;border:1.5px solid #EADFF6;box-shadow:0 22px 44px -30px rgba(91,60,140,.55);transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1),border-color 200ms ease}
+@media(hover:hover) and (pointer:fine){.pk-card:hover{translate:0 -4px;box-shadow:0 28px 52px -30px rgba(91,60,140,.65)}}
+.pk-card.on{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent),0 26px 50px -30px rgba(91,60,140,.6)}
+.pk-card.feat{border:2px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF) border-box}
+.pk-pop{position:absolute;top:-12px;left:18px;background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;font:700 12px 'Fredoka','Heebo',sans-serif;border-radius:100px;padding:5px 12px;box-shadow:0 10px 20px -10px rgba(240,96,158,.8)}
+.pk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.pk-ic{width:54px;height:54px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--c) 14%,#fff)}
+.pk-badge{font:700 12px 'Fredoka','Heebo',sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:100px;padding:4px 11px}
+.pk-card h3{margin:0;font-size:19px;font-weight:700;color:#2B1D3F}
+.pk-price{font-size:26px;font-weight:700;color:var(--c);line-height:1.2}
+.pk-price small{font-size:13px;color:#5E5470;font-weight:600}
+.pk-desc{margin:0;font-size:13.5px;line-height:1.55;color:#3A2F50;font-weight:600}
+.pk-feats{list-style:none;margin:6px 0 12px;padding:0;display:grid;gap:6px;flex:1}
+.pk-feats li,.pk-all li{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:#2B1D3F;font-weight:600}
+.pk-feats li::before,.pk-all li::before{content:"✓";flex-shrink:0;width:19px;height:19px;border-radius:50%;background:color-mix(in srgb,var(--c) 16%,#fff);color:var(--c);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.pk-all li.warn::before{content:"!";background:#FFF4E0;color:#8A5A00}
+.pk-all li.plus::before{content:"+"}
+.pk-btn{min-height:46px;border:none;border-radius:100px;background:var(--c);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:scale 160ms cubic-bezier(0.23,1,0.32,1),filter 160ms ease}
+.pk-card.feat .pk-btn{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)}
+.pk-btn:active{scale:.97}.pk-btn:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
+.pk-card.on .pk-btn{background:#fff;color:var(--c);box-shadow:inset 0 0 0 1.5px var(--c)}
+.pk-own{min-height:46px;border-radius:100px;display:flex;align-items:center;justify-content:center;background:#EFFAF3;color:#1F7A4D;font:700 14px 'Fredoka','Heebo',sans-serif}
+.pk-panel{grid-column:1/-1;background:#fff;border-radius:28px;padding:22px 24px;border:2px solid var(--c);box-shadow:0 26px 54px -32px rgba(91,60,140,.55);animation:pkIn 260ms cubic-bezier(0.23,1,0.32,1) both}
+@keyframes pkIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.pk-panel{animation:none}}
+.pk-panel-h{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;color:#2B1D3F;margin-bottom:12px}
+.pk-panel-h small{margin-inline-start:auto;font-size:18px;color:var(--c)}
+.pk-note{background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#8A5A00;font-weight:700}
+.pk-all{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 16px}
+.pk-buy{width:100%;min-height:50px;border:none;border-radius:100px;background:var(--c);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.pk-buy:disabled{background:#E2E8F0;color:#8A8599;cursor:not-allowed}
+.pk-pay{margin-top:18px;text-align:center;font-size:13px;color:#5E5470;font-weight:600;background:#F7F2FF;border-radius:100px;padding:10px 16px}
+@media(max-width:1100px){.pk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.pk{padding:14px 12px 90px}.pk-hero{padding:22px 20px;border-radius:26px}.pk-grid{grid-template-columns:1fr}.pk-panel{padding:18px 16px}}
+`;
 
 // ─── SMS SCREEN ───────────────────────────────────────────────────────────────
 // ─── תזמון שליחות (SMS / וואטסאפ) ─────────────────────────────────────────────
@@ -12545,6 +12605,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
   if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#f0e6ff,#e6f0ff,#e6fff0)"}}><Spinner size={40} color="#9147D6"/></div>);
 
+  if(producerEntry&&statsReady&&!isProducer)return <ProducerJoin user={user} onSkip={()=>setProducerEntry(false)} onLogout={onLogout}/>;
   return(
     <div dir="rtl" className="evs" style={{minHeight:"100vh",fontFamily:"'Heebo',sans-serif",position:"relative",overflowX:"hidden",
       background:"radial-gradient(760px 520px at 92% 0%,#F7F2FF 0%,rgba(247,242,255,0) 62%),radial-gradient(680px 520px at 4% 30%,#FFF4F9 0%,rgba(255,244,249,0) 62%),radial-gradient(640px 440px at 50% 100%,#F1FBF6 0%,rgba(241,251,246,0) 60%),#FFFEFC"}}>
@@ -12555,6 +12616,11 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs{font-synthesis-weight:none}
         .evs h1 mark{color:inherit;padding:0 .12em;border-radius:.22em;background:linear-gradient(120deg,#FFD1E5,#FFB2D3)}
         .evs .ev-blobs i{position:absolute;border-radius:50%;pointer-events:none}
+        .evs .ev-tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
+        .evs .ev-tile{background:#fff;border-radius:18px;padding:14px 16px;border:1.5px solid #EFE6F7;box-shadow:0 14px 30px -24px rgba(91,60,140,.5);min-width:0}
+        .evs .ev-tile > div:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        @media(max-width:1000px){.evs .ev-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        @media(max-width:600px){.evs .ev-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
         /* כותרת "האירועים שלי": תמונות בהירות של סוגי אירועים, נעלמות לכיוון הטקסט */
         .evs .ev-hero{position:relative;overflow:hidden;isolation:isolate}
         .evs .ev-hero > :not(.ev-hero-ph){position:relative;z-index:1}
@@ -12636,19 +12702,6 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
           </div>
         )}
 
-        {/* נכנסו דרך "כניסת מפיקים" אבל החשבון עוד לא מפיק */}
-        {producerEntry&&statsReady&&!isProducer&&(
-          <div style={{background:"#fff",border:"1.5px solid #BAE6FD",borderRadius:20,padding:"20px 22px",marginBottom:24,boxShadow:"0 2px 12px rgba(14,116,144,.08)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"flex-start"}}>
-              <div style={{fontSize:17,fontWeight:900,color:"#0E7490",marginBottom:6}}>🎬 החשבון עוד לא מוגדר כחשבון מפיק</div>
-              <button onClick={()=>setProducerEntry(false)} aria-label="סגירה" style={{background:"none",border:"none",fontSize:20,color:"#6E6585",cursor:"pointer",lineHeight:1}}>×</button>
-            </div>
-            <div style={{fontSize:13,color:"#555",lineHeight:1.7,marginBottom:14}}>חשבון מפיק מציג לוח בקרה לכל האירועים שלכם: כמה אישרו, מה ממתין ואיזה אירוע דורש טיפול, עם כניסה מהירה לכל אירוע והמיתוג שלכם בהזמנה לאורחים. דברו איתנו ונפעיל לכם אותו.</div>
-            <a href={`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מפיק אירועים ומעוניין בחשבון מפיק ב-Sidor-IL")}`} target="_blank" rel="noopener noreferrer"
-              style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",borderRadius:12,padding:"10px 18px",fontSize:14,fontWeight:800,textDecoration:"none"}}><WaIcon size={16}/> לפתיחת חשבון מפיק</a>
-          </div>
-        )}
-
         {/* מפיק: סיכום כל האירועים + מה דורש טיפול */}
         {isProducer&&events.length>0&&(()=>{
           const t0=new Date();t0.setHours(0,0,0,0);
@@ -12669,9 +12722,9 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
           attn.sort((a,b)=>a.d-b.d);
           const tiles=[["📅",up.length,"אירועים קרובים"],["⏳",up.filter(e=>{const d=dl(e);return d!==null&&d<=30;}).length,"ב-30 הימים הקרובים"],["👥",people.toLocaleString("he-IL"),"מוזמנים (קרובים)"],["✅",`${people?Math.round(conf/people*100):0}%`,`אישרו · ${conf.toLocaleString("he-IL")}`],["✉️",sum("pending").toLocaleString("he-IL"),"ממתינים לתשובה"],["⚠️",attn.length,"דורשים טיפול"]];
           return(<>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12,marginBottom:16}}>
+            <div className="ev-tiles">
               {tiles.map(([ic,v,l])=>(
-                <div key={l} style={{background:"#fff",borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 12px rgba(155,107,255,.08)"}}>
+                <div key={l} className="ev-tile">
                   <div style={{fontSize:12,color:"#6E6585",fontWeight:700,marginBottom:4}}>{ic} {l}</div>
                   <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{statsReady?v:"…"}</div>
                 </div>
@@ -13443,6 +13496,7 @@ function AdminDashboard({ user, onLogout }) {
 
   const [updatedAt,setUpdatedAt]=useState(null);
   // silent: רענון ברקע בלי ספינר (כשחוזרים לחלון / כל 30 שניות)
+  const [producerProfs,setProducerProfs]=useState([]);
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
     const since=new Date(Date.now()-14*864e5).toISOString();
@@ -13450,6 +13504,7 @@ function AdminDashboard({ user, onLogout }) {
     sb.from("wa_balance").select("event_id,balance").then(({data})=>setWaBalances(Object.fromEntries((data||[]).map(b=>[b.event_id,b.balance])))).catch(()=>{});
     sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
     sb.rpc("admin_list_referrals").then(({data})=>setRefs(Object.fromEntries((data||[]).map(r=>[r.user_id,r.ref])))).catch(()=>{});
+    sb.from("producer_profiles").select("user_id,brand_name,phone,updated_at").then(({data})=>setProducerProfs(data||[])).catch(()=>{});
     const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
@@ -13567,6 +13622,9 @@ function AdminDashboard({ user, onLogout }) {
   const attention=[];
   if(pending.length)attention.push({lvl:"red",icon:"🛒",text:`${pending.length} בקשות רכישת SMS ממתינות לאישור`,go:()=>setTab("requests")});
   if(waPendingReqs.length)attention.push({lvl:"red",icon:"💬",text:`${waPendingReqs.length} בקשות רכישת WhatsApp ממתינות לאישור`,go:()=>setTab("wa_requests")});
+  // בקשת חשבון מפיק: יש פרופיל מפיק אבל עוד אין חבילת מפיק. מפעילים ב"משתמשים וחבילות" ← "חשבון מפיק"
+  producerProfs.filter(pp=>!(packages[pp.user_id]||[]).includes("producer")).forEach(pp=>{const em=(users.find(u=>u.user_id===pp.user_id)||{}).email||"";
+    attention.push({lvl:"red",icon:"🎬",text:`בקשת חשבון מפיק · ${pp.brand_name||em||"משתמש"}`,sub:`${pp.phone||""}${em?" · "+em:""} · מפעילים ב"משתמשים וחבילות"`,go:()=>{setSearch(em);setTab("users");}});});
   failedRuns.forEach(r=>{const ev=eventOf(r.event_id);if(!ev)return;
     attention.push({lvl:r.status==="failed"?"red":"amber",icon:r.status==="failed"?"✗":"⏭",text:`שליחה אוטומטית ${r.status==="failed"?"נכשלה":"דולגה"} · ${ev.name}`,sub:`${r.error||""} · ${fmtDate(r.created_at)}`,ev});});
   events.filter(e=>{const d=daysTo(e.date);return d!==null&&d>=0&&d<=14;}).sort((a,b)=>a.date.localeCompare(b.date)).forEach(ev=>{
