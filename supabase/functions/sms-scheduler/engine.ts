@@ -49,6 +49,23 @@ export function buildTemplates(event: any): Record<string, string> {
   };
 }
 
+// שפת ההודעות של כל אורח — כמו guestLangOf ב-App.jsx (עמודה guests.lang, ותמיכה לאחור ב-settings_json.guest_langs)
+export const MSG_LANGS = ["he", "en", "ru", "uk", "ar", "am"];
+export function guestLang(ev: any, g: any) {
+  const ok = (l: unknown) => typeof l === "string" && MSG_LANGS.includes(l);
+  if (ok(g?.lang)) return g.lang as string;
+  const l = ev?.settings_json?.guest_langs?.[g?.id];
+  return ok(l) ? (l as string) : "he";
+}
+// הנוסח לשפה: נוסח ששמרו בשפה הזו (sms_texts_lang) ← הנוסח האוטומטי שהמסך שמר (sms_texts_i18n) ← עברית
+export function textForLang(ev: any, templateId: string, lang: string, heText: string) {
+  if (lang === "he") return heText;
+  const own = String(ev?.settings_json?.sms_texts_lang?.[lang]?.[templateId] ?? "").trim();
+  if (own) return own;
+  const auto = String(ev?.settings_json?.sms_texts_i18n?.[lang]?.[templateId] ?? "").trim();
+  return auto || heText;
+}
+
 // למי נשלח כל נוסח (מוצג גם במסך התזמונים)
 export function recipientsFor(templateId: string, guests: any[]) {
   // תזכורת: רק מי שעוד לא ענה — לא מי שאישר ולא מי שסירב (כל ערך אחר נחשב "ממתין")
@@ -99,8 +116,9 @@ export async function runOne(c: Claim, deps: Deps) {
     const nums = ev.settings_json?.table_nums || {};
     const tableName = (id: string | null) => { const t = tables.find((t) => t.id === id); return t ? tableLabel(nums[t.id], t.name) : "—"; };
     const inviteUrl = ev.invite_code ? `https://www.sidoril.com/#/invite/${ev.invite_code}` : "";
+    // כל אורח מקבל את הנוסח בשפה שלו
     const valid = recipientsFor(c.template_id, guests)
-      .map((g) => ({ id: g.id, name: g.name, phone: normPhone(g.phone || ""), text: renderFor(text, g, tableName, inviteUrl) }))
+      .map((g) => ({ id: g.id, name: g.name, phone: normPhone(g.phone || ""), text: renderFor(textForLang(ev, c.template_id, guestLang(ev, g), text), g, tableName, inviteUrl) }))
       .filter((i) => i.phone);
     if (!valid.length) return await deps.finish(c.run_id, { status: "skipped", error: "אין נמענים עם נייד תקין" });
     if (valid.length > MAX_RECIPIENTS) return await deps.finish(c.run_id, { status: "failed", recipients: valid.length, error: `יותר מ-${MAX_RECIPIENTS} נמענים` });

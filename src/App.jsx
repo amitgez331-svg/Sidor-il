@@ -9174,7 +9174,7 @@ const SCHEDULE_TO={invite:"כל האורחים",reminder:"ממתינים לאי�
 const SCHEDULE_LATE_HOURS=12;
 // defaultOn: תזמוני ברירת המחדל מופעלים כל עוד המשתמש לא שינה אותם (בוואטסאפ: 4 הסבבים שבחבילה)
 // lockDefaults: 4 הסבבים תמיד דלוקים (בוואטסאפ הם חלק מהרשומה שנקנתה)  -  בלי מתג כיבוי, אפשר רק לשנות מועד
-function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false, lockDefaults=false }) {
+function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false, lockDefaults=false, langNote="" }) {
   const eventD=event.date?new Date(event.date):null;
   // סטטוס שליחה אוטומטית לכל תזמון
   const [runs,setRuns]=useState({});
@@ -9273,6 +9273,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
       </div>
       <div style={{fontSize:11,color:C.muted,marginTop:-4,marginBottom:10,lineHeight:1.6}}>
         {auto?"🤖 תזמון פעיל נשלח אוטומטית במועד (שעון ישראל), פעם אחת, וכל אורח = 1 מהיתרה. ודאו שיש מספיק יתרה.":"🔔 תזכורת בלבד: הודעות וואטסאפ לא נשלחות אוטומטית, צריך לשלוח אותן מכאן במועד."}
+        {auto&&langNote&&<div style={{marginTop:4,color:"#4A2C8F",fontWeight:700}}>🌍 {langNote}</div>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {items.map(s=>{
@@ -9558,7 +9559,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   // טון + שפה: לכל אורח הנוסח בשפה שלו (guests.lang), ברירת מחדל עברית
   const [tone,setTone]=useState("classic"),[activeLang,setActiveLang]=useState("he"),[langEdits,setLangEdits]=useState({});
   const heClassicOf=id=>TEMPLATES.find(t=>t.id===id)?.text||"";
-  const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate)));
+  const textFor=lang=>lang==="he"?msgText:(langEdits[lang]??((tone==="classic"&&langTextOf(lang,selectedTemplate))||buildMsgText(event,selectedTemplate,tone,lang,heClassicOf(selectedTemplate))));
   const chooseTone=v=>{setTone(v);setLangEdits({});setMsgText(buildMsgText(event,selectedTemplate,v,"he",heClassicOf(selectedTemplate)));};
 
 
@@ -9597,6 +9598,27 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   const byLang=list=>Object.entries(list.reduce((m,g)=>{const l=guestLangOf(event,g);(m[l]||=[]).push(g);return m;},{}));
 
   const tableOf=id=>{const t=tables.find(t=>t.id===id);return t?tableLabel(event.settings_json?.table_nums?.[id],t.name):"—";};
+
+  // נוסחים בשפות האורחים לשליחה האוטומטית. נשמר רק כשמשהו השתנה
+  const [langSaved,setLangSaved]=useState(()=>event.settings_json?.sms_texts_lang||{});
+  const otherLangs=langsUsed.filter(([l,n])=>l!=="he"&&n>0).map(([l])=>l).join(",");
+  useEffect(()=>{
+    const want={};
+    otherLangs.split(",").filter(Boolean).forEach(l=>{want[l]={};TEMPLATES.forEach(t=>{want[l][t.id]=buildMsgText(event,t.id,"classic",l,t.text);});});
+    const cur=event.settings_json?.sms_texts_i18n||{};
+    if(JSON.stringify(cur)===JSON.stringify(want))return;
+    const settings={...(event.settings_json||{}),sms_texts_i18n:want};
+    sb.from("events").update({settings_json:settings}).eq("id",event.id).then(({error})=>{if(!error)event.settings_json=settings;},()=>{});
+  },[event.id,otherLangs,event.date,event.venue,event.event_type,event.groom_name,event.bride_name]);
+  const langTextOf=(lang,tid)=>String(langSaved?.[lang]?.[tid]||"").trim();
+  const saveLangText=async(lang,tid,text)=>{
+    const next={...langSaved,[lang]:{...(langSaved[lang]||{})}};
+    if(text.trim())next[lang][tid]=text;else delete next[lang][tid];
+    const settings={...(event.settings_json||{}),sms_texts_lang:next};
+    const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+    if(error){alert("❌ הנוסח לא נשמר: "+error.message);return false;}
+    event.settings_json=settings;setLangSaved(next);return true;
+  };
 
   // אותה החלפה כמו בשרת השליחה (קישור קצר אישי)
   const buildPreview=(g)=>{
@@ -9787,7 +9809,16 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
             {activeLang==="he"&&tone==="classic"&&<TemplateTextBar tpl={TEMPLATES.find(t=>t.id===selectedTemplate)} text={msgText} accent={C.blueM} autoNote
               onSave={t=>tooLong?(alert(`ההודעה ארוכה מ-${SMS_MAX} תווים. קצרו לפני השמירה.`),false):saveText(selectedTemplate,t)}
               onReset={async()=>{const tp=TEMPLATES.find(t=>t.id===selectedTemplate);if(tp.custom&&!confirm("לחזור לנוסח המקורי?"))return;if(tp.custom)await saveText(selectedTemplate,"");setMsgText(tp.def);}}/>}
-            {langsUsed.length>1&&<div style={{fontSize:12,color:"#5E5470",marginTop:8}}>🌍 כל אורח יקבל את ההודעה בשפה שנבחרה לו בניהול אורחים</div>}
+            {activeLang!=="he"&&tone==="classic"&&(()=>{const L=MSG_LANGS.find(x=>x[0]===activeLang);const cur=textFor(activeLang),saved=langTextOf(activeLang,selectedTemplate),auto=buildMsgText(event,selectedTemplate,"classic",activeLang,heClassicOf(selectedTemplate));const dirty=cur!==(saved||auto);
+              const bb={border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
+              return <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:8}}>
+                <button disabled={!dirty} onClick={async()=>{if(tooLong){alert(`ההודעה ארוכה מ-${SMS_MAX} תווים. קצרו לפני השמירה.`);return;}if(await saveLangText(activeLang,selectedTemplate,cur===auto?"":cur))setLangEdits(x=>{const n={...x};delete n[activeLang];return n;});}} className="sx-btn"
+                  style={{...bb,background:dirty?C.blueM:"#E9E4EF",color:dirty?"#fff":"#4A4060",cursor:dirty?"pointer":"default"}}>💾 שמירת הנוסח ({L?.[1]||activeLang})</button>
+                {saved&&<button onClick={async()=>{if(!confirm("לחזור לנוסח המקורי בשפה הזו?"))return;if(await saveLangText(activeLang,selectedTemplate,""))setLangEdits(x=>{const n={...x};delete n[activeLang];return n;});}} style={{...bb,background:"#F7F1FD",color:C.blue}}>↺ נוסח מקורי</button>}
+                {!dirty&&saved&&<span style={{fontSize:11,color:C.muted}}>✏️ נוסח אישי שלך · ישמש גם בשליחה האוטומטית</span>}
+                {dirty&&<span style={{fontSize:11,color:"#8A5A00"}}>יש שינויים שלא נשמרו</span>}
+              </div>;})()}
+            {langsUsed.length>1&&<div style={{fontSize:12,color:"#5E5470",marginTop:8}}>🌍 כל אורח יקבל את ההודעה בשפה שנבחרה לו בניהול אורחים, גם בשליחה ידנית וגם בשליחה האוטומטית</div>}
           </div>
 
           {/* פילטר */}
@@ -9895,6 +9926,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
       {/* תזמון שליחה אוטומטית: נפרד מהשליחה הידנית, אחריה */}
       <div className="sm-card" style={{"--t":"#F1EAFF",marginTop:20}}>
         <ScheduleEditor event={event} storeKey="sms_schedule" templates={TEMPLATES} accent={C.blueM} auto
+          langNote={otherLangs?`אורחים בשפה אחרת יקבלו כל תזמון בשפה שלהם (${otherLangs.split(",").map(l=>MSG_LANGS.find(x=>x[0]===l)?.[1]||l).join(", ")})`:""}
           onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("sms-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
       </div>
     </div>
@@ -10779,8 +10811,9 @@ function SupplierCard({ v, onOpen, compact=false }) {
 }
 
 // פרטי ספק מלאים: גלריה, תיאור ויצירת קשר
-function SupplierDetails({ v, onClose }) {
+function SupplierDetails({ v, onClose, user, event, own=false }) {
   const [img,setImg]=useState(0);
+  useEffect(()=>{setImg(0);},[v?.user_id]);
   if(!v)return null;
   const cat=SUPPLIER_CAT[v.category]||SUPPLIER_CAT.other,photos=v.photos||[];
   const b={display:"inline-flex",alignItems:"center",gap:6,borderRadius:12,padding:"10px 14px",fontSize:14,fontWeight:800,textDecoration:"none",fontFamily:"inherit"};
@@ -10816,14 +10849,175 @@ function SupplierDetails({ v, onClose }) {
             {extLink(v.instagram)&&<a href={extLink(v.instagram)} target="_blank" rel="noopener noreferrer" style={{...b,background:"#F6F0FF",color:"#3A2464"}}>📷 אינסטגרם</a>}
             {extLink(v.facebook)&&<a href={extLink(v.facebook)} target="_blank" rel="noopener noreferrer" style={{...b,background:"#F6F0FF",color:"#3A2464"}}>👍 פייסבוק</a>}
           </div>
+          {own?<div style={{marginTop:16,background:"#F6F0FF",borderRadius:16,padding:"12px 14px",fontSize:13.5,color:"#3E3555",lineHeight:1.6}}>📩 כאן לקוחות רואים כפתור "בקשת הצעת מחיר". הפניות שלהם מגיעות אליכם לאזור הספקים.</div>
+            :user&&v.status==="approved"&&v.user_id!==user.id&&<VendorLeadForm key={v.user_id} v={v} user={user} event={event}/>}
         </div>
       </div>
     </div>
   );
 }
 
+// ─── פנייה לספק: הלקוח משאיר פרטים, והפנייה נשמרת ב-vendor_leads ומופיעה לספק באזור הספקים ───
+const LEAD_STATUS=[["new","🆕 חדשה","#B4236A","#FFE9F2"],["contacted","📞 חזרתי ללקוח","#1F6FB2","#E8F2FC"],["quoted","💰 נשלחה הצעה","#7A4E00","#FFF4DC"],["won","🤝 נסגרה עסקה","#1F7A4D","#EFFAF3"],["closed","✕ לא רלוונטי","#525A66","#F2F4F7"]];
+const LEAD_FOR_CLIENT={new:"📨 נשלחה לספק",contacted:"📞 הספק יצר קשר",quoted:"💰 התקבלה הצעת מחיר",won:"🤝 סגרתם עם הספק",closed:"הפנייה נסגרה"};
+function VendorLeadForm({ v, user, event }) {
+  const nm=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim();
+  const [open,setOpen]=useState(false),[busy,setBusy]=useState(false),[done,setDone]=useState(false),[err,setErr]=useState("");
+  const [f,setF]=useState(()=>({name:nm,phone:"",event_date:event?.date?String(event.date).slice(0,10):"",guests:"",message:""}));
+  const set=(k,val)=>setF(x=>({...x,[k]:val}));
+  const inp={width:"100%",boxSizing:"border-box",border:"1.5px solid #E6DDF5",borderRadius:14,padding:"10px 12px",fontSize:14.5,fontFamily:"inherit",outline:"none",background:"#fff",color:"#2B1D3F",minHeight:46};
+  const lbl=(t,req)=><div style={{fontSize:12.5,fontWeight:800,color:"#3E3555",marginBottom:5}}>{t}{req&&<span style={{color:"#C53030"}}> *</span>}</div>;
+  const send=async()=>{
+    setErr("");
+    if(f.name.trim().length<2)return setErr("נא למלא שם");
+    if(!normPhone(f.phone))return setErr("נא למלא נייד תקין, כדי שהספק יוכל לחזור אליכם");
+    setBusy(true);
+    const{error}=await sb.from("vendor_leads").insert({vendor_id:v.user_id,user_id:user.id,event_id:event?.id||null,name:f.name.trim().slice(0,60),phone:f.phone.trim().slice(0,20),
+      event_date:f.event_date||null,guests:f.guests===""?null:Math.min(5000,Math.max(1,parseInt(f.guests)||0))||null,message:f.message.trim().slice(0,600)||null});
+    setBusy(false);
+    if(error)return setErr(/limit|too many/i.test(error.message)?"שלחתם הרבה פניות היום. נסו שוב מחר.":"הפנייה לא נשלחה: "+error.message);
+    setDone(true);
+  };
+  if(done)return <div role="status" style={{marginTop:16,background:"#EFFAF3",border:"1.5px solid #BDEFDD",borderRadius:18,padding:"14px 16px",color:"#1F7A4D",fontSize:14.5,fontWeight:700,lineHeight:1.6}}>✓ הפנייה נשלחה ל{v.business_name}. הם יחזרו אליכם לנייד {f.phone.trim()}.</div>;
+  if(!open)return <button type="button" onClick={()=>setOpen(true)} className="sx-btn" style={{marginTop:16,width:"100%",minHeight:50,border:"none",borderRadius:999,background:GRAD,color:"#fff",fontSize:15.5,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>📩 בקשת הצעת מחיר</button>;
+  return(
+    <div style={{marginTop:16,background:"#FCFAFE",border:"1.5px solid #EFE6F7",borderRadius:20,padding:16}}>
+      <div style={{fontSize:16,fontWeight:900,color:"#2B1D3F",marginBottom:4}}>📩 בקשת הצעת מחיר מ{v.business_name}</div>
+      <div style={{fontSize:13,color:"#5E5470",marginBottom:12}}>הפרטים נשלחים לספק בלבד, כדי שיוכל לחזור אליכם.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:10,marginBottom:10}}>
+        <div>{lbl("שם",1)}<input value={f.name} onChange={e=>set("name",e.target.value)} maxLength={60} style={inp}/></div>
+        <div>{lbl("נייד",1)}<input value={f.phone} onChange={e=>set("phone",e.target.value)} type="tel" inputMode="tel" dir="ltr" maxLength={20} placeholder="050-0000000" style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("תאריך האירוע")}<input type="date" value={f.event_date} onChange={e=>set("event_date",e.target.value)} dir="ltr" style={{...inp,textAlign:"right"}}/></div>
+        <div>{lbl("כמה אורחים, בערך")}<input value={f.guests} onChange={e=>set("guests",e.target.value.replace(/\D/g,"").slice(0,4))} inputMode="numeric" placeholder="למשל 250" style={inp}/></div>
+      </div>
+      <div style={{marginBottom:10}}>{lbl("מה חשוב לכם?")}<textarea value={f.message} onChange={e=>set("message",e.target.value)} maxLength={600} rows={3} placeholder="סוג האירוע, מיקום, מה אתם מחפשים..." style={{...inp,resize:"vertical",minHeight:84,lineHeight:1.6}}/></div>
+      {err&&<div role="alert" style={{fontSize:13.5,color:"#B42318",fontWeight:700,marginBottom:10}}>{err}</div>}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button type="button" onClick={send} disabled={busy} className="sx-btn" style={{flex:"1 1 200px",minHeight:48,border:"none",borderRadius:999,background:GRAD,color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",opacity:busy?.6:1}}>{busy?"שולח...":"שליחת הפנייה"}</button>
+        <button type="button" onClick={()=>setOpen(false)} style={{minHeight:48,padding:"0 18px",border:"1.5px solid #E6DDF5",borderRadius:999,background:"#fff",color:"#3A2464",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
+      </div>
+      <div style={{fontSize:12,color:"#5F5675",marginTop:10,lineHeight:1.6}}>בשליחה אתם מאשרים להעביר לספק את השם, הנייד ופרטי האירוע שמילאתם. אפשר לבקש מחיקה לפי <a href="#/privacy" style={{color:C.blue}}>מדיניות הפרטיות</a>.</div>
+    </div>
+  );
+}
+// אצל הספק: לוח ניהול הפניות. מספרים, סינון, וואטסאפ / חיוג, הצעת מחיר ושלב הטיפול
+function VendorLeads({ user, business }) {
+  const [list,setList]=useState(null),[err,setErr]=useState(""),[filter,setFilter]=useState("open"),[quoting,setQuoting]=useState(null),[q,setQ]=useState({price:"",note:""}),[busy,setBusy]=useState(false);
+  const load=()=>sb.from("vendor_leads").select("*").eq("vendor_id",user.id).order("created_at",{ascending:false}).limit(500).then(({data,error})=>{if(error)setErr(error.message);setList(data||[]);},()=>setList([]));
+  useEffect(()=>{load();},[user.id]);
+  const patch=async(l,p)=>{setErr("");setList(a=>a.map(x=>x.id===l.id?{...x,...p}:x));const{error}=await sb.from("vendor_leads").update(p).eq("id",l.id);if(error){setErr(error.message);load();return false;}return true;};
+  const del=async l=>{if(!window.confirm(`למחוק את הפנייה של ${l.name}?`))return;const{error}=await sb.from("vendor_leads").delete().eq("id",l.id);if(error)setErr(error.message);else setList(a=>a.filter(x=>x.id!==l.id));};
+  const first=n=>String(n||"").split(" ")[0];
+  const quoteText=(l,price,note)=>`היי ${first(l.name)}, כאן ${business||"הספק"} 😊\nבהמשך לפנייה שלך ב-Sidor-IL${l.event_date?` לאירוע ב-${new Date(l.event_date+"T00:00:00").toLocaleDateString("he-IL")}`:""}:\n💰 הצעת מחיר: ₪${Number(price).toLocaleString()}${note?`\n${note}`:""}\nאשמח לשמוע ממך!`;
+  const openQuote=l=>{setQuoting(l.id);setQ({price:l.quote_price?String(l.quote_price):"",note:l.quote_note||""});};
+  const saveQuote=async l=>{
+    const price=parseInt(q.price,10);
+    if(!price||price<1)return setErr("נא למלא מחיר");
+    setBusy(true);
+    const ok=await patch(l,{quote_price:Math.min(price,10000000),quote_note:q.note.trim().slice(0,600)||null,quoted_at:new Date().toISOString(),status:["won","closed"].includes(l.status)?l.status:"quoted"});
+    setBusy(false);
+    if(!ok)return;
+    setQuoting(null);
+    const wa=waLink(l.phone);
+    if(wa&&window.confirm("ההצעה נשמרה, והזוג יראה אותה בפניות שלו. לשלוח אותה גם בוואטסאפ?"))window.open(`${wa}?text=${encodeURIComponent(quoteText(l,price,q.note.trim()))}`,"_blank","noopener,noreferrer");
+  };
+  const all=list||[],cnt=k=>all.filter(l=>(l.status||"new")===k).length;
+  const won=all.filter(l=>l.status==="won"),wonSum=won.reduce((a,l)=>a+(Number(l.quote_price)||0),0);
+  const FILTERS=[["open","בטיפול",l=>["new","contacted","quoted"].includes(l.status||"new")],["new","חדשות",l=>(l.status||"new")==="new"],["quoted","הצעות שנשלחו",l=>l.status==="quoted"],["won","עסקאות",l=>l.status==="won"],["all","הכל",()=>true]];
+  const shown=all.filter((FILTERS.find(x=>x[0]===filter)||FILTERS[0])[2]);
+  const fresh=cnt("new");
+  return(
+    <div className="vd-card vd-leads">
+      <div className="vd-h" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>📩 פניות והצעות מחיר{fresh>0&&<span className="vd-new">{fresh===1?"פנייה חדשה":`${fresh} חדשות`}</span>}</div>
+      <div className="vd-stats">
+        <div><b>{fresh}</b><span>פניות חדשות</span></div>
+        <div><b>{cnt("new")+cnt("contacted")}</b><span>מחכות להצעה</span></div>
+        <div><b>{cnt("quoted")}</b><span>הצעות פתוחות</span></div>
+        <div><b>{won.length}</b><span>{wonSum?`עסקאות · ₪${wonSum.toLocaleString()}`:"עסקאות שנסגרו"}</span></div>
+      </div>
+      {all.length>0&&<div className="vd-filters" role="tablist" aria-label="סינון פניות">{FILTERS.map(([k,t,fn])=>(
+        <button key={k} type="button" role="tab" aria-selected={filter===k} className={filter===k?"on":""} onClick={()=>setFilter(k)}>{t} ({all.filter(fn).length})</button>))}</div>}
+      {err&&<div role="alert" style={{fontSize:13,color:"#B42318",fontWeight:700,marginBottom:8}}>{err}</div>}
+      {list===null?<div style={{textAlign:"center",padding:20}}><Spinner size={26}/></div>
+      :!all.length?<div className="vd-empty">עוד אין פניות. כשלקוח ילחץ "בקשת הצעת מחיר" בפרופיל שלכם, הפנייה תופיע כאן, ומכאן שולחים לו הצעה.</div>
+      :!shown.length?<div className="vd-empty">אין פניות בסינון הזה.</div>
+      :<div className="vd-lead-list">{shown.map(l=>{
+        const st=LEAD_STATUS.find(x=>x[0]===(l.status||"new"))||LEAD_STATUS[0];
+        const wa=waLink(l.phone);
+        return(
+          <div key={l.id} className={`vd-lead${(l.status||"new")==="new"?" on":""}`}>
+            <div className="vd-lead-top">
+              <b>{l.name}</b>
+              <span className="vd-lead-st" style={{color:st[2],background:st[3]}}>{st[1]}</span>
+              <span className="vd-lead-at">{new Date(l.created_at).toLocaleDateString("he-IL",{day:"numeric",month:"short"})}</span>
+            </div>
+            <div className="vd-lead-meta">
+              {l.event_date&&<span>📅 {new Date(l.event_date+"T00:00:00").toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"})}</span>}
+              {l.guests>0&&<span>👥 {l.guests} אורחים</span>}
+              <span dir="ltr">📱 {l.phone}</span>
+            </div>
+            {l.message&&<p className="vd-lead-msg">{l.message}</p>}
+            {l.quote_price>0&&quoting!==l.id&&<div className="vd-quote">💰 ההצעה שלכם: <b>₪{Number(l.quote_price).toLocaleString()}</b>{l.quote_note&&<span> · {l.quote_note}</span>}</div>}
+            {quoting===l.id&&<div className="vd-qform">
+              <div className="vd-qrow">
+                <label><span>מחיר (₪)</span><input value={q.price} onChange={e=>setQ(x=>({...x,price:e.target.value.replace(/\D/g,"").slice(0,8)}))} inputMode="numeric" placeholder="למשל 6500" autoFocus/></label>
+                <label style={{flex:"2 1 220px"}}><span>מה כלול</span><input value={q.note} onChange={e=>setQ(x=>({...x,note:e.target.value}))} maxLength={600} placeholder="למשל: סטילס + וידאו, אלבום, 8 שעות"/></label>
+              </div>
+              <div className="vd-lead-acts" style={{marginTop:10}}>
+                <button type="button" disabled={busy} onClick={()=>saveQuote(l)} className="vd-lead-wa" style={{background:"#2B1D3F",border:"none",cursor:"pointer"}}>{busy?"שומר...":"שמירת ההצעה"}</button>
+                <button type="button" onClick={()=>setQuoting(null)} className="vd-lead-btn" style={{border:"none",cursor:"pointer"}}>ביטול</button>
+              </div>
+            </div>}
+            {quoting!==l.id&&<div className="vd-lead-acts">
+              <button type="button" onClick={()=>openQuote(l)} className="vd-lead-q">💰 {l.quote_price?"עדכון ההצעה":"שליחת הצעת מחיר"}</button>
+              {wa&&<a className="vd-lead-wa" href={`${wa}?text=${encodeURIComponent(`היי ${first(l.name)}, כאן ${business||"הספק"}. קיבלנו את הפנייה שלך מ-Sidor-IL`)}`} target="_blank" rel="noopener noreferrer" onClick={()=>(l.status||"new")==="new"&&patch(l,{status:"contacted"})}><WaIcon size={15}/> וואטסאפ</a>}
+              <a className="vd-lead-btn" href={`tel:${l.phone}`} onClick={()=>(l.status||"new")==="new"&&patch(l,{status:"contacted"})}>📞 חיוג</a>
+              <select value={l.status||"new"} onChange={e=>patch(l,{status:e.target.value})} aria-label={`שלב הטיפול בפנייה של ${l.name}`} className="vd-lead-sel">
+                {LEAD_STATUS.map(([k,t])=><option key={k} value={k}>{t}</option>)}
+              </select>
+              <button type="button" onClick={()=>del(l)} className="vd-lead-del" aria-label={`מחיקת הפנייה של ${l.name}`}>מחיקה</button>
+            </div>}
+          </div>);})}
+      </div>}
+    </div>
+  );
+}
+// אצל הזוג: הפניות ששלחתי לספקים, והצעות המחיר שחזרו
+function MyVendorLeads({ user, vendors }) {
+  const [list,setList]=useState([]),[open,setOpen]=useState(false);
+  useEffect(()=>{if(!user)return;sb.from("vendor_leads").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100).then(({data})=>setList(data||[]),()=>{});},[user?.id]);
+  if(!list.length)return null;
+  const byId=Object.fromEntries((vendors||[]).map(v=>[v.user_id,v]));
+  const quotes=list.filter(l=>l.quote_price>0).length;
+  return(
+    <div className="ml-box">
+      <button type="button" className="ml-head" onClick={()=>setOpen(o=>!o)} aria-expanded={open}>
+        <span>📩 הפניות שלי לספקים ({list.length}){quotes>0&&<em>{quotes===1?"הצעת מחיר אחת":`${quotes} הצעות מחיר`}</em>}</span>
+        <span aria-hidden="true">{open?"▲":"▼"}</span>
+      </button>
+      {open&&<div className="ml-list">{list.map(l=>{const v=byId[l.vendor_id];return(
+        <div key={l.id} className="ml-row">
+          <div className="ml-top"><b>{v?.business_name||"ספק"}</b><span>{LEAD_FOR_CLIENT[l.status||"new"]||""}</span><small>{new Date(l.created_at).toLocaleDateString("he-IL",{day:"numeric",month:"short"})}</small></div>
+          {l.quote_price>0&&<div className="ml-q">💰 ₪{Number(l.quote_price).toLocaleString()}{l.quote_note&&<span> · {l.quote_note}</span>}</div>}
+          {v?.phone&&waLink(v.phone)&&<a className="ml-wa" href={`${waLink(v.phone)}?text=${encodeURIComponent(`היי ${v.business_name}, לגבי הפנייה שלי מ-Sidor-IL`)}`} target="_blank" rel="noopener noreferrer"><WaIcon size={14}/> לדבר עם הספק</a>}
+        </div>);})}</div>}
+    </div>
+  );
+}
+const ML_CSS=`
+  .ml-box{background:#fff;border:1.5px solid #EFE6F7;border-radius:20px;margin-bottom:14px;overflow:hidden}
+  .ml-head{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font:800 15px 'Heebo',sans-serif;color:#2B1D3F}
+  .ml-head:focus-visible{outline:2px solid #9B6BFF;outline-offset:-2px}
+  .ml-head em{font-style:normal;background:#FFF4DC;color:#7A4E00;border-radius:999px;padding:2px 10px;font-size:12.5px;margin-right:8px}
+  .ml-list{display:grid;gap:8px;padding:0 12px 12px}
+  .ml-row{background:#FCFAFE;border-radius:14px;padding:10px 12px}
+  .ml-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}.ml-top b{color:#2B1D3F}.ml-top span{color:#4A2C8F;font-weight:700;font-size:13px}.ml-top small{margin-right:auto;color:#6E6585}
+  .ml-q{margin-top:5px;font-size:14px;color:#7A4E00;font-weight:800}.ml-q span{font-weight:500;color:#3E3555}
+  .ml-wa{display:inline-flex;align-items:center;gap:5px;margin-top:7px;background:#1FA855;color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800;text-decoration:none}
+`;
+
 // רשימת הספקים המאושרים (בתוך המערכת): סינון לפי תחום ואזור, מובילים קודם ואז החדשים
-function SupplierDirectory({ ui }) {
+function SupplierDirectory({ ui, user, event }) {
   const [list,setList]=useState(null),[cat,setCat]=useState(""),[region,setRegion]=useState(""),[q,setQ]=useState(""),[open,setOpen]=useState(null);
   useEffect(()=>{sb.from("vendor_profiles").select("*").eq("status","approved").then(({data})=>setList(data||[]));},[]);
   if(!list)return <div style={{textAlign:"center",padding:40}}><Spinner size={30}/></div>;
@@ -10831,6 +11025,8 @@ function SupplierDirectory({ ui }) {
     .sort((a,b)=>(isFeatured(b)-isFeatured(a))||String(b.created_at).localeCompare(String(a.created_at)));
   const sel={...ui.inp,flex:"1 1 160px",width:"auto"};
   return(<>
+    <style>{ML_CSS}</style>
+    <MyVendorLeads user={user} vendors={list}/>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
       <select value={cat} onChange={e=>setCat(e.target.value)} aria-label="תחום" style={sel}><option value="">כל התחומים</option>{SUPPLIER_CATS.map(([k,i,l])=><option key={k} value={k}>{i} {l}</option>)}</select>
       <select value={region} onChange={e=>setRegion(e.target.value)} aria-label="אזור" style={sel}><option value="">כל האזורים</option>{SUPPLIER_REGIONS.filter(([k])=>k!=="all").map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
@@ -10838,7 +11034,7 @@ function SupplierDirectory({ ui }) {
     </div>
     {!shown.length?<div style={{...ui.card,textAlign:"center",color:"#6E6585"}}>{list.length?"לא נמצאו ספקים בסינון הזה":"עוד אין ספקים רשומים. בקרוב!"}</div>
       :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>{shown.map(v=><SupplierCard key={v.user_id} v={v} onOpen={setOpen}/>)}</div>}
-    <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+    <SupplierDetails v={open} onClose={()=>setOpen(null)} user={user} event={event}/>
   </>);
 }
 
@@ -10994,6 +11190,8 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
             <b style={{color:status.c}}>{status.t}</b>
             <span>{status.s}</span>
           </div>
+          {p.status==="approved"?<VendorLeads user={user} business={p.business_name}/>
+            :<div className="vd-card vd-leads"><div className="vd-h">📩 פניות והצעות מחיר</div><div className="vd-empty">אחרי שנאשר את הפרופיל, כאן יופיעו פניות מלקוחות, ומכאן שולחים להם הצעות מחיר ומנהלים את הטיפול.</div></div>}
           <div className="vd-grid">
             <div className="vd-card">
               <div className="vd-h">ככה הלקוחות רואים אתכם</div>
@@ -11015,7 +11213,7 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
           <button onClick={onEvents} className="vd-link">📅 מתכננים גם אירוע? מעבר לאירועים שלי</button>
         </div>
       </div>
-      <SupplierDetails v={open} onClose={()=>setOpen(null)}/>
+      <SupplierDetails v={open} onClose={()=>setOpen(null)} own/>
     </PublicPage>
   );
 }
@@ -11048,6 +11246,39 @@ const VD_CSS=`
   .vd-up ul{margin:0 0 16px;padding:0 18px 0 0;font-size:15px;line-height:1.9;color:#3A2F50}
   .vd-wa{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;background:#1FA855;color:#fff;border:none;border-radius:999px;font:700 16px 'Fredoka','Heebo',sans-serif;cursor:pointer}
   .vd-link{background:none;border:none;color:#5B2FA8;font:700 15px 'Fredoka','Heebo',sans-serif;cursor:pointer;text-decoration:underline}
+  .vd-leads{margin-bottom:18px}
+  .vd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  .vd-stats div{background:#FCFAFE;border:1.5px solid #EFE6F7;border-radius:18px;padding:12px 14px;min-width:0}
+  .vd-stats b{display:block;font:700 26px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;line-height:1.1}
+  .vd-stats span{font-size:13px;color:#5E5470;font-weight:700}
+  .vd-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .vd-filters button{border:none;border-radius:999px;padding:8px 14px;font:700 13.5px 'Heebo',sans-serif;background:#F6F0FF;color:#3A2464;cursor:pointer;min-height:36px}
+  .vd-filters button.on{background:#2B1D3F;color:#fff}
+  .vd-quote{margin-top:8px;background:#FFF8E8;border-radius:14px;padding:8px 12px;font-size:14px;color:#7A4E00}
+  .vd-quote span{color:#3E3555}
+  .vd-qform{margin-top:10px;background:#FFF8E8;border-radius:18px;padding:12px}
+  .vd-qrow{display:flex;flex-wrap:wrap;gap:10px}
+  .vd-qrow label{flex:1 1 140px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:800;color:#3E3555}
+  .vd-qrow input{border:1.5px solid #F0D9A8;border-radius:14px;padding:9px 12px;font:500 14.5px 'Heebo',sans-serif;min-height:42px;background:#fff;color:#2B1D3F;outline:none}
+  .vd-qrow input:focus{border-color:#E8B04A;box-shadow:0 0 0 3px rgba(232,176,74,.2)}
+  .vd-lead-q{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:none;background:linear-gradient(135deg,#FFD9A0,#FFB6C9);color:#4A2A00;font:700 14px 'Fredoka','Heebo',sans-serif;cursor:pointer}
+  @media(max-width:700px){.vd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .vd-new{background:#F0609E;color:#fff;border-radius:999px;padding:3px 11px;font:700 13px 'Fredoka','Heebo',sans-serif}
+  .vd-empty{background:#FCFAFE;border:1.5px dashed #E6DDF5;border-radius:20px;padding:18px;text-align:center;color:#5E5470;font-size:14.5px;line-height:1.6}
+  .vd-lead-list{display:grid;gap:12px}
+  .vd-lead{border:1.5px solid #EFE6F7;border-radius:22px;padding:14px 16px;background:#fff}
+  .vd-lead.on{border-color:#F7B6D2;background:linear-gradient(135deg,#FFF6FA,#fff 60%)}
+  .vd-lead-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .vd-lead-top b{font:700 17px 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
+  .vd-lead-st{border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:800}
+  .vd-lead-at{margin-right:auto;font-size:12.5px;color:#6E6585}
+  .vd-lead-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;font-size:14px;color:#3E3555}
+  .vd-lead-msg{margin:8px 0 0;font-size:14px;line-height:1.7;color:#3A2F50;white-space:pre-line;background:#FCFAFE;border-radius:14px;padding:8px 12px}
+  .vd-lead-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+  .vd-lead-wa,.vd-lead-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;font:700 14px 'Fredoka','Heebo',sans-serif;text-decoration:none}
+  .vd-lead-wa{background:#1FA855;color:#fff}.vd-lead-btn{background:#F6F0FF;color:#3A2464}
+  .vd-lead-sel{min-height:40px;border:1.5px solid #E6DDF5;border-radius:999px;padding:0 12px;font:600 14px 'Heebo',sans-serif;color:#2B1D3F;background:#fff}
+  .vd-lead-del{background:none;border:none;color:#B42318;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;margin-right:auto}
   @media(max-width:700px){.vd-hero{margin:86px 8px 20px;border-radius:32px;padding:34px 22px}.vd-hero p{font-size:16px}.vd-form > div{padding:18px!important;border-radius:26px!important}}
 `;
 
@@ -11076,7 +11307,7 @@ function VendorsScreen({ user, event, mobile }) {
         ))}
       </div>
       {err&&<div role="alert" style={{...card,color:"#C53030",marginBottom:12}}>⚠️ {err}</div>}
-      {tab==="suppliers"?<SupplierDirectory ui={{card,inp,lbl,btn,mobile}}/>
+      {tab==="suppliers"?<SupplierDirectory ui={{card,inp,lbl,btn,mobile}} user={user} event={event}/>
         :prices===null?<div style={{textAlign:"center",padding:40}}><Spinner size={32}/></div>
         :tab==="prices"?<PlatePrices user={user} event={event} prices={prices} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>
         :<VendorReviews user={user} reviews={reviews} onAdded={load} ui={{card,inp,lbl,btn,mobile}}/>}
@@ -13134,11 +13365,12 @@ function AdminBackups({ card, events }) {
 
 // ניהול ספקים: אישור / דחייה, אימות עסק (ע.מ / ח.פ מוצג רק כאן), ספק מוביל עד תאריך
 function AdminSuppliers({ card }) {
-  const [rows,setRows]=useState(null),[priv,setPriv]=useState({}),[show,setShow]=useState("pending"),[err,setErr]=useState(""),[open,setOpen]=useState(null);
+  const [rows,setRows]=useState(null),[priv,setPriv]=useState({}),[show,setShow]=useState("pending"),[err,setErr]=useState(""),[open,setOpen]=useState(null),[leadN,setLeadN]=useState({});
   const load=async()=>{
-    const [a,b]=await Promise.all([sb.from("vendor_profiles").select("*").order("created_at",{ascending:false}),sb.from("vendor_private").select("*")]);
+    const [a,b,c]=await Promise.all([sb.from("vendor_profiles").select("*").order("created_at",{ascending:false}),sb.from("vendor_private").select("*"),sb.from("vendor_leads").select("vendor_id,status").limit(10000)]);
     if(a.error)setErr(a.error.message);
     setRows(a.data||[]);setPriv(Object.fromEntries((b.data||[]).map(x=>[x.user_id,x])));
+    setLeadN((c.data||[]).reduce((m,l)=>{const x=m[l.vendor_id]||(m[l.vendor_id]={n:0,won:0});x.n++;if(l.status==="won")x.won++;return m;},{}));
   };
   useEffect(()=>{load();},[]);
   const upd=async(v,patch)=>{const{error}=await sb.from("vendor_profiles").update(patch).eq("user_id",v.user_id);if(error)setErr(error.message);else load();};
@@ -13171,7 +13403,7 @@ function AdminSuppliers({ card }) {
             <div style={{fontSize:12,color:p?(validIsraeliId(p.business_id)?"#1F8F6C":"#C53030"):"#C53030",marginTop:2,fontWeight:700}}>
               🧾 {p?`${BUSINESS_TYPES.find(([k])=>k===p.business_type)?.[1]||""} ${p.business_id} ${validIsraeliId(p.business_id)?"(ספרת ביקורת תקינה)":"(ספרת ביקורת לא תקינה!)"}`:"חסרים פרטים עסקיים"}
             </div>
-            <div style={{fontSize:11,color:"#6E6585",marginTop:2}}>נרשם {new Date(v.created_at).toLocaleDateString("he-IL")} · {(v.photos||[]).length} תמונות{v.reject_reason?` · סיבת דחייה: ${v.reject_reason}`:""}{isFeatured(v)&&v.featured_until?` · מוביל עד ${new Date(v.featured_until).toLocaleDateString("he-IL")}`:""}</div>
+            <div style={{fontSize:11,color:"#6E6585",marginTop:2}}>נרשם {new Date(v.created_at).toLocaleDateString("he-IL")} · {(v.photos||[]).length} תמונות{leadN[v.user_id]?` · 📩 ${leadN[v.user_id].n} פניות${leadN[v.user_id].won?` (${leadN[v.user_id].won} עסקאות)`:""}`:""}{v.reject_reason?` · סיבת דחייה: ${v.reject_reason}`:""}{isFeatured(v)&&v.featured_until?` · מוביל עד ${new Date(v.featured_until).toLocaleDateString("he-IL")}`:""}</div>
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             <button onClick={()=>setOpen(v)} style={{...b,background:"#F4EEFC",color:"#2B1D3F"}}>👁 צפייה</button>
@@ -13496,7 +13728,7 @@ function AdminDashboard({ user, onLogout }) {
 
   const [updatedAt,setUpdatedAt]=useState(null);
   // silent: רענון ברקע בלי ספינר (כשחוזרים לחלון / כל 30 שניות)
-  const [producerProfs,setProducerProfs]=useState([]);
+  const [producerProfs,setProducerProfs]=useState([]),[pendingVendors,setPendingVendors]=useState([]);
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
     const since=new Date(Date.now()-14*864e5).toISOString();
@@ -13505,6 +13737,7 @@ function AdminDashboard({ user, onLogout }) {
     sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
     sb.rpc("admin_list_referrals").then(({data})=>setRefs(Object.fromEntries((data||[]).map(r=>[r.user_id,r.ref])))).catch(()=>{});
     sb.from("producer_profiles").select("user_id,brand_name,phone,updated_at").then(({data})=>setProducerProfs(data||[])).catch(()=>{});
+    sb.from("vendor_profiles").select("user_id,business_name,category,phone,created_at").eq("status","pending").then(({data})=>setPendingVendors(data||[])).catch(()=>{});
     const [ev,g,pk,bal,req,tx,us,runs]=await Promise.all([
       sb.from("events").select("id,name,user_id,date,event_type,venue,invite_active,created_at,host_phone,settings_json").order("created_at",{ascending:false}),
       sb.from("guests").select("event_id,table_id,rsvp,guest_count,phone"),
@@ -13622,6 +13855,8 @@ function AdminDashboard({ user, onLogout }) {
   const attention=[];
   if(pending.length)attention.push({lvl:"red",icon:"🛒",text:`${pending.length} בקשות רכישת SMS ממתינות לאישור`,go:()=>setTab("requests")});
   if(waPendingReqs.length)attention.push({lvl:"red",icon:"💬",text:`${waPendingReqs.length} בקשות רכישת WhatsApp ממתינות לאישור`,go:()=>setTab("wa_requests")});
+  // ספק חדש שנרשם ומחכה לאישור (מאשרים בלשונית "ספקים")
+  if(pendingVendors.length)attention.push({lvl:"red",icon:"🏪",text:pendingVendors.length===1?`ספק חדש מחכה לאישור · ${pendingVendors[0].business_name}`:`${pendingVendors.length} ספקים חדשים מחכים לאישור`,sub:pendingVendors.slice(0,3).map(v=>v.business_name).join(" · ")+' · מאשרים בלשונית "ספקים"',go:()=>setTab("suppliers")});
   // בקשת חשבון מפיק: יש פרופיל מפיק אבל עוד אין חבילת מפיק. מפעילים ב"משתמשים וחבילות" ← "חשבון מפיק"
   producerProfs.filter(pp=>!(packages[pp.user_id]||[]).includes("producer")).forEach(pp=>{const em=(users.find(u=>u.user_id===pp.user_id)||{}).email||"";
     attention.push({lvl:"red",icon:"🎬",text:`בקשת חשבון מפיק · ${pp.brand_name||em||"משתמש"}`,sub:`${pp.phone||""}${em?" · "+em:""} · מפעילים ב"משתמשים וחבילות"`,go:()=>{setSearch(em);setTab("users");}});});

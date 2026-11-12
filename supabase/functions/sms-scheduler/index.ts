@@ -1,6 +1,7 @@
 // sms-scheduler · נקרא כל 5 דקות ע"י pg_cron (ראו supabase/sms_scheduler.sql).
 // תופס תזמוני SMS שהגיע זמנם ושולח אותם בדיוק כמו send-sms: יתרה בשרת, הודעה אחת לכל אורח, החזר אם 019 נכשל.
 // אין צורך בהרשאה: הפונקציה שולחת רק תזמונים שבעל האירוע הפעיל ושהגיע זמנם, וכל תזמון נשלח פעם אחת בלבד.
+// כל אורח מקבל את הנוסח בשפה שלו (guests.lang), לפי הנוסחים שמסך ה-SMS שמר באירוע.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { runScheduler } from "./engine.ts";
 
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
         return data || [];
       },
       loadEvent: async (id) => (await admin.from("events").select("*").eq("id", id).maybeSingle()).data,
-      loadGuests: async (id) => (await admin.from("guests").select("id,name,phone,rsvp,table_id,short_code").eq("event_id", id)).data || [],
+      loadGuests: async (id) => (await admin.from("guests").select("id,name,phone,rsvp,table_id,short_code,lang").eq("event_id", id)).data || [],
       loadTables: async (id) => (await admin.from("tables").select("id,name").eq("event_id", id)).data || [],
       debit: async (ev, units, note) => {
         const { data, error } = await admin.rpc("sms_debit", { p_event: ev, p_amount: units, p_note: note });
