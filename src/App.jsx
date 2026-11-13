@@ -17,7 +17,7 @@ const C = {
 const GRAD=`linear-gradient(120deg,${C.coral},${C.blueM},${C.blueL})`;
 
 // ─── שיתוף ההזמנה בוואטסאפ ────────────────────────────────────────────────────
-const WA_GREEN="#25D366";
+const WA_GREEN="#15803D"; // ירוק כהה מספיק לטקסט לבן (ניגודיות 5:1, תקן נגישות)
 // הודעת ההזמנה לשליחה ידנית בוואטסאפ: באותו סגנון של הזמנת ה-SMS, אבל בלי שם (נשלחת לכולם אותו דבר)
 const inviteShareText=(event,url)=>{
   const ew=eventWords(event);
@@ -641,18 +641,27 @@ const Inp = ({value,onChange,placeholder,onKeyDown,type="text",style={}}) => (
 const EMPTY_SEAT="#EEE7F6", EMPTY_SEAT_STROKE="#DCCFEA";
 const guestColor=g=>RELATION_COLORS[g?.relation]||C.blueL;
 const fillColor=(occ,total)=>occ===0?"#DCCFEA":occ>=total?C.danger:occ>=total*.8?C.gold:C.success;
+const TABLE_TINTS=["#F0609E","#9B6BFF","#3CC8A0","#5AA9FF","#E8B04A","#FF8A65"];
+const tableTint=(t,num)=>{const n=parseInt(num,10);if(n>0)return TABLE_TINTS[(n-1)%TABLE_TINTS.length];let h=0;for(const ch of String(t.id||""))h=(h*31+ch.charCodeAt(0))>>>0;return TABLE_TINTS[h%TABLE_TINTS.length];};
 
 // כיסא מעוגל שמסובב לכיוון השולחן
 // אורח שהושב הרגע מקבל אנימציית "קפיצה" של הכיסא
-const Chair=({x,y,deg,guest,freshIds,w=13,h=10})=>(
+const Chair=({x,y,deg,guest,freshIds,tint,w=13,h=10})=>(
   <g transform={`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg})`}>
     <g className={guest&&freshIds?.has(guest.id)?"sx-chair-new":undefined}>
-      <rect x={-w/2} y={-h/2+1.2} width={w} height={h} rx={4.5} fill="rgba(58,36,100,.12)"/>
-      <rect x={-w/2} y={-h/2} width={w} height={h} rx={4.5}
-        fill={guest?guestColor(guest):EMPTY_SEAT} stroke={guest?"rgba(255,255,255,.9)":EMPTY_SEAT_STROKE} strokeWidth={1.3}>
-        {guest&&<title>{guest.name}</title>}
-      </rect>
-      <rect x={-w/2+2.5} y={-h/2-2.6} width={w-5} height={3} rx={1.5} fill={guest?guestColor(guest):EMPTY_SEAT_STROKE} opacity={.75}/>
+      <rect x={-w/2} y={-h/2+1.2} width={w} height={h} rx={4.5} fill="rgba(58,36,100,.10)"/>
+      {tint?<>
+        <rect x={-w/2} y={-h/2} width={w} height={h} rx={4.5} fill={guest?tint:`${tint}2E`} stroke={guest?"rgba(255,255,255,.95)":`${tint}66`} strokeWidth={1.2}>
+          {guest&&<title>{guest.name}</title>}
+        </rect>
+        {guest&&<circle cx={0} cy={0.5} r={1.9} fill={guestColor(guest)} stroke="rgba(255,255,255,.85)" strokeWidth={0.8}/>}
+      </>:<>
+        <rect x={-w/2} y={-h/2} width={w} height={h} rx={4.5}
+          fill={guest?guestColor(guest):EMPTY_SEAT} stroke={guest?"rgba(255,255,255,.9)":EMPTY_SEAT_STROKE} strokeWidth={1.3}>
+          {guest&&<title>{guest.name}</title>}
+        </rect>
+        <rect x={-w/2+2.5} y={-h/2-2.6} width={w-5} height={3} rx={1.5} fill={guest?guestColor(guest):EMPTY_SEAT_STROKE} opacity={.75}/>
+      </>}
     </g>
   </g>
 );
@@ -677,9 +686,12 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   const occupied=guests.length;
   const total=table.seats||10;
   const full=occupied>=total;
-  const ring=fillColor(occupied,total);
+  // טבעת ההתקדמות בצבע השולחן; מלא = אדום
+  const ring=full?C.danger:occupied===0?"#DCCFEA":null;
   // צבע השולחן לפי הקטגוריה הנפוצה אצל היושבים בו (כמו מפת האולם בדף הבית); שולחן ריק — סגול עדין
-  const accent=(()=>{const cnt={};guests.forEach(g=>{const r=g.relation||"ללא שיוך";cnt[r]=(cnt[r]||0)+1;});const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0];return top?(RELATION_COLORS[top]||"#B8AECB"):"#C9B6EC";})();
+  const tableNumEarly=table.num?String(table.num):(table.name?.match(/\d+/)?.[0]||"");
+  const accent=tableTint(table,tableNumEarly);
+  const ringC=ring||accent;
   const uid=String(table.id).replace(/[^a-z0-9]/gi,"");
   // סידור פרחים במרכז השולחן (עלי כותרת בצבע השולחן ולב זהוב)
   const Flowers=({x,y,s=1})=>(<g pointerEvents="none">
@@ -730,7 +742,7 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   );
   const labelBox=(style,big=20)=>(
     <div style={{position:"absolute",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none",gap:1,textAlign:"center",...style}}>
-      {tableNum&&<span style={{fontSize:big,fontWeight:900,color:C.blue,lineHeight:1}}>{tableNum}</span>}
+      {tableNum&&<span style={{fontSize:big,fontWeight:900,color:`color-mix(in srgb,${accent} 62%,#2B1D3F)`,lineHeight:1}}>{tableNum}</span>}
       <span style={{fontSize:10,fontWeight:800,lineHeight:1.2,color:full?C.danger:occupied?C.muted:"#A99FBD",background:full?"#FDECEE":"transparent",borderRadius:100,padding:full?"0 6px":0}}>
         {occupied}/{total}
       </span>
@@ -744,13 +756,13 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     const W=180,H=60,pad=16,SW=W+pad*2,SH=H+pad*2;
     const top=Math.ceil(total/2),bottom=total-top;
     const chairs=[];
-    for(let i=0;i<top;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(top+1)*(i+1)} y={pad-8} deg={0} freshIds={fresh} guest={guests[i]}/>);
-    for(let i=0;i<bottom;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottom+1)*(i+1)} y={pad+H+8} deg={180} freshIds={fresh} guest={guests[top+i]}/>);
+    for(let i=0;i<top;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(top+1)*(i+1)} y={pad-8} deg={0} freshIds={fresh} tint={accent} guest={guests[i]}/>);
+    for(let i=0;i<bottom;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottom+1)*(i+1)} y={pad+H+8} deg={180} freshIds={fresh} tint={accent} guest={guests[top+i]}/>);
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-6} y={pad-6} width={W+12} height={H+12} rx={18} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
       <rect x={pad} y={pad} width={W} height={H} rx={14} fill="#fff"/>
-      <rect x={pad} y={pad} width={W} height={H} rx={14} fill={`url(#tc${uid})`} stroke={ring} strokeWidth={2.5}/>
+      <rect x={pad} y={pad} width={W} height={H} rx={14} fill={`url(#tc${uid})`} stroke={ringC} strokeWidth={2.5}/>
       <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={10} fill="none" stroke={accent} strokeOpacity=".4" strokeDasharray="4 4"/>
       <text x={pad+14} y={pad+H/2+5} fontSize="14" textAnchor="middle">👑</text>
       <Flowers x={pad+W-18} y={pad+H/2} s={.8}/>
@@ -762,15 +774,15 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     const W=110,H=80,pad=18,SW=W+pad*2,SH=H+pad*2;
     const topN=Math.ceil(total/4),bottomN=Math.ceil(total/4),leftN=Math.floor(total/4),rightN=total-topN-bottomN-leftN;
     let k=0;const chairs=[];
-    for(let i=0;i<topN;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(topN+1)*(i+1)} y={pad-9} deg={0} freshIds={fresh} guest={guests[k++]}/>);
-    for(let i=0;i<rightN;i++)chairs.push(<Chair key={"r"+i} x={pad+W+9} y={pad+H/(rightN+1)*(i+1)} deg={90} freshIds={fresh} guest={guests[k++]}/>);
-    for(let i=0;i<bottomN;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottomN+1)*(i+1)} y={pad+H+9} deg={180} freshIds={fresh} guest={guests[k++]}/>);
-    for(let i=0;i<leftN;i++)chairs.push(<Chair key={"l"+i} x={pad-9} y={pad+H/(leftN+1)*(i+1)} deg={270} freshIds={fresh} guest={guests[k++]}/>);
+    for(let i=0;i<topN;i++)chairs.push(<Chair key={"t"+i} x={pad+W/(topN+1)*(i+1)} y={pad-9} deg={0} freshIds={fresh} tint={accent} guest={guests[k++]}/>);
+    for(let i=0;i<rightN;i++)chairs.push(<Chair key={"r"+i} x={pad+W+9} y={pad+H/(rightN+1)*(i+1)} deg={90} freshIds={fresh} tint={accent} guest={guests[k++]}/>);
+    for(let i=0;i<bottomN;i++)chairs.push(<Chair key={"b"+i} x={pad+W/(bottomN+1)*(i+1)} y={pad+H+9} deg={180} freshIds={fresh} tint={accent} guest={guests[k++]}/>);
+    for(let i=0;i<leftN;i++)chairs.push(<Chair key={"l"+i} x={pad-9} y={pad+H/(leftN+1)*(i+1)} deg={270} freshIds={fresh} tint={accent} guest={guests[k++]}/>);
     return wrap(SW,SH,table.x-pad,table.y-pad,<>
       {chairs}
       {selRing(<rect x={pad-7} y={pad-7} width={W+14} height={H+14} rx={20} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
       <rect x={pad} y={pad} width={W} height={H} rx={16} fill="#fff"/>
-      <rect x={pad} y={pad} width={W} height={H} rx={16} fill={`url(#tc${uid})`} stroke={ring} strokeWidth={2.5}/>
+      <rect x={pad} y={pad} width={W} height={H} rx={16} fill={`url(#tc${uid})`} stroke={ringC} strokeWidth={2.5}/>
       <rect x={pad+6} y={pad+6} width={W-12} height={H-12} rx={11} fill="none" stroke={accent} strokeOpacity=".4" strokeDasharray="4 4"/>
       <Flowers x={pad+W/2} y={pad+14} s={.7}/>
     </>,labelBox({left:pad,top:pad+8,width:W,height:H-8}));
@@ -781,16 +793,16 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   const circ=2*Math.PI*(R+5);
   const chairs=Array.from({length:total},(_,i)=>{
     const deg=i*(360/total);const a=deg*Math.PI/180;
-    return <Chair key={i} x={cx+seatDist*Math.sin(a)} y={cy-seatDist*Math.cos(a)} deg={deg} freshIds={fresh} guest={guests[i]}/>;
+    return <Chair key={i} x={cx+seatDist*Math.sin(a)} y={cy-seatDist*Math.cos(a)} deg={deg} freshIds={fresh} tint={accent} guest={guests[i]}/>;
   });
   return wrap(S,S,table.x,table.y,<>
     {chairs}
     {selRing(<circle cx={cx} cy={cy} r={R+11} fill="none" stroke={C.blueL} strokeWidth={2} strokeDasharray="5 4"/>)}
     <circle cx={cx} cy={cy} r={R} fill="#fff"/>
-    <circle cx={cx} cy={cy} r={R} fill={`url(#tc${uid})`} stroke={accent} strokeOpacity=".45" strokeWidth={1.5}/>
+    <circle cx={cx} cy={cy} r={R} fill={`url(#tc${uid})`} stroke={accent} strokeOpacity=".6" strokeWidth={2}/>
     {/* טבעת התקדמות  -  כמה מהשולחן מלא */}
     <circle cx={cx} cy={cy} r={R+5} fill="none" stroke="#F1EAF8" strokeWidth={3.5}/>
-    <circle cx={cx} cy={cy} r={R+5} fill="none" stroke={ring} strokeWidth={3.5} strokeLinecap="round"
+    <circle cx={cx} cy={cy} r={R+5} fill="none" stroke={ringC} strokeWidth={3.5} strokeLinecap="round"
       strokeDasharray={`${circ*Math.min(occupied/total,1)} ${circ}`} transform={`rotate(-90 ${cx} ${cy})`} style={{transition:"stroke-dasharray .4s"}}/>
     <Flowers x={cx} y={cy-29} s={.85}/>
   </>,labelBox({inset:0,paddingTop:12},22));
@@ -1631,6 +1643,11 @@ const LANDING_CSS=`
   .lp-cta3 .lp-bokeh{z-index:-1}
   @media(max-width:700px){.lp-cta3{margin:0 8px 40px;border-radius:36px;padding:76px 6vw}}
   .lp-foot-top{position:relative;isolation:isolate}
+  /* מפת האתר ליד הלוגו (ולא נדחקת לשורה מתחת): לוגו + 5 עמודות */
+  @media(min-width:1001px){.lp-foot-top{display:grid!important;grid-template-columns:minmax(230px,280px) 1fr;align-items:start;gap:48px!important}
+    .lp-foot-top > nav.lp-foot{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px 28px!important}}
+  @media(min-width:601px) and (max-width:1000px){.lp-foot-top > nav.lp-foot{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 28px!important;width:100%}}
+  @media(max-width:600px){.lp-foot-top > nav.lp-foot{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 18px!important;width:100%}}
   .lp-foot-top > *:not(.lp-foot-mark){position:relative;z-index:1}
   .lp-foot-mark{position:absolute;z-index:0;left:50%;top:50%;translate:-50% -50%;direction:ltr;white-space:nowrap;pointer-events:none;user-select:none;font-family:'Fredoka','Heebo',sans-serif;font-weight:700;font-size:clamp(90px,19vw,280px);line-height:1;letter-spacing:-.05em;background:linear-gradient(180deg,rgba(155,107,255,.16) 0%,rgba(240,96,158,.10) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
   @media(max-width:700px){.lp-foot-mark{font-size:27vw}}
@@ -2589,7 +2606,7 @@ const FA_CSS=`
   .lp-fa-h{display:flex;align-items:center;gap:10px;padding:0 6px}
   .lp-fa-h .lp-circ{flex-shrink:0}
   .lp-fa-h h3{font:900 18px/1.25 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin:0}
-  .lp-fa-h small{display:block;font-size:13px;font-weight:800;color:var(--t)}
+  .lp-fa-h small{display:block;font-size:13px;font-weight:800;color:color-mix(in srgb,var(--t) 78%,#2B1D3F)}
   .lp-fa-card p{font-size:14.5px;line-height:1.6;color:#3E3555;margin:8px 6px 0}
   .lp-fa-ch{transform-box:fill-box;transform-origin:center}
   .lp-fa-bub{background:#fff;border:1px solid #E6DAFF;border-radius:14px 14px 14px 4px;padding:7px 11px;font-size:12px;font-weight:700;color:#2B1D3F;box-shadow:0 8px 18px -12px rgba(155,107,255,.6)}
@@ -2600,7 +2617,7 @@ const FA_CSS=`
   .lp-fa-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:100px;padding:5px 11px;font-size:12px;font-weight:800;color:#2B1D3F;box-shadow:0 6px 14px -10px rgba(60,35,110,.6)}
   .lp-fa-chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
   .lp-fa-wa{background:#fff;border-radius:16px 16px 4px 16px;padding:9px 12px;max-width:220px;font-size:12px;line-height:1.55;color:#2B1D3F;border:1px solid #CFEFDB;box-shadow:0 10px 22px -14px rgba(31,168,85,.6);transform-origin:bottom right}
-  .lp-fa-wa em{font-style:normal;display:block;text-align:left;font-size:11px;color:#8B8499}
+  .lp-fa-wa em{font-style:normal;display:block;text-align:left;font-size:11px;color:#625B73}
   .lp-fa-sc{width:92px;background:#fff;border-radius:12px;padding:9px 8px;text-align:center;border:1px solid #F3E6C8;box-shadow:0 12px 22px -14px rgba(232,176,74,.8);rotate:var(--r)}
   .lp-fa-sc span{display:block;font-size:10px;font-weight:800;color:#6B5F80}
   .lp-fa-sc b{display:block;font:900 26px/1.1 'Fredoka','Heebo',sans-serif;color:var(--c)}
@@ -2620,7 +2637,7 @@ const FA_CSS=`
   @keyframes lpFaPop{0%{opacity:0;transform:scale(.6)}8%,84%{opacity:1;transform:scale(1)}93%,100%{opacity:0;transform:scale(1)}}
   @keyframes lpFaRing{0%{stroke-dashoffset:163}35%,84%{stroke-dashoffset:41}100%{stroke-dashoffset:163}}
   @keyframes lpFaWa{0%{opacity:0;transform:translateY(10px) scale(.95)}8%,86%{opacity:1;transform:none}94%,100%{opacity:0;transform:none}}
-  @keyframes lpFaTick{0%,40%{color:#8B8499}46%,100%{color:#2F9BDA}}
+  @keyframes lpFaTick{0%,40%{color:#625B73}46%,100%{color:#1C6699}}
   @keyframes lpFaSway{0%{transform:translateY(0) rotate(0deg)}100%{transform:translateY(-6px) rotate(calc(var(--r) * -1.6))}}
   @keyframes lpFaRow{0%{opacity:0;transform:translateX(-36px)}9%,84%{opacity:1;transform:none}93%,100%{opacity:0;transform:none}}
   .lp-motion .lp-fa-ch{animation:lpFaFill 8s cubic-bezier(0.23,1,0.32,1) var(--d,0s) infinite both}
@@ -2729,7 +2746,7 @@ const XM_CSS=`
   .lp-xm-xl th{background:#F1F3F2;font-weight:700;color:#5F6B66;height:28px;border:1px solid #E1E5E3}
   .lp-xm-xl td{height:30px;border:1px solid #E6E9E7;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
   .lp-xm-xl td.n{width:30px;text-align:center;background:#F7F8F7;color:#8A938F;font-size:11px}
-  .lp-xm-xl tr.x td:not(.n){text-decoration:line-through;color:#A39FAD}
+  .lp-xm-xl tr.x td:not(.n){text-decoration:line-through;color:#6E6880}
   .lp-xm-xl tr.y td:not(.n){background:#FFF6B8}
   .lp-xm-note{position:absolute;z-index:2;background:#FFE680;color:#5A4500;font:700 13px/1.35 'Heebo',sans-serif;padding:9px 12px;border-radius:4px;box-shadow:0 10px 20px -12px rgba(90,69,0,.7);max-width:150px}
   .lp-xm-note.a{top:84px;left:-22px;rotate:-6deg;background:#FFC9DD;color:#7A1F48}
@@ -2747,7 +2764,7 @@ const XM_CSS=`
   .lp-xm-ch{transform-box:fill-box;transform-origin:center}
   .lp-xm-pts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1120px;margin:56px auto 0}
   .lp-xm-pt{background:#fff;border-radius:22px;padding:18px 20px;box-shadow:0 18px 40px -30px rgba(60,35,110,.55)}
-  .lp-xm-pt s{display:block;font-size:14.5px;color:#8B8499;margin-bottom:6px}
+  .lp-xm-pt s{display:block;font-size:14.5px;color:#625B73;margin-bottom:6px}
   .lp-xm-pt b{display:flex;gap:8px;align-items:flex-start;font:800 16.5px/1.4 'Fredoka','Heebo',sans-serif;color:#2B1D3F}
   .lp-xm-pt b::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:1px;border-radius:50%;background:#3CC8A0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
 
@@ -2944,10 +2961,10 @@ const SA_CSS=`
   .lp-sa-ch{background:#F4FAF7}
   .lp-sa-ch .lp-sa-hd{color:#167A3E}
   .lp-sa-msg{margin:8px 2px 0;max-width:86%;background:#fff;border-radius:14px 14px 14px 4px;padding:8px 10px;font-size:12px;line-height:1.5;color:#2B1D3F;box-shadow:0 6px 16px -10px rgba(31,122,77,.6)}
-  .lp-sa-msg em{font-style:normal;display:block;text-align:left;font-size:10px;color:#8B8499}
+  .lp-sa-msg em{font-style:normal;display:block;text-align:left;font-size:10px;color:#57506A}
   .lp-sa-msg.me{margin-right:auto;margin-left:2px;border-radius:14px 14px 4px 14px;background:#DFF6E8}
   .lp-sa-plane{position:absolute;z-index:3;width:30px;height:30px;left:-34px;bottom:30px}
-  .lp-sa-sent{position:absolute;bottom:10px;right:10px;left:10px;background:#1FA855;color:#fff;border-radius:12px;padding:8px 10px;font:800 12px 'Fredoka','Heebo',sans-serif;text-align:center}
+  .lp-sa-sent{position:absolute;bottom:10px;right:10px;left:10px;background:#15803D;color:#fff;border-radius:12px;padding:8px 10px;font:800 12px 'Fredoka','Heebo',sans-serif;text-align:center}
 
   @keyframes lpSaPlus{0%{opacity:1}4%,72%{opacity:0}78%,100%{opacity:1}}
   @keyframes lpSaOk{0%{opacity:0;transform:scale(.4)}4%,72%{opacity:1;transform:scale(1)}78%,100%{opacity:0;transform:scale(1)}}
@@ -2958,7 +2975,7 @@ const SA_CSS=`
   @keyframes lpSaB{0%,48%{opacity:0}52%,92%{opacity:1}96%,100%{opacity:0}}
   @keyframes lpSaPlane{0%{opacity:0;transform:translate(0,0) rotate(-10deg)}6%{opacity:1}22%{opacity:1;transform:translate(150px,-150px) rotate(-10deg)}26%,100%{opacity:0;transform:translate(170px,-170px) rotate(-10deg)}}
   @keyframes lpSaMsg{0%,18%{opacity:0;transform:translateY(10px) scale(.96)}24%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:none}}
-  @keyframes lpSaTick{0%,38%{color:#8B8499}44%,100%{color:#2F9BDA}}
+  @keyframes lpSaTick{0%,38%{color:#57506A}44%,100%{color:#1C6699}}
   @keyframes lpSaRep{0%,50%{opacity:0;transform:translateY(10px) scale(.96)}56%,88%{opacity:1;transform:none}94%,100%{opacity:0;transform:none}}
   .lp-sa-ch{transform-box:fill-box;transform-origin:center}
   .lp-motion .lp-sa-plus{animation:lpSaPlus 6s ease var(--d) infinite both}
@@ -3011,7 +3028,7 @@ function HowStepArt({i}){
       <div className="lp-sa-msg me">היי רחל! 🎉 מחכים לך הערב.<br/><b>השולחן שלך: 7</b><em>19:02 ✓✓</em></div>
       <div className="lp-sa-msg rep">תודה! נתראה 💃</div>
       <div className="lp-sa-sent">📤 נשלח לכל האורחים</div>
-      <svg className="lp-sa-plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-7 18-2.5-7.5z" fill="#fff" stroke="#1FA855" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+      <svg className="lp-sa-plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-7 18-2.5-7.5z" fill="#fff" stroke="#15803D" strokeWidth="1.6" strokeLinejoin="round"/></svg>
     </div>);
 }
 
@@ -4616,7 +4633,7 @@ function TasksScreen({ event }) {
               <div style={{flex:1,minWidth:0}}>
                 {editId===t.id
                   ?<input autoFocus defaultValue={t.t} onBlur={e=>rename(t.id,e.target.value)} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();if(e.key==="Escape")setEditId(null);}} style={{...inp,width:"100%",padding:"6px 10px"}}/>
-                  :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:t.done?"#8A9A90":C.text,textDecoration:t.done?"line-through":"none",textDecorationThickness:2,textDecorationColor:"#25D366"}}>{t.t}</div>}
+                  :<div onDoubleClick={()=>setEditId(t.id)} style={{fontSize:14,fontWeight:700,color:t.done?"#5D6B63":C.text,textDecoration:t.done?"line-through":"none",textDecorationThickness:2,textDecorationColor:"#25D366"}}>{t.t}</div>}
                 {taskPastEvent(t,event)
                   ?<div style={{fontSize:11,color:"#A0AEC0",fontWeight:700}}>📅 עבר תאריך {eventWord(event)}</div>
                   :d&&<div style={{fontSize:11,color:lt?C.danger:taskCatchUp(t,event)?"#B45309":C.muted,fontWeight:lt||taskCatchUp(t,event)?800:500}}>{lt?"⚠️ באיחור · ":taskCatchUp(t,event)?"⏩ להשלים בהקדם · ":""}{fmtDue(d)}</div>}
@@ -4832,7 +4849,7 @@ const ED_CSS=`
 .ed .ed-inv-url{flex:1 1 260px;min-width:0;background:#fff;border-radius:14px;padding:11px 14px;font-size:13.5px;font-weight:600;color:#5B3C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .ed .ed-inv-btns{display:flex;gap:8px;flex-wrap:wrap}
 .ed .ed-inv-btns button{min-height:44px;padding:0 16px;border:none;border-radius:100px;background:linear-gradient(120deg,#F0609E,#9B6BFF);color:#fff;font:700 14px 'Fredoka','Heebo',sans-serif;cursor:pointer}
-.ed .ed-inv-btns button.wa{background:#1FA855}
+.ed .ed-inv-btns button.wa{background:#15803D}
 .ed .ed-inv-btns button:last-child{background:#fff;color:#5B3C8C;box-shadow:inset 0 0 0 1.5px #E6DDF5}
 .ed .ed-inv-btns button.ok{background:#1F7A4D}
 @media(max-width:700px){.ed .ed-inv-btns{width:100%}.ed .ed-inv-btns button{flex:1 1 auto;padding:0 10px}}
@@ -7378,7 +7395,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 {/* כותרת שולחן */}
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-                    <span title="מספר שולחן" style={{minWidth:30,height:30,borderRadius:9,background:GRAD,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:15,flexShrink:0,padding:"0 6px"}}>{t.num}</span>
+                    <span title="מספר שולחן" style={{minWidth:30,height:30,borderRadius:9,background:tableTint(t,t.num),color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:15,flexShrink:0,padding:"0 6px"}}>{t.num}</span>
                     <span style={{fontSize:16}}>{TABLE_TYPES[t.type]?.icon}</span>
                     <span style={{fontWeight:800,fontSize:14,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{String(t.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${t.num}`}</span>
                     <button onClick={()=>setEditTableData(t)} title="עריכת שולחן ומספר" style={{background:"none",border:"none",cursor:"pointer",fontSize:12,padding:2}}>✏️</button>
@@ -9090,7 +9107,7 @@ const PK_CSS=`
 .pk-pop{position:absolute;top:-12px;left:18px;background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;font:700 12px 'Fredoka','Heebo',sans-serif;border-radius:100px;padding:5px 12px;box-shadow:0 10px 20px -10px rgba(240,96,158,.8)}
 .pk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .pk-ic{width:54px;height:54px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--c) 14%,#fff)}
-.pk-badge{font:700 12px 'Fredoka','Heebo',sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:100px;padding:4px 11px}
+.pk-badge{font:700 12px 'Fredoka','Heebo',sans-serif;color:color-mix(in srgb,var(--c) 68%,#1A1030);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:100px;padding:4px 11px}
 .pk-card h3{margin:0;font-size:19px;font-weight:700;color:#2B1D3F}
 .pk-price{font-size:26px;font-weight:700;color:var(--c);line-height:1.2}
 .pk-price small{font-size:13px;color:#5E5470;font-weight:600}
@@ -9100,10 +9117,10 @@ const PK_CSS=`
 .pk-feats li::before,.pk-all li::before{content:"✓";flex-shrink:0;width:19px;height:19px;border-radius:50%;background:color-mix(in srgb,var(--c) 16%,#fff);color:var(--c);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .pk-all li.warn::before{content:"!";background:#FFF4E0;color:#8A5A00}
 .pk-all li.plus::before{content:"+"}
-.pk-btn{min-height:46px;border:none;border-radius:100px;background:var(--c);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:scale 160ms cubic-bezier(0.23,1,0.32,1),filter 160ms ease}
+.pk-btn{min-height:46px;border:none;border-radius:100px;background:color-mix(in srgb,var(--c) 78%,#1A1030);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:scale 160ms cubic-bezier(0.23,1,0.32,1),filter 160ms ease}
 .pk-card.feat .pk-btn{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)}
 .pk-btn:active{scale:.97}.pk-btn:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
-.pk-card.on .pk-btn{background:#fff;color:var(--c);box-shadow:inset 0 0 0 1.5px var(--c)}
+.pk-card.on .pk-btn{background:#fff;color:color-mix(in srgb,var(--c) 68%,#1A1030);box-shadow:inset 0 0 0 1.5px var(--c)}
 .pk-own{min-height:46px;border-radius:100px;display:flex;align-items:center;justify-content:center;background:#EFFAF3;color:#1F7A4D;font:700 14px 'Fredoka','Heebo',sans-serif}
 .pk-panel{grid-column:1/-1;background:#fff;border-radius:28px;padding:22px 24px;border:2px solid var(--c);box-shadow:0 26px 54px -32px rgba(91,60,140,.55);animation:pkIn 260ms cubic-bezier(0.23,1,0.32,1) both}
 @keyframes pkIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -9112,7 +9129,7 @@ const PK_CSS=`
 .pk-panel-h small{margin-inline-start:auto;font-size:18px;color:var(--c)}
 .pk-note{background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#8A5A00;font-weight:700}
 .pk-all{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 16px}
-.pk-buy{width:100%;min-height:50px;border:none;border-radius:100px;background:var(--c);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.pk-buy{width:100%;min-height:50px;border:none;border-radius:100px;background:color-mix(in srgb,var(--c) 78%,#1A1030);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .pk-buy:disabled{background:#E2E8F0;color:#8A8599;cursor:not-allowed}
 .pk-pay{margin-top:18px;text-align:center;font-size:13px;color:#5E5470;font-weight:600;background:#F7F2FF;border-radius:100px;padding:10px 16px}
 @media(max-width:1100px){.pk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -10180,10 +10197,10 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
                 <div key={t.id} onClick={()=>pickTemplate(t)} role="radio" aria-checked={selectedTemplate===t.id} tabIndex={0}
                   onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pickTemplate(t);}}}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"11px 16px",borderRadius:100,border:"none",
-                    boxShadow:selectedTemplate===t.id?"0 0 0 2px #1FA855":"inset 0 0 0 1.5px #E4EFE8",
+                    boxShadow:selectedTemplate===t.id?"0 0 0 2px #15803D":"inset 0 0 0 1.5px #E4EFE8",
                     background:selectedTemplate===t.id?"#E3F8EC":"#fff",
                     cursor:"pointer",transition:"box-shadow 200ms cubic-bezier(0.23,1,0.32,1),background-color 200ms ease"}}>
-                  <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${selectedTemplate===t.id?"#1FA855":"#C9DDD1"}`,background:selectedTemplate===t.id?"radial-gradient(circle,#1FA855 45%,#fff 50%)":"#fff",flexShrink:0}}/>
+                  <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${selectedTemplate===t.id?"#15803D":"#C9DDD1"}`,background:selectedTemplate===t.id?"radial-gradient(circle,#15803D 45%,#fff 50%)":"#fff",flexShrink:0}}/>
                   <span style={{fontSize:14,fontWeight:700,color:"#173D2F"}}>{t.label}</span>
                 </div>
               ))}
@@ -11026,7 +11043,7 @@ const ML_CSS=`
   .ml-row{background:#FCFAFE;border-radius:14px;padding:10px 12px}
   .ml-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}.ml-top b{color:#2B1D3F}.ml-top span{color:#4A2C8F;font-weight:700;font-size:13px}.ml-top small{margin-right:auto;color:#6E6585}
   .ml-q{margin-top:5px;font-size:14px;color:#7A4E00;font-weight:800}.ml-q span{font-weight:500;color:#3E3555}
-  .ml-wa{display:inline-flex;align-items:center;gap:5px;margin-top:7px;background:#1FA855;color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800;text-decoration:none}
+  .ml-wa{display:inline-flex;align-items:center;gap:5px;margin-top:7px;background:#15803D;color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800;text-decoration:none}
 `;
 
 // רשימת הספקים המאושרים (בתוך המערכת): סינון לפי תחום ואזור, מובילים קודם ואז החדשים
@@ -11176,7 +11193,7 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
   };
   const upgrade=()=>window.open(`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(`היי, אני ${p?.business_name||"ספק"} (${SUPPLIER_CAT[p?.category]?.label||""}) ב-Sidor-IL ואשמח לשמוע על שדרוג לספק מוביל`)}`,"_blank","noopener,noreferrer");
   const status=p&&({pending:{bg:"#FFF8E8",b:"#F5DDA6",c:"#8A5A00",t:"⏳ הפרופיל ממתין לאישור",s:"נבדוק את הפרטים בדרך כלל תוך יום-יומיים, ואז הפרופיל יופיע ללקוחות."},
-    approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#1F8F6C",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
+    approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#17694F",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
     rejected:{bg:"#FFF5F5",b:"#FED7D7",c:"#C53030",t:"✗ הפרופיל לא אושר",s:p.reject_reason||"תקנו את הפרטים ושלחו שוב."}}[p.status]);
   const navActs=inMenu=>(<>
     <button type="button" className={inMenu?"lp-btn lp-primary":"lp-btn lp-navbtn lp-ghost"} onClick={onEvents} style={inMenu?undefined:{padding:"9px 20px",fontSize:14,minHeight:44}}>{inMenu?"האירועים שלי":<><span className="lp-lg">האירועים שלי</span><span className="lp-sm">האירועים</span></>}</button>
@@ -11259,7 +11276,7 @@ const VD_CSS=`
   .vd-del{margin-top:12px;background:none;border:none;padding:6px 0;color:#B42318;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline}
   .vd-up{background:linear-gradient(135deg,#FFF6E2,#FFF0F6)}
   .vd-up ul{margin:0 0 16px;padding:0 18px 0 0;font-size:15px;line-height:1.9;color:#3A2F50}
-  .vd-wa{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;background:#1FA855;color:#fff;border:none;border-radius:999px;font:700 16px 'Fredoka','Heebo',sans-serif;cursor:pointer}
+  .vd-wa{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;background:#15803D;color:#fff;border:none;border-radius:999px;font:700 16px 'Fredoka','Heebo',sans-serif;cursor:pointer}
   .vd-link{background:none;border:none;color:#5B2FA8;font:700 15px 'Fredoka','Heebo',sans-serif;cursor:pointer;text-decoration:underline}
   .vd-leads{margin-bottom:18px}
   .vd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
@@ -11278,7 +11295,7 @@ const VD_CSS=`
   .vd-qrow input:focus{border-color:#E8B04A;box-shadow:0 0 0 3px rgba(232,176,74,.2)}
   .vd-lead-q{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:none;background:linear-gradient(135deg,#FFD9A0,#FFB6C9);color:#4A2A00;font:700 14px 'Fredoka','Heebo',sans-serif;cursor:pointer}
   @media(max-width:700px){.vd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  .vd-new{background:#F0609E;color:#fff;border-radius:999px;padding:3px 11px;font:700 13px 'Fredoka','Heebo',sans-serif}
+  .vd-new{background:#C2185B;color:#fff;border-radius:999px;padding:3px 11px;font:700 13px 'Fredoka','Heebo',sans-serif}
   .vd-empty{background:#FCFAFE;border:1.5px dashed #E6DDF5;border-radius:20px;padding:18px;text-align:center;color:#5E5470;font-size:14.5px;line-height:1.6}
   .vd-lead-list{display:grid;gap:12px}
   .vd-lead{border:1.5px solid #EFE6F7;border-radius:22px;padding:14px 16px;background:#fff}
@@ -11291,7 +11308,7 @@ const VD_CSS=`
   .vd-lead-msg{margin:8px 0 0;font-size:14px;line-height:1.7;color:#3A2F50;white-space:pre-line;background:#FCFAFE;border-radius:14px;padding:8px 12px}
   .vd-lead-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
   .vd-lead-wa,.vd-lead-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;font:700 14px 'Fredoka','Heebo',sans-serif;text-decoration:none}
-  .vd-lead-wa{background:#1FA855;color:#fff}.vd-lead-btn{background:#F6F0FF;color:#3A2464}
+  .vd-lead-wa,.vd-leads a.vd-lead-wa{background:#15803D;color:#fff}.vd-lead-btn,.vd-leads a.vd-lead-btn{background:#F6F0FF;color:#3A2464}
   .vd-lead-sel{min-height:40px;border:1.5px solid #E6DDF5;border-radius:999px;padding:0 12px;font:600 14px 'Heebo',sans-serif;color:#2B1D3F;background:#fff}
   .vd-lead-del{background:none;border:none;color:#B42318;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;margin-right:auto}
   @media(max-width:700px){.vd-hero{margin:86px 8px 20px;border-radius:32px;padding:34px 22px}.vd-hero p{font-size:16px}.vd-form > div{padding:18px!important;border-radius:26px!important}}
@@ -14178,7 +14195,7 @@ function AdminDashboard({ user, onLogout }) {
                     <div style={{fontWeight:900,fontSize:15,direction:"ltr",textAlign:"right"}}>{u.email||u.user_id}</div>
                     <div style={{fontSize:12,color:C.muted}}>הצטרף {fmtDate(u.created_at)} · כניסה אחרונה {fmtDate(u.last_sign_in_at)}{refs[u.user_id]&&<> · 🎯 הגיע דרך <b>{refs[u.user_id]}</b></>}</div>
                     {[...new Set(u.events.map(e=>e.host_phone).filter(p=>normPhone(p)))].map(p=>(
-                      <a key={p} href={`https://wa.me/972${normPhone(p).slice(1)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",fontSize:12,fontWeight:800,color:"#1FA855",textDecoration:"none",marginTop:3,marginLeft:10,direction:"ltr"}}>💬 {p}</a>
+                      <a key={p} href={`https://wa.me/972${normPhone(p).slice(1)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",fontSize:12,fontWeight:800,color:"#15803D",textDecoration:"none",marginTop:3,marginLeft:10,direction:"ltr"}}>💬 {p}</a>
                     ))}
                   </div>
                   <span style={chip(C.blueXL,C.text)}>{u.events.length} אירועים</span>
@@ -14296,13 +14313,14 @@ const LEGAL_PAGES={
   terms:{title:"תנאי שימוש",updated:"נובמבר 2026",sections:[
     {title:"1. כללי",text:`ברוכים הבאים ל-Sidor-IL ("השירות", "אנחנו"; עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל), פלטפורמה לניהול אירועים בכתובת sidoril.com: סידורי הושבה, אישורי הגעה, הזמנות דיגיטליות, שליחת הודעות לאורחים וכלים נלווים.\n\nהשימוש בשירות, כולל הרשמה, יצירת אירוע או רכישת חבילה, מהווה הסכמה לתנאים אלה ולמדיניות הפרטיות. אם אינכם מסכימים, אנא אל תשתמשו בשירות. התנאים מנוסחים בלשון זכר מטעמי נוחות בלבד ופונים לכל המגדרים.`},
     {title:"2. ההרשמה והחשבון",text:`• השימוש בשירות מיועד לבני 18 ומעלה.\n• יש למסור פרטים נכונים ולשמור על סודיות פרטי ההתחברות. אתם אחראים לכל פעולה שנעשית בחשבונכם.\n• בעל אירוע רשאי לשתף את האירוע עם אנשים נוספים (למשל בן/בת זוג או הורים). מי ששותף יכול לצפות ולערוך את פרטי האירוע, והאחריות על מתן הגישה היא של בעל האירוע.\n• אנו רשאים להשעות או לסגור חשבון שנעשה בו שימוש בניגוד לתנאים או לחוק.`},
-    {title:"3. השירותים והחבילות",text:`• חלק מהשירות ניתן ללא תשלום, וחלקו בחבילות בתשלום (כגון החבילה הבסיסית, הודעות SMS, הודעות WhatsApp, צוות הושבה ועמדת טאבלט), כמפורט בדף החבילות.\n• המחיר המחייב הוא המחיר שמוצג באתר ומאושר מולנו בעת הרכישה. כל המחירים באתר כוללים מע"מ.\n• על כל תשלום תונפק קבלה או חשבונית מס כדין.\n• החבילה מופעלת לאחר אישור התשלום.\n• יתרת הודעות SMS שנרכשה משמשת לאירוע שעבורו נרכשה. הודעה נחשבת לנוצלה כשנשלחה לספק ההודעות.`},
+    {title:"3. השירותים והחבילות",text:`• חלק מהשירות ניתן ללא תשלום, וחלקו בחבילות בתשלום (כגון החבילה הבסיסית, הודעות SMS, הודעות WhatsApp, צוות הושבה ועמדת טאבלט), כמפורט בדף החבילות.\n• המחיר המחייב הוא המחיר שמוצג באתר ומאושר מולנו בעת הרכישה. כל המחירים באתר כוללים מע"מ.\n• על כל תשלום תונפק קבלה או חשבונית מס כדין.\n• החבילה מופעלת לאחר אישור התשלום.\n• יתרת הודעות SMS שנרכשה משמשת לאירוע שעבורו נרכשה. הודעה נחשבת לנוצלה כשנשלחה לספק ההודעות.\n• הודעות WhatsApp נמכרות לפי רשומה. רשומה היא אורח אחד (או משפחה עם מספר טלפון אחד), והיא כוללת עד 4 הודעות: הזמנה, תזכורת (נשלחת רק למי שעוד לא ענה), הודעה ביום האירוע (עם מספר השולחן למי ששובץ) והודעת תודה. ההודעות נשלחות אוטומטית במועדים שבתזמון, או ידנית מהמסך. רשומה נחשבת לנוצלה כשנשלחה לאורח ההודעה הראשונה, וכל אחת מ-4 ההודעות נשלחת לאורח פעם אחת. הודעה שלא נשלחה בגלל תקלה אצל ספק ההודעות אינה מנצלת רשומה.`},
     {title:"4. ביטול עסקה והחזרים",text:`ביטול עסקה ייעשה בהתאם לחוק הגנת הצרכן, התשמ"א-1981 ולתקנות הגנת הצרכן (ביטול עסקה), התשע"א-2010:\n\n• ניתן לבטל רכישה בתוך 14 ימים ממועד העסקה (או ממועד קבלת פרטי העסקה, לפי המאוחר), ובלבד שהביטול נעשה לפחות 2 ימים שאינם ימי מנוחה לפני מועד מתן השירות (למשל לפני מועד האירוע שאליו הוזמנו צוות הושבה או עמדת טאבלט).\n• הודעת ביטול אפשר למסור בוואטסאפ, באימייל, בטלפון או דרך דף "ביטול עסקה" באתר: https://www.sidoril.com/#/cancel\n• בביטול יוחזר הסכום ששולם בתוך 14 ימים מקבלת הודעת הביטול, בניכוי דמי ביטול בשיעור 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יינתן החזר עבור חלק מהשירות שכבר ניתן או נוצל (למשל הודעות SMS שכבר נשלחו).\n• צרכן שהוא אדם עם מוגבלות, אזרח ותיק או עולה חדש, רשאי לבטל עסקה שנעשתה בשיחה טלפונית (לרבות שיחה עם נציג בוואטסאפ) בתוך 4 חודשים, בהתאם לחוק.`},
     {title:"5. אחריות המשתמש לתוכן ולפרטי האורחים",text:`• אתם אחראים לכל המידע שאתם מזינים לשירות, ובכלל זה שמות וטלפונים של אורחים.\n• אתם מצהירים כי יש לכם זכות להשתמש בפרטי האורחים לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו.\n• ההודעות לאורחים (SMS ו-WhatsApp) נשלחות בשמכם ולפי הוראותיכם. אתם השולחים, ואנו מספקים את הכלי הטכני בלבד.\n• השירות מיועד לשליחת הזמנות, תזכורות ועדכונים הנוגעים לאירוע בלבד. אין להשתמש בו לשליחת דבר פרסומת או הודעות שאינן קשורות לאירוע, ובכלל זה בניגוד לסעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982.\n• אין להעלות תוכן פוגעני, מטעה או מפר זכויות של אחרים, ובכלל זה תמונות שאין לכם זכות להשתמש בהן.\n• מפיק או בעל מקצוע שמנהל אירועים עבור לקוחות אחראי לקבל את הסכמת לקוחותיו להזנת פרטיהם ופרטי אורחיהם לשירות.`},
     {title:"5א. עיבוד פרטי האורחים עבורכם",text:`לגבי פרטי האורחים שאתם מזינים, אתם בעלי השליטה במידע ואנו מחזיקים ומעבדים אותו עבורכם בלבד: לצורך מתן השירות, לפי הוראותיכם, ובאמצעי אבטחה סבירים. איננו משתמשים בפרטים אלה לכל מטרה אחרת, ואיננו מוסרים אותם לאחרים מלבד הספקים הנדרשים להפעלת השירות (כמפורט במדיניות הפרטיות). עם מחיקת האירוע נמחקים פרטי האורחים שלו.`},
     {title:"5ב. תקופת שמירת המידע",text:`השירות נועד לניהול אירוע, ולא לאחסון קבוע של רשימות אנשי קשר. פרטי האורחים של כל אירוע נשמרים עד 12 חודשים מתאריך האירוע, ולאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים, בלי הודעה נוספת. חשבון שלא נעשה בו שימוש 24 חודשים עשוי להימחק לאחר הודעה מוקדמת באימייל. באחריותכם לייצא ולשמור עותק של מה שתרצו לפני כן (למשל ייצוא לאקסל). לא נהיה אחראים לאובדן מידע שנמחק בהתאם לסעיף זה. הפרטים המלאים במדיניות הפרטיות.`},
     {title:"5ג. המלצות ודירוגים",text:`המלצה שאתם שולחים דרך האתר עשויה להתפרסם באתר עם השם שבחרתם להציג, לאחר אישורנו. אנו מפרסמים רק המלצות אמיתיות של לקוחות, ולא עורכים את תוכנן מלבד תיקון שגיאות כתיב. ניתן לבקש בכל עת להסיר המלצה.`},
-    {title:"5ד. מדריך הספקים",text:`• ספק שנרשם למדריך אחראי לכך שכל הפרטים, המחירים והתמונות שהוא מפרסם נכונים, שייכים לו או שיש לו זכות לפרסמם, ושהוא פועל כדין (כולל רישיונות והיתרים הנדרשים בתחומו).\n• פרופיל מוצג לאחר אישורנו. אנו רשאים לסרב לפרופיל, לבקש תיקונים, לסמן "עסק רשום" לאחר בדיקת מספר העוסק או ח.פ, או להסיר פרופיל שמפר את התנאים, לפי שיקול דעתנו.\n• "ספק מוביל" הוא מיקום בולט בתשלום, ומסומן באתר כ"מקודם". הוא אינו המלצה שלנו על איכות הספק.\n• Sidor-IL אינה צד להתקשרות בין גולשים לספקים, אינה בודקת את טיב השירות של הספקים ואינה אחראית לו. ההתקשרות, התשלום וכל מחלוקת הם בין הגולש לספק בלבד.\n• ספק יכול לעדכן את הפרופיל או למחוק אותו בכל עת מאזור הספקים.`},
+    {title:"5ד. מדריך הספקים",text:`• ספק שנרשם למדריך אחראי לכך שכל הפרטים, המחירים והתמונות שהוא מפרסם נכונים, שייכים לו או שיש לו זכות לפרסמם, ושהוא פועל כדין (כולל רישיונות והיתרים הנדרשים בתחומו).\n• פרופיל מוצג לאחר אישורנו, או מיד עם פרסומו אם הפעלנו לספק חשבון ספק (במקרה זה אנו בודקים אותו לאחר הפרסום). אנו רשאים לסרב לפרופיל, לבקש תיקונים, לסמן "עסק רשום" לאחר בדיקת מספר העוסק או ח.פ, או להסיר פרופיל שמפר את התנאים, לפי שיקול דעתנו.\n• "ספק מוביל" הוא מיקום בולט בתשלום, ומסומן באתר כ"מקודם". הוא אינו המלצה שלנו על איכות הספק.\n• Sidor-IL אינה צד להתקשרות בין גולשים לספקים, אינה בודקת את טיב השירות של הספקים ואינה אחראית לו. ההתקשרות, התשלום וכל מחלוקת הם בין הגולש לספק בלבד.\n• ספק יכול לעדכן את הפרופיל או למחוק אותו בכל עת מאזור הספקים.`},
+    {title:"5ו. פניות לספקים והצעות מחיר",text:`• "בקשת הצעת מחיר" מעבירה לספק את הפרטים שמילאתם, כדי שיחזור אליכם. מלאו רק פרטים שאתם מסכימים שהספק יקבל.\n• הצעת מחיר שספק שולח דרך האתר היא הצעה של הספק בלבד. Sidor-IL אינה צד לה, אינה מתחייבת למחיר או לשירות, והתשלום וכל מחלוקת הם בין הלקוח לספק.\n• ספק רשאי להשתמש בפרטי הפנייה רק כדי לחזור ללקוח בנוגע לפנייה זו, ולא לשלוח לו דבר פרסומת בלי הסכמתו (סעיף 30א לחוק התקשורת).\n• אנו רשאים להגביל מספר פניות כדי למנוע הצפה, ולהסיר ספק שעושה שימוש לרעה בפניות.`},
     {title:"5ה. דיווחי מחירים והמלצות על ספקים",text:`• דיווח מחיר או המלצה על ספק צריכים להתבסס על ניסיון אישי ואמיתי שלכם. אין לפרסם מידע כוזב, מטעה או פוגעני, ואין לפרסם תוכן שעלול להוות לשון הרע לפי חוק איסור לשון הרע, התשכ"ה-1965.\n• ספק אינו רשאי לפרסם המלצות על עצמו או על מתחריו.\n• ההמלצות והדיווחים משקפים את דעת הכותבים בלבד ולא את עמדתנו. אנו רשאים לסמן, להסתיר או להסיר דיווח או המלצה שנראים חריגים, לא אמינים או מפרים את התנאים, ולפעול לפי בקשת הסרה מוצדקת של ספק.\n• פרסום בעילום שם אפשרי, אך פרטי המפרסם נשמרים אצלנו ועשויים להימסר אם נחויב לכך על פי דין.`},
     {title:"6. זמינות השירות",text:`אנו עושים מאמץ שהשירות יפעל באופן רציף ותקין, אך ייתכנו תקלות, הפסקות לצורך תחזוקה או עיכובים אצל ספקים חיצוניים (כגון ספקי SMS ו-WhatsApp). מומלץ לשמור עותק של רשימת האורחים וסידור ההושבה (למשל באמצעות כפתורי ההדפסה והייצוא) לקראת יום האירוע.`},
     {title:"7. הגבלת אחריות",text:`השירות ניתן כפי שהוא (AS IS). ככל שהדין מתיר, לא נהיה אחראים לנזק עקיף או תוצאתי הנובע מהשימוש בשירות או מחוסר היכולת להשתמש בו, ובכלל זה הודעה שלא נמסרה או עוכבה אצל ספק חיצוני. בכל מקרה, אחריותנו הכוללת לא תעלה על הסכום ששילמתם עבור השירות הרלוונטי. אין באמור כדי לגרוע מזכויות שאינן ניתנות להתניה על פי דין.`},
@@ -14313,14 +14331,14 @@ const LEGAL_PAGES={
   ]},
   privacy:{title:"מדיניות פרטיות",updated:"נובמבר 2026",sections:[
     {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com, טלפון: 052-681-7102.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
-    {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
+    {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו, או מיד עם פרסום הפרופיל אם הפעלנו לספק חשבון ספק. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• פניות לספקים: כשאתם שולחים "בקשת הצעת מחיר" לספק, נשמרים ונמסרים לספק שבחרתם השם, הנייד, תאריך האירוע, מספר האורחים המשוער והפרטים שכתבתם. הצעת המחיר שהספק שולח לכם נשמרת יחד עם הפנייה.\n• שפת ההודעות של כל אורח (אם בחרתם שפה אחרת מעברית), כדי לשלוח לו את ההודעות בשפה שלו.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
-    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Unsplash: תמונות הרקע בדף הבית ובעיצובי ההזמנה נטענות משרתי Unsplash, ובמהלך הטעינה כתובת ה-IP של הדפדפן נחשפת אליהם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
+    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Twilio: שליחת הודעות WhatsApp לאורחים (שרתים בארצות הברית).\n• ספק שפניתם אליו דרך "בקשת הצעת מחיר": מקבל את פרטי הפנייה שמילאתם, כדי לחזור אליכם. מרגע זה הספק אחראי למידע שקיבל.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Unsplash: תמונות הרקע בדף הבית ובעיצובי ההזמנה נטענות משרתי Unsplash, ובמהלך הטעינה כתובת ה-IP של הדפדפן נחשפת אליהם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
-    {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
+    {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n• פניות לספקים והצעות מחיר: נשמרות עד שהספק מוחק אותן, ולכל היותר 24 חודשים ממועד הפנייה. ניתן לבקש מאיתנו למחוק פנייה ששלחתם.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
     {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com, טלפון 052-681-7102, או בדואר: Sidor-IL, השושנים 30, נוף הגליל. נשיב בתוך 30 ימים. ספק יכול גם לעדכן או למחוק את הפרופיל שלו בעצמו מאזור הספקים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
-    {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage). בכניסה הראשונה תתבקשו לאשר או לדחות את השמירה שאינה חיונית.\n\nנשמר תמיד, כי בלעדיו השירות לא יעבוד:\n• שמירת ההתחברות לחשבון.\n• הבחירה שלכם באישור או בדחייה.\n• סוג החשבון (פרטי או ספק), קוד הגישה לעמדת הכניסה לאולם שהגדרתם, ומצב הניווט בלשונית הפתוחה.\n\nנשמר רק אם אישרתם:\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות). בלי אישור הן פועלות עד רענון הדף.\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n\nבדחייה השירות ממשיך לעבוד במלואו, ומה שכבר נשמר מהרשימה השנייה נמחק. אפשר לשנות את הבחירה בכל עת בכפתור שבסעיף זה או ב"הגדרות עוגיות" בתחתית דף הבית.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם מראש. ניתן גם למחוק את המידע השמור דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
+    {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage). בכניסה הראשונה תתבקשו לאשר או לדחות את השמירה שאינה חיונית.\n\nנשמר תמיד, כי בלעדיו השירות לא יעבוד:\n• שמירת ההתחברות לחשבון.\n• הבחירה שלכם באישור או בדחייה.\n• קוד הגישה לעמדת הכניסה לאולם שהגדרתם, ומצב הניווט בלשונית הפתוחה.\n\nנשמר רק אם אישרתם:\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות). בלי אישור הן פועלות עד רענון הדף.\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n\nבדחייה השירות ממשיך לעבוד במלואו, ומה שכבר נשמר מהרשימה השנייה נמחק. אפשר לשנות את הבחירה בכל עת בכפתור שבסעיף זה או ב"הגדרות עוגיות" בתחתית דף הבית.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם מראש. ניתן גם למחוק את המידע השמור דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
     {title:"10. קטינים",text:`פתיחת חשבון מיועדת לבני 18 ומעלה. פרטי אורחים קטינים מוזנים על ידי בעל האירוע ובאחריותו.`},
     {title:"11. שינויים במדיניות",text:`נעדכן מדיניות זו לפי הצורך. שינוי מהותי יפורסם באתר, ותאריך העדכון האחרון מופיע בראש הדף.`},
     {title:"12. יצירת קשר",text:CONTACT_TXT},
