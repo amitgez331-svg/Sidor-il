@@ -13713,6 +13713,12 @@ function AdminDashboard({ user, onLogout }) {
   const [updatedAt,setUpdatedAt]=useState(null);
   // silent: רענון ברקע בלי ספינר (כשחוזרים לחלון / כל 30 שניות)
   const [producerProfs,setProducerProfs]=useState([]),[pendingVendors,setPendingVendors]=useState([]);
+  // "צריך טיפול": פריטים שסומנו כמטופלים (טבלה admin_seen_alerts, לכל המכשירים). מפתח = תוכן הפריט
+  const [seenAlerts,setSeenAlerts]=useState(new Set()),[showSeen,setShowSeen]=useState(false);
+  useEffect(()=>{sb.from("admin_seen_alerts").select("key").then(({data})=>setSeenAlerts(new Set((data||[]).map(r=>r.key))),()=>{});
+    sb.from("admin_seen_alerts").delete().lt("seen_at",new Date(Date.now()-90*864e5).toISOString()).then(()=>{},()=>{});},[]);
+  const markSeen=async k=>{setSeenAlerts(x=>new Set([...x,k]));await sb.from("admin_seen_alerts").upsert({key:k,seen_at:new Date().toISOString()}).then(()=>{},()=>{});};
+  const unmarkSeen=async k=>{setSeenAlerts(x=>{const n=new Set(x);n.delete(k);return n;});await sb.from("admin_seen_alerts").delete().eq("key",k).then(()=>{},()=>{});};
   const loadData=async(silent=false)=>{
     if(!silent)setLoading(true);
     const since=new Date(Date.now()-14*864e5).toISOString();
@@ -13867,7 +13873,11 @@ function AdminDashboard({ user, onLogout }) {
   const income30=[...requests,...waRequests].filter(r=>r.status==="approved"&&new Date(r.handled_at||r.created_at).getTime()>=monthAgo).reduce((t,r)=>t+(+r.price||0),0);
   const upcoming=events.filter(e=>{const d=daysTo(e.date);return d!==null&&d>=0&&d<=30;}).sort((a,b)=>a.date.localeCompare(b.date));
   const recentUsers=[...users].filter(u=>u.created_at).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))).slice(0,5);
-  const urgent=attention.filter(a=>a.lvl!=="info");
+  attention.forEach(a=>{a.k=`${a.icon}|${a.text}|${a.sub||""}`.slice(0,600);});
+  const seenItems=attention.filter(a=>seenAlerts.has(a.k));
+  const openItems=attention.filter(a=>!seenAlerts.has(a.k));
+  const handle=a=>{markSeen(a.k);a.go&&a.go();};
+  const urgent=openItems.filter(a=>a.lvl!=="info");
   const NAV=[
     ["יומיומי",[["overview","🏠","סקירה",null],["attention","🔔","צריך טיפול",urgent.length],["requests","🛒","בקשות SMS",pending.length],["wa_requests","💬","בקשות WhatsApp",waPendingReqs.length]]],
     ["לקוחות",[["events","📅","אירועים ויתרות",events.length],["users","👥","משתמשים וחבילות",users.length],["referrals","🎯","הפניות",Object.keys(refs).length]]],
@@ -13966,7 +13976,7 @@ function AdminDashboard({ user, onLogout }) {
                   <div key={i} className="adm-li" style={{"--c":lvlColor(a.lvl)}}>
                     <span className="adm-li-ic" aria-hidden="true">{a.icon}</span>
                     <div className="adm-li-t"><b>{a.text}</b>{(a.sub||a.ev)&&<span>{a.sub}{a.ev?`${a.sub?" · ":""}${emailOf(a.ev.user_id)}`:""}</span>}</div>
-                    {a.go&&<button className="adm-mini" onClick={a.go}>לטיפול</button>}
+                    {a.go?<button className="adm-mini" onClick={()=>handle(a)}>לטיפול</button>:<button className="adm-mini" onClick={()=>markSeen(a.k)} title="מסמן כמטופל ומוריד מהרשימה">✓ טופל</button>}
                     {a.ev&&<button className="adm-mini ghost" onClick={()=>openEvent(a.ev)}>פתח אירוע</button>}
                   </div>
                 ))}
@@ -14017,19 +14027,23 @@ function AdminDashboard({ user, onLogout }) {
           </div>
         ):tab==="attention"?(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {!attention.length&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין כרגע שום דבר שדורש טיפול</div><div style={{fontSize:13,marginTop:4}}>בודק: בקשות רכישה, שליחות אוטומטיות שנכשלו, ואירועים ב-14 הימים הקרובים</div></div>}
-            {attention.map((a,i)=>{const col=a.lvl==="red"?C.danger:a.lvl==="amber"?"#B45309":C.blue;return(
-              <div key={i} className="adm-row" style={{...card,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",borderRight:`4px solid ${col}`}}>
+            {!openItems.length&&<div style={{...card,padding:40,textAlign:"center",color:C.muted}}><div style={{fontSize:40}}>✅</div><div style={{fontWeight:800,marginTop:6}}>אין כרגע שום דבר שדורש טיפול</div><div style={{fontSize:13,marginTop:4}}>בודק: בקשות רכישה, שליחות אוטומטיות שנכשלו, ואירועים ב-14 הימים הקרובים</div></div>}
+            {(showSeen?attention:openItems).map((a,i)=>{const col=a.lvl==="red"?C.danger:a.lvl==="amber"?"#B45309":C.blue,done=seenAlerts.has(a.k);return(
+              <div key={a.k} className="adm-row" style={{...card,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",borderRight:`4px solid ${done?"#CBD5E0":col}`,opacity:done?.6:1}}>
                 <div style={{width:38,height:38,borderRadius:12,background:col+"14",color:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,flexShrink:0}}>{a.icon}</div>
                 <div style={{flex:1,minWidth:220}}>
                   <div style={{fontWeight:800,fontSize:14}}>{a.text}</div>
                   {(a.sub||a.ev)&&<div style={{fontSize:12,color:C.muted}}>{a.sub}{a.ev?`${a.sub?" · ":""}${emailOf(a.ev.user_id)}`:""}</div>}
                 </div>
-                {a.go&&<button onClick={a.go} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לטיפול ←</button>}
+                {done?<button onClick={()=>unmarkSeen(a.k)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>↩ החזרה לרשימה</button>
+                :<>{a.go&&<button onClick={()=>handle(a)} className="sx-btn" style={{background:GRAD,color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>לטיפול ←</button>}
+                <button onClick={()=>markSeen(a.k)} className="sx-btn" title="מסמן כמטופל ומוריד מהרשימה" style={{background:"#EFFAF3",border:"1.5px solid #BDEFDD",color:"#1F7A4D",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>✓ טופל</button></>}
                 {a.ev&&<button onClick={()=>setCustFor(a.ev.user_id)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>👤 כרטיס לקוח</button>}
                 {a.ev&&<button onClick={()=>openEvent(a.ev)} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>📅 פתח אירוע</button>}
               </div>
             );})}
+            {seenItems.length>0&&<button onClick={()=>setShowSeen(v=>!v)} style={{alignSelf:"center",background:"none",border:"none",color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline",padding:8}}>
+              {showSeen?"הסתרת מה שטופל":`הצגת ${seenItems.length} פריטים שסומנו כמטופלים`}</button>}
           </div>
         ):tab==="wa_requests"?(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
