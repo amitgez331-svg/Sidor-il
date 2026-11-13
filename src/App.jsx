@@ -4753,7 +4753,7 @@ const HOME_CSS=`
 @media(prefers-reduced-motion:no-preference){
   .hm-anim .hm-hero{animation:hmIn .6s cubic-bezier(0.23,1,0.32,1) both}
   .hm-anim .hm-hero .hm-cd div{animation:hmPop .5s cubic-bezier(0.23,1,0.32,1) both}
-  .hm-anim .hm-hero .hm-cd div:nth-child(1){animation-delay:.25s}.hm-anim .hm-hero .hm-cd div:nth-child(2){animation-delay:.31s}.hm-anim .hm-hero .hm-cd div:nth-child(3){animation-delay:.37s}
+  .hm-anim .hm-hero .hm-cd div:nth-child(1){animation-delay:.25s}.hm-anim .hm-hero .hm-cd div:nth-child(2){animation-delay:.31s}.hm-anim .hm-hero .hm-cd div:nth-child(3){animation-delay:.37s}.hm-anim .hm-hero .hm-cd div:nth-child(4){animation-delay:.43s}
   .hm-anim .hm-inv{animation:hmCard .8s cubic-bezier(0.23,1,0.32,1) .2s both}
   .hm-anim .hm-stats > *,.hm-anim .hm-tiles > *{animation:hmIn .5s cubic-bezier(0.23,1,0.32,1) both}
   .hm-anim .hm-stats > *:nth-child(1){animation-delay:.12s}.hm-anim .hm-stats > *:nth-child(2){animation-delay:.17s}.hm-anim .hm-stats > *:nth-child(3){animation-delay:.22s}.hm-anim .hm-stats > *:nth-child(4){animation-delay:.27s}
@@ -4878,6 +4878,34 @@ const SMS_CSS=`
 `;
 const hmGreet=()=>{const h=new Date().getHours();return h<5?"לילה טוב":h<12?"בוקר טוב":h<17?"צהריים טובים":h<21?"ערב טוב":"לילה טוב";};
 // זמן עד האירוע: התאריך + שעת קבלת הפנים (או שעת האירוע) אם הוגדרה
+// ימים · שעות · דקות · שניות, מימין לשמאל
+function cdParts(ms){return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60,s:Math.floor(ms/1e3)%60};}
+function useTick(target){
+  const [now,setNow]=useState(()=>Date.now());
+  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id);},[target]);
+  const ms=target-now;return isNaN(ms)||ms<=0?null:cdParts(ms);
+}
+function HmCountdown({ target }){
+  const c=useTick(target);if(!c)return null;
+  return(<div className="hm-cd" role="timer" aria-label={`עוד ${c.d} ימים, ${c.h} שעות ו-${c.m} דקות`}>
+    {[[c.d,"ימים"],[c.h,"שעות"],[c.m,"דקות"],[c.s,"שניות"]].map(([v,l])=><div key={l}><b>{l==="ימים"?v:String(v).padStart(2,"0")}</b><span>{l}</span></div>)}
+  </div>);
+}
+function IvCountdown({ target }){
+  const c=useTick(target);if(!c)return null;
+  const it={color:"#fff",fontWeight:800,fontSize:14,fontVariantNumeric:"tabular-nums"};
+  return(
+    <div className="iv-cd" role="timer" aria-label={`עוד ${c.d} ימים לאירוע`} style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"10px 16px",textAlign:"center",direction:"rtl"}}>
+      <div style={{display:"inline-flex",gap:14,alignItems:"center",flexWrap:"wrap",justifyContent:"center"}}>
+        <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>⏳ עוד</span>
+        {c.d>0&&<span style={it}>{c.d} ימים</span>}
+        <span style={it}>{c.h} שעות</span>
+        <span style={it}>{c.m} דקות</span>
+        <span style={it}>{String(c.s).padStart(2,"0")} שניות</span>
+        <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>לאירוע</span>
+      </div>
+    </div>);
+}
 function useEventCountdown(event){
   const [now,setNow]=useState(()=>Date.now());
   useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(id);},[]);
@@ -4885,7 +4913,7 @@ function useEventCountdown(event){
   const t=(event.reception_time||event.event_time||"00:00").slice(0,5);
   const target=new Date(`${String(event.date).slice(0,10)}T${/^\d\d:\d\d$/.test(t)?t:"00:00"}:00`).getTime();
   const ms=target-now;if(isNaN(ms)||ms<=0)return null;
-  return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60};
+  return{...cdParts(ms),target};
 }
 // תמונה שמעלים להזמנה מוקטנת אוטומטית (עד 1600 פיקסלים בצד הארוך, JPEG) כדי שתיטען מהר אצל האורחים
 async function resizeImageFile(file,max=1600){
@@ -4941,11 +4969,7 @@ function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
           {hebrewDateStr(event.date)&&<span>✡️ {hebrewDateStr(event.date)}</span>}
           {event.venue&&<span>📍 {event.venue}</span>}
         </div>
-        {cd?<div className="hm-cd" role="timer" aria-label={`עוד ${cd.d} ימים, ${cd.h} שעות ו-${cd.m} דקות`}>
-          <div><b>{cd.d}</b><span>ימים</span></div>
-          <div><b>{cd.h}</b><span>שעות</span></div>
-          <div><b>{cd.m}</b><span>דקות</span></div>
-        </div>:<div style={{height:18}}/>}
+        {cd?<HmCountdown target={cd.target}/>:<div style={{height:18}}/>}
         {checksPct===100&&<div style={{marginBottom:14,fontSize:15,fontWeight:700,color:"#1F6B43"}}>✓ כל שלבי ההכנה הושלמו</div>}
         <div className="hm-acts">
           <button className="hm-pill w" onClick={()=>onGo("invite")}>💌 צפייה בהזמנה</button>
@@ -12089,25 +12113,7 @@ function InvitePage({ code, guestId }) {
       })()}
 
       {/* ספירה לאחור */}
-      {(event.settings_json?.countdown??true)&&eventDate&&(()=>{
-        const now=new Date();
-        const diff=eventDate-now;
-        if(diff<=0)return null;
-        const days=Math.floor(diff/(1000*60*60*24));
-        const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
-        const mins=Math.floor((diff%(1000*60*60))/(1000*60));
-        return(
-          <div className="iv-cd" style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"10px 16px",textAlign:"center",direction:"rtl"}}>
-            <div style={{display:"inline-flex",gap:16,alignItems:"center"}}>
-              <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>⏳ עוד</span>
-              {days>0&&<span style={{color:"#fff",fontWeight:800,fontSize:14}}>{days} ימים</span>}
-              <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{hours} שעות</span>
-              <span style={{color:"#fff",fontWeight:800,fontSize:14}}>{mins} דקות</span>
-              <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>לאירוע</span>
-            </div>
-          </div>
-        );
-      })()}
+      {(event.settings_json?.countdown??true)&&eventDate&&<IvCountdown target={eventDate.getTime()}/>}
 
       <div style={{position:"relative",height:"55vw",maxHeight:360,minHeight:240,overflow:"hidden"}}>
         <div className="iv-kb" style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
