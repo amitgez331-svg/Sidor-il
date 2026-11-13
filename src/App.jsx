@@ -4681,7 +4681,7 @@ const HOME_CSS=`
 .hm-hero h1{font-size:clamp(26px,3vw,40px);font-weight:700;line-height:1.12;margin:4px 0 8px}
 .hm-greet{font-size:15px;font-weight:700;color:#7A3FBF}
 .hm-when{font-size:15px;color:#3E3555;display:flex;flex-wrap:wrap;gap:6px 14px}
-.hm-cd{display:flex;gap:10px;margin:18px 0 20px;flex-wrap:wrap}
+.hm-cd{display:flex;gap:10px;margin:18px 0 20px;flex-wrap:wrap;direction:ltr;justify-content:flex-end}
 .hm-cd div{background:#fff;color:#2B1D3F;border-radius:20px;min-width:72px;padding:10px 12px 8px;text-align:center;box-shadow:0 14px 26px -16px rgba(43,29,63,.6)}
 .hm-cd b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .hm-cd span{font-size:13px;font-weight:600;color:#5E5470}
@@ -4897,12 +4897,13 @@ function IvCountdown({ target }){
   return(
     <div className="iv-cd" role="timer" aria-label={`עוד ${c.d} ימים לאירוע`} style={{background:"linear-gradient(135deg,#1B3A8C,#2952C8)",padding:"10px 16px",textAlign:"center",direction:"rtl"}}>
       <div style={{display:"inline-flex",gap:14,alignItems:"center",flexWrap:"wrap",justifyContent:"center"}}>
-        <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>⏳ עוד</span>
-        {c.d>0&&<span style={it}>{c.d} ימים</span>}
-        <span style={it}>{c.h} שעות</span>
-        <span style={it}>{c.m} דקות</span>
-        <span style={it}>{String(c.s).padStart(2,"0")} שניות</span>
-        <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>לאירוע</span>
+        <span style={{fontSize:13,color:"rgba(255,255,255,.9)",fontWeight:700}}>⏳ עד האירוע:</span>
+        <span style={{display:"inline-flex",gap:14,direction:"ltr"}}>
+          {c.d>0&&<span style={it} dir="rtl">{c.d} ימים</span>}
+          <span style={it} dir="rtl">{c.h} שעות</span>
+          <span style={it} dir="rtl">{c.m} דקות</span>
+          <span style={it} dir="rtl">{String(c.s).padStart(2,"0")} שניות</span>
+        </span>
       </div>
     </div>);
 }
