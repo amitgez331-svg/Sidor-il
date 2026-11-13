@@ -9088,28 +9088,32 @@ const SCHEDULE_DEFAULTS=[
 ];
 // SMS בלבד: שליחה אוטומטית ע"י sms-scheduler בשרת (כל 5 דקות). הנמענים לפי הנוסח — כמו recipientsFor בשרת
 const SCHEDULE_TO={invite:"כל האורחים",reminder:"ממתינים לאישור",table:"מגיעים ששובצו לשולחן",thanks:"מגיעים"};
+// WhatsApp: הלקוח שילם 4 הודעות לכל רשומה — כולם מקבלים, חוץ מתזכורת (רק מי שלא ענה). מספר שולחן רק למי ששובץ
+const WA_SCHEDULE_TO={invite:"כל האורחים",reminder:"מי שעוד לא אישר",table:"כל האורחים (עם מספר שולחן למי ששובץ)",thanks:"כל האורחים"};
 const SCHEDULE_LATE_HOURS=12;
 // defaultOn: תזמוני ברירת המחדל מופעלים כל עוד המשתמש לא שינה אותם (בוואטסאפ: 4 הסבבים שבחבילה)
 // lockDefaults: 4 הסבבים תמיד דלוקים (בוואטסאפ הם חלק מהרשומה שנקנתה)  -  בלי מתג כיבוי, אפשר רק לשנות מועד
-function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false, lockDefaults=false, langNote="" }) {
+function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, auto=false, defaultOn=false, lockDefaults=false, langNote="", runsTable="sms_schedule_runs", toMap=SCHEDULE_TO, autoNote="" }) {
   const eventD=event.date?new Date(event.date):null;
   // סטטוס שליחה אוטומטית לכל תזמון
   const [runs,setRuns]=useState({});
   const loadRuns=async()=>{
     if(!auto)return;
-    const{data}=await sb.from("sms_schedule_runs").select("schedule_id,status,recipients,units,error,finished_at,created_at").eq("event_id",event.id);
+    const{data}=await sb.from(runsTable).select("schedule_id,status,recipients,units,error,finished_at,created_at").eq("event_id",event.id);
     setRuns(Object.fromEntries((data||[]).map(r=>[r.schedule_id,r])));
   };
   useEffect(()=>{loadRuns().catch(()=>{});const iv=auto?setInterval(()=>loadRuns().catch(()=>{}),60000):null;return()=>iv&&clearInterval(iv);},[event.id,auto]);
   const autoStatus=s=>{
     const r=runs[s.id];
     const fmt=t=>new Date(t).toLocaleString("he-IL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
-    if(r?.status==="sent")return{c:"#1F7A4D",bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} SMS)`};
+    const unitW=runsTable==="wa_schedule_runs"?"רשומות":"SMS";
+    if(r?.status==="sent")return{c:"#1F7A4D",bg:"#EFFAF3",t:`✓ נשלח אוטומטית ${fmt(r.finished_at||r.created_at)} ל-${r.recipients} אורחים (${r.units} ${unitW})`};
+    if(r?.status==="partial")return{c:"#8A5A00",bg:"#FFF8E8",t:`◐ נשלח ל-${r.recipients} אורחים (${r.units} ${unitW}). ${r.error||""}`};
     if(r?.status==="failed")return{c:"#B42318",bg:"#FFF2F4",t:`✗ לא נשלח: ${r.error||"שגיאה"}. אפשר לשלוח ידנית מהמסך הזה.`};
     if(r?.status==="skipped")return{c:"#8A5A00",bg:"#FFF8E8",t:`⏭ דולג: ${r.error||""}`};
-    if(r?.status==="sending")return{c:C.blue,bg:"#F4EEFC",t:"⏳ שולח עכשיו…"};
+    if(r?.status==="sending")return{c:C.blue,bg:"#F4EEFC",t:`⏳ שולח עכשיו…${r.recipients?` (${r.recipients} כבר קיבלו)`:""}`};
     if(!s.enabled)return null;
-    const to=SCHEDULE_TO[s.templateId]||SCHEDULE_TO.invite;
+    const to=toMap[s.templateId]||toMap.invite;
     if(!s.date||!s.time)return{c:"#8A5A00",bg:"#FFF8E8",t:"⚠️ חסר תאריך או שעה — לא יישלח"};
     const due=new Date(`${s.date}T${s.time}:00`);
     if(due>new Date())return{c:C.blue,bg:"#F4EEFC",t:`🤖 יישלח אוטומטית אל: ${to}`};
@@ -9189,7 +9193,7 @@ function ScheduleEditor({ event, storeKey, templates, accent, onPickTemplate, au
         </div>
       </div>
       <div style={{fontSize:11,color:C.muted,marginTop:-4,marginBottom:10,lineHeight:1.6}}>
-        {auto?"🤖 תזמון פעיל נשלח אוטומטית במועד (שעון ישראל), פעם אחת, וכל אורח = 1 מהיתרה. ודאו שיש מספיק יתרה.":"🔔 תזכורת בלבד: הודעות וואטסאפ לא נשלחות אוטומטית, צריך לשלוח אותן מכאן במועד."}
+        {autoNote||(auto?"🤖 תזמון פעיל נשלח אוטומטית במועד (שעון ישראל), פעם אחת, וכל אורח = 1 מהיתרה. ודאו שיש מספיק יתרה.":"🔔 תזכורת בלבד: הודעות וואטסאפ לא נשלחות אוטומטית, צריך לשלוח אותן מכאן במועד.")}
         {auto&&langNote&&<div style={{marginTop:4,color:"#4A2C8F",fontWeight:700}}>🌍 {langNote}</div>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -9943,30 +9947,40 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
 
   const pickTemplate=(t)=>{setSelectedTemplate(t.id);setLangEdits({});setMsgText(buildMsgText(event,t.id,tone,"he",t.text));};
 
+  // נוסח לכל שפה שיש לאורחים שנבחרו (השרת בוחר לכל אורח את השפה שלו)
+  const msgMap=list=>{const m={he:textFor("he")};list.forEach(g=>{const l=guestLangOf(event,g);if(!m[l])m[l]=textFor(l);});return m;};
+  const callWa=async(dry)=>{
+    const ids=toSend.map(g=>g.id),chunks=[];for(let i=0;i<ids.length;i+=150)chunks.push(ids.slice(i,i+150));
+    const out={results:[],will_send:[],skipped:[],new_records:0,free:0,balance:null,enough:true,error:null};
+    for(const c of chunks){
+      const{data,error}=await sb.functions.invoke("send-whatsapp",{body:{event_id:event.id,guest_ids:c,round:selectedTemplate,messages:msgMap(toSend),dry_run:dry}});
+      let b=data;if(error){try{b=await error.context?.json();}catch{b=null;}}
+      if(!b){out.error=error?.message||"שגיאה בשרת";break;}
+      out.results.push(...(b.results||[]));out.will_send.push(...(b.will_send||[]));out.skipped.push(...(b.skipped||[]));
+      out.new_records+=b.new_records||0;out.free+=b.free||0;if(typeof b.balance==="number")out.balance=b.balance;if(b.enough===false)out.enough=false;
+      if(b.error){out.error=b.error;break;}
+    }
+    return out;
+  };
+  const [check,setCheck]=useState(null),[checking,setChecking]=useState(false);
+  useEffect(()=>{setCheck(null);},[selectedTemplate,sendTo.join(),event.id]);
+  const runCheck=async()=>{
+    if(toSend.length===0){alert("בחר למי לשלוח");return;}
+    setChecking(true);setCheck(null);
+    try{setCheck(await callWa(true));}catch(e){setCheck({error:e.message,will_send:[],skipped:[]});}
+    setChecking(false);
+  };
   const sendAll=async()=>{
     if(toSend.length===0){alert("אין אורחים לשליחה עם מספר טלפון");return;}
-    if(!window.confirm(`לשלוח הודעה ל-${toSend.length} אורחים?`))return;
+    if(!window.confirm(`לשלוח הודעה ל-${toSend.length} אורחים?\nאורח שעוד לא קיבל הודעה מוריד רשומה אחת מהיתרה; מי שכבר קיבל לא מחויב שוב.`))return;
     setSending(true);setProgress(0);setResults(null);
+    let p=0;const iv=setInterval(()=>{p=Math.min(p+3,92);setProgress(p);},400);
     try{
-      let p=0;
-      const iv=setInterval(()=>{p=Math.min(p+3,92);setProgress(p);},400);
-      // שליחה לפי שפה: כל קבוצה מקבלת את הנוסח בשפה שלה
-      const all=[];
-      for(const [lang,gs] of byLang(toSend)){
-        const{data,error}=await sb.functions.invoke("send-whatsapp",{body:{guests:gs.map(g=>({id:g.id,name:g.name,phone:g.phone})),message:textFor(lang),inviteUrl}});
-        if(error){clearInterval(iv);throw new Error(error.message);}
-        all.push(...(data?.results||[]));
-      }
-      clearInterval(iv);
-      setProgress(100);
-      setResults(all);
-      // רק מי שההודעה אליו עברה (✓) — לפי הטלפון שחזר מהשרת
-      const okPhones=new Set(all.filter(r=>r.status?.includes("✓")).map(r=>r.phone));
-      await markSent(toSend.filter(g=>okPhones.has(g.phone)).map(g=>g.id),selectedTemplate);
-    }catch(e){
-      alert("שגיאה בשליחה: "+e.message);
-    }
-    setSending(false);
+      const r=await callWa(false);
+      setResults([...r.results,...r.skipped.map(x=>({name:x.name,status:`דולג · ${x.reason}`}))]);
+      if(r.error)alert("⚠️ "+r.error);else setProgress(100);
+    }catch(e){alert("שגיאה בשליחה: "+e.message);}
+    clearInterval(iv);setSending(false);loadWa().catch(()=>{});
   };
 
   const [scheduledDate,setScheduledDate]=useState("");
@@ -9980,12 +9994,16 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
   // יתרת WhatsApp ברשומות (רשומה = אורח = סבב של 4 הודעות) + רכישה כמו ב-SMS:
   // בקשה נשמרת (request_wa), נפתח וואטסאפ עם הפרטים, והיתרה נטענת אחרי שהאדמין מאשר תשלום
   const [waBalance,setWaBalance]=useState(null),[waPending,setWaPending]=useState([]),[buyOpen,setBuyOpen]=useState(false),[buying,setBuying]=useState(false);
+  const [waUsed,setWaUsed]=useState(0),[waRounds,setWaRounds]=useState({});
   const loadWa=async()=>{
-    const [{data},{data:reqs}]=await Promise.all([
+    const [{data},{data:reqs},{data:rec},{data:rnd}]=await Promise.all([
       sb.from("wa_balance").select("balance").eq("event_id",event.id).maybeSingle(),
       sb.from("wa_requests").select("id,records,price,created_at").eq("event_id",event.id).eq("status","pending").order("created_at",{ascending:false}),
+      sb.from("wa_guest_records").select("guest_id").eq("event_id",event.id),
+      sb.from("wa_guest_rounds").select("guest_id,round").eq("event_id",event.id),
     ]);
-    setWaBalance(data?.balance??0);setWaPending(reqs||[]);
+    setWaBalance(data?.balance??0);setWaPending(reqs||[]);setWaUsed((rec||[]).length);
+    setWaRounds((rnd||[]).reduce((m,r)=>{(m[r.guest_id]||=[]).push(r.round);return m;},{}));
   };
   useEffect(()=>{
     loadWa().catch(()=>setWaBalance(0));
@@ -9993,7 +10011,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
     window.addEventListener("focus",refresh);document.addEventListener("visibilitychange",refresh);
     return()=>{window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",refresh);};
   },[event.id]);
-  const waNeeded=withPhone.length, waShort=waBalance!==null&&waBalance<waNeeded;
+  const waNeeded=withPhone.length, waShort=waBalance!==null&&waBalance<withPhone.filter(g=>!waRounds[g.id]).length;
   const confirmWaPurchase=async()=>{
     setBuying(true);
     const{error}=await sb.rpc("request_wa",{p_event:event.id,p_records:waQty,p_price:waSum});
@@ -10011,6 +10029,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
         <div>
           <div style={{fontSize:13,fontWeight:800,color:C.text}}>יתרת רשומות WhatsApp</div>
           <div style={{fontSize:11,color:C.muted}}>כל רשומה = אורח אחד = סבב של 4 הודעות · אורחים עם נייד: {waNeeded}</div>
+          {waUsed>0&&<div style={{fontSize:12,color:"#156B45",fontWeight:700,marginTop:3}}>נוצלו {waUsed} רשומות · {Object.values(waRounds).filter(r=>r.length>=4).length} אורחים קיבלו את כל 4 הסבבים</div>}
         </div>
       </div>
       <div style={{textAlign:"center"}}>
@@ -10073,6 +10092,16 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
       </div>
     )}
   </>);
+
+  const waLangs=langsUsed.filter(([,n])=>n>0).map(([l])=>l).join(",");
+  const waTextsKey=TEMPLATES.map(t=>t.text).join("|");
+  useEffect(()=>{
+    const want={he:Object.fromEntries(TEMPLATES.map(t=>[t.id,t.text]))};
+    waLangs.split(",").filter(l=>l&&l!=="he").forEach(l=>{want[l]=Object.fromEntries(TEMPLATES.map(t=>[t.id,buildMsgText(event,t.id,"classic",l,t.text)]));});
+    if(JSON.stringify(event.settings_json?.wa_texts_auto||{})===JSON.stringify(want))return;
+    const settings={...(event.settings_json||{}),wa_texts_auto:want};
+    sb.from("events").update({settings_json:settings}).eq("id",event.id).then(({error})=>{if(!error)event.settings_json=settings;},()=>{});
+  },[event.id,waLangs,waTextsKey]);
 
   return(
     <div className="hm sm wa" style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"22px 24px",paddingBottom:80}}>
@@ -10148,8 +10177,32 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
           </div>
 
           {/* תזמון שליחה וואטסאפ  -  נשמר באירוע */}
-          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn
+          <ScheduleEditor event={event} storeKey="wa_schedule" templates={TEMPLATES} accent={WA_GREEN} defaultOn lockDefaults auto runsTable="wa_schedule_runs" toMap={WA_SCHEDULE_TO}
+            autoNote="🤖 4 הסבבים נשלחים אוטומטית במועד (שעון ישראל), כל סבב פעם אחת. כל אורח = רשומה אחת לכל 4 ההודעות. תזכורת רק למי שעוד לא אישר; יום האירוע והתודה לכולם."
             onPickTemplate={id=>{const tp=TEMPLATES.find(x=>x.id===id);setSelectedTemplate(id);setMsgText(tp?.text||"");document.getElementById("wa-text")?.scrollIntoView({behavior:"smooth",block:"center"});}}/>
+
+          {/* בדיקה בלי שליחה: כמה רשומות יירדו, מי יקבל ומי ידולג */}
+          <button type="button" onClick={runCheck} disabled={checking||sending||toSend.length===0} className="sx-btn"
+            style={{width:"100%",marginBottom:10,background:"#fff",color:"#0F5F32",border:"1.5px solid #9FDDB8",borderRadius:100,padding:"13px",fontSize:15,fontWeight:700,cursor:toSend.length?"pointer":"default",fontFamily:"inherit",opacity:toSend.length?1:.6}}>
+            {checking?"בודק...":"🧪 בדיקה בלי שליחה"}
+          </button>
+          {check&&<div className="sm-card" role="status" style={{"--t":"#FFF4D9",marginBottom:12}}>
+            <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 10px"}}>🧪 תוצאת הבדיקה · {TEMPLATES.find(t=>t.id===selectedTemplate)?.label}</h2>
+            {check.error&&!check.will_send?.length?<div style={{color:"#B42318",fontWeight:700,fontSize:14}}>{check.error}</div>:<>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8,marginBottom:10}}>
+              {[[check.will_send.length,"יקבלו את ההודעה","#156B45","#E9FBF2"],[check.new_records,"רשומות יירדו מהיתרה",check.enough?"#7A4E00":"#B42318",check.enough?"#FFF8E8":"#FFF2F4"],[check.skipped.length,"ידולגו","#525A66","#F2F4F7"]].map(([v,l,c,bg])=>(
+                <div key={l} style={{background:bg,borderRadius:14,padding:"10px 8px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:12,fontWeight:700,color:c}}>{l}</div></div>))}
+            </div>
+            <div style={{fontSize:13,color:"#3E3555",lineHeight:1.7,marginBottom:8}}>
+              {check.free>0&&<div>✓ {check.free} אורחים כבר שולמו ברשומה ויקבלו בלי חיוב נוסף</div>}
+              <div>יתרה עכשיו: <b>{check.balance??waBalance??0}</b> רשומות{check.new_records>0&&check.enough&&<> · אחרי השליחה: <b>{(check.balance??0)-check.new_records}</b></>}</div>
+              {!check.enough&&<div style={{color:"#B42318",fontWeight:800}}>⚠️ אין מספיק רשומות. צריך עוד {check.new_records-(check.balance??0)}, והשליחה לא תצא.</div>}
+            </div>
+            <div style={{maxHeight:220,overflowY:"auto",borderTop:`1px solid ${C.border}`}}>
+              {check.will_send.map(g=><div key={g.id} style={{display:"flex",justifyContent:"space-between",gap:8,padding:"6px 4px",fontSize:12.5,borderBottom:`1px solid ${C.border}`}}><span style={{fontWeight:700}}>{g.name}</span><span style={{color:g.charged?"#7A4E00":"#156B45",fontWeight:700}}>סבב {g.round_no} מתוך 4 · {g.charged?"רשומה חדשה":"בלי חיוב"}</span></div>)}
+              {check.skipped.map(g=><div key={g.id} style={{display:"flex",justifyContent:"space-between",gap:8,padding:"6px 4px",fontSize:12.5,borderBottom:`1px solid ${C.border}`,color:"#5E5470"}}><span>{g.name}</span><span>דולג · {g.reason}</span></div>)}
+            </div></>}
+          </div>}
 
           {/* כפתור שליחה */}
           <button onClick={sendAll} disabled={sending||toSend.length===0}
@@ -10236,7 +10289,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
             {/* אזהרה */}
             <div style={{marginTop:14,background:"#FFF4D9",border:"none",borderRadius:18,padding:"12px 16px"}}>
               <div style={{fontSize:12,color:"#744210",lineHeight:1.7}}>
-                💡 התזמון מראה מתי לשלוח כל אחד מ-4 הסבבים. אם משהו לא נשלח, דברו איתנו בוואטסאפ ונטפל.
+                💡 4 הסבבים יוצאים לבד במועדים שבתזמון. אפשר גם לשלוח סבב ידנית מכאן, ואורח שכבר קיבל אותו לא יקבל שוב.
               </div>
             </div>
           </div>
@@ -11062,10 +11115,10 @@ function SupplierForm({ user, profile, priv, onSaved, onCancel }) {
 
 // לוח הספק: סטטוס, תצוגה מקדימה, עריכה ושדרוג לספק מוביל
 function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
-  const [p,setP]=useState(undefined),[priv,setPriv]=useState(null),[edit,setEdit]=useState(false),[open,setOpen]=useState(null);
+  const [p,setP]=useState(undefined),[priv,setPriv]=useState(null),[edit,setEdit]=useState(false),[open,setOpen]=useState(null),[activated,setActivated]=useState(false);
   const load=async()=>{
-    const [{data:a},{data:b}]=await Promise.all([sb.from("vendor_profiles").select("*").eq("user_id",user.id).maybeSingle(),sb.from("vendor_private").select("*").eq("user_id",user.id).maybeSingle()]);
-    setP(a||null);setPriv(b||null);
+    const [{data:a},{data:b},{data:c}]=await Promise.all([sb.from("vendor_profiles").select("*").eq("user_id",user.id).maybeSingle(),sb.from("vendor_private").select("*").eq("user_id",user.id).maybeSingle(),sb.from("user_packages").select("package_id").eq("user_id",user.id).eq("package_id","vendor")]);
+    setP(a||null);setPriv(b||null);setActivated(!!(c||[]).length);
   };
   useEffect(()=>{load();},[user.id]);
   // הספק מוחק את הפרופיל בעצמו (זכות המחיקה): הפרטים העסקיים נמחקים איתו (on delete cascade)
@@ -11092,10 +11145,12 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
       <section className="vd-hero">
         <span className="vd-blob a" aria-hidden="true"/><span className="vd-blob b" aria-hidden="true"/>
         <div className="vd-in">
-          <h1>{!p?<>ברוכים הבאים, <span className="lp-grad">ספקים</span></>:<>אזור <span className="lp-grad">הספקים</span></>}</h1>
-          <p>{!p?"ממלאים פעם אחת את פרטי העסק, והפרופיל עולה מיד לכל מי שמתכנן אירוע ב-Sidor-IL."
-            :"כאן מנהלים את הפרופיל של העסק: רואים איך הלקוחות רואים אתכם, מעדכנים פרטים ותמונות."}</p>
-          {!p&&<div className="vd-chips"><span>🆓 פרופיל עסק בחינם</span><span>💍 מול זוגות ומשפחות שמתכננים אירוע</span><span>⚡ הפרופיל עולה מיד</span></div>}
+          <h1>{!p&&activated?<>החשבון שלך <span className="lp-grad">הופעל</span></>:!p?<>ברוכים הבאים, <span className="lp-grad">ספקים</span></>:<>אזור <span className="lp-grad">הספקים</span></>}</h1>
+          <p>{!p&&activated?"החשבון שלך פתוח כחשבון ספק. נשאר צעד אחד: ממלאים כאן את פרטי העסק ולוחצים \"פרסום הפרופיל\". הפרופיל עולה מיד, ומהדף הזה מנהלים פניות והצעות מחיר."
+            :!p?"ממלאים פעם אחת את פרטי העסק, והפרופיל עולה מיד לכל מי שמתכנן אירוע ב-Sidor-IL."
+            :"כאן מנהלים את העסק: פניות מלקוחות, הצעות מחיר, והפרופיל כמו שהלקוחות רואים אותו."}</p>
+          {!p&&<div className="vd-chips">{activated?<><span>✓ החשבון הופעל</span><span>📝 פרטי העסק, פעם אחת</span><span>📩 פניות והצעות מחיר במקום אחד</span></>
+            :<><span>🆓 פרופיל עסק בחינם</span><span>💍 מול זוגות ומשפחות שמתכננים אירוע</span><span>⚡ הפרופיל עולה מיד</span></>}</div>}
         </div>
       </section>
       <div className="vd-body">
@@ -12678,7 +12733,7 @@ function CreateEventWizard({ form, setForm, evName, autoName, creating, onCreate
 }
 
 // ─── CREATE EVENT SCREEN ──────────────────────────────────────────────────────
-function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor }) {
+function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor, vendorSetup=false }) {
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [creating,setCreating]=useState(false);
@@ -12814,6 +12869,14 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
       </header>
 
       <div className="ev-wrap" style={{maxWidth:1100,margin:"0 auto",padding:"108px 24px 40px",position:"relative"}}>
+        {vendorSetup&&onVendor&&<div role="status" style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",background:"linear-gradient(135deg,#FFF4D6,#FFE9F2)",borderRadius:24,padding:"16px 20px",marginBottom:18,boxShadow:"0 18px 40px -30px rgba(122,78,0,.6)"}}>
+          <span style={{fontSize:30}} aria-hidden="true">🏪</span>
+          <div style={{flex:"1 1 260px"}}>
+            <div style={{fontSize:17,fontWeight:800,color:"#2B1D3F"}}>החשבון שלך הופעל כחשבון ספק</div>
+            <div style={{fontSize:14,color:"#5E4A2A"}}>נשאר צעד אחד: ממלאים את פרטי העסק, והפרופיל עולה מיד לזוגות ולמשפחות.</div>
+          </div>
+          <button type="button" onClick={onVendor} className="sx-btn" style={{background:"#2B1D3F",color:"#fff",border:"none",borderRadius:999,padding:"12px 20px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",minHeight:46}}>להשלמת פרטי העסק</button>
+        </div>}
 
         {/* כותרת: באנר צבעוני בהיר */}
         <div className="ev-hero" style={{background:"linear-gradient(150deg,#E6D9FF 0%,#FFD3E6 55%,#FFE6C4 100%)",borderRadius:36,padding:"30px 36px",marginBottom:28,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 30px 70px -40px rgba(120,60,170,.6)",animation:"fadeUp .5s cubic-bezier(0.23,1,0.32,1) both"}}>
@@ -13628,6 +13691,7 @@ function AdminDashboard({ user, onLogout }) {
   const [failedRuns,setFailedRuns]=useState([]);  // שליחות אוטומטיות שנכשלו / דולגו ב-14 הימים האחרונים
   const [custFor,setCustFor]=useState(null);      // כרטיס לקוח פתוח (user_id)
   const [waBalances,setWaBalances]=useState({});  // {event_id: רשומות WhatsApp}
+  const [waUsedAdm,setWaUsedAdm]=useState({});   // {event_id: רשומות שנוצלו}
   const [waRequests,setWaRequests]=useState([]);  // בקשות רכישת WhatsApp
   const [refs,setRefs]=useState({});              // {user_id: קוד הפניה שדרכו נרשם}
   const [search,setSearch]=useState("");
@@ -13653,7 +13717,7 @@ function AdminDashboard({ user, onLogout }) {
     if(!silent)setLoading(true);
     const since=new Date(Date.now()-14*864e5).toISOString();
     // WhatsApp בטבלאות נפרדות (wa_balance / wa_requests) — לא קשור ל-SMS
-    sb.from("wa_balance").select("event_id,balance").then(({data})=>setWaBalances(Object.fromEntries((data||[]).map(b=>[b.event_id,b.balance])))).catch(()=>{});
+    sb.from("wa_balance").select("event_id,balance,sent").then(({data})=>{setWaBalances(Object.fromEntries((data||[]).map(b=>[b.event_id,b.balance])));setWaUsedAdm(Object.fromEntries((data||[]).map(b=>[b.event_id,b.sent||0])));}).catch(()=>{});
     sb.from("wa_requests").select("*").order("created_at",{ascending:false}).limit(100).then(({data})=>setWaRequests(data||[])).catch(()=>{});
     sb.rpc("admin_list_referrals").then(({data})=>setRefs(Object.fromEntries((data||[]).map(r=>[r.user_id,r.ref])))).catch(()=>{});
     sb.from("producer_profiles").select("user_id,brand_name,phone,updated_at").then(({data})=>setProducerProfs(data||[])).catch(()=>{});
@@ -14055,7 +14119,7 @@ function AdminDashboard({ user, onLogout }) {
                   <div style={{fontSize:22}}>💬</div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:20,fontWeight:900,lineHeight:1}}>{(waBalances[ev.id]??0).toLocaleString()}</div>
-                    <div style={{fontSize:11,color:C.muted,fontWeight:700}}>רשומות WhatsApp (4 הודעות לרשומה)</div>
+                    <div style={{fontSize:11,color:C.muted,fontWeight:700}}>רשומות WhatsApp (4 הודעות לרשומה){waUsedAdm[ev.id]?` · נוצלו ${waUsedAdm[ev.id]}`:""}</div>
                   </div>
                   <button onClick={()=>openAdd(ev,null,"wa")} className="sx-btn" style={{background:WA_GREEN,color:"#fff",border:"none",borderRadius:12,padding:"9px 14px",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>+ הוסף WhatsApp</button>
                 </div>
@@ -14591,7 +14655,7 @@ export default function App() {
   // ספק: נבחר "ספק" בהרשמה (במכשיר הזה) או שיש לו פרופיל ספק → אזור הספקים. "לאירועים שלי" עובר לאירועים (עד סגירת הלשונית)
   // ברירת המחדל בפתיחת האתר: מי שיש לו אירועים נכנס לאירועים; רק ספק בלי אירועים נכנס לאזור הספקים.
   // בחירה מפורשת בלשונית הזו (sessionStorage): "1" = לאירועים, "0" = לאזור הספקים
-  const [isVendor,setIsVendor]=useState(false),[hasEvents,setHasEvents]=useState(null);
+  const [isVendor,setIsVendor]=useState(false),[hasEvents,setHasEvents]=useState(null),[vendorSetup,setVendorSetup]=useState(false);
   const [vendorChoice,setVendorChoice]=useState(()=>{try{return sessionStorage.getItem("sidor_vendor_events");}catch{return null;}});
   const setVendorEvents=v=>{const c=v?"1":"0";setVendorChoice(c);try{sessionStorage.setItem("sidor_vendor_events",c);}catch{}};
   const vendorView=vendorChoice==="0"?true:vendorChoice==="1"?false:hasEvents===false;
@@ -14606,7 +14670,7 @@ export default function App() {
     if(!user){setIsVendor(false);return;}
     try{localStorage.removeItem(ACCOUNT_KEY);}catch{}
     Promise.all([sb.from("vendor_profiles").select("user_id").eq("user_id",user.id).maybeSingle(),sb.from("user_packages").select("package_id").eq("user_id",user.id).eq("package_id","vendor")])
-      .then(([a,b])=>setIsVendor(!!a.data||!!(b.data||[]).length),()=>{});
+      .then(([a,b])=>{const pkg=!!(b.data||[]).length;setIsVendor(!!a.data||pkg);setVendorSetup(pkg&&!a.data);},()=>{});
   },[user?.id]);
 
   const selectEvent=(ev)=>{
@@ -14764,7 +14828,7 @@ export default function App() {
   </>);
 
   if(!event)return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)} onVendor={isVendor?()=>setVendorEvents(false):null}/>
+    <CreateEventScreen user={user} onSelect={selectEvent} onLogout={logout} onBackToLanding={()=>setShowLanding(true)} onVendor={isVendor?()=>setVendorEvents(false):null} vendorSetup={vendorSetup}/>
     <CookieNotice/>
   </>);
 
