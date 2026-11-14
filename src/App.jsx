@@ -908,7 +908,7 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
     :highlight?`drop-shadow(0 0 16px ${C.gold})`
     :selected?`drop-shadow(0 8px 22px ${C.blueL}88)`:"drop-shadow(0 4px 10px rgba(58,36,100,.14))";
   const wrap=(w,h,left,top,children,label)=>(
-    <div onMouseDown={onMouseDown} {...dp} title={tip}
+    <div onPointerDown={onMouseDown} {...dp} title={tip}
       style={{position:"absolute",left,top,width:w,height:h,cursor:locked?"pointer":"grab",userSelect:"none",zIndex:selected||over?10:1,
         filter:glow,transform:over?"scale(1.06)":highlight?"scale(1.04)":"none",transition:"transform .18s,filter .2s"}}>
       <svg width={w} height={h} style={{overflow:"visible"}}>
@@ -5895,9 +5895,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       const cx=t.x+ox,cy=t.y+oy,col=Math.floor(cx/GRID),row=Math.floor(cy/GRID);
       let best=null,bd=Infinity;
       for(let dr=-4;dr<=4;dr++)for(let dc=-4;dc<=4;dc++){
-        const c=col+dc,r=row+dr;if(c<0||r<0)continue;
+        const c=col+dc,r=row+dr;
         const x=c*GRID+GRID/2-ox,y=r*GRID+GRID/2-oy,b=[x+o[0]-6,y+o[1]-6,x+o[2]+6,y+o[3]+6];
-        if(x+o[0]<0||y+o[1]<0||placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]))continue;
+        if(placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]))continue;
         const d=Math.hypot(c*GRID+GRID/2-cx,r*GRID+GRID/2-cy);if(d<bd){bd=d;best={x:Math.round(x),y:Math.round(y)};}
       }
       if(!best){placed.push(tableBox(t));continue;}
@@ -6407,7 +6407,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // בועת הסבר על בורר מפה/רשימה — פעם אחת לכל דפדפן
   const [viewTip,setViewTipRaw]=useState(()=>{try{return !localStorage.getItem("sidor_view_tip");}catch{return false;}});
   const setViewTip=v=>{setViewTipRaw(v);if(!v)optSet("sidor_view_tip","1");};
-  const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x:Math.max(0,x),y:Math.max(0,y)}:t)),[]);
+  const moveTablePos=useCallback((id,x,y)=>setTables(ts=>ts.map(t=>t.id===id?{...t,x,y}:t)),[]);
   const saveTablePos=async(id,x,y)=>await sb.from("tables").update({x:Math.round(x),y:Math.round(y)}).eq("id",id);
 
   // ─── ביטול פעולה (↩): שיבוץ/הוצאת אורחים, הושבה אוטומטית, הזזה ויישור שולחנות ───
@@ -6448,7 +6448,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // יישור שולחנות במקום: שורות לפי הגובה שבו הונחו, ריווח אחיד בתוך השורה, בלי להזיז את המפה
   const alignTables=async()=>{
     if(!tables.length)return;
-    const snap=v=>Math.max(0,Math.round(v/10)*10);
+    const snap=v=>Math.round(v/10)*10; // גם שמאלה/מעל נקודה 0 — לא מושכים שולחנות חזרה
     const wOf=t=>t.type==="knight"?240:200;
     const sorted=[...tables].sort((a,b)=>a.y-b.y);
     const rows=[];
@@ -7369,16 +7369,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       e.stopPropagation();e.preventDefault();
                       setSelItem(it.id);setSelected(null);
                       if(mapLocked||it.locked)return;
-                      const node=e.currentTarget.closest("[data-item]"),sx=e.clientX,sy=e.clientY,z=zoomRef.current,r=hallRect();let n={...it},raf=0;
+                      // האולם גדל בזמן הגרירה (כמו בשולחנות), כך שאפשר לגרור לכל כיוון בגרירה אחת
+                      const node=e.currentTarget.closest("[data-item]"),sx=e.clientX,sy=e.clientY,z=zoomRef.current,h0=hallRect(),G=1200,r=[h0[0]-G,h0[1]-G,h0[2]+G,h0[3]+G];let n={...it},raf=0;
                       const mv=me=>{
                         const dx=(me.clientX-sx)/z,dy=(me.clientY-sy)/z;
                         n=mode==="move"?{...it,...clampIn(it.x+dx,it.y+dy,[0,0,it.w,it.h],r)}
                           :{...it,w:Math.round(Math.max(60,Math.min(r[2]-it.x,it.w+dx))),h:Math.round(Math.max(36,Math.min(r[3]-it.y,it.h+dy)))};
                         if(!raf)raf=requestAnimationFrame(()=>{raf=0;Object.assign(node.style,{left:n.x+"px",top:n.y+"px",width:n.w+"px",height:n.h+"px"});});
                       };
-                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                      const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);
                         if(n.x!==it.x||n.y!==it.y||n.w!==it.w||n.h!==it.h)updateItem(it.id,{x:n.x,y:n.y,w:n.w,h:n.h},`${mode==="move"?"הזזת":"שינוי גודל"} ${label}`);};
-                      window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
+                      window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);
                     };
                     const big=it.w>=150&&it.h>=90,fs=Math.max(12,Math.min(20,Math.min(it.w/10,it.h/2.8)));
                     const hBtn={width:30,height:30,borderRadius:9,border:"none",background:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px -4px rgba(43,29,63,.35)"};
@@ -7387,7 +7388,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       :K.dance?{background:"repeating-conic-gradient(#F6E7CC 0 25%,#FBF3E4 0 50%) 0 0/20px 20px",border:"1.5px solid #EBCB8F",borderRadius:18,color:"#A87A22"}
                       :{background:"#fff",border:"1px solid #EFE8F7",borderRadius:K.round?"50%":16,color:LP.ink};
                     return(
-                      <div key={it.id} data-item={it.id} onMouseDown={e=>startItem(e,"move")} title={mapLocked||it.locked?`${label}${it.locked?" · נעול":""}`:`${label} · גררו להזזה`}
+                      <div key={it.id} data-item={it.id} onPointerDown={e=>startItem(e,"move")} onMouseDown={e=>e.stopPropagation()} title={mapLocked||it.locked?`${label}${it.locked?" · נעול":""}`:`${label} · גררו להזזה`}
                         className={mapLocked||it.locked?"":"sx-fixture"}
                         style={{position:"absolute",left:it.x,top:it.y,width:it.w,height:it.h,zIndex:sel?9:K.dance?1:2,userSelect:"none",cursor:mapLocked||it.locked?"default":"grab",
                           ...look,boxShadow:"0 3px 8px rgba(91,60,140,.16)",
@@ -7408,13 +7409,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         {it.locked&&!sel&&<span aria-label="נעול" style={{position:"absolute",top:-10,left:-10,width:24,height:24,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,pointerEvents:"none"}}>🔒</span>}
                         {sel&&!mapLocked&&<>
                           {/* כפתורי עריכה מעל האלמנט */}
-                          <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",top:-42,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:12}}>
+                          <div onMouseDown={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} style={{position:"absolute",top:-42,left:"50%",transform:"translateX(-50%)",display:"flex",gap:6,zIndex:12}}>
                             <button onClick={()=>toggleItemLock(it.id)} title={it.locked?"שחרור: אפשר להזיז שוב":"נעילה: לא יזוז, גם לא בסידור מושלם"} aria-pressed={!!it.locked} aria-label={`${it.locked?"שחרור":"נעילת"} ${label}`} style={{...hBtn,background:it.locked?"#FFF4E0":"#fff"}}>{it.locked?"🔒":"🔓"}</button>
                             <button onClick={()=>renameItem(it.id)} title="שינוי שם" aria-label={`שינוי שם ל${label}`} style={hBtn}>✏️</button>
                             {!it.locked&&<button onClick={()=>deleteItem(it.id)} title="מחיקה מהמפה" aria-label={`מחיקת ${label}`} style={{...hBtn,background:"#FFF0F0"}}>🗑</button>}
                           </div>
                           {/* ידית שינוי גודל */}
-                          {!it.locked&&<div onMouseDown={e=>startItem(e,"resize")} title="גררו לשינוי גודל" style={{position:"absolute",right:-9,bottom:-9,width:20,height:20,borderRadius:6,background:"#9B6BFF",border:"3px solid #fff",cursor:"nwse-resize",boxShadow:"0 2px 8px rgba(0,0,0,.25)",zIndex:12}}/>}
+                          {!it.locked&&<div onPointerDown={e=>startItem(e,"resize")} onMouseDown={e=>e.stopPropagation()} title="גררו לשינוי גודל" style={{position:"absolute",right:-9,bottom:-9,width:20,height:20,borderRadius:6,background:"#9B6BFF",border:"3px solid #fff",cursor:"nwse-resize",boxShadow:"0 2px 8px rgba(0,0,0,.25)",zIndex:12}}/>}
                         </>}
                       </div>
                     );
@@ -7440,15 +7441,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                       const node=e.currentTarget.closest("[data-tid]");
                       const sx=e.clientX,sy=e.clientY,bx=t.x,by=t.y,z=zoomRef.current,p0={...panRef.current};let posX=bx,posY=by,raf=0;
                       let cell=null,last=null,edgeRaf=0;
-                      // האולם גדל בזמן הגרירה: שולחן שמתקרב לקצה מקבל עוד ריבוע מקום באותו כיוון (ימינה/למטה בלי הגבלה,
-                      // שמאלה/למעלה עד נקודה 0 — שם מתחילה הרשת). הרצפה והרשת מתעדכנות מיד, ואחרי השחרור האולם מחושב מחדש
+                      // האולם גדל בזמן הגרירה: שולחן שמתקרב לקצה מקבל עוד ריבוע מקום באותו כיוון — לכל ארבעת הכיוונים
+                      // (עד MAXS). הרצפה והרשת מתעדכנות מיד, ואחרי השחרור האולם מחושב מחדש
                       const hr=[...hallRect()],o=tableOff(t.type),EDGE=GRID/2,MAXS=8000;
                       const growTo=(x,y)=>{let ch=false;
                         if(x+o[2]>hr[2]-EDGE&&hr[2]-hr[0]<MAXS){hr[2]=x+o[2]+GRID;ch=true;}
                         if(y+o[3]>hr[3]-EDGE&&hr[3]-hr[1]<MAXS){hr[3]=y+o[3]+GRID;ch=true;}
-                        const minX=Math.min(hr[0],0),minY=Math.min(hr[1],0);
-                        if(x+o[0]<hr[0]+EDGE&&hr[0]>minX){hr[0]=Math.max(minX,x+o[0]-GRID);ch=true;}
-                        if(y+o[1]<hr[1]+EDGE&&hr[1]>minY){hr[1]=Math.max(minY,y+o[1]-GRID);ch=true;}
+                        if(x+o[0]<hr[0]+EDGE&&hr[2]-hr[0]<MAXS){hr[0]=x+o[0]-GRID;ch=true;}
+                        if(y+o[1]<hr[1]+EDGE&&hr[3]-hr[1]<MAXS){hr[1]=y+o[1]-GRID;ch=true;}
                         if(ch)[floorRef.current,gridLayerRef.current].forEach(el=>{if(el)Object.assign(el.style,{left:hr[0]+14+"px",top:hr[1]+14+"px",width:hr[2]-hr[0]-28+"px",height:hr[3]-hr[1]-28+"px"});});
                         if(ch&&gridLayerRef.current)gridLayerRef.current.style.backgroundPosition=`${(((-(hr[0]+14))%GRID)+GRID)%GRID}px ${(((-(hr[1]+14))%GRID)+GRID)%GRID}px`;
                       };
@@ -7470,7 +7470,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         if(vx||vy){const p=panRef.current;panRef.current={x:p.x+vx,y:p.y+vy};paintCam();place();edgeRaf=requestAnimationFrame(edgeTick);}
                       };
                       const mv=me=>{last={x:me.clientX,y:me.clientY};place();if(!edgeRaf)edgeRaf=requestAnimationFrame(edgeTick);};
-                      const up=()=>{window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);
+                      const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);
                         if(edgeRaf){cancelAnimationFrame(edgeRaf);edgeRaf=0;}
                         if(raf){cancelAnimationFrame(raf);raf=0;if(node){node.style.left=posX+"px";node.style.top=posY+"px";}}
                         if(snapCellRef.current)snapCellRef.current.style.display="none";
@@ -7478,8 +7478,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         if(panRef.current.x!==p0.x||panRef.current.y!==p0.y){manualZoomRef.current=true;setPan({...panRef.current});}
                         if(posX!==bx||posY!==by){moveTablePos(t.id,posX,posY);saveTablePos(t.id,posX,posY);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}
                         else [floorRef.current,gridLayerRef.current].forEach(el=>{if(el){const h=hallRect();Object.assign(el.style,{left:h[0]+14+"px",top:h[1]+14+"px",width:h[2]-h[0]-28+"px",height:h[3]-h[1]-28+"px"});}});};
-                      window.addEventListener("mousemove",mv);
-                      window.addEventListener("mouseup",up);
+                      window.addEventListener("pointermove",mv);
+                      window.addEventListener("pointerup",up);
+                      window.addEventListener("pointercancel",up);
                     };
                     const hit=!!q&&(t.guests||[]).some(g=>g.name.toLowerCase().includes(q));
                     return(
@@ -7492,7 +7493,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                         </div>
                         {lockedTables.has(t.id)&&selected!==t.id&&<span aria-label="שולחן נעול" style={{position:"absolute",top:-8,left:-8,zIndex:30,width:22,height:22,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,pointerEvents:"none"}}>🔒</span>}
                         {selected===t.id&&!mapLocked&&(
-                          <button onMouseDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();toggleTableLock(t.id);}}
+                          <button onMouseDown={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();toggleTableLock(t.id);}}
                             title={lockedTables.has(t.id)?"שחרור: אפשר להזיז שוב":"נעילה: השולחן לא יזוז (גם לא בסידור מושלם). אורחים עדיין אפשר להושיב"}
                             aria-pressed={lockedTables.has(t.id)} aria-label={lockedTables.has(t.id)?"שחרור השולחן":"נעילת השולחן"}
                             style={{position:"absolute",top:-14,left:-14,zIndex:30,width:28,height:28,borderRadius:"50%",background:lockedTables.has(t.id)?"#FFF4E0":"#fff",border:`2px solid ${lockedTables.has(t.id)?C.gold:"#fff"}`,
