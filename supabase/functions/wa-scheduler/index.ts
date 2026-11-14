@@ -3,13 +3,13 @@
 // כל עוד חשבון הוואטסאפ לא מחובר — לא נפתחות הרצות, כך שאף סבב לא "נשרף" לפני החיבור.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { runAll } from "./runner.ts";
+import { waProvider } from "./provider.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
-  const sid = Deno.env.get("TWILIO_ACCOUNT_SID"), token = Deno.env.get("TWILIO_AUTH_TOKEN"), from = Deno.env.get("TWILIO_WHATSAPP_NUMBER");
-  if (!sid || !token || !from) return json({ processed: 0, skipped: "whatsapp not connected" });
+  if (!waProvider.configured) return json({ processed: 0, skipped: "whatsapp not connected" });
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   try {
     await admin.rpc("claim_due_wa_schedules");
@@ -34,15 +34,7 @@ Deno.serve(async (req) => {
       markMsg: async (ids, round) => { await admin.from("guests").update({ last_msg: round, last_msg_at: new Date().toISOString() }).in("id", ids); },
       send: async (phone, text) => {
         await new Promise((r) => setTimeout(r, 100));
-        try {
-          const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-            method: "POST",
-            headers: { Authorization: "Basic " + btoa(`${sid}:${token}`), "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ From: from, To: `whatsapp:+${phone}`, Body: text }).toString(),
-          });
-          const data = await res.json().catch(() => null);
-          return { ok: res.ok, message: data?.message };
-        } catch (e) { return { ok: false, message: String(e) }; }
+        try { return await waProvider.send(phone, text); } catch (e) { return { ok: false, message: String(e) }; }
       },
       update: async (id, patch) => { await admin.from("wa_schedule_runs").update(patch).eq("id", id); },
     });

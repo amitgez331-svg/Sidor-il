@@ -4,6 +4,7 @@
 // dry_run: מחזיר מה יקרה (כמה רשומות יירדו, מי יקבל ומי ידולג) בלי לשלוח ובלי לחייב.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { plan, ROUND_LABEL } from "./engine.ts";
+import { waProvider } from "./provider.ts";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -59,8 +60,7 @@ Deno.serve(async (req) => {
     if (!p.send.length) return json({ ...summary, results: [], error: "אין למי לשלוח בסבב הזה" }, 400);
     if (!p.enough) return json({ ...summary, error: `אין מספיק רשומות WhatsApp: צריך ${p.newRecords}, יש ${p.balance}` }, 402);
 
-    const sid = Deno.env.get("TWILIO_ACCOUNT_SID"), token = Deno.env.get("TWILIO_AUTH_TOKEN"), from = Deno.env.get("TWILIO_WHATSAPP_NUMBER");
-    if (!sid || !token || !from) return json({ ...summary, error: "חשבון הוואטסאפ עוד לא מחובר. אפשר להריץ בדיקה בלי שליחה." }, 503);
+    if (!waProvider.configured) return json({ ...summary, error: "חשבון הוואטסאפ עוד לא מחובר. אפשר להריץ בדיקה בלי שליחה." }, 503);
 
     // חיוב לפני השליחה (אטומי בשרת): אם אין מספיק, לא נשלח כלום
     const newIds = p.send.filter((s) => s.isNew).map((s) => s.id);
@@ -75,15 +75,7 @@ Deno.serve(async (req) => {
     for (const s of p.send) {
       await new Promise((r) => setTimeout(r, 250));
       let ok = false, msg = "";
-      try {
-        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-          method: "POST",
-          headers: { Authorization: "Basic " + btoa(`${sid}:${token}`), "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ From: from, To: `whatsapp:+${s.phone}`, Body: s.text }).toString(),
-        });
-        const data = await res.json().catch(() => null);
-        ok = res.ok; msg = data?.message || "";
-      } catch (e) { msg = String(e); }
+      try { const r = await waProvider.send(s.phone, s.text); ok = r.ok; msg = r.message || ""; } catch (e) { msg = String(e); }
       if (ok) okIds.push(s.id); else if (s.isNew) failNew.push(s.id);
       results.push({ id: s.id, name: s.name, status: ok ? `נשלח ✓ · סבב ${s.roundNo} מתוך 4` : `שגיאה ✗ ${msg}`.trim(), charged: s.isNew && ok });
     }
