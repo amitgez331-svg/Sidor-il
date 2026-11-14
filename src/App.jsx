@@ -5849,20 +5849,21 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   // מה שרואים: השולחנות והאלמנטים + שוליים, מורחב ליחס של המסך — בזום "כל האולם" זה ממלא את כל המפה.
   // עוד שולחנות = שטח גדול יותר = זום קטן יותר. עם מעט שולחנות הזום לא עולה על 1 (לא ענק)
   // שוליים: מקום לכפתורי הזום (משמאל למעלה) ולכותרת (מימין למטה) בלי לכסות שולחנות
-  const HALL_PAD=90;
+  const HALL_PAD=90,GRID=200,HALL_EXTRA_DEF={w:2,h:0}; // w/h: ריבועים נוספים בסך הכל (חצי מכל צד): ברירת מחדל ריבוע פנוי אחד מימין ואחד משמאל
   const hallRect=()=>{
     const el=mapBoxRef.current,cw=el?.clientWidth||1000,ch=Math.max(el?.clientHeight||600,1);
     const [x0,y0,x1,y1]=contentBox();
-    let w=Math.max(x1-x0+2*HALL_PAD,cw),h=Math.max(y1-y0+2*HALL_PAD,ch);
-    if(w/h<cw/ch)w=h*cw/ch;else h=w*ch/cw;
+    // האולם עוטף את מה שיש בו (לא נמתח לפרופורציות של המסך — אחרת הוא יוצא רחב וריק). להגדלה: כפתורי "גודל האולם"
+    const w=Math.max(x1-x0+2*HALL_PAD,600),h=Math.max(y1-y0+2*HALL_PAD,400);
     const cx=(x0+x1)/2,cy=(y0+y1)/2;
-    return [cx-w/2,cy-h/2,cx+w/2,cy+h/2];
+    // "גודל האולם": עוד ריבועים ריקים משני הצדדים (הבמה נשארת באמצע). ברירת מחדל: 2 ריבועים מכל צד
+    const ex=(hallRef.current||{}).extra||HALL_EXTRA_DEF,EW=(ex.w||0)*GRID,EH=(ex.h||0)*GRID;
+    return [cx-w/2-EW/2,cy-h/2-EH/2,cx+w/2+EW/2,cy+h/2+EH/2];
   };
   // גרירה בתוך האולם: off = גבולות הצורה ביחס לנקודת המיקום
   const clampIn=(x,y,off,r=hallRect())=>({x:Math.round(Math.min(r[2]-off[2],Math.max(r[0]-off[0],x))),y:Math.round(Math.min(r[3]-off[3],Math.max(r[1]-off[1],y)))});
   const tableOff=type=>tableBox({x:0,y:0,type});
   // ─── רשת ריבועים במפה: שולחן שנגרר נכנס למרכז הריבוע הקרוב (הפנוי). hall.grid=false מכבה ───
-  const GRID=200;
   const gridOn=()=>(hallRef.current||{}).grid!==false;
   const snapToGrid=(t,x,y,hr)=>{
     const o=tableOff(t.type),ox=(o[0]+o[2])/2,oy=(o[1]+o[3])/2;
@@ -5911,15 +5912,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const clampCam=(p,z=zoomRef.current)=>{
     const el=mapBoxRef.current;if(!el)return p;
     const [x0,y0,x1,y1]=hallRect();
-    const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start;const want=len<=size?(size-len)/2:Math.min(0,Math.max(size-len,a));return start+(want-a);};
+    const ax=(lo,hi,size,start)=>{const len=(hi-lo)*z,a=lo*z+start;const S=90,want=len<=size?(size-len)/2:Math.min(S,Math.max(size-len-S,a)); /* S: קצת מעבר לקיר, כדי שהכפתורים והכרטיס בקצה לא יסתירו שולחנות */return start+(want-a);};
     return {x:Math.round(ax(x0,x1,el.clientWidth,p.x)),y:Math.round(ax(y0,y1,el.clientHeight,p.y))};
   };
   // הזום הכי רחוק = כל האולם ממלא את המפה
-  const minZoom=()=>{
+  const hallFillZoom=()=>{
     const el=mapBoxRef.current;if(!el)return ZMIN;
-    const [x0,,x1]=hallRect();
-    return +(el.clientWidth/(x1-x0)).toFixed(4);
+    const [x0,y0,x1,y1]=hallRect();
+    return +Math.min(ZMAX,el.clientWidth/(x1-x0),el.clientHeight/(y1-y0)).toFixed(4);
   };
+  // אפשר להקטין עוד קצת מ"כל האולם ממלא את המפה", כדי שכפתורי הזום והכרטיס שבתחתית לא יסתירו את מה שבקצוות
+  const minZoom=()=>+(hallFillZoom()*.85).toFixed(4);
   // מצייר את המצלמה ישר על ה-DOM (חלק בזמן גרירה), ושומר ל-state בסוף
   const paintCam=(p=panRef.current,z=zoomRef.current)=>{
     if(hallLayerRef.current)hallLayerRef.current.style.transform=`translate(${p.x}px,${p.y}px) scale(${z})`;
@@ -5935,14 +5938,19 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const fitZoom=(all=false)=>{
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
-    if(!all&&mapFullRef.current){
-      const [cx0,cy0,cx1,cy1]=contentBox(),P=60,cw=el.clientWidth,ch=el.clientHeight;
+    if(!all){
+      // שוליים: משמאל כפתורי הזום וגודל האולם, למטה כרטיס "מפת האולם" — שלא יסתירו שולחנות
+      // רגיל: כל האולם (כולל הריבועים הפנויים מסביב) על המסך. מסך מלא: השולחנות והאלמנטים ממלאים את המסך
+      const full=mapFullRef.current,[cx0,cy0,cx1,cy1]=full?contentBox():hallRect(),cw=el.clientWidth,ch=el.clientHeight,IL=full?140:0,IR=full?28:0,IT=full?28:0,IB=full?84:0;
       if(cx1>cx0&&cy1>cy0){
-        const zf=+Math.max(minZoom(),Math.min(1.6,ZMAX,cw/(cx1-cx0+2*P),ch/(cy1-cy0+2*P))).toFixed(4);
-        setCam({x:cw/2-(cx0+cx1)/2*zf,y:ch/2-(cy0+cy1)/2*zf},zf);return;
+        const zc=Math.min(full?1.6:1.25,ZMAX,(cw-IL-IR)/(cx1-cx0),(ch-IT-IB)/(cy1-cy0));
+        if(full||zc>=.3){ // אולם ענק (פחות מ-30%) — החלק העליון של האולם וגלילה
+          const zf=+Math.max(minZoom(),zc).toFixed(4);
+          setCam({x:IL+(cw-IL-IR)/2-(cx0+cx1)/2*zf,y:IT+(ch-IT-IB)/2-(cy0+cy1)/2*zf},zf);return;
+        }
       }
     }
-    const [x0,y0,x1]=hallRect(),zFit=minZoom(),z=all?zFit:+Math.max(zFit,Math.min(OPEN_ZOOM,ZMAX)).toFixed(4);
+    const [x0,y0,x1]=hallRect(),zFit=hallFillZoom(),z=all?zFit:+Math.max(zFit,Math.min(OPEN_ZOOM,ZMAX)).toFixed(4);
     setCam({x:el.clientWidth/2-(x0+x1)/2*z,y:-y0*z},z);
   };
   // זום סביב נקודה במסך (ברירת מחדל: מרכז המפה)
@@ -6248,7 +6256,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     if(loading||screen!=="seating")return;
     const h=hallRef.current||{};
     const [x0,y0]=contentBox();
-    const dx=x0<0?HALL_MARGIN-Math.floor(x0):0,dy=y0<0?HALL_MARGIN-Math.floor(y0):0;
+    const dx=x0<0?Math.ceil((HALL_MARGIN-x0)/200)*200:0,dy=y0<0?Math.ceil((HALL_MARGIN-y0)/200)*200:0; // ריבועים שלמים (GRID)
     if(!dx&&!dy&&Array.isArray(h.items)&&HALL_SIZES[h.size])return;
     if(dx||dy){
       setTables(ts=>ts.map(t=>({...t,x:t.x+dx,y:t.y+dy})));
@@ -7064,7 +7072,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
 
     {/* מסכי תוכן */}
-    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 76px)",gap:8,padding:8,boxSizing:"border-box",
+    {/* במסך נמוך (מחשב נייד) המפה מקבלת לפחות ~620px גובה, והדף נגלל למטה — במקום מפה דחוסה מתחת לסרגל הכלים */}
+    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:view==="map"?"0 0 auto":1,overflow:"hidden",height:view==="map"?"max(calc(100vh - 76px), 780px)":"calc(100vh - 76px)",gap:8,padding:8,boxSizing:"border-box",
       background:"radial-gradient(circle at 85% 0%,rgba(240,96,158,.10),transparent 40%),radial-gradient(circle at 10% 100%,rgba(155,107,255,.10),transparent 45%),#FBF7FE"}}>
       {/* כותרת המסך לקוראי מסך (במסך עצמו השם מופיע בלשוניות "מפת האולם / רשימת שולחנות") */}
       <h1 style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",margin:-1}}>סידורי הושבה</h1>
@@ -7520,10 +7529,32 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                   <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#E9FBF4",color:"#17694F",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
                 </div>
                 {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
-                <div onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
+                <div onMouseDown={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
+                <div style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
                   {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom(true)]].map(([ic,l,fn])=>(
                     <button key={l} onClick={fn} title={l} aria-label={l} style={{width:40,height:40,borderRadius:10,border:"none",background:ic==="+"||ic==="−"?"#F4EEFC":"#fff",color:C.blue,fontSize:ic==="+"||ic==="−"?22:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{ic}</button>
                   ))}
+                </div>
+                {/* גודל האולם: עוד שורה/עמודה של ריבועים ריקים בכל לחיצה (ביטול עם ↩) */}
+                {/* הקטנה: עד הגודל הקטן שעדיין מכיל את כל השולחנות והאלמנטים (בלי מקום נוסף) */}
+                {!mapLocked&&<div role="group" aria-label="גודל האולם" dir="rtl" style={{display:"flex",flexDirection:"column",gap:4,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:"6px 6px 7px",boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)",fontFamily:"'Heebo',sans-serif"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:C.muted,textAlign:"center"}}>גודל האולם</div>
+                  {[["w","↔","רוחב","האולם","מימין ומשמאל"],["h","↕","אורך","האולם","למעלה ולמטה"]].map(([k,ic,word,,where])=>{
+                    const ex=hall.extra||HALL_EXTRA_DEF,n=ex[k]||0,step=2,max=n>=16,min=n<=0;
+                    const set=(v,l)=>{const before=hallRef.current;saveHall({...before,extra:{...(before.extra||HALL_EXTRA_DEF),[k]:v}});pushUndo(l,()=>saveHall(before));
+                      // מראים את כל האולם כדי שיראו את השינוי
+                      setTimeout(()=>{fitZoom(true);manualZoomRef.current=true;},60);};
+                    const bs=dis=>({width:32,height:32,borderRadius:9,border:"none",background:dis?"#F7F4FA":"#F4EEFC",color:C.blue,fontSize:18,fontWeight:900,lineHeight:1,cursor:dis?"default":"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",opacity:dis?.4:1,padding:0});
+                    return(
+                    <div key={k} style={{display:"flex",alignItems:"center",gap:4}}>
+                      <span title={word} style={{width:30,display:"flex",flexDirection:"column",alignItems:"center",color:C.blue,lineHeight:1}}>
+                        <span aria-hidden="true" style={{fontSize:15,fontWeight:900}}>{ic}</span>
+                        <span style={{fontSize:10,fontWeight:800}}>{word}</span>
+                      </span>
+                      <button disabled={max} onClick={()=>set(n+step,`הגדלת ${word} האולם`)} aria-label={`הגדלת ${word} האולם`} title={max?"האולם כבר בגודל המקסימלי":`עוד מקום ל${word}, ${where}`} style={bs(max)}>+</button>
+                      <button disabled={min} onClick={()=>set(Math.max(0,n-step),`הקטנת ${word} האולם`)} aria-label={`הקטנת ${word} האולם`} title={min?"האולם כבר בגודל הקטן ביותר שמכיל את כל השולחנות":`פחות מקום ל${word}`} style={bs(min)}>−</button>
+                    </div>);})}
+                </div>}
                 </div>
                 </>
               );
