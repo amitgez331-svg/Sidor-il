@@ -71,8 +71,21 @@ const REF_KEY="sidor_ref";
 const PRODUCER_ENTRY_KEY="sidor_producer_entry";
 // סוג החשבון שנבחר בהרשמה ("vendor" = ספק). נשמר במכשיר כדי לשרוד גם כניסה עם Google
 const ACCOUNT_KEY="sidor_account"; // ישן: בחירת "ספק" בהרשמה. כבר לא בשימוש, נמחק בכניסה
-const JOIN_WA_URL=()=>`https://wa.me/972526817102?text=${encodeURIComponent("היי, אני ספק / מפיק אירועים ואשמח להצטרף ל-Sidor-IL. אפשר פרטים?")}`;
-const openJoin=()=>{try{window.open(JOIN_WA_URL(),"_blank","noopener,noreferrer");}catch{}};
+// ─── פרטי הקשר של Sidor-IL — במקום אחד בלבד ───
+// SUPPORT_PHONE: המספר שמוצג באתר (טלפון + וואטסאפ). כרגע ריק: כפתורי הוואטסאפ והטלפון מוסתרים, וכל הפניות והרכישות עוברות למייל.
+// כשיהיה מספר חדש — כותבים אותו כאן (למשל "05X-XXXXXXX"), וכל האתר מתעדכן: כפתורים, תחתית, מדיניות ונגישות
+const SUPPORT_PHONE="";
+const SUPPORT_MAIL="sidoril2026@gmail.com";
+const SUPPORT_WA=SUPPORT_PHONE?"972"+SUPPORT_PHONE.replace(/\D/g,"").replace(/^0/,""):"";
+const SUPPORT_TEL=SUPPORT_PHONE.replace(/[^\d+]/g,"");
+const CONTACT_BY=SUPPORT_WA?"בוואטסאפ":"במייל";
+const contactUrl=(text="",subject="פנייה ל-Sidor-IL")=>SUPPORT_WA?`https://wa.me/${SUPPORT_WA}${text?`?text=${encodeURIComponent(text)}`:""}`:`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent(subject)}${text?`&body=${encodeURIComponent(text)}`:""}`;
+const openContact=(text,subject)=>{const u=contactUrl(text,subject);try{if(SUPPORT_WA)window.open(u,"_blank","noopener,noreferrer");else window.location.href=u;}catch{}};
+// שורות "טלפון / וואטסאפ" לטקסטים (מדיניות, נגישות, ביטול) — ריקות כשאין מספר
+const CONTACT_LINES=(sep="\n")=>[SUPPORT_PHONE&&`טלפון: ${SUPPORT_PHONE}`,`אימייל: ${SUPPORT_MAIL}`,SUPPORT_WA&&`וואטסאפ: https://wa.me/${SUPPORT_WA}`].filter(Boolean).join(sep);
+const JOIN_TEXT="היי, אני ספק / מפיק אירועים ואשמח להצטרף ל-Sidor-IL. אפשר פרטים?";
+const JOIN_WA_URL=()=>contactUrl(JOIN_TEXT,"הצטרפות ספק / מפיק ל-Sidor-IL");
+const openJoin=()=>openContact(JOIN_TEXT,"הצטרפות ספק / מפיק ל-Sidor-IL");
 // ─── הסכמה לאחסון לא חיוני (באנר העוגיות) ───
 // "all" = אישור · "essential" = דחייה · כל ערך אחר = עוד לא נבחר (כמו דחייה: לא שומרים דברים לא חיוניים).
 // חיוני תמיד: ההתחברות, הבחירה הזו, ומצב הניווט בלשונית. לא חיוני: הפניה, חזרה למסך האחרון, הגדרות תצוגה ונגישות.
@@ -1310,7 +1323,7 @@ function Countdown({ date }) {
 // ─── VENUE PAGE ───────────────────────────────────────────────────────────────
 function VenuePage({ onBack, onOpenAuth }) {
   useEffect(()=>{window.scrollTo(0,0);},[]);
-  const wa=`${LP_WA}?text=${encodeURIComponent("שלום, אני מעוניין לשמוע על שיתוף פעולה עם Sidor-IL")}`;
+  const wa=contactUrl("שלום, אני מעוניין לשמוע על שיתוף פעולה עם Sidor-IL","שיתוף פעולה עם Sidor-IL");
   const offers=[
     {icon:"🪑",bg:"#FFEFF5",title:"מערכת הושבה מתקדמת",desc:"ניהול מלא של סידורי הושבה לכל אירוע: ממשק גרירה, מפה אינטראקטיבית ופתק הושבה."},
     {icon:"✅",bg:"#E9FBF4",title:"אישורי הגעה דיגיטליים",desc:"שליחת הזמנות דיגיטליות ואישורי הגעה בוואטסאפ וב-SMS לכל האורחים."},
@@ -1325,7 +1338,7 @@ function VenuePage({ onBack, onOpenAuth }) {
         lead="שיתוף פעולה עם Sidor-IL: הושבה, אישורי הגעה וכניסה בלי תורים ללקוחות שלכם, עם המותג שלכם, ותוכנית שותפים.">
         <div className="lp-hero-cta" style={{display:"flex",gap:14,flexWrap:"wrap"}}>
           {onOpenAuth&&<button type="button" className="lp-btn lp-primary" onClick={()=>onOpenAuth("login")} style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:58}}>כניסה לחשבון<LpGo/></button>}
-          <a href={wa} target="_blank" rel="noopener noreferrer" className="lp-btn lp-ghost" style={{padding:"13px 30px",fontSize:18,minHeight:58}}>דברו איתנו בוואטסאפ</a>
+          <a href={wa} {...(SUPPORT_WA?{target:"_blank",rel:"noopener noreferrer"}:{})} className="lp-btn lp-ghost" style={{padding:"13px 30px",fontSize:18,minHeight:58}}>דברו איתנו {CONTACT_BY}</a>
         </div>
       </PageHero>
       <section className="lp-sheet" style={{background:"#EEF4FF",marginTop:28}}>
@@ -1358,8 +1371,8 @@ function VenuePage({ onBack, onOpenAuth }) {
       </section>
       <div style={{height:60}}/>
       <LpCtaBand title="מעוניינים בשיתוף פעולה?" text="צרו איתנו קשר: נפתח לכם קישור שותף, ונספר על התגמול ועל החבילות לאולמות ולמפיקים."
-        primary={{href:wa,label:"שלחו הודעה בוואטסאפ",external:true}} secondary={{href:`mailto:sidoril2026@gmail.com?subject=${encodeURIComponent("שיתוף פעולה עם Sidor-IL")}`,label:"שלחו מייל"}}
-        note="052-681-7102 · א׳-ה׳ 9:00-17:00"/>
+        primary={{href:wa,label:SUPPORT_WA?"שלחו הודעה בוואטסאפ":"שלחו מייל",external:!!SUPPORT_WA}} secondary={SUPPORT_WA?{href:`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent("שיתוף פעולה עם Sidor-IL")}`,label:"שלחו מייל"}:null}
+        note={SUPPORT_PHONE?`${SUPPORT_PHONE} · א׳-ה׳ 9:00-17:00`:SUPPORT_MAIL}/>
     </PublicPage>
   );
 }
@@ -1423,10 +1436,10 @@ function HamburgerMenu({ onOpenAuth, onClose, onVenuePage, onLogout }) {
         </div>
         {/* Contact */}
         <div style={{padding:"12px 20px",background:C.bg,borderTop:`1px solid ${C.border}`}}>
-          <a href="https://wa.me/972526817102" style={{display:"flex",alignItems:"center",gap:8,textDecoration:"none",color:C.muted,fontSize:12,fontWeight:600}}>
-            <span style={{fontSize:15}}>💬</span> לחץ לצ'אט ב-WhatsApp
+          <a href={contactUrl()} style={{display:"flex",alignItems:"center",gap:8,textDecoration:"none",color:C.muted,fontSize:12,fontWeight:600}}>
+            <span style={{fontSize:15}}>{SUPPORT_WA?"💬":"✉️"}</span> {SUPPORT_WA?"לחץ לצ'אט ב-WhatsApp":SUPPORT_MAIL}
           </a>
-          <div style={{fontSize:11,color:C.muted,marginTop:4}}>📞 052-681-7102 · א׳-ה׳ 9:00-17:00</div>
+          {SUPPORT_PHONE&&<div style={{fontSize:11,color:C.muted,marginTop:4}}>📞 {SUPPORT_PHONE} · א׳-ה׳ 9:00-17:00</div>}
         </div>
       </div>
     </>
@@ -2358,7 +2371,6 @@ function InstallAppButton({ style, label="📲 הורדת האפליקציה" })
 }
 
 // תמיכה ועזרה מתוך האירוע: וואטסאפ או מייל, עם שם האירוע כבר בהודעה
-const SUPPORT_WA="972526817102", SUPPORT_MAIL="sidoril2026@gmail.com";
 // compact: בבר העליון בטלפון — "❓ עזרה" קצר
 function SupportMenu({ event, compact=false }) {
   // open = מיקום הכפתור במסך. התפריט ב-position:fixed כי הבאנר חותך (overflow:hidden)
@@ -2379,9 +2391,9 @@ function SupportMenu({ event, compact=false }) {
       {open&&(
         <div role="menu" style={{position:"fixed",top:open.top,left:open.left,zIndex:400,background:"#fff",borderRadius:16,padding:6,width:240,boxShadow:"0 18px 40px -12px rgba(91,60,140,.45)",border:`1px solid ${C.border}`,direction:"rtl"}}>
           <div style={{fontSize:11,color:C.muted,padding:"6px 10px 4px"}}>נשמח לעזור, בדרך כלל עונים תוך כמה שעות</div>
-          <a role="menuitem" href={`https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(intro+":\n")}`} target="_blank" rel="noopener noreferrer" onClick={()=>setOpen(null)} style={{...opt,background:"#F0FFF4"}}>
+          {SUPPORT_WA&&<a role="menuitem" href={`https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(intro+":\n")}`} target="_blank" rel="noopener noreferrer" onClick={()=>setOpen(null)} style={{...opt,background:"#F0FFF4"}}>
             <WaIcon size={20}/> שליחה בוואטסאפ
-          </a>
+          </a>}
           <a role="menuitem" href={`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent("עזרה: "+(event?.name||"Sidor-IL"))}&body=${encodeURIComponent(intro+".\n\n")}`} onClick={()=>setOpen(null)} style={{...opt,marginTop:4}}>
             <span style={{fontSize:18}}>✉️</span> שליחה במייל
           </a>
@@ -2406,8 +2418,8 @@ const goLanding=(id,auth)=>{
 // ─── דפים ציבוריים (סוגי אירועים, מדריכים, מידע משפטי, אולמות): אותה שפה, תפריט, תחתית ותנועה של דף הבית ───
 // הקישורים למקטעי דף הבית עוברים דרך goLanding (כדי שגם משתמש מחובר יראה את דף הבית)
 const WA_SVG_D="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z";
-const LP_WA="https://wa.me/972526817102";
-const LpWaFab=()=>(
+const LP_WA=contactUrl();
+const LpWaFab=()=>!SUPPORT_WA?null:(
   <a href={LP_WA} target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
     className="lp-wa-fab" style={{position:"fixed",bottom:20,left:20,background:"#0F7F40",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d={WA_SVG_D}/></svg>
@@ -2447,7 +2459,7 @@ function PageHero({ crumbs, title, lead, img, aside, children }) {
 }
 // פס הסיום עם תמונה: כפתור ראשי + וואטסאפ
 function LpCtaBand({ title, text, primary, secondary, note }) {
-  const sec=secondary||{href:LP_WA,label:"דברו איתנו בוואטסאפ",external:true};
+  const sec=secondary===null?null:(secondary||{href:LP_WA,label:`דברו איתנו ${CONTACT_BY}`,external:!!SUPPORT_WA});
   const ext=x=>x.external?{target:"_blank",rel:"noopener noreferrer"}:{};
   return(
     <section className="lp-cta3" aria-label={title}>
@@ -2459,7 +2471,7 @@ function LpCtaBand({ title, text, primary, secondary, note }) {
         {text&&<p data-reveal style={{"--d":".08s",fontSize:19,marginBottom:32,lineHeight:1.65,maxWidth:"48ch"}}>{text}</p>}
         <div data-reveal style={{"--d":".16s",display:"flex",gap:14,flexWrap:"wrap"}}>
           <a href={primary.href} onClick={primary.onClick} {...ext(primary)} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:60}}>{primary.label}<LpGo/></a>
-          <a href={sec.href} {...ext(sec)} className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>{sec.label}</a>
+          {sec&&<a href={sec.href} {...ext(sec)} className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>{sec.label}</a>}
         </div>
         {note&&<div className="lp-ctanote" data-reveal style={{"--d":".2s"}}>{note}</div>}
       </div>
@@ -2491,7 +2503,7 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
   const legal=[lg("#/terms","תנאי שימוש"),lg("#/privacy","מדיניות פרטיות"),lg("#/accessibility","הצהרת נגישות"),lg("#/cancel","ביטול עסקה")];
   const cols=[
     ["האתר",[sec("how","איך זה עובד"),sec("features","יכולות"),sec("events","סוגי אירועים"),sec("pricing","מחירים וחבילות"),{href:"/guides",label:"מדריכים וטיפים"},sec("contact","צור קשר")]],
-    ["שירות",[{label:loggedIn?"האירועים שלי":"כניסה לחשבון",btn:()=>onAuth("login")},{label:"הרשמה חינם",btn:()=>onAuth("register")},{label:"ספקים ומפיקים: הצטרפות",href:JOIN_WA_URL(),ext:true},{label:"לאולמות ומפיקים",btn:onVenue}]],
+    ["שירות",[{label:loggedIn?"האירועים שלי":"כניסה לחשבון",btn:()=>onAuth("login")},{label:"הרשמה חינם",btn:()=>onAuth("register")},{label:"ספקים ומפיקים: הצטרפות",href:JOIN_WA_URL(),ext:!!SUPPORT_WA},{label:"לאולמות ומפיקים",btn:onVenue}]],
     ["לפי אירוע",EVENT_LANDINGS.map(x=>({href:`/events/${x.slug}`,label:x.nav}))],
     ["מידע משפטי",legal],
   ];
@@ -2526,8 +2538,8 @@ function SiteFooter({ home=false, onAuth, onVenue, loggedIn=false }) {
               <div style={{fontSize:14,fontWeight:900,marginBottom:14}}>צור קשר</div>
               <div style={{display:"flex",flexDirection:"column",gap:9,fontSize:14,color:LP.muted}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><LpIcon name="pin" color={LP.rose} size={18}/>השושנים 30, נוף הגליל</div>
-                <a href={LP_WA} target="_blank" rel="noopener noreferrer" style={{color:"#167A3E",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#167A3E" size={18}/>WhatsApp</a>
-                <a href="tel:0526817102" style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>052-681-7102</a>
+                {SUPPORT_WA&&<a href={LP_WA} target="_blank" rel="noopener noreferrer" style={{color:"#167A3E",textDecoration:"none",fontWeight:800}}><LpIcon name="msg" color="#167A3E" size={18}/>WhatsApp</a>}
+                {SUPPORT_PHONE&&<a href={`tel:${SUPPORT_TEL}`} style={{textDecoration:"none"}}><LpIcon name="phone" color={LP.violet} size={18}/>{SUPPORT_PHONE}</a>}
                 <a href="mailto:sidoril2026@gmail.com" style={{textDecoration:"none"}}><LpIcon name="mail" color={LP.coral} size={18}/>sidoril2026@gmail.com</a>
               </div>
             </div>
@@ -3756,7 +3768,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           {[
             ["check","#1F7A4D","#E9FBF4","₪0 להתחלה",`בלי כרטיס אשראי, והושבה חינם עד ${FREE_SEATING_LIMIT} מוזמנים.`],
             ["users","#B8306F","#FFEFF5","בנוי לאירועים בישראל","עברית מלאה, חתונות, בריתות ובר/בת מצווה."],
-            ["msg","#167A3E","#EAF8EF","תמיכה בוואטסאפ","שואלים ומקבלים תשובה מאדם אמיתי."],
+            ["msg","#167A3E","#EAF8EF",SUPPORT_WA?"תמיכה בוואטסאפ":"תמיכה אישית","שואלים ומקבלים תשובה מאדם אמיתי."],
             ["map","#6A3FCF","#F1EAFF","הפרטים שלכם מוגנים","תקשורת מוצפנת, ורק אתם רואים את האורחים."],
           ].map(([ic,c,bg,t,d],i)=>(
             <div key={t} className="lp-lift" data-reveal style={{"--d":`${(i*.07).toFixed(2)}s`,background:bg,borderRadius:28,padding:"22px 22px 24px"}}>
@@ -3778,7 +3790,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           <p data-reveal style={{"--d":".08s",fontSize:19,marginBottom:32,lineHeight:1.65,maxWidth:"46ch"}}>פותחים אירוע, מעלים את המוזמנים, ותוך כמה דקות יש לכם סידור הושבה.</p>
           <div data-reveal style={{"--d":".16s",display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>onOpenAuth("register")} className="lp-btn lp-white" style={{padding:"13px 32px 13px 14px",fontSize:18,minHeight:60}}>צרו סידור הושבה עכשיו<LpGo/></button>
-            <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>דברו איתנו בוואטסאפ</a>
+            <a href={contactUrl()} {...(SUPPORT_WA?{target:"_blank",rel:"noopener noreferrer"}:{})} className="lp-btn lp-glass-btn" style={{padding:"13px 30px",fontSize:16,minHeight:60}}>דברו איתנו {CONTACT_BY}</a>
           </div>
         </div>
       </section>
@@ -3791,12 +3803,12 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         <button className="lp-btn lp-primary" tabIndex={pastHero?0:-1} onClick={()=>onOpenAuth("register")} style={{flex:1,padding:"12px 18px",fontSize:15,minHeight:48,whiteSpace:"nowrap"}}>התחילו בחינם</button>
       </div>
 
-      {/* WhatsApp FAB */}
-      <a href="https://wa.me/972526817102" target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
+      {/* WhatsApp FAB (רק כשיש מספר) */}
+      {SUPPORT_WA&&<a href={contactUrl()} target="_blank" rel="noopener noreferrer" aria-label="צ'אט בוואטסאפ"
         className="lp-wa-fab" style={{position:"fixed",bottom:20,left:20,background:"#0F7F40",color:"#fff",borderRadius:50,padding:"12px 20px",display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,boxShadow:"0 8px 24px rgba(37,211,102,.45)",zIndex:99,textDecoration:"none"}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         <span className="lp-lg">לחץ לצ'אט</span>
-      </a>
+      </a>}
     </div>
   );
 }
@@ -3809,7 +3821,7 @@ const AUTH_ERRORS={
   "Unable to validate email address: invalid format":"❌ כתובת המייל לא תקינה",
   "Email rate limit exceeded":"⏳ נשלחו יותר מדי מיילים  -  נסו שוב בעוד כמה דקות",
 };
-const AUTH_DOWN="⚠️ שרת ההתחברות לא זמין כרגע. נסו שוב בעוד כמה דקות, ואם זה ממשיך  -  צרו קשר בוואטסאפ.";
+const AUTH_DOWN="⚠️ שרת ההתחברות לא זמין כרגע. נסו שוב בעוד כמה דקות, ואם זה ממשיך  -  צרו איתנו קשר.";
 // שגיאות רשת (השרת לא עונה) מגיעות בלי הודעה ברורה  -  מציגים הודעה מובנת
 const authErrorText=e=>{
   if(!e)return "";
@@ -7849,11 +7861,11 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
     {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
     {autoSeatModal}{templatesModal}
-    {/* WhatsApp צף */}
-    <a href="https://wa.me/972526817102" target="_blank" rel="noopener" aria-label="תמיכה בוואטסאפ"
+    {/* WhatsApp צף (רק כשיש מספר) */}
+    {SUPPORT_WA&&<a href={contactUrl()} target="_blank" rel="noopener" aria-label="תמיכה בוואטסאפ"
       style={{position:"fixed",bottom:90,left:24,background:"#25D366",color:"#fff",borderRadius:"50%",width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(37,211,102,.5)",zIndex:200,textDecoration:"none"}}>
       <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-    </a>
+    </a>}
     <AccessibilityWidget/>
       </div>{/* end main content */}
     </div>{/* end flex row */}
@@ -9319,7 +9331,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
     else if(pkg.smsPicker){const q=smsQty();msg+=` - ${q.toLocaleString()} הודעות × ${fmtShekel(SMS_UNIT_PRICE)}${callOn.sms?callTxt(callRecs):""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(smsSum())}`;}
     else if(selectedTier) msg+=` - ${selectedTier[0]} רשומות - ₪${selectedTier[1].toLocaleString()}`;
     else if(pkg.price) msg+=` - ${pkg.priceLabel||"₪"+pkg.price}`;
-    window.open(`https://wa.me/972526817102?text=${encodeURIComponent("שלום, אני מעוניין "+msg)}`, "_blank");
+    openContact("שלום, אני מעוניין "+msg,"רכישת חבילה ב-Sidor-IL");
   };
 
   // פאנל הפרטים: נפתח מתחת לשורה של הריבוע שנבחר
@@ -9387,7 +9399,7 @@ function PackagesScreen({ event, onBack, userPackages=[], recordCount=0 }) {
                   </div>
                 )}
                 <button onClick={e=>{e.stopPropagation();handleBuy(pkg);}} disabled={!!pkg.tiers&&!selectedTier} className="pk-buy">
-                  {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":"💬 פנה לרכישה בוואטסאפ"}
+                  {pkg.tiers&&!selectedTier?"בחר כמות רשומות תחילה":SUPPORT_WA?"💬 פנה לרכישה בוואטסאפ":"✉️ פנה לרכישה במייל"}
                   {pkg.waPicker?` - ${fmtShekel(waSum())}`:pkg.smsPicker?` - ${fmtShekel(smsSum())}`:selectedTier&&` - ₪${selectedTier[1].toLocaleString()}`}
                 </button>
               </div>
@@ -9944,7 +9956,7 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
     const{error}=await sb.rpc("request_sms",{p_event:event.id,p_amount:amount,p_price:price});
     if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
     const msg=`היי! אני רוצה לרכוש ${amount} הודעות SMS${buyCall?` + מוקד מתקשר ל-${buyCallRecs} רשומות`:""}${smsBase?` + החבילה הבסיסית`:""} ב-${fmtShekel(Number(price))} לאירוע "${event.name}".`;
-    window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
+    openContact(msg,"בקשת רכישה ב-Sidor-IL");
     setBuyPack(null);await loadBalance();
   };
 
@@ -10033,12 +10045,12 @@ function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
               <div style={{fontSize:19,fontWeight:900,color:C.text}}>{buyPack.amount} הודעות SMS</div>
               <div style={{fontSize:28,fontWeight:900,background:GRAD,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",margin:"4px 0 12px"}}>{fmtShekel(Number(buyPack.price))}</div>
               <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:16,textAlign:"right",background:C.blueXL,borderRadius:12,padding:"10px 12px"}}>
-                1. לחיצה על "שלח בקשה" פותחת וואטסאפ עם הפרטים<br/>
+                1. לחיצה על "שלח בקשה" פותחת {SUPPORT_WA?"וואטסאפ":"מייל"} עם הפרטים<br/>
                 2. נשלח לך פרטי תשלום (Bit / העברה)<br/>
                 3. אחרי התשלום ההודעות נטענות ליתרה שלך
               </div>
               <button onClick={confirmPurchase} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:WA_GREEN,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
-                <WaIcon size={18}/> שלח בקשה בוואטסאפ
+                {SUPPORT_WA?<WaIcon size={18}/>:"✉️"} שלח בקשה {CONTACT_BY}
               </button>
               <button onClick={()=>setBuyPack(null)} style={{background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
             </div>
@@ -10389,7 +10401,7 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
     setBuying(false);
     if(error){alert("❌ לא הצלחנו לשלוח את הבקשה: "+error.message);return;}
     const msg=`שלום, אני מעוניין בחבילת "הודעות WhatsApp" - ${waQty.toLocaleString()} רשומות × ${fmtShekel(WA_RECORD_PRICE)} (סבב של 4 הודעות לכל רשומה)${waCall?` + מוקד מתקשר ל-${waQty.toLocaleString()} רשומות × ${fmtShekel(CALL_RECORD_PRICE)}`:""}${smsBase?` + חבילה בסיסית ${fmtShekel(smsBase)}`:""} - סה"כ ${fmtShekel(waSum)} לאירוע "${event.name}"`;
-    window.open("https://wa.me/972526817102?text="+encodeURIComponent(msg),"_blank","noopener,noreferrer");
+    openContact(msg,"בקשת רכישה ב-Sidor-IL");
     setBuyOpen(false);await loadWa();
   };
   const waPurchase=(<>
@@ -10451,12 +10463,12 @@ function WhatsAppScreen({ event, guests, userPackages=[] }) {
           <div style={{fontSize:13,color:C.muted,marginTop:2}}>סבב של 4 הודעות לכל רשומה</div>
           <div style={{fontSize:28,fontWeight:900,color:"#075E54",margin:"6px 0 12px"}}>{fmtShekel(waSum)}</div>
           <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:16,textAlign:"right",background:"#F0FFF4",borderRadius:12,padding:"10px 12px"}}>
-            1. לחיצה על "שלח בקשה" פותחת וואטסאפ עם הפרטים<br/>
+            1. לחיצה על "שלח בקשה" פותחת {SUPPORT_WA?"וואטסאפ":"מייל"} עם הפרטים<br/>
             2. נשלח לך פרטי תשלום (Bit / העברה)<br/>
             3. אחרי התשלום הרשומות נטענות ליתרה שלך
           </div>
           <button onClick={confirmWaPurchase} disabled={buying} className="sx-btn" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:WA_GREEN,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
-            <WaIcon size={18}/> {buying?"שולח...":"שלח בקשה בוואטסאפ"}
+            {SUPPORT_WA?<WaIcon size={18}/>:"✉️"} {buying?"שולח...":`שלח בקשה ${CONTACT_BY}`}
           </button>
           <button onClick={()=>setBuyOpen(false)} style={{background:"none",border:"none",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ביטול</button>
         </div>
@@ -11043,7 +11055,6 @@ const SUPPLIER_CAT=Object.fromEntries(SUPPLIER_CATS.map(([k,i,l])=>[k,{icon:i,la
 const SUPPLIER_REGIONS=[["all","כל הארץ"],["north","צפון"],["center","מרכז ושרון"],["jerusalem","ירושלים והסביבה"],["south","דרום"]];
 const SUPPLIER_REGION=Object.fromEntries(SUPPLIER_REGIONS);
 const BUSINESS_TYPES=[["patur","עוסק פטור"],["murshe","עוסק מורשה"],["company","חברה בע״מ"],["amuta","עמותה"]];
-const SUPPORT_WA_NUM="972526817102";
 // ספרת ביקורת של ת.ז / ע.מ / ח.פ (9 ספרות)
 const validIsraeliId=s=>{const d=String(s||"").replace(/\D/g,"");if(!/^\d{5,9}$/.test(d))return false;const p=d.padStart(9,"0");let sum=0;for(let i=0;i<9;i++){let x=+p[i]*((i%2)+1);sum+=x>9?x-9:x;}return sum%10===0;};
 // ספק מוביל = מסומן ועדיין בתוקף
@@ -11502,7 +11513,7 @@ function SupplierHome({ user, onLogout, onEvents, onBackToLanding }) {
       if(files?.length)await st.remove(files.map(f=>`vendors/${user.id}/${f.name}`));}catch{}
     setP(null);setPriv(null);setEdit(false);
   };
-  const upgrade=()=>window.open(`https://wa.me/${SUPPORT_WA_NUM}?text=${encodeURIComponent(`היי, אני ${p?.business_name||"ספק"} (${SUPPLIER_CAT[p?.category]?.label||""}) ב-Sidor-IL ואשמח לשמוע על שדרוג לספק מוביל`)}`,"_blank","noopener,noreferrer");
+  const upgrade=()=>openContact(`היי, אני ${p?.business_name||"ספק"} (${SUPPLIER_CAT[p?.category]?.label||""}) ב-Sidor-IL ואשמח לשמוע על שדרוג לספק מוביל`,"שדרוג לספק מוביל");
   const status=p&&({pending:{bg:"#FFF8E8",b:"#F5DDA6",c:"#8A5A00",t:"⏳ הפרופיל ממתין לאישור",s:"נבדוק את הפרטים בדרך כלל תוך יום-יומיים, ואז הפרופיל יופיע ללקוחות."},
     approved:{bg:"#E9FBF4",b:"#BDEFDD",c:"#17694F",t:"✓ הפרופיל מוצג ללקוחות",s:isFeatured(p)?`⭐ ספק מוביל${p.featured_until?` עד ${new Date(p.featured_until).toLocaleDateString("he-IL")}`:""}`:"זוגות ומשפחות שמתכננים אירוע רואים אתכם ברשימת הספקים."},
     rejected:{bg:"#FFF5F5",b:"#FED7D7",c:"#C53030",t:"✗ הפרופיל לא אושר",s:p.reject_reason||"תקנו את הפרטים ושלחו שוב."}}[p.status]);
@@ -14639,13 +14650,13 @@ function AdminDashboard({ user, onLogout }) {
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 // ─── דפים משפטיים: תנאי שימוש, מדיניות פרטיות, הצהרת נגישות (#/terms, #/privacy, #/accessibility) ───
-const CONTACT_TXT=`Sidor-IL\nעוסק מורשה מס' 203887450\nהשושנים 30, נוף הגליל\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102`;
+const CONTACT_TXT=`Sidor-IL\nעוסק מורשה מס' 203887450\nהשושנים 30, נוף הגליל\n${CONTACT_LINES()}`;
 const LEGAL_PAGES={
   terms:{title:"תנאי שימוש",updated:"נובמבר 2026",sections:[
     {title:"1. כללי",text:`ברוכים הבאים ל-Sidor-IL ("השירות", "אנחנו"; עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל), פלטפורמה לניהול אירועים בכתובת sidoril.com: סידורי הושבה, אישורי הגעה, הזמנות דיגיטליות, שליחת הודעות לאורחים וכלים נלווים.\n\nהשימוש בשירות, כולל הרשמה, יצירת אירוע או רכישת חבילה, מהווה הסכמה לתנאים אלה ולמדיניות הפרטיות. אם אינכם מסכימים, אנא אל תשתמשו בשירות. התנאים מנוסחים בלשון זכר מטעמי נוחות בלבד ופונים לכל המגדרים.`},
     {title:"2. ההרשמה והחשבון",text:`• השימוש בשירות מיועד לבני 18 ומעלה.\n• יש למסור פרטים נכונים ולשמור על סודיות פרטי ההתחברות. אתם אחראים לכל פעולה שנעשית בחשבונכם.\n• בעל אירוע רשאי לשתף את האירוע עם אנשים נוספים (למשל בן/בת זוג או הורים). מי ששותף יכול לצפות ולערוך את פרטי האירוע, והאחריות על מתן הגישה היא של בעל האירוע.\n• אנו רשאים להשעות או לסגור חשבון שנעשה בו שימוש בניגוד לתנאים או לחוק.`},
     {title:"3. השירותים והחבילות",text:`• חלק מהשירות ניתן ללא תשלום, וחלקו בחבילות בתשלום (כגון החבילה הבסיסית, הודעות SMS, הודעות WhatsApp, צוות הושבה ועמדת טאבלט), כמפורט בדף החבילות.\n• המחיר המחייב הוא המחיר שמוצג באתר ומאושר מולנו בעת הרכישה. כל המחירים באתר כוללים מע"מ.\n• על כל תשלום תונפק קבלה או חשבונית מס כדין.\n• החבילה מופעלת לאחר אישור התשלום.\n• יתרת הודעות SMS שנרכשה משמשת לאירוע שעבורו נרכשה. הודעה נחשבת לנוצלה כשנשלחה לספק ההודעות.\n• הודעות WhatsApp נמכרות לפי רשומה. רשומה היא אורח אחד (או משפחה עם מספר טלפון אחד), והיא כוללת עד 4 הודעות: הזמנה, תזכורת (נשלחת רק למי שעוד לא ענה), הודעה ביום האירוע (עם מספר השולחן למי ששובץ) והודעת תודה. ההודעות נשלחות אוטומטית במועדים שבתזמון, או ידנית מהמסך. רשומה נחשבת לנוצלה כשנשלחה לאורח ההודעה הראשונה, וכל אחת מ-4 ההודעות נשלחת לאורח פעם אחת. הודעה שלא נשלחה בגלל תקלה אצל ספק ההודעות אינה מנצלת רשומה.`},
-    {title:"4. ביטול עסקה והחזרים",text:`ביטול עסקה ייעשה בהתאם לחוק הגנת הצרכן, התשמ"א-1981 ולתקנות הגנת הצרכן (ביטול עסקה), התשע"א-2010:\n\n• ניתן לבטל רכישה בתוך 14 ימים ממועד העסקה (או ממועד קבלת פרטי העסקה, לפי המאוחר), ובלבד שהביטול נעשה לפחות 2 ימים שאינם ימי מנוחה לפני מועד מתן השירות (למשל לפני מועד האירוע שאליו הוזמנו צוות הושבה או עמדת טאבלט).\n• הודעת ביטול אפשר למסור בוואטסאפ, באימייל, בטלפון או דרך דף "ביטול עסקה" באתר: https://www.sidoril.com/#/cancel\n• בביטול יוחזר הסכום ששולם בתוך 14 ימים מקבלת הודעת הביטול, בניכוי דמי ביטול בשיעור 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יינתן החזר עבור חלק מהשירות שכבר ניתן או נוצל (למשל הודעות SMS שכבר נשלחו).\n• צרכן שהוא אדם עם מוגבלות, אזרח ותיק או עולה חדש, רשאי לבטל עסקה שנעשתה בשיחה טלפונית (לרבות שיחה עם נציג בוואטסאפ) בתוך 4 חודשים, בהתאם לחוק.`},
+    {title:"4. ביטול עסקה והחזרים",text:`ביטול עסקה ייעשה בהתאם לחוק הגנת הצרכן, התשמ"א-1981 ולתקנות הגנת הצרכן (ביטול עסקה), התשע"א-2010:\n\n• ניתן לבטל רכישה בתוך 14 ימים ממועד העסקה (או ממועד קבלת פרטי העסקה, לפי המאוחר), ובלבד שהביטול נעשה לפחות 2 ימים שאינם ימי מנוחה לפני מועד מתן השירות (למשל לפני מועד האירוע שאליו הוזמנו צוות הושבה או עמדת טאבלט).\n• הודעת ביטול אפשר למסור ${SUPPORT_PHONE?"בוואטסאפ, באימייל, בטלפון":"באימייל"} או דרך דף "ביטול עסקה" באתר: https://www.sidoril.com/#/cancel\n• בביטול יוחזר הסכום ששולם בתוך 14 ימים מקבלת הודעת הביטול, בניכוי דמי ביטול בשיעור 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יינתן החזר עבור חלק מהשירות שכבר ניתן או נוצל (למשל הודעות SMS שכבר נשלחו).\n• צרכן שהוא אדם עם מוגבלות, אזרח ותיק או עולה חדש, רשאי לבטל עסקה שנעשתה בשיחה טלפונית (לרבות שיחה עם נציג בוואטסאפ) בתוך 4 חודשים, בהתאם לחוק.`},
     {title:"5. אחריות המשתמש לתוכן ולפרטי האורחים",text:`• אתם אחראים לכל המידע שאתם מזינים לשירות, ובכלל זה שמות וטלפונים של אורחים.\n• אתם מצהירים כי יש לכם זכות להשתמש בפרטי האורחים לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו.\n• ההודעות לאורחים (SMS ו-WhatsApp) נשלחות בשמכם ולפי הוראותיכם. אתם השולחים, ואנו מספקים את הכלי הטכני בלבד.\n• השירות מיועד לשליחת הזמנות, תזכורות ועדכונים הנוגעים לאירוע בלבד. אין להשתמש בו לשליחת דבר פרסומת או הודעות שאינן קשורות לאירוע, ובכלל זה בניגוד לסעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982.\n• אין להעלות תוכן פוגעני, מטעה או מפר זכויות של אחרים, ובכלל זה תמונות שאין לכם זכות להשתמש בהן.\n• מפיק או בעל מקצוע שמנהל אירועים עבור לקוחות אחראי לקבל את הסכמת לקוחותיו להזנת פרטיהם ופרטי אורחיהם לשירות.`},
     {title:"5א. עיבוד פרטי האורחים עבורכם",text:`לגבי פרטי האורחים שאתם מזינים, אתם בעלי השליטה במידע ואנו מחזיקים ומעבדים אותו עבורכם בלבד: לצורך מתן השירות, לפי הוראותיכם, ובאמצעי אבטחה סבירים. איננו משתמשים בפרטים אלה לכל מטרה אחרת, ואיננו מוסרים אותם לאחרים מלבד הספקים הנדרשים להפעלת השירות (כמפורט במדיניות הפרטיות). עם מחיקת האירוע נמחקים פרטי האורחים שלו.`},
     {title:"5ב. תקופת שמירת המידע",text:`השירות נועד לניהול אירוע, ולא לאחסון קבוע של רשימות אנשי קשר. פרטי האורחים של כל אירוע נשמרים עד 12 חודשים מתאריך האירוע, ולאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים, בלי הודעה נוספת. חשבון שלא נעשה בו שימוש 24 חודשים עשוי להימחק לאחר הודעה מוקדמת באימייל. באחריותכם לייצא ולשמור עותק של מה שתרצו לפני כן (למשל ייצוא לאקסל). לא נהיה אחראים לאובדן מידע שנמחק בהתאם לסעיף זה. הפרטים המלאים במדיניות הפרטיות.`},
@@ -14661,14 +14672,14 @@ const LEGAL_PAGES={
     {title:"11. יצירת קשר",text:CONTACT_TXT},
   ]},
   privacy:{title:"מדיניות פרטיות",updated:"נובמבר 2026",sections:[
-    {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com, טלפון: 052-681-7102.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
+    {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com${SUPPORT_PHONE?`, טלפון: ${SUPPORT_PHONE}`:""}.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
     {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו, או מיד עם פרסום הפרופיל אם הפעלנו לספק חשבון ספק. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• פניות לספקים: כשאתם שולחים "בקשת הצעת מחיר" לספק, נשמרים ונמסרים לספק שבחרתם השם, הנייד, תאריך האירוע, מספר האורחים המשוער והפרטים שכתבתם. הצעת המחיר שהספק שולח לכם נשמרת יחד עם הפנייה.\n• שפת ההודעות של כל אורח (אם בחרתם שפה אחרת מעברית), כדי לשלוח לו את ההודעות בשפה שלו.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
     {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• ספק שפניתם אליו דרך "בקשת הצעת מחיר": מקבל את פרטי הפנייה שמילאתם, כדי לחזור אליכם. מרגע זה הספק אחראי למידע שקיבל.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
     {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n• פניות לספקים והצעות מחיר: נשמרות עד שהספק מוחק אותן, ולכל היותר 24 חודשים ממועד הפנייה. ניתן לבקש מאיתנו למחוק פנייה ששלחתם.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
-    {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com, טלפון 052-681-7102, או בדואר: Sidor-IL, השושנים 30, נוף הגליל. נשיב בתוך 30 ימים. ספק יכול גם לעדכן או למחוק את הפרופיל שלו בעצמו מאזור הספקים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
+    {title:"8. הזכויות שלכם",text:`על פי חוק הגנת הפרטיות, אתם זכאים לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי או לא מעודכן, ולבקש את מחיקתו. אורח שפרטיו נמסרו לנו על ידי בעל אירוע רשאי לפנות אלינו או לבעל האירוע.\n\nלמימוש הזכויות: sidoril2026@gmail.com${SUPPORT_PHONE?`, טלפון ${SUPPORT_PHONE}`:""}, או בדואר: Sidor-IL, השושנים 30, נוף הגליל. נשיב בתוך 30 ימים. ספק יכול גם לעדכן או למחוק את הפרופיל שלו בעצמו מאזור הספקים.\n\nאם לדעתכם לא טיפלנו כראוי בפנייה, באפשרותכם להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים.`},
     {title:"9. עוגיות ואחסון מקומי",text:`האתר משתמש באחסון מקומי בדפדפן (Local Storage / Session Storage). בכניסה הראשונה תתבקשו לאשר או לדחות את השמירה שאינה חיונית.\n\nנשמר תמיד, כי בלעדיו השירות לא יעבוד:\n• שמירת ההתחברות לחשבון.\n• הבחירה שלכם באישור או בדחייה.\n• קוד הגישה לעמדת הכניסה לאולם שהגדרתם, ומצב הניווט בלשונית הפתוחה.\n\nנשמר רק אם אישרתם:\n• האירוע והמסך האחרונים, כדי לחזור אליהם אחרי רענון.\n• הגדרות תצוגה ונגישות (למשל גודל טקסט וניגודיות). בלי אישור הן פועלות עד רענון הדף.\n• קוד הפניה שהגעתם איתו (?ref=), לעד 60 יום, כדי לשייך אותו לחשבון בהרשמה.\n\nבדחייה השירות ממשיך לעבוד במלואו, ומה שכבר נשמר מהרשימה השנייה נמחק. אפשר לשנות את הבחירה בכל עת בכפתור שבסעיף זה או ב"הגדרות עוגיות" בתחתית דף הבית.\n\nאיננו משתמשים בעוגיות פרסום, בכלי מעקב או בכלי אנליטיקה של צד שלישי. אם נוסיף כלים כאלה בעתיד, נעדכן מדיניות זו ונבקש את הסכמתכם מראש. ניתן גם למחוק את המידע השמור דרך הגדרות הדפדפן; במקרה זה תתבקשו להתחבר מחדש.`},
     {title:"10. קטינים",text:`פתיחת חשבון מיועדת לבני 18 ומעלה. פרטי אורחים קטינים מוזנים על ידי בעל האירוע ובאחריותו.`},
     {title:"11. שינויים במדיניות",text:`נעדכן מדיניות זו לפי הצורך. שינוי מהותי יפורסם באתר, ותאריך העדכון האחרון מופיע בראש הדף.`},
@@ -14679,11 +14690,11 @@ const LEGAL_PAGES={
     {title:"מה עשינו באתר",text:`• תפריט נגישות (כפתור הנגישות בפינת המסך): הגדלה והקטנה של הטקסט, ניגודיות גבוהה, גווני אפור, סמן גדול, עצירת אנימציות, גופן קריא, הדגשת קישורים וקו תחתי לקישורים. ההגדרות נשמרות גם אחרי רענון.\n• מבנה דף בעברית מימין לשמאל, עם הגדרת שפה וכיוון, וכותרת ראשית בכל מסך.\n• תמיכה בניווט במקלדת וסימון פוקוס ברכיבים עיקריים.\n• טקסט חלופי לתמונות, ושמות נגישים לכפתורים, לקישורים ולשדות טפסים, לשימוש עם קוראי מסך.\n• תוויות גלויות בטפסים (למשל בטופס אישור ההגעה), והודעות שגיאה בטקסט.\n• ניגודיות צבעים לטקסט לפי רמה AA.\n• כיבוד הגדרת "הפחתת תנועה" של מערכת ההפעלה.\n• התאמה לצפייה בטלפון, בטאבלט ובמחשב.`},
     {title:"בדיקת הנגישות",text:`האתר נבדק לאחרונה בנובמבר 2026: בדיקה אוטומטית בכלי axe לפי WCAG 2.0 ברמה AA בדף הבית, בדף ההזמנה לאורח, במסכי ניהול האירוע ובדפי המידע המשפטי, במחשב ובטלפון, ובדיקה ידנית של ניווט מקלדת, ניגודיות, טקסט חלופי ותוויות. הבעיות שנמצאו תוקנו.`},
     {title:"מגבלות ידועות",text:`למרות מאמצינו, ייתכן שחלקים מהאתר עדיין אינם נגישים במלואם:\n\n• מפת האולם וגרירת אורחים לשולחנות מבוססות על גרירה בעכבר או במגע. כחלופה, ניתן לשבץ אורחים מתצוגת הרשימה ולהשתמש בהושבה האוטומטית.\n• סריקת QR בכניסה לאולם דורשת מצלמה. כחלופה, ניתן לחפש אורח לפי שם.\n• תכנים שמעלים המשתמשים עצמם (כגון תמונת הזמנה, תמונות ספקים ונוסחי הודעות) אינם בשליטתנו.\n• שירותים חיצוניים שהאתר מקשר אליהם (כגון התחברות עם Google, WhatsApp, Bit, PayBox, Waze ו-Google Maps) מונגשים על ידי מפעיליהם.\n• דפי ההדפסה (סידור הושבה, כרטיסי שולחן ורשימות) מיועדים להדפסה על נייר. המידע שבהם זמין גם במסכי האתר עצמם.\n\nאנו ממשיכים לשפר את הנגישות באופן שוטף.`},
-    {title:"נתקלתם בבעיה?",text:`אם נתקלתם בקושי בשימוש באתר, או שיש לכם הצעה לשיפור, נשמח לשמוע ולסייע. אנא ציינו את הדף, תיאור הבעיה וסוג הדפדפן או הטכנולוגיה המסייעת.\n\nרכז/ת הנגישות של Sidor-IL:\nטלפון: 052-681-7102\nאימייל: sidoril2026@gmail.com\nוואטסאפ: https://wa.me/972526817102\n\nנשתדל להשיב בתוך 7 ימי עבודה.`},
-    {title:"הסדרי נגישות בשירות",text:`השירות ניתן באופן מקוון בלבד, ואין קבלת קהל פיזית. ניתן לקבל סיוע טלפוני או בוואטסאפ בשימוש באתר, בהקמת האירוע ובהזנת אורחים, לרבות עבור אנשים עם מוגבלות.`},
+    {title:"נתקלתם בבעיה?",text:`אם נתקלתם בקושי בשימוש באתר, או שיש לכם הצעה לשיפור, נשמח לשמוע ולסייע. אנא ציינו את הדף, תיאור הבעיה וסוג הדפדפן או הטכנולוגיה המסייעת.\n\nרכז/ת הנגישות של Sidor-IL:\n${CONTACT_LINES()}\n\nנשתדל להשיב בתוך 7 ימי עבודה.`},
+    {title:"הסדרי נגישות בשירות",text:`השירות ניתן באופן מקוון בלבד, ואין קבלת קהל פיזית. ניתן לקבל סיוע ${SUPPORT_PHONE?"טלפוני, בוואטסאפ או במייל":"במייל"} בשימוש באתר, בהקמת האירוע ובהזנת אורחים, לרבות עבור אנשים עם מוגבלות.`},
   ]},
   cancel:{title:"ביטול עסקה",updated:"נובמבר 2026",sections:[
-    {title:"איך מבטלים",text:`רכשתם חבילה ורוצים לבטל? אפשר לשלוח הודעת ביטול בכל אחת מהדרכים:\n\n• וואטסאפ: https://wa.me/972526817102\n• אימייל: sidoril2026@gmail.com\n• טלפון: 052-681-7102\n\nבהודעה ציינו: שם מלא, כתובת האימייל של החשבון, מספר טלפון, והחבילה שברצונכם לבטל.`},
+    {title:"איך מבטלים",text:`רכשתם חבילה ורוצים לבטל? אפשר לשלוח הודעת ביטול בכל אחת מהדרכים:\n\n• ${CONTACT_LINES("\n• ")}\n\nבהודעה ציינו: שם מלא, כתובת האימייל של החשבון, מספר טלפון, והחבילה שברצונכם לבטל.`},
     {title:"מה קורה אחרי ההודעה",text:`• נאשר את קבלת הודעת הביטול.\n• ההחזר יבוצע בתוך 14 ימים מקבלת ההודעה, באותו אמצעי תשלום ששימש לרכישה (או בהעברה בנקאית, בתיאום).\n• דמי ביטול: 5% ממחיר העסקה או 100 ₪, לפי הנמוך מביניהם.\n• לא יוחזר תשלום עבור חלק מהשירות שכבר ניתן או נוצל, כגון הודעות SMS שכבר נשלחו.\n\nהתנאים המלאים מופיעים בסעיף 4 בתנאי השימוש: https://www.sidoril.com/#/terms`},
   ]},
 };
@@ -14738,8 +14749,8 @@ function LegalPage({ kind }) {
             <div className="lp-contact-box">
               <span>לשאלות:</span>
               <a href="mailto:sidoril2026@gmail.com">sidoril2026@gmail.com</a>
-              <a href="tel:0526817102">052-681-7102</a>
-              <a href={LP_WA} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              {SUPPORT_PHONE&&<a href={`tel:${SUPPORT_TEL}`}>{SUPPORT_PHONE}</a>}
+              {SUPPORT_WA&&<a href={LP_WA} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
             </div>
           </article>
         </div>
