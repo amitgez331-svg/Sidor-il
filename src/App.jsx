@@ -808,6 +808,90 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   </>,labelBox({inset:0,paddingTop:12},22));
 }
 
+// ─── לוח המפיק: הגעה בזמן אמת. כל אורח שמסומן "הגיע" בכניסה לאולם (guests.arrived_at) נספר כאן, רענון כל 15 שניות ───
+function LiveArrivals({ events, onOpen }) {
+  const [rows,setRows]=useState(null),[now,setNow]=useState(Date.now());
+  const ids=events.map(e=>e.id).join(",");
+  useEffect(()=>{
+    if(!ids)return;
+    let alive=true;
+    const load=()=>sb.from("guests").select("event_id,rsvp,guest_count,arrived_at").in("event_id",ids.split(",")).then(({data})=>{if(alive){setRows(data||[]);setNow(Date.now());}},()=>{});
+    load();
+    const iv=setInterval(()=>{if(document.visibilityState==="visible")load();},15000);
+    const tick=setInterval(()=>setNow(Date.now()),30000);
+    return()=>{alive=false;clearInterval(iv);clearInterval(tick);};
+  },[ids]);
+  if(!events.length)return null;
+  const ago=t=>{const m=Math.max(0,Math.round((now-Date.parse(t))/6e4));return m<1?"עכשיו":m<60?`לפני ${m} דק'`:`לפני ${Math.floor(m/60)} שע'`;};
+  return(
+    <div className="ev-live" role="region" aria-label="הגעה בזמן אמת">
+      <div className="ev-live-h"><span className="dot" aria-hidden="true"/>הגעה בזמן אמת · היום</div>
+      {events.map(e=>{
+        const gs=(rows||[]).filter(g=>g.event_id===e.id),n=g=>g.guest_count||1;
+        const came=gs.filter(g=>g.arrived_at),cameN=came.reduce((a,g)=>a+n(g),0);
+        const confN=gs.filter(g=>g.rsvp==="confirmed").reduce((a,g)=>a+n(g),0);
+        const goal=Math.max(confN,cameN),pct=goal?Math.min(100,Math.round(cameN/goal*100)):0;
+        const last=came.map(g=>g.arrived_at).sort().pop();
+        const recent=came.filter(g=>now-Date.parse(g.arrived_at)<15*6e4).reduce((a,g)=>a+n(g),0);
+        return(
+          <div key={e.id} className="ev-live-row">
+            <div className="ev-live-name">{eventWords(e).emoji} {e.name}{e.event_time?<small> · {String(e.event_time).slice(0,5)}</small>:null}{e.venue?<small> · {e.venue}</small>:null}</div>
+            <div className="ev-live-big" aria-live="polite"><b>{rows?<CountUp value={cameN.toLocaleString("he-IL")}/>:"…"}</b><span>הגיעו מתוך {confN.toLocaleString("he-IL")} שאישרו</span></div>
+            <div className="ev-live-bar" aria-hidden="true"><u style={{width:`${pct}%`}}/></div>
+            <div className="ev-live-meta">
+              <span>{pct}% מהמאשרים</span>
+              {recent>0&&<span className="up">+{recent} ב-15 הדקות האחרונות</span>}
+              <span>{last?`אחרון הגיע ${ago(last)}`:"עוד אף אחד לא סומן כהגיע"}</span>
+            </div>
+            <button type="button" className="ev-live-go" onClick={()=>onOpen(e)}>לכניסה לאולם ←</button>
+          </div>);
+      })}
+    </div>
+  );
+}
+
+// ─── אפקטים: מספרים שרצים ואדווה ───
+// עצירת אנימציות: הגדרת המכשיר, או "עצור אנימציות" בתפריט הנגישות (style#a11y-style)
+const fxReduced=()=>{try{return window.matchMedia("(prefers-reduced-motion: reduce)").matches||(document.getElementById("a11y-style")?.textContent||"").includes("animation:none");}catch{return true;}};
+// CountUp: מציג את הערך, ובפעם הראשונה שהוא נראה על המסך רץ אליו מ-0. "33%", "19/24", "1,250" — רק המספר הראשון רץ
+function CountUp({ value, ms=900 }) {
+  const str=String(value??""),m=str.match(/^(\D*?)(\d[\d,]*)(.*)$/s);
+  const target=m?parseInt(m[2].replace(/,/g,""),10):NaN;
+  // ברירת מחדל: הערך האמיתי. הספירה רצה רק כשהמספר נראה בפועל, ואם הדפדפן לא מצייר (לשונית ברקע) — חוזרים לערך מעצמו
+  const ref=useRef(null),[shown,setShown]=useState(null);
+  useLayoutEffect(()=>{
+    if(!m||!(target>0)||fxReduced()||!ref.current)return;
+    let raf=0,fb=0,io,done=false;
+    const start=()=>{
+      setShown(0);const t0=performance.now();
+      const step=t=>{const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);if(k<1){setShown(Math.round(target*e));raf=requestAnimationFrame(step);}else{done=true;setShown(null);}};
+      raf=requestAnimationFrame(step);
+      fb=setTimeout(()=>{if(!done){cancelAnimationFrame(raf);setShown(null);}},ms+500);
+    };
+    const r=ref.current.getBoundingClientRect();
+    if(r.top<window.innerHeight&&r.bottom>0)start();
+    else if("IntersectionObserver" in window){io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)){io.disconnect();start();}},{threshold:.4});io.observe(ref.current);}
+    return()=>{cancelAnimationFrame(raf);clearTimeout(fb);io&&io.disconnect();};
+  },[]);
+  if(shown===null||!m)return <span ref={ref}>{str}</span>;
+  const useComma=m[2].includes(",")||target>=1000;
+  return <span ref={ref} aria-label={str}>{m[1]}{useComma?shown.toLocaleString("he-IL"):shown}{m[3]}</span>;
+}
+const FX_SEL=".sx-btn-primary,.lp-btn.lp-primary,.lp-btn.lp-white,.hm-pill.p,.pk-buy,.pk-btn,.ad-go,.vd-wa,.ev-live-go,.lp-btn.lp-ghost,.hm-pill";
+function installFxRipple(){
+  if(typeof window==="undefined"||window.__fxRipple)return;window.__fxRipple=true;
+  document.addEventListener("pointerdown",e=>{
+    if(e.button!==0||fxReduced())return;
+    const el=e.target.closest?.(FX_SEL);if(!el||el.disabled)return;
+    const cs=getComputedStyle(el);if(cs.overflow!=="hidden"){if(cs.position==="static")return;}
+    const r=el.getBoundingClientRect(),d=Math.max(r.width,r.height)*2.2,sp=document.createElement("span");
+    const light=el.classList.contains("lp-ghost")||(el.classList.contains("hm-pill")&&(el.classList.contains("g")||el.classList.contains("s")));
+    sp.className="fx-ripple"+(light?" dark":"");sp.style.width=sp.style.height=d+"px";sp.style.left=(e.clientX-r.left)+"px";sp.style.top=(e.clientY-r.top)+"px";
+    if(cs.overflow!=="hidden")el.style.overflow="hidden";
+    el.appendChild(sp);setTimeout(()=>sp.remove(),600);
+  },{passive:true});
+}
+
 // ─── RSVP BADGE ──────────────────────────────────────────────────────────────
 const RsvpBadge = ({rsvp}) => {
   // "ממתין..." נראה כמו טקסט שנחתך — מילה מלאה וקצרה; גוונים כהים מספיק לקריאה על הרקע הבהיר
@@ -4703,7 +4787,7 @@ const HOME_CSS=`
 .hm-cd b{display:block;font-family:'Fredoka','Heebo',sans-serif;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .hm-cd span{font-size:13px;font-weight:600;color:#5E5470}
 .hm-acts{display:flex;gap:10px;flex-wrap:wrap}
-.hm-pill{border:none;border-radius:100px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
+.hm-pill{position:relative;overflow:hidden;isolation:isolate;border:none;border-radius:100px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:translate 200ms cubic-bezier(0.23,1,0.32,1),box-shadow 200ms cubic-bezier(0.23,1,0.32,1)}
 .hm-pill.w{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
 .hm-pill.g{background:#fff;color:#4A2C8F;box-shadow:0 12px 24px -16px rgba(43,29,63,.55)}
 .hm-pill.p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
@@ -5024,7 +5108,7 @@ function EventHomeStats({ confirmed, declined, pending, total, onOpen }) {
       {items.map(([ic,l,v,s,bg])=>(
         <button key={l} className="hm-stat" style={{"--bg":bg}} onClick={onOpen}>
           <span className="t"><i aria-hidden="true">{ic}</i>{l}</span>
-          <b>{v}</b><small>{s}</small>
+          <b><CountUp value={v}/></b><small>{s}</small>
         </button>))}
     </div>
   );
@@ -5043,7 +5127,7 @@ function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
       {tiles.map(t=>(
         <button key={t.go} className="hm-tile" style={{"--bg":t.bg,"--c":t.c}} onClick={()=>onGo(t.go)}>
           <div className="art ph" aria-hidden="true"><img src={t.img} alt="" loading="lazy" decoding="async"/><i>{t.ic}</i></div>
-          <div className="row"><span>{t.l}</span><b>{t.v}</b></div>
+          <div className="row"><span>{t.l}</span><b><CountUp value={t.v}/></b></div>
           <small style={t.go==="tasks"&&late?{color:"#B42318"}:undefined}>{t.s}</small>
           {t.bar!==undefined&&<div className="bar" aria-hidden="true"><u style={{width:`${t.bar}%`}}/></div>}
         </button>))}
@@ -12860,6 +12944,23 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
         .evs{font-synthesis-weight:none}
         .evs h1 mark{color:inherit;padding:0 .12em;border-radius:.22em;background:linear-gradient(120deg,#FFD1E5,#FFB2D3)}
         .evs .ev-blobs i{position:absolute;border-radius:50%;pointer-events:none}
+        .evs .ev-live{background:linear-gradient(135deg,#2B1D3F,#4A2C8F 60%,#7A3FBF);color:#fff;border-radius:26px;padding:18px 20px;margin-bottom:16px;box-shadow:0 26px 50px -28px rgba(43,29,63,.75)}
+        .evs .ev-live-h{display:flex;align-items:center;gap:9px;font:700 15px 'Fredoka','Heebo',sans-serif;margin-bottom:10px;color:#FFE3EE}
+        .evs .ev-live-h .dot{width:10px;height:10px;border-radius:50%;background:#FF5C8A;box-shadow:0 0 0 0 rgba(255,92,138,.7)}
+        @media(prefers-reduced-motion:no-preference){.evs .ev-live-h .dot{animation:evPulse 1.6s ease-out infinite}}
+        @keyframes evPulse{0%{box-shadow:0 0 0 0 rgba(255,92,138,.7)}100%{box-shadow:0 0 0 12px rgba(255,92,138,0)}}
+        .evs .ev-live-row{background:rgba(255,255,255,.08);border-radius:20px;padding:14px 16px;display:grid;gap:8px}
+        .evs .ev-live-row + .ev-live-row{margin-top:10px}
+        .evs .ev-live-name{font-weight:800;font-size:15px}.evs .ev-live-name small{font-weight:600;opacity:.85;font-size:13px}
+        .evs .ev-live-big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+        .evs .ev-live-big b{font:700 44px/1 'Fredoka','Heebo',sans-serif;font-variant-numeric:tabular-nums;color:#fff}
+        .evs .ev-live-big span{font-size:15px;color:#E9DDFF;font-weight:700}
+        .evs .ev-live-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+        .evs .ev-live-bar u{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3CC8A0,#9BF0D2);transition:width 600ms cubic-bezier(0.23,1,0.32,1)}
+        .evs .ev-live-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:#E9DDFF;font-weight:600}
+        .evs .ev-live-meta .up{color:#9BF0D2;font-weight:800}
+        .evs .ev-live-go{justify-self:start;border:none;border-radius:999px;background:#fff;color:#2B1D3F;font:700 14px 'Fredoka','Heebo',sans-serif;padding:9px 16px;cursor:pointer;min-height:40px}
+        .evs .ev-live-go:focus-visible{outline:3px solid #9BF0D2;outline-offset:2px}
         .evs .ev-tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
         .evs .ev-tile{background:#fff;border-radius:18px;padding:14px 16px;border:1.5px solid #EFE6F7;box-shadow:0 14px 30px -24px rgba(91,60,140,.5);min-width:0}
         .evs .ev-tile > div:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -12972,13 +13073,16 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
             if(issues.length)attn.push({e,d,issues});
           });
           attn.sort((a,b)=>a.d-b.d);
+          const nowH=new Date().getHours();
+          const liveEvs=events.filter(e=>{const d=dl(e);return d===0||(d===-1&&nowH<6);});
           const tiles=[["📅",up.length,"אירועים קרובים"],["⏳",up.filter(e=>{const d=dl(e);return d!==null&&d<=30;}).length,"ב-30 הימים הקרובים"],["👥",people.toLocaleString("he-IL"),"מוזמנים (קרובים)"],["✅",`${people?Math.round(conf/people*100):0}%`,`אישרו · ${conf.toLocaleString("he-IL")}`],["✉️",sum("pending").toLocaleString("he-IL"),"ממתינים לתשובה"],["⚠️",attn.length,"דורשים טיפול"]];
           return(<>
+            {liveEvs.length>0&&<LiveArrivals events={liveEvs} onOpen={e=>onSelect(e,"checkin")}/>}
             <div className="ev-tiles">
               {tiles.map(([ic,v,l])=>(
                 <div key={l} className="ev-tile">
                   <div style={{fontSize:12,color:"#6E6585",fontWeight:700,marginBottom:4}}>{ic} {l}</div>
-                  <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{statsReady?v:"…"}</div>
+                  <div style={{fontSize:24,fontWeight:900,color:l==="דורשים טיפול"&&attn.length?"#C53030":"#2B1D3F",fontVariantNumeric:"tabular-nums"}}>{statsReady?<CountUp value={v}/>:"…"}</div>
                 </div>
               ))}
             </div>
@@ -14686,6 +14790,7 @@ function ShortLinkRedirect({ short }) {
 }
 
 export default function App() {
+  useEffect(()=>{installFxRipple();},[]);
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null);
   // משתמש מחובר שעבר לדף הבית: רענון באותה לשונית נשאר בדף הבית (ולא קופץ לאירועים)
   const [showLanding,setShowLanding]=useState(()=>{try{return sessionStorage.getItem("sidor_landing")==="1";}catch{return false;}});
@@ -14730,9 +14835,9 @@ export default function App() {
       .then(([a,b])=>{const pkg=!!(b.data||[]).length;setIsVendor(!!a.data||pkg);setVendorSetup(pkg&&!a.data);},()=>{});
   },[user?.id]);
 
-  const selectEvent=(ev)=>{
-    // כניסה לאירוע מהרשימה תמיד למסך הראשי (שחזור המסך האחרון הוא רק לרענון דף)
-    if(ev)optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:"home",view:readLastScreen(ev.id)?.view||"map"}));
+  const selectEvent=(ev,scr="home")=>{
+    // כניסה לאירוע מהרשימה למסך הראשי (או למסך שביקשו, למשל כניסה לאולם מלוח המפיק). שחזור המסך האחרון הוא רק לרענון דף
+    if(ev)optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:typeof scr==="string"?scr:"home",view:readLastScreen(ev.id)?.view||"map"}));
     setEvent(ev);
     if(ev)optSet("sidor_event_id",ev.id);
     else localStorage.removeItem("sidor_event_id");
