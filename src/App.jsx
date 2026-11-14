@@ -2186,7 +2186,7 @@ function LpCtaBand({ title, text, primary, secondary, note }) {
   const ext=x=>x.external?{target:"_blank",rel:"noopener noreferrer"}:{};
   return(
     <section className="lp-cta3" aria-label={title}>
-      <img className="lp-kb" src="https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=1600&q=65&auto=format&fit=crop" alt="" loading="lazy"/>
+      <img className="lp-kb" src="/img/u/1773005695300-14b62bc85ba0_1600.webp" alt="" loading="lazy"/>
       <div className="lp-cta-tint" aria-hidden="true"/>
       <LpBokeh n={7}/>
       <div className="lp-wrap" style={{position:"relative"}}>
@@ -2510,7 +2510,7 @@ function ProductTour(){
 }
 
 // ספקים ומחירים: כותרת במרכז ותמונות של סוגי ספקים מסביב
-const VR_U=id=>`https://images.unsplash.com/photo-${id}?w=480&h=480&q=70&auto=format&fit=crop`;
+const VR_U=id=>`/img/u/${id}_480x480.webp`;
 const VR_TILES=[
   {id:"1519225421980-715cb0215aed",l:"אולמות וגנים",p:"t1"},
   {id:"1414235077428-338989a2e8c0",l:"קייטרינג",p:"t2"},
@@ -3283,7 +3283,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── HERO: רקע בהיר, בועות צבע, מילים מודגשות במרקר, ובאנר צבעוני עם מסכי המוצר ─── */}
       <section id="top" className="lp-hero6">
         {/* תמונת אולם בהירה מאוד, רק כאווירה ברקע */}
-        <div className="lp-hero6-photo" aria-hidden="true"><img className="lp-kb" src="https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=1800&q=60&auto=format&fit=crop" alt=""/></div>
+        <div className="lp-hero6-photo" aria-hidden="true"><img className="lp-kb" src="/img/u/1780888207019-dd9121069a81_1800.webp" alt=""/></div>
         <div className="lp-blobs" aria-hidden="true"><i/><i/><i/><i/></div>
         <StringLights/>
         <div className="lp-hero" style={{maxWidth:1200,margin:"0 auto",width:"100%",display:"flex",alignItems:"center",gap:"5vw",position:"relative",zIndex:2}}>
@@ -3321,7 +3321,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
           <div className="lp-demo lp-rise-side" style={{"--d":".38s"}}>
             <div className="lp-banner">
-              <img className="lp-banner-img" src="https://images.unsplash.com/photo-1775476793931-cb484f197760?w=1100&q=70&auto=format&fit=crop" alt=""/>
+              <img className="lp-banner-img" src="/img/u/1775476793931-cb484f197760_1100.webp" alt=""/>
               <div className="lp-banner-tint" aria-hidden="true"/>
               <svg className="lp-spark" style={{top:-14,right:30}} width="34" height="34" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill="#FFD796"/></svg>
               <svg className="lp-spark" style={{bottom:24,left:-12,animationDelay:"1.2s"}} width="26" height="26" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0C10.8 6 14 9.2 20 10C14 10.8 10.8 14 10 20C9.2 14 6 10.8 0 10C6 9.2 9.2 6 10 0Z" fill="#F0609E"/></svg>
@@ -3404,10 +3404,10 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
           {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה, Sidor-IL מסדרת את כולם.")}
           <div className="lp-ev-grid">
             {[
-              {title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים, כל אחד בשולחן הנכון",img:"https://images.unsplash.com/photo-1775476793931-cb484f197760?w=700&q=70&auto=format&fit=crop"},
-              {title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"https://images.unsplash.com/photo-1792587545791-dbff25ac7905?w=700&q=70&auto=format&fit=crop"},
-              {title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"https://images.unsplash.com/photo-1510154221590-ff63e90a136f?w=700&q=70&auto=format&fit=crop"},
-              {title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות",img:"https://images.unsplash.com/photo-1511578314322-379afb476865?w=700&q=70&auto=format&fit=crop"},
+              {title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים, כל אחד בשולחן הנכון",img:"/img/u/1775476793931-cb484f197760_700.webp"},
+              {title:"בר/ת מצווה",desc:"שולחן ילדים, שולחן משפחה ושולחן חברי ההורים בקליק",img:"/img/u/1792587545791-dbff25ac7905_700.webp"},
+              {title:"בריתות",desc:"הושבה מהירה גם כשיש רק כמה ימים להתארגן",img:"/img/u/1510154221590-ff63e90a136f_700.webp"},
+              {title:"אירועים עסקיים",desc:"הושבה לפי מחלקות, VIP ולקוחות",img:"/img/u/1511578314322-379afb476865_700.webp"},
             ].map((ev,i)=>(
               <button key={ev.title} type="button" className="lp-ev-card" data-reveal="scale" style={{"--d":`${(i*.07).toFixed(2)}s`}} onClick={()=>onOpenAuth("register")}>
                 <img src={ev.img} alt="" loading="lazy"/>
@@ -3505,7 +3505,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
       {/* ─── CTA ─────────────────────────────────────────────────── */}
       <section id="contact" className="lp-cta3">
-        <img className="lp-kb" src="https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=1600&q=65&auto=format&fit=crop" alt="" loading="lazy"/>
+        <img className="lp-kb" src="/img/u/1773005695300-14b62bc85ba0_1600.webp" alt="" loading="lazy"/>
         <div className="lp-cta-tint" aria-hidden="true"/>
         <LpBokeh n={7}/>
         <div className="lp-wrap" style={{position:"relative"}}>
@@ -5033,10 +5033,10 @@ function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
   const list=taskList(event),done=list.filter(t=>t.done).length,late=list.filter(t=>taskLate(t,event)).length;
   const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):0;
   const tiles=[
-    {go:"seating",ic:"🪑",img:"https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=640&h=360&fit=crop&q=70&auto=format",l:"סידורי הושבה",v:`${seated}/${total}`,s:`${tablesCount} שולחנות · ${total-seated} ממתינים לשיבוץ`,bg:"#FFE3EE",c:"#F0609E",bar:pct(seated,total)},
-    {go:"rsvp",ic:"👥",img:"https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=640&h=360&fit=crop&q=70&auto=format",l:"ניהול אורחים",v:people??total,s:"הוספה, ייבוא ועריכה",bg:"#EFE6FF",c:"#9B6BFF"},
-    {go:"invite",ic:"💌",img:"https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=640&h=360&fit=crop&q=70&auto=format",l:"הזמנה דיגיטלית",v:event.invite_image?"מוכנה":"לעיצוב",s:"עיצוב, נוסח וקישור לאורחים",bg:"#FFE9DC",c:"#FF8A65"},
-    {go:"tasks",ic:"📋",img:"https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=640&h=360&fit=crop&q=70&auto=format",l:"משימות",v:`${done}/${list.length}`,s:late?`${late} באיחור`:"הכול בזמן",bg:"#DFF6EC",c:"#3CC8A0",bar:pct(done,list.length)},
+    {go:"seating",ic:"🪑",img:"/img/u/1464366400600-7168b8af9bc3_640x360.webp",l:"סידורי הושבה",v:`${seated}/${total}`,s:`${tablesCount} שולחנות · ${total-seated} ממתינים לשיבוץ`,bg:"#FFE3EE",c:"#F0609E",bar:pct(seated,total)},
+    {go:"rsvp",ic:"👥",img:"/img/u/1519225421980-715cb0215aed_640x360.webp",l:"ניהול אורחים",v:people??total,s:"הוספה, ייבוא ועריכה",bg:"#EFE6FF",c:"#9B6BFF"},
+    {go:"invite",ic:"💌",img:"/img/u/1515934751635-c81c6bc9a2d8_640x360.webp",l:"הזמנה דיגיטלית",v:event.invite_image?"מוכנה":"לעיצוב",s:"עיצוב, נוסח וקישור לאורחים",bg:"#FFE9DC",c:"#FF8A65"},
+    {go:"tasks",ic:"📋",img:"/img/u/1506784983877-45594efa4cbe_640x360.webp",l:"משימות",v:`${done}/${list.length}`,s:late?`${late} באיחור`:"הכול בזמן",bg:"#DFF6EC",c:"#3CC8A0",bar:pct(done,list.length)},
   ];
   return(
     <div className="hm-tiles">
@@ -11910,56 +11910,56 @@ function AddTableModal({ onConfirm, onClose }) {
 // ─── INVITE PAGE ──────────────────────────────────────────────────────────────
 const INVITE_TEMPLATES = {
   wedding: [
-    { id:"classic", name:"קלאסי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1592125661285-79820f2fdf7a?w=800&q=80", titleColor:"#fff", accent:"#E8C4FF" },
-    { id:"romantic", name:"רומנטי", bg:"linear-gradient(160deg,#3d0a0a,#7a1f1f,#c45050)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&q=80", titleColor:"#fff", accent:"#FFB3B3" },
-    { id:"elegant", name:"אלגנטי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"natural", name:"טבעי", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1769812343890-4e406a33cfbe?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
-    { id:"bright", name:"פרחוני", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
-    { id:"barn", name:"אולם כפרי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1780888207019-dd9121069a81?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
-    { id:"garden", name:"טקס בגן", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80", titleColor:"#fff", accent:"#C6F6D5" },
-    { id:"rings", name:"טבעות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
-    { id:"sea", name:"שקיעה בים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1629744418692-345355518e78?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"chandelier", name:"נברשת", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1703432287852-28f965fc3749?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"lightsgarden", name:"גן מואר", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1607861884586-c7cfaed16290?w=800&q=80", titleColor:"#fff", accent:"#FFE8A3" },
-    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1723832348105-2e69f948135a?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
-    { id:"goldgreen", name:"זהב וירוק", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1620022604911-126743712882?w=800&q=80", titleColor:"#fff", accent:"#E8C46A" },
-    { id:"white", name:"לבן", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1700142611715-8a023c5eb8c5?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
-    { id:"botanic", name:"בוטני", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1721176487015-5408ae0e9bc2?w=800&q=80", titleColor:"#fff", accent:"#C6F6D5" },
-    { id:"lanterns", name:"פנסים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1628024564458-b3dfcceb3f34?w=800&q=80", titleColor:"#fff", accent:"#FFD27A" },
-    { id:"aisle", name:"שביל נרות", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1641524967324-6c7882b4be80?w=800&q=80", titleColor:"#fff", accent:"#FFE0B2" },
-    { id:"table", name:"שולחן חגיגי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"classic", name:"קלאסי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1592125661285-79820f2fdf7a_800.webp", titleColor:"#fff", accent:"#E8C4FF" },
+    { id:"romantic", name:"רומנטי", bg:"linear-gradient(160deg,#3d0a0a,#7a1f1f,#c45050)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1520854221256-17451cc331bf_800.webp", titleColor:"#fff", accent:"#FFB3B3" },
+    { id:"elegant", name:"אלגנטי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.5)", img:"/img/u/1465495976277-4387d4b0b4c6_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"natural", name:"טבעי", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1769812343890-4e406a33cfbe_800.webp", titleColor:"#fff", accent:"#90EE90" },
+    { id:"bright", name:"פרחוני", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"/img/u/1469371670807-013ccf25f16a_800.webp", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"barn", name:"אולם כפרי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1780888207019-dd9121069a81_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"garden", name:"טקס בגן", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1522673607200-164d1b6ce486_800.webp", titleColor:"#fff", accent:"#C6F6D5" },
+    { id:"rings", name:"טבעות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1515934751635-c81c6bc9a2d8_800.webp", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"sea", name:"שקיעה בים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1629744418692-345355518e78_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"chandelier", name:"נברשת", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1703432287852-28f965fc3749_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"lightsgarden", name:"גן מואר", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1607861884586-c7cfaed16290_800.webp", titleColor:"#fff", accent:"#FFE8A3" },
+    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1723832348105-2e69f948135a_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"goldgreen", name:"זהב וירוק", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1620022604911-126743712882_800.webp", titleColor:"#fff", accent:"#E8C46A" },
+    { id:"white", name:"לבן", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1700142611715-8a023c5eb8c5_800.webp", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"botanic", name:"בוטני", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1721176487015-5408ae0e9bc2_800.webp", titleColor:"#fff", accent:"#C6F6D5" },
+    { id:"lanterns", name:"פנסים", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1628024564458-b3dfcceb3f34_800.webp", titleColor:"#fff", accent:"#FFD27A" },
+    { id:"aisle", name:"שביל נרות", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1641524967324-6c7882b4be80_800.webp", titleColor:"#fff", accent:"#FFE0B2" },
+    { id:"table", name:"שולחן חגיגי", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1511795409834-ef04bbd61622_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
   ],
   bar_mitzvah: [
-    { id:"blue", name:"כחול", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
-    { id:"gold", name:"משפחתי", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1792587545791-dbff25ac7905?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
-    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"prayer", name:"תפילה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1638702919819-2bb988863024?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"kippah", name:"כיפה", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1643992017839-1ed8679d145d?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"blue", name:"כחול", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1533174072545-7a4b6ad7a6c3_800.webp", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"gold", name:"משפחתי", bg:"linear-gradient(160deg,#1a1000,#3d2800,#7a5000)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1792587545791-dbff25ac7905_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1530103862676-de8c9debad1d_800.webp", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1513151233558-d860c5398176_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1475721027785-f74eccf877e2_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"prayer", name:"תפילה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1638702919819-2bb988863024_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"kippah", name:"כיפה", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1643992017839-1ed8679d145d_800.webp", titleColor:"#fff", accent:"#7DC4FF" },
   ],
   brit: [
-    { id:"soft", name:"עדין", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80", titleColor:"#fff", accent:"#90EE90" },
-    { id:"pink", name:"משפחתי", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1510154221590-ff63e90a136f?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
-    { id:"sweet", name:"רך ומתוק", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1678192568478-9488ee55def6?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
-    { id:"summer", name:"קיצי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1594150878496-a921e5af8907?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"hug", name:"חיבוק", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1770831208183-92f98cf3845b?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
-    { id:"tinyhands", name:"ידיים קטנות", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.3)", img:"https://images.unsplash.com/photo-1647650096640-c5c608e1d259?w=800&q=80", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"soft", name:"עדין", bg:"linear-gradient(160deg,#0a2a1a,#1a5a2a,#2d8a4a)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1555252333-9f8e92e65df9_800.webp", titleColor:"#fff", accent:"#90EE90" },
+    { id:"pink", name:"משפחתי", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1510154221590-ff63e90a136f_800.webp", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"sweet", name:"רך ומתוק", bg:"linear-gradient(160deg,#f5f0ff,#e8d5ff,#d0b0ff)", overlay:"rgba(0,0,0,.3)", img:"/img/u/1678192568478-9488ee55def6_800.webp", titleColor:"#fff", accent:"#FFD1E5" },
+    { id:"summer", name:"קיצי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.3)", img:"/img/u/1594150878496-a921e5af8907_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"hug", name:"חיבוק", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.3)", img:"/img/u/1770831208183-92f98cf3845b_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"tinyhands", name:"ידיים קטנות", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.3)", img:"/img/u/1647650096640-c5c608e1d259_800.webp", titleColor:"#fff", accent:"#FFD1E5" },
   ],
   business: [
-    { id:"dark", name:"כהה", bg:"linear-gradient(160deg,#0a0a0a,#1a1a1a,#2a2a2a)", overlay:"rgba(0,0,0,.5)", img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"navy", name:"כנס", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1574155088851-0c770818ba40?w=800&q=80", titleColor:"#fff", accent:"#7DC4FF" },
-    { id:"hall", name:"אולם כנסים", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"talk", name:"הרצאה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"stage", name:"במה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1670028514318-0ac718c0590d?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
+    { id:"dark", name:"כהה", bg:"linear-gradient(160deg,#0a0a0a,#1a1a1a,#2a2a2a)", overlay:"rgba(0,0,0,.5)", img:"/img/u/1540575467063-178a50c2df87_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"navy", name:"כנס", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1574155088851-0c770818ba40_800.webp", titleColor:"#fff", accent:"#7DC4FF" },
+    { id:"hall", name:"אולם כנסים", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1511578314322-379afb476865_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"talk", name:"הרצאה", bg:"linear-gradient(160deg,#0a1a3a,#1B3A8C,#2952C8)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1505373877841-8d25f7d46678_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"stage", name:"במה", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1670028514318-0ac718c0590d_800.webp", titleColor:"#fff", accent:"#FFD700" },
   ],
   other: [
-    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#1B3A8C,#2952C8,#4A7AFF)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80", titleColor:"#fff", accent:"#A0C4FF" },
-    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", titleColor:"#fff", accent:"#FFB3D9" },
-    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&q=80", titleColor:"#fff", accent:"#BEE3F8" },
-    { id:"mic", name:"ערב חגיגי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80", titleColor:"#fff", accent:"#FFD700" },
-    { id:"hall", name:"אולם", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1773005695300-14b62bc85ba0?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
-    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"https://images.unsplash.com/photo-1723832348105-2e69f948135a?w=800&q=80", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"party", name:"מסיבה", bg:"linear-gradient(160deg,#1B3A8C,#2952C8,#4A7AFF)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1492684223066-81342ee5ff30_800.webp", titleColor:"#fff", accent:"#A0C4FF" },
+    { id:"balloons", name:"בלונים", bg:"linear-gradient(160deg,#3a0a2a,#7a1f5a,#c45090)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1530103862676-de8c9debad1d_800.webp", titleColor:"#fff", accent:"#FFB3D9" },
+    { id:"confetti", name:"קונפטי", bg:"linear-gradient(160deg,#0a2a3a,#1a5a7a,#2d8aaa)", overlay:"rgba(0,0,0,.35)", img:"/img/u/1513151233558-d860c5398176_800.webp", titleColor:"#fff", accent:"#BEE3F8" },
+    { id:"mic", name:"ערב חגיגי", bg:"linear-gradient(160deg,#0a0a0a,#2a2a2a,#4a4a4a)", overlay:"rgba(0,0,0,.45)", img:"/img/u/1475721027785-f74eccf877e2_800.webp", titleColor:"#fff", accent:"#FFD700" },
+    { id:"hall", name:"אולם", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1773005695300-14b62bc85ba0_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
+    { id:"lights", name:"אורות", bg:"linear-gradient(160deg,#1a0a2e,#3d1f6e,#6b3fa0)", overlay:"rgba(0,0,0,.4)", img:"/img/u/1723832348105-2e69f948135a_800.webp", titleColor:"#fff", accent:"#FFD9A8" },
   ],
 };
 
@@ -12534,10 +12534,10 @@ function InviteSettings({ event, onUpdate }) {
 
 // ─── אשף יצירת אירוע: שלב אחרי שלב, עם תצוגת הזמנה חיה בטלפון ───
 const WIZ_TYPES=[
-  ["wedding","חתונה","אורחים, הושבה והזמנה","https://images.unsplash.com/photo-1775476793931-cb484f197760?w=700&q=70&auto=format&fit=crop"],
-  ["bar_mitzvah","בר/ת מצווה","חגיגה של כל המשפחה","https://images.unsplash.com/photo-1792587545791-dbff25ac7905?w=700&q=70&auto=format&fit=crop"],
-  ["brit","ברית / בריתה","שמחה ראשונה","https://images.unsplash.com/photo-1510154221590-ff63e90a136f?w=700&q=70&auto=format&fit=crop"],
-  ["business","אירוע עסקי","כנס, השקה או ערב חברה","https://images.unsplash.com/photo-1511578314322-379afb476865?w=700&q=70&auto=format&fit=crop"],
+  ["wedding","חתונה","אורחים, הושבה והזמנה","/img/u/1775476793931-cb484f197760_700.webp"],
+  ["bar_mitzvah","בר/ת מצווה","חגיגה של כל המשפחה","/img/u/1792587545791-dbff25ac7905_700.webp"],
+  ["brit","ברית / בריתה","שמחה ראשונה","/img/u/1510154221590-ff63e90a136f_700.webp"],
+  ["business","אירוע עסקי","כנס, השקה או ערב חברה","/img/u/1511578314322-379afb476865_700.webp"],
   ["other","אירוע אחר","יום הולדת, אירוסין ועוד",null],
 ];
 const WIZ_COUPLE_ICON={mf:"🤵 👰",mm:"🤵 🤵",ff:"👰 👰"};
@@ -12922,7 +12922,7 @@ function CreateEventScreen({ user, onSelect, onLogout, onBackToLanding, onVendor
 
         {/* כותרת: באנר צבעוני בהיר */}
         <div className="ev-hero" style={{background:"linear-gradient(150deg,#E6D9FF 0%,#FFD3E6 55%,#FFE6C4 100%)",borderRadius:36,padding:"30px 36px",marginBottom:28,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 30px 70px -40px rgba(120,60,170,.6)",animation:"fadeUp .5s cubic-bezier(0.23,1,0.32,1) both"}}>
-          <div className="ev-hero-ph" aria-hidden="true">{["1775476793931-cb484f197760","1792587545791-dbff25ac7905","1510154221590-ff63e90a136f","1511578314322-379afb476865"].map(id=><img key={id} src={`https://images.unsplash.com/photo-${id}?w=500&q=60&auto=format&fit=crop`} alt="" loading="lazy" decoding="async"/>)}</div>
+          <div className="ev-hero-ph" aria-hidden="true">{["1775476793931-cb484f197760","1792587545791-dbff25ac7905","1510154221590-ff63e90a136f","1511578314322-379afb476865"].map(id=><img key={id} src={`/img/u/${id}_500.webp`} alt="" loading="lazy" decoding="async"/>)}</div>
           <div>
             <h1 style={{fontSize:"clamp(28px,3.4vw,44px)",fontWeight:700,color:"#2B1D3F",margin:"0 0 8px",lineHeight:1.15}}>{isProducer?<>לוח <mark>המפיק</mark></>:<>האירועים <mark>שלי</mark></>}</h1>
             {/* משפט על הנתונים, לא על הממשק */}
@@ -14333,7 +14333,7 @@ const LEGAL_PAGES={
     {title:"1. כללי ובעל השליטה במידע",text:`Sidor-IL ("אנחנו") מפעילה את השירות בכתובת sidoril.com. מדיניות זו מסבירה איזה מידע נאסף, למה, עם מי הוא משותף ומה הזכויות שלכם, בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות מכוחו.\n\nבעל השליטה במידע על המשתמשים הרשומים, הספקים והגולשים: Sidor-IL, עוסק מורשה מס' 203887450, השושנים 30, נוף הגליל. אימייל: sidoril2026@gmail.com, טלפון: 052-681-7102.\n\nלגבי פרטי האורחים של אירוע, בעלי השליטה הם בעלי האירוע שהזינו אותם (או שהאורחים מסרו להם דרך דף ההזמנה), ואנו מחזיקים ומעבדים את המידע עבורם (ראו סעיף 7).\n\nאין חובה חוקית למסור לנו מידע. עם זאת, בלי פרטי חשבון לא ניתן להשתמש בשירות, בלי פרטי אורחים לא ניתן לשלוח להם הזמנות או להושיב אותם, ובלי פרטי אישור הגעה לא ניתן לרשום את התשובה של האורח.`},
     {title:"2. מידע שאנו אוספים",text:`• פרטי חשבון: שם, כתובת אימייל, ופרטי התחברות (סיסמה מוצפנת, או התחברות עם חשבון Google).\n• פרטי האירוע: סוג האירוע, שמות בעלי השמחה, תאריך, מקום וכתובת, נוסחים, תמונת הזמנה וקישורי Bit / PayBox.\n• פרטי אורחים שאתם מזינים: שם, טלפון, קטגוריה, מספר מוזמנים, אישור הגעה, שיבוץ לשולחן, הערות, סימון כניסה לאולם וסכום מתנה (אם רשמתם).\n• מידע שאורחים מוסרים בדף ההזמנה: שם, טלפון, אישור הגעה ומספר מגיעים, ואם בעל האירוע ביקש: סוג מנה, מספר ילדים, צורך בהסעה והערות למטבח.\n• אלרגיות והערות למטבח עשויות לכלול מידע על בריאות. מסירתן אינה חובה, והן מוצגות רק לבעל האירוע ולמי שהוא שיתף איתו, לצורך הכנת האוכל באירוע בלבד.\n• קוד הפניה: אם הגעתם דרך קישור של לקוח, אולם או מפיק (?ref=), נשמור את הקוד בחשבון כדי לדעת מי הפנה אתכם.\n• המלצות שאתם שולחים, ופרטי פרופיל מפיק (שם עסק, טלפון ולוגו) למי שמשתמש בחשבון מפיק.\n• ספקים שנרשמים למדריך הספקים: שם העסק, תחום, אזור ועיר, איש קשר, טלפון, אימייל, אתר ורשתות חברתיות, תיאור, מחיר התחלתי, לוגו ותמונות עבודה. פרטים אלה מוצגים לכל הגולשים לאחר אישורנו, או מיד עם פרסום הפרופיל אם הפעלנו לספק חשבון ספק. סוג העסק ומספר עוסק / ח.פ (שאצל עוסק פטור או מורשה הוא מספר תעודת הזהות) משמשים לאימות העסק בלבד ואינם מוצגים לאף אחד.\n• דיווחי מחירי מנות והמלצות על ספקים שאתם מפרסמים במדור "ספקים ומחירים", עם השם שבחרתם להציג או בעילום שם.\n• פניות לספקים: כשאתם שולחים "בקשת הצעת מחיר" לספק, נשמרים ונמסרים לספק שבחרתם השם, הנייד, תאריך האירוע, מספר האורחים המשוער והפרטים שכתבתם. הצעת המחיר שהספק שולח לכם נשמרת יחד עם הפנייה.\n• שפת ההודעות של כל אורח (אם בחרתם שפה אחרת מעברית), כדי לשלוח לו את ההודעות בשפה שלו.\n• הרשאות מכשיר, רק כשאתם מפעילים אותן: מצלמה לסריקת QR בכניסה לאולם (התמונה אינה נשמרת ואינה נשלחת אלינו), והתראות (Push) על אישורי הגעה.\n• מידע טכני בסיסי הנדרש להפעלת השירות (כגון כתובת IP ויומני שרת), ואחסון מקומי בדפדפן לשמירת הגדרות והתחברות.`},
     {title:"3. מטרות השימוש",text:`• מתן השירות: ניהול האירוע, האורחים וסידור ההושבה.\n• שליחת הזמנות, תזכורות ועדכונים לאורחים לפי הוראותיכם (SMS ו-WhatsApp).\n• הצגת מספר השולחן וקוד QR אישי לאורח שאישר הגעה, וסימון כניסתו לאולם.\n• הצעת שמות וכתובות של אולמות בעת הקלדת מקום האירוע (מקום שהוזן על ידי לקוח יחיד אינו מוצג ללקוחות אחרים).\n• טיפול ברכישות, תמיכה ויצירת קשר בנוגע לשירות.\n• אבטחת השירות ועמידה בדרישות הדין.\n\nאיננו משתמשים בפרטי האורחים לשיווק ואיננו פונים אליהם מיוזמתנו. איננו שולחים לכם דברי פרסומת בלי הסכמתכם, בהתאם לסעיף 30א לחוק התקשורת.`},
-    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Twilio: שליחת הודעות WhatsApp לאורחים (שרתים בארצות הברית).\n• ספק שפניתם אליו דרך "בקשת הצעת מחיר": מקבל את פרטי הפנייה שמילאתם, כדי לחזור אליכם. מרגע זה הספק אחראי למידע שקיבל.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Unsplash: תמונות הרקע בדף הבית ובעיצובי ההזמנה נטענות משרתי Unsplash, ובמהלך הטעינה כתובת ה-IP של הדפדפן נחשפת אליהם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
+    {title:"4. שיתוף עם צדדים שלישיים",text:`איננו מוכרים או משכירים מידע אישי. מידע מועבר רק לספקים הנדרשים להפעלת השירות, לצורך זה בלבד:\n\n• Supabase: מסד נתונים, התחברות ואחסון קבצים (שרתים באיחוד האירופי).\n• Vercel: אירוח האתר.\n• 019 SMS: שליחת הודעות SMS.\n• Twilio: שליחת הודעות WhatsApp לאורחים (שרתים בארצות הברית).\n• ספק שפניתם אליו דרך "בקשת הצעת מחיר": מקבל את פרטי הפנייה שמילאתם, כדי לחזור אליכם. מרגע זה הספק אחראי למידע שקיבל.\n• Google: התחברות עם חשבון Google למי שבוחר בה. הגופן של האתר נטען מהשרת שלנו ולא מ-Google.\n• WhatsApp (Meta): הודעות שאתם שולחים דרך אפליקציית WhatsApp שלכם, או דרך ספק הודעות WhatsApp כשהשירות פעיל.\n• Google Maps ו-Waze: רק כשלוחצים על קישור הניווט לאולם.\n• Google Drive: עותק גיבוי מוצפן בהעברה של מסד הנתונים נשמר פעם בשבוע בחשבון Google Drive פרטי של Sidor-IL, לצורך שחזור במקרה תקלה בלבד. נשמרים 8 העותקים האחרונים והישנים נמחקים.\n• שירותי ההתראות של הדפדפן (כגון Google, Apple ו-Mozilla): מעבירים התראות Push למי שהפעיל אותן, בלי פרטי האורחים עצמם.\n• הספקים פועלים לפי תנאי השירות והסכמי עיבוד המידע (DPA) שלהם, ומקבלים רק את המידע הדרוש לשירות שהם נותנים.\n\nבנוסף, מידע יימסר לרשויות אם נחויב לכך על פי דין. חלק מהספקים מאחסנים מידע מחוץ לישראל (בעיקר באיחוד האירופי ובארצות הברית), בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה).`},
     {title:"5. אבטחת מידע",text:`המידע מאוחסן בשרתים מאובטחים, התעבורה מוצפנת (HTTPS), והגישה לנתוני כל אירוע מוגבלת לבעליו ולמי שהוא שיתף איתו. אנו נוקטים אמצעים סבירים ומקובלים להגנה על המידע, אך אין אפשרות להבטיח הגנה מוחלטת. במקרה של אירוע אבטחה חמור נפעל בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), ובכלל זה נדווח לרשות להגנת הפרטיות ונעדכן את מי שנפגע, כנדרש בדין.`},
     {title:"6. שמירת מידע ומחיקתו",text:`אנו שומרים מידע אישי רק כל עוד הוא נחוץ למטרה שלשמה נאסף, בהתאם לחוק הגנת הפרטיות (כפי שתוקן בתיקון מס' 13) ולתקנות אבטחת מידע. בפועל:\n\n• פרטי אורחים, שולחנות, אישורי הגעה, מתנות והערות למטבח: נשמרים עד 12 חודשים מתאריך האירוע. לאחר מכן אנו רשאים למחוק אותם או להפוך אותם לאנונימיים (למשל להשאיר רק מספרים כלליים כמו כמות אורחים), בלי הודעה נוספת. מומלץ לייצא לאקסל את מה שתרצו לשמור לפני כן.\n• פרטי האירוע עצמו (שם, תאריך, מקום): נשמרים כל עוד החשבון פעיל, כדי שתוכלו לחזור לאירוע.\n• חשבון שלא נעשה בו שימוש במשך 24 חודשים: אנו רשאים למחוק אותו ואת כל המידע שבו, לאחר הודעה מוקדמת לכתובת האימייל של החשבון.\n• רכישות, חשבוניות ותנועות יתרה: נשמרות עד 7 שנים, כנדרש בדיני המס וניהול הספרים, גם אם החשבון נמחק.\n• גיבויים: עותקי גיבוי נשמרים עד 14 יום ונמחקים אוטומטית, כך שמידע שנמחק נעלם גם מהגיבויים בתוך תקופה זו.\n• דיווחי מחירים והמלצות על ספקים: עשויים להישאר בשירות גם לאחר מחיקת החשבון, בלי שמכם ובלי פרטים מזהים.\n• פניות לספקים והצעות מחיר: נשמרות עד שהספק מוחק אותן, ולכל היותר 24 חודשים ממועד הפנייה. ניתן לבקש מאיתנו למחוק פנייה ששלחתם.\n\nניתן בכל עת למחוק אירוע (כולל כל פרטי האורחים שלו) או את החשבון כולו ממסך ההגדרות, או לפנות אלינו בבקשה למחיקה. מידע שנדרש לשמור על פי דין, או לצורך בירור מחלוקת או תביעה, יישמר רק לתקופה הנדרשת לכך.`},
     {title:"7. האחריות שלכם על פרטי האורחים",text:`כשאתם מזינים פרטי אורחים, אתם מצהירים שיש לכם זכות להשתמש בהם לצורך הזמנתם לאירוע ויצירת קשר בנוגע אליו. לגבי מידע זה אתם בעלי השליטה, ואנו מעבדים אותו בשמכם ולפי הוראותיכם.`},
@@ -14606,7 +14606,7 @@ function EventLandingPage({ slug }) {
     </PublicPage>
   );
   const start=`/?ref=lp-${p.slug}`;
-  const img=`https://images.unsplash.com/${LP_EVENT_IMG[p.slug]}?w=1800&q=70&auto=format&fit=crop`;
+  const img=`/img/u/${String(LP_EVENT_IMG[p.slug]).replace(/^photo-/,"")}_1800.webp`;
   return(
     <PublicPage pageKey={p.slug}>
       <PageHero img={img} crumbs={<><LpHomeCrumb/>{LP_SEP}<span>{p.nav}</span></>} title={p.title} lead={p.lead} aside={<HeroSeating/>}>
