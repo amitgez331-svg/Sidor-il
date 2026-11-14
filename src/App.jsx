@@ -533,6 +533,187 @@ const readSheetRows = async file => {
   }
   return best;
 };
+// ─── ייבוא חכם: כל עמודה מזוהה לפי הכותרת שלה וגם לפי מה שכתוב בה. כשלא בטוחים — מי שמעלה מסמן איזו עמודה היא מה ───
+const IMPORT_ROLES=[["","לא לייבא"],["name","שם מלא"],["first","שם פרטי"],["last","שם משפחה"],["phone","טלפון"],["count","כמות מוזמנים"],["rsvp","אישור הגעה"]];
+const IMPORT_ROLE_LABEL=Object.fromEntries(IMPORT_ROLES);
+// undefined = כותרת לא מוכרת (מחליטים לפי התוכן), "" = עמודה מוכרת שלא מייבאים (שולחן, הערות, מייל...)
+const importHeaderRole=raw=>{
+  const h=String(raw??"").trim().replace(/[:*]+$/,"").trim();
+  if(!h||/^__col/.test(h))return undefined;
+  if(/label|type|סוג/i.test(h))return "";
+  if(/טלפון|פלאפון|נייד|סלולרי|phone|mobile|^tel|cell|וואטסאפ|whatsapp/i.test(h))return "phone";
+  if(/שם פרטי|^פרטי$|first|given/i.test(h))return "first";
+  if(/שם משפחה|^משפחה$|last ?name|surname|family/i.test(h))return "last";
+  if(/כמות|נפשות|^מוזמנים$|^אורחים$|^אנשים$|מס(פר|'|\.)?\s*(ה)?(מוזמנים|אורחים|אנשים|מקומות|מגיעים|משתתפים)|count|guests|qty|pax|people/i.test(h))return "count";
+  if(/אישור|סטטוס|status|rsvp|הגעה|מגיע/i.test(h))return "rsvp";
+  if(/שולחן|table|^צד$|קרבה|קבוצה|group|הערה|הערות|note|מייל|email|e-mail|כתובת|address|^עיר$|city|מתנה|gift|סכום|^#$|^מס'?\.?$|סידורי|serial|^id$/i.test(h))return "";
+  if(/שם|name|אורח|מוזמן|איש קשר|contact/i.test(h)&&!/אירוע|אולם|קובץ|user|file/i.test(h))return "name";
+  return undefined;
+};
+const isPhoneCell=v=>/^[\d\s\-+().\/]{9,}$/.test(v)&&!!parseGuestLine(v).phone;
+const RSVP_YES=/^(כן|מגיע|מגיעה|מגיעים|אישר|אישרה|אישרו|מאשר|מאשרת|מאושר|confirmed|yes|y|v|✓|✔|✅)$/i;
+const RSVP_NO=/^(לא|לא מגיע.*|לא מגיעה.*|לא מגיעים.*|לא יגיע.*|לא תגיע.*|declined|no|n|x|✗|✘|❌)$/i;
+const RSVP_MAYBE=/^(אולי|לא בטוח.*|ממתין.*|טרם|pending|maybe|\?)$/i;
+const importRsvp=v=>{v=String(v??"").trim();return RSVP_YES.test(v)?"confirmed":RSVP_NO.test(v)?"declined":"pending";};
+const importColStats=(body,i)=>{
+  const vals=body.slice(0,300).map(r=>String(r[i]??"").trim()).filter(Boolean),n=vals.length||1;
+  const rate=fn=>vals.filter(fn).length/n;
+  return {filled:vals.length,phone:rate(isPhoneCell),int:rate(v=>/^\d{1,2}$/.test(v)&&+v>=1&&+v<=30),
+    rsvp:rate(v=>RSVP_YES.test(v)||RSVP_NO.test(v)||RSVP_MAYBE.test(v)),text:rate(v=>/[A-Za-z\u0590-\u05FF]{2}/.test(v))};
+};
+const importColName=(head,i)=>head&&String(head[i]??"").trim()?`"${String(head[i]).trim()}"`:`${i<26?String.fromCharCode(65+i):i+1} (בלי כותרת)`;
+const importFindHeader=rows=>{
+  const isHeader=r=>{const cells=r.map(c=>String(c).trim()).filter(Boolean);
+    if(!cells.length||cells.some(c=>parseGuestLine(c).phone))return false;
+    return cells.some(c=>SHEET_HEADER_RE.test(c))||cells.filter(c=>SHEET_HINT_RE.test(c)).length>=2||cells.filter(c=>importHeaderRole(c)).length>=2;};
+  return rows.slice(0,15).findIndex(isHeader);
+};
+const importAutoRoles=(rows,h)=>{
+  const body=rows.slice(h+1),head=h>=0?rows[h]:null;
+  const width=Math.max(0,...rows.slice(0,300).map(r=>r.length));
+  const roles=[],reasons=[],nameCands=[],byHeader=[];let unsure=false;
+  for(let i=0;i<width;i++){
+    const st=importColStats(body,i),hr=head?importHeaderRole(head[i]):undefined;
+    byHeader[i]=hr!==undefined;
+    if(!st.filled){roles.push("");continue;}
+    if(hr===""&&st.phone>=.6){roles.push("phone");continue;} // כותרת כמו "מס" — אבל כל התאים מספרי טלפון
+    if(hr!==undefined){
+      if(hr==="phone"&&st.phone<.3){unsure=true;reasons.push(`בעמודה ${importColName(head,i)} כמעט אין מספרי טלפון`);}
+      if(hr==="count"&&st.int<.5){unsure=true;reasons.push(`בעמודה ${importColName(head,i)} אין מספרים של כמות מוזמנים`);}
+      if(["name","first","last"].includes(hr)&&st.phone>.6){unsure=true;reasons.push(`בעמודה ${importColName(head,i)} יש מספרי טלפון ולא שמות`);}
+      roles.push(hr);continue;
+    }
+    let r="";
+    if(st.phone>=.6)r="phone";
+    else if(st.rsvp>=.7)r="rsvp";
+    else if(st.int>=.8){r="count";unsure=true;reasons.push(`לא ברור מה המספרים בעמודה ${importColName(head,i)}: כמות מוזמנים, או משהו אחר כמו מספר שולחן?`);}
+    else if(st.text>=.6)nameCands.push(i);
+    roles.push(r);
+  }
+  if(!roles.some(r=>r==="name"||r==="first"||r==="last")){
+    if(nameCands.length)roles[nameCands[0]]="name";
+    if(nameCands.length>1){unsure=true;reasons.push("יש בקובץ כמה עמודות של טקסט, ולא ברור איזו מהן היא שם האורח");}
+    if(!nameCands.length){unsure=true;reasons.push("לא מצאנו עמודה של שמות");}
+  }
+  if(roles.includes("last")&&!roles.includes("first")&&!roles.includes("name")){unsure=true;reasons.push("מצאנו שם משפחה אבל לא שם פרטי");}
+  // כל תפקיד בעמודה אחת. שתי עמודות טלפון בלי כותרות — לא יודעים איזו לקחת
+  const first={};
+  roles.forEach((r,i)=>{if(!r)return;if(first[r]===undefined){first[r]=i;return;}
+    if(r==="phone"&&!byHeader[i]&&!byHeader[first[r]]){unsure=true;reasons.push("יש יותר מעמודה אחת של מספרי טלפון");}
+    roles[i]="";});
+  return {roles,unsure,reasons:[...new Set(reasons)]};
+};
+const importRowsFromRoles=(body,roles)=>body.map(r=>{
+  const get=role=>roles.map((x,i)=>x===role?String(r[i]??"").trim():"").filter(Boolean);
+  let name=get("name").join(" ")||[...get("first"),...get("last")].join(" ");
+  const pc=get("phone")[0]||"";
+  let phone=pc?(parseGuestLine(pc).phone||formatPhone(pc)):"";
+  if(name&&!phone){const p=parseGuestLine(name);if(p.phone&&p.name){name=p.name;phone=p.phone;}}
+  const cc=get("count")[0];
+  const count=cc?Math.min(30,Math.max(1,parseInt(cc)||1)):1;
+  const rs=get("rsvp")[0];
+  return {name:name.replace(/\s+/g," ").trim(),phone,count,rsvp:rs?importRsvp(rs):"pending"};
+});
+// קורא את הקובץ ומחזיר את הגיליון עם הכי הרבה אורחים, את הזיהוי, והאם צריך שמי שמעלה יסמן
+const analyzeSheetFile=async file=>{
+  const{read,utils}=await import("https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs");
+  const wb=/\.csv$/i.test(file.name)?read((await file.text()).replace(/^\uFEFF/,""),{type:"string"}):read(await file.arrayBuffer());
+  let best=null;
+  for(const n of wb.SheetNames){
+    const rows=utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""}).filter(r=>r.some(c=>String(c).trim()));
+    if(!rows.length)continue;
+    const h=importFindHeader(rows);
+    // קובץ Google Contacts: עמודות "Phone 1 - Value" — המנוע הקודם כבר יודע לקרוא אותו
+    if(h>=0&&rows[h].some(c=>/phone \d+ - value/i.test(String(c)))){
+      const parsed=sheetToGuestRows(rows).map(parseSheetRow),score=parsed.filter(p=>p.name&&p.name.length>=2).length;
+      const rank=score+parsed.filter(p=>p.name&&p.phone).length+.5;
+      if(!best||rank>best.rank)best={legacy:true,parsed,score,rank,unsure:false,reasons:[]};
+      continue;
+    }
+    const a=importAutoRoles(rows,h),parsed=importRowsFromRoles(rows.slice(h+1),a.roles);
+    // הגיליון של האורחים: הכי הרבה שמות וטלפונים, ובשוויון — זה שהזיהוי בו בטוח (ולא גיליון סיכום)
+    const good=parsed.filter(p=>p.name&&p.name.length>=2),score=good.length;
+    const rank=score+good.filter(p=>p.phone).length+(a.unsure?0:.5);
+    if(!best||rank>best.rank)best={rows,h,...a,parsed,score,rank,sheet:n,file:file.name};
+  }
+  if(best&&!best.legacy&&!best.score&&!best.unsure){best.unsure=true;best.reasons=["לא הצלחנו לקרוא שמות מהקובץ"];}
+  return best;
+};
+const importDetectedNote=a=>{
+  if(!a||a.legacy||!a.roles)return "";
+  const head=a.h>=0?a.rows[a.h]:null;
+  const parts=a.roles.map((r,i)=>r?`${IMPORT_ROLE_LABEL[r]} ← ${importColName(head,i)}`:null).filter(Boolean);
+  return parts.length?"זיהינו את העמודות: "+parts.join(" · "):"";
+};
+// חלון "איזו עמודה היא מה?" — נפתח רק כשהזיהוי לא בטוח
+function ImportMapper({ data, onImport, onCancel, busy }) {
+  const [roles,setRoles]=useState(data.roles),[h,setH]=useState(data.h);
+  const titleRef=useRef(null);
+  useEffect(()=>{titleRef.current?.focus();const k=e=>{if(e.key==="Escape")onCancel();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
+  const head=h>=0?data.rows[h]:null,body=data.rows.slice(h+1);
+  const width=roles.length;
+  const cols=[...Array(width).keys()].filter(i=>(head&&String(head[i]??"").trim())||body.slice(0,300).some(r=>String(r[i]??"").trim()));
+  const parsed=importRowsFromRoles(body,roles).filter(p=>p.name&&p.name.length>=2);
+  const hasName=roles.some(r=>r==="name"||r==="first"||r==="last");
+  const setRole=(i,r)=>setRoles(rs=>rs.map((x,j)=>j===i?r:(r&&x===r?"":x)));
+  const RS={confirmed:"מגיע",declined:"לא מגיע",pending:"ממתין"};
+  const th={padding:"8px 8px 6px",background:"#F6F0FF",borderBottom:`1px solid ${C.border}`,minWidth:130,verticalAlign:"top"};
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(43,29,63,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:12,direction:"rtl",fontFamily:"'Heebo',sans-serif"}} onClick={onCancel}>
+      <div role="dialog" aria-modal="true" aria-labelledby="imap-t" onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:22,width:"100%",maxWidth:820,maxHeight:"92vh",overflowY:"auto",padding:"22px 22px 18px",boxShadow:"0 30px 70px -20px rgba(91,60,140,.55)",textAlign:"right"}}>
+        <h2 id="imap-t" ref={titleRef} tabIndex={-1} style={{margin:"0 0 6px",fontSize:20,fontWeight:800,color:C.text,outline:"none"}}>איזו עמודה היא מה?</h2>
+        <p style={{margin:"0 0 10px",fontSize:14,color:C.text,lineHeight:1.6}}>לא הצלחנו לזהות בוודאות את כל העמודות בקובץ <b dir="auto">{data.file}</b>. בחרו מעל כל עמודה מה יש בה, ובדקו בדוגמה למטה שהאורחים נראים נכון.</p>
+        {data.reasons?.length>0&&<ul style={{margin:"0 0 12px",padding:"10px 28px 10px 14px",background:"#FFF7E6",border:"1px solid #F5D9A0",borderRadius:12,fontSize:13,color:"#7A4B00",lineHeight:1.7}}>
+          {data.reasons.map(r=><li key={r}>{r}</li>)}
+        </ul>}
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:C.text,marginBottom:10,cursor:"pointer",width:"fit-content"}}>
+          <input type="checkbox" checked={h>=0} onChange={e=>setH(e.target.checked?(data.h>=0?data.h:0):-1)} style={{width:18,height:18,accentColor:"#9B6BFF"}}/>
+          השורה הראשונה היא כותרות, לא אורח
+        </label>
+        <div style={{overflowX:"auto",border:`1.5px solid ${C.border}`,borderRadius:14}}>
+          <table style={{borderCollapse:"collapse",width:"100%",fontSize:13}}>
+            <thead><tr>
+              {cols.map(i=>(
+                <th key={i} scope="col" style={th}>
+                  <select value={roles[i]} onChange={e=>setRole(i,e.target.value)} aria-label={`מה יש בעמודה ${importColName(head,i)}`}
+                    style={{width:"100%",fontFamily:"inherit",fontSize:13,fontWeight:800,padding:"7px 8px",borderRadius:10,border:`1.5px solid ${roles[i]?"#9B6BFF":C.border}`,background:roles[i]?"#fff":"#FAF8FC",color:roles[i]?"#4A2C8F":C.muted,cursor:"pointer"}}>
+                    {IMPORT_ROLES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                  </select>
+                  {head&&<div style={{marginTop:6,fontSize:12,fontWeight:700,color:C.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:180}} dir="auto">{String(head[i]??"").trim()||"(בלי כותרת)"}</div>}
+                </th>))}
+            </tr></thead>
+            <tbody>
+              {body.slice(0,6).map((r,ri)=>(
+                <tr key={ri}>
+                  {cols.map(i=><td key={i} dir="auto" style={{padding:"7px 10px",borderTop:ri?`1px solid ${C.border}`:"none",color:roles[i]?C.text:"#9A8FA8",background:roles[i]?"#fff":"#FCFBFD",whiteSpace:"nowrap",maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",textAlign:"right"}}>{String(r[i]??"")}</td>)}
+                </tr>))}
+            </tbody>
+          </table>
+        </div>
+        {body.length>6&&<div style={{fontSize:12,color:C.muted,marginTop:6}}>ועוד {(body.length-6).toLocaleString("he-IL")} שורות</div>}
+        <div style={{marginTop:14,background:"#F4FBF7",border:"1px solid #BFE6D2",borderRadius:14,padding:"12px 14px"}}>
+          <div style={{fontSize:13,fontWeight:800,color:"#15603A",marginBottom:6}}>כך האורחים ייכנסו לרשימה</div>
+          {parsed.length?parsed.slice(0,3).map((p,k)=>(
+            <div key={k} style={{fontSize:13,color:C.text,padding:"3px 0",display:"flex",flexWrap:"wrap",gap:"2px 12px"}}>
+              <b dir="auto">{p.name}</b>
+              <span dir="ltr" style={{color:p.phone?C.text:"#9A8FA8"}}>{p.phone||"בלי טלפון"}</span>
+              <span>{p.count} {p.count===1?"מוזמן":"מוזמנים"}</span>
+              {roles.includes("rsvp")&&<span>{RS[p.rsvp]}</span>}
+            </div>)):<div style={{fontSize:13,color:"#B42318",fontWeight:700}}>עוד אין אורחים. סמנו את עמודת השם.</div>}
+        </div>
+        {!hasName&&<div role="alert" style={{marginTop:10,fontSize:13,fontWeight:700,color:"#B42318"}}>צריך לסמן לפחות עמודה אחת של שם (שם מלא, או שם פרטי ושם משפחה).</div>}
+        <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
+          <button type="button" className="sx-btn sx-btn-primary" disabled={!hasName||!parsed.length||busy} onClick={()=>onImport(parsed)}
+            style={{flex:"1 1 220px",border:"none",borderRadius:14,padding:"13px 18px",fontSize:15,fontWeight:800,fontFamily:"inherit",cursor:hasName&&parsed.length&&!busy?"pointer":"default",color:"#fff",background:"linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)",backgroundSize:"200% 100%",opacity:hasName&&parsed.length&&!busy?1:.5}}>
+            {busy?"מייבא...":`ייבוא ${parsed.length.toLocaleString("he-IL")} אורחים`}
+          </button>
+          <button type="button" onClick={onCancel} style={{flex:"0 1 auto",background:"#fff",border:`1.5px solid ${C.border}`,color:C.text,borderRadius:14,padding:"12px 18px",fontSize:14,fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>ביטול</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // כרטיס ייבוא מ-Google Contacts: הוראות ייצוא + בחירת הקובץ
 function GoogleContactsImport({ onFile }) {
   return(
@@ -568,7 +749,7 @@ const prepareImport = (parsed,existing,eventId) => {
     const n=normPhone(p.phone);
     if(n&&seen.has(n)){dupes.push(p);continue;}
     if(n)seen.add(n);
-    toInsert.push({name:p.name,phone:p.phone||null,rsvp:"pending",guest_count:p.count||1,event_id:eventId,table_id:null});
+    toInsert.push({name:p.name,phone:p.phone||null,rsvp:["confirmed","declined"].includes(p.rsvp)?p.rsvp:"pending",guest_count:p.count||1,event_id:eventId,table_id:null});
   }
   return {toInsert,dupes};
 };
@@ -5601,6 +5782,7 @@ const readLastScreen=eventId=>{
 function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
+  const [importMap,setImportMap]=useState(null);
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   // "הזמנה דיגיטלית" נפתחת בתוך פרטי האירוע (אין מסך נפרד)
   useEffect(()=>{if(screen==="invite")setScreen("settings");},[screen]);
@@ -6457,14 +6639,25 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const importSheetFile=async file=>{
     if(/\.vcf$/i.test(file.name)){alert("קובץ vCard לא נתמך. בייצוא מ-Google Contacts בחרו Google CSV.");return;}
     setSaving(true);
+    let a=null;
+    try{a=await analyzeSheetFile(file);}catch(err){setSaving(false);alert("לא הצלחנו לקרוא את הקובץ. ודאו שזה קובץ אקסל או CSV");return;}
+    setSaving(false);
+    if(!a){alert("הקובץ ריק. לא מצאנו בו שורות");return;}
+    // לא בטוחים בזיהוי — מבקשים ממי שמעלה לסמן איזו עמודה היא מה
+    if(a.unsure){setImportMap(a);return;}
+    await importParsedGuests(a.parsed,importDetectedNote(a));
+  };
+  const importParsedGuests=async(parsed,note="")=>{
+    setSaving(true);
     try{
-      const rows=await readSheetRows(file);
-      const res=prepareImport(rows.map(parseSheetRow),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
+      const res=prepareImport(parsed,[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
       if(res.toInsert.length>0){const{error}=await sb.from("guests").insert(res.toInsert);if(error)throw error;await loadAll(true);}
-      alert(res.toInsert.length||res.dupes.length?importSummary(res):"לא נמצאו אנשי קשר עם שם בקובץ");
-    }catch(err){alert("שגיאה בקריאת הקובץ. ודאו שזה קובץ אקסל או CSV עם עמודת שם");}
+      setImportMap(null);
+      alert(res.toInsert.length||res.dupes.length?importSummary(res)+(note?"\n\n"+note:""):"לא נמצאו אורחים עם שם בקובץ");
+    }catch(err){alert("שמירת האורחים נכשלה. נסו שוב");}
     setSaving(false);
   };
+  const importMapModal=importMap&&<ImportMapper data={importMap} busy={saving} onCancel={()=>setImportMap(null)} onImport={p=>importParsedGuests(p)}/>;
   // הושבה אוטומטית (מתוך סידורי הושבה): עדכון אחד לכל שולחן במקום אחד לכל אורח
   const applyAutoSeating=async assignments=>{
     setSaving(true);
@@ -6618,13 +6811,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
               <div style={{fontSize:36,marginBottom:8}}>📊</div>
               <div style={{fontSize:15,fontWeight:700,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>המערכת מזהה לבד שם, טלפון, כמות מוזמנים ואישור הגעה. אם משהו לא ברור, נבקש מכם לסמן איזו עמודה היא מה</div>
               <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
                 📂 בחר קובץ Excel
                 <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";if(f)importSheetFile(f);}}/>
               </label>
             </div>
             <GoogleContactsImport onFile={importSheetFile}/>
+            {importMapModal}
             <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
             <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
             <textarea placeholder={"ישראל ישראלי, 050-1234567\nרונית לוי\nמשפחת כהן, 052-9876543\n..."} id="importText"
@@ -7595,13 +7789,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
             <div style={{fontSize:36,marginBottom:8}}>📊</div>
             <div style={{fontSize:16,fontWeight:800,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>קובץ אקסל עם עמודות שם וטלפון (מזהה גם "שם מלא", "שם פרטי"+"שם משפחה", "נייד", "פלאפון")</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>המערכת מזהה לבד שם, טלפון, כמות מוזמנים ואישור הגעה. אם משהו לא ברור, נבקש מכם לסמן איזו עמודה היא מה</div>
             <label style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:12,padding:"11px 24px",fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>
               📂 בחר קובץ Excel
               <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];e.target.value="";if(f)importSheetFile(f);}}/>
             </label>
           </div>
           <GoogleContactsImport onFile={importSheetFile}/>
+          {importMapModal}
           {/* ייבוא ידני */}
           <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:8}}>או הדבק שמות ידנית</div>
           <div style={{fontSize:12,color:C.muted,marginBottom:10}}>שם וטלפון בכל שורה  -  אפשר להפריד ברווח, פסיק או להדביק ישר מאקסל</div>
