@@ -2093,6 +2093,23 @@ const LANDING_CSS=`
   .lp-spark{position:absolute;z-index:2;pointer-events:none}
   .lp-motion .lp-spark{animation:twinkle 3s ease-in-out infinite}
   @media(max-width:960px){.lp-hero6{padding:112px 5vw 90px}.lp-banner{padding:24px 16px 28px;border-radius:34px}.lp-chiprow{justify-content:center}}
+  /* ─── ליטוש: טיפוגרפיה, פתיחה פחות עמוסה, עובדות בפס אחד ─── */
+  .lp h1,.lp h2,.lp h3{text-wrap:balance}
+  .lp p,.lp li{text-wrap:pretty}
+  html:has(.lp){scrollbar-color:#D9C6FF #FFFBF7}
+  /* בועות הרקע: שקטות יותר ולא מאחורי הכותרת */
+  .lp-blobs i:nth-child(1){width:150px;height:150px;top:9%;right:50%;opacity:.45}
+  .lp-blobs i:nth-child(4){width:120px;height:120px;opacity:.4}
+  /* ארבע העובדות: פס לבן אחד עם קווים דקים, המספר בצבע שלו (במקום ארבע קוביות בצבעים שונים) */
+  .lp-facts6{gap:0;background:rgba(255,255,255,.88);border:1px solid #EFE6F7;border-radius:24px;padding:4px;box-shadow:0 18px 40px -30px rgba(91,60,140,.55);backdrop-filter:blur(6px)}
+  .lp-facts6 .lp-fact{background:none;border:none;border-radius:0;color:#3E3555;padding:11px 8px}
+  .lp-facts6 .lp-fact+.lp-fact{box-shadow:inset -1px 0 0 #EFE6F7}
+  .lp-facts6 .lp-fact b{color:var(--fg);font-size:clamp(17px,1.4vw,21px)}
+  .lp-facts6 .lp-fact span{color:#5F5675;font-weight:600}
+  @media(max-width:600px){.lp-facts6 .lp-fact:nth-child(3){box-shadow:none}.lp-facts6 .lp-fact:nth-child(n+3){border-top:1px solid #EFE6F7}}
+  /* בנייד: התגיות מעל הכותרת בשורה אחת שנגללת לצד, כדי שהכותרת והמוצר יעלו למעלה */
+  @media(max-width:700px){.lp-blobs i:nth-child(1),.lp-blobs i:nth-child(3){display:none}}
+  @media(max-width:700px){.lp-chiprow{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;margin:0 -5vw 18px;padding:2px 5vw;scrollbar-width:none}.lp-chiprow::-webkit-scrollbar{display:none}.lp-chiprow span{flex:0 0 auto}}
   /* דפים פנימיים: אותה פתיחה בהירה וצבעונית של דף הבית */
   .lp-phero{border-radius:0;color:#2B1D3F;
     background:radial-gradient(760px 520px at 92% 8%,#EFE4FF 0%,rgba(239,228,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFE4F0 0%,rgba(255,228,240,0) 62%),radial-gradient(640px 440px at 50% 100%,#E2F6EE 0%,rgba(226,246,238,0) 60%),#FFFBF7}
@@ -2736,6 +2753,11 @@ const TOUR_CSS=`
   .lp-pk.auto .lp-pk-t.on .lp-pk-bar u{animation:lpPkBar var(--dur) linear both}
   @keyframes lpPkBar{to{transform:scaleX(1)}}
   .lp-pk-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
+  /* מחשב: כל הקוביות בגובה המסך הפתוח (עמודות צרות לצדו) — בלי שטח ריק מתחת לקוביות הקטנות */
+  @media(min-width:901px){
+    .lp-pk-t{height:416px;background:linear-gradient(180deg,#fff 30%,var(--a))}
+    .lp-pk-t.on{background:#fff}
+  }
   @media(prefers-reduced-motion:reduce){.lp-pk-t,.lp-pk-in,.lp-pk-face{transition-duration:1ms!important}.lp-pk-bar{display:none}}
   @media(max-width:900px){
     .lp-pk{flex-direction:column;gap:10px}
@@ -2843,7 +2865,7 @@ function VendorRing({onOpen,cta}){
     <style>{VR_CSS}</style>
     <div className="lp-vr">
       <div className="lp-vr-c">
-        <h2 className="lp-h2">כמה שילמו <span className="lp-grad">זוגות אחרים?</span></h2>
+        <h2 className="lp-h2">כמה שילמו זוגות אחרים?</h2>
         <p>מחירי מנות באולמות, ומחירים והמלצות על צלמים, תקליטנים, פרחים ועוד. משווים לפני שסוגרים.</p>
         <div className="lp-vr-hall" aria-label="דוגמה: מחיר מנה באולם">
           <div className="lp-vr-hall-top"><span>🏛️ מחיר מנה באולם</span><small>דוגמה להמחשה</small></div>
@@ -3506,7 +3528,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
   const sectionTitle=(kicker,title,accent,sub,opts={})=>(
     <div data-reveal style={{marginBottom:opts.mb??52,maxWidth:820}}>
       <h2 className="lp-h2" style={opts.dark?{color:LP.cream}:undefined}>
-        {title} {accent&&<span className={opts.dark?"lp-grad-light":"lp-grad"}>{accent}</span>}
+        {title} {accent&&<span className={opts.plain?undefined:opts.dark?"lp-grad-light":"lp-grad"}>{accent}</span>}
       </h2>
       {sub&&<p className="lp-sec-sub" style={opts.dark?{color:"#E2DAEE"}:undefined}>{sub}</p>}
     </div>
@@ -3575,9 +3597,8 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
 
             {/* המשפט הראשון אומר במפורש מה זה (הכותרת היא דימוי) */}
             <p className="lp-rise" style={{"--d":".5s",fontSize:"clamp(17px,1.6vw,21px)",color:"#3E3555",lineHeight:1.7,marginBottom:30,maxWidth:"42ch"}}>
-              <b style={{color:LP.ink,display:"block",marginBottom:4}}>סידורי הושבה ואישורי הגעה לחתונות ואירועים, במקום אחד.</b>
-              גוררים אורחים לשולחנות על מפת האולם, נותנים ל-AI לסדר לפי משפחות וחברים,
-              וכל אורח מקבל את מספר השולחן שלו ב-SMS או בוואטסאפ.
+              <b style={{color:LP.ink}}>סידורי הושבה ואישורי הגעה לחתונות ואירועים.</b>{" "}
+              גוררים אורחים לשולחנות על מפת האולם או נותנים ל-AI לסדר לפי משפחות וחברים, וכל אורח מקבל את מספר השולחן שלו ב-SMS או בוואטסאפ.
             </p>
 
             <div className="lp-hero-cta lp-rise" style={{"--d":".62s",display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
@@ -3632,7 +3653,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── HOW: 3 שלבים בשורה אחת, כל אחד עם המסך שלו ─── */}
       <section id="how" className="lp-sheet" style={{background:"#EEF9F4",marginTop:28}}>
         <div className="lp-wrap">
-          {sectionTitle("","מהרשימה לאולם","ב-3 צעדים","בלי לשבור את הראש מי יושב ליד מי. אתם מחליטים, המערכת עושה את העבודה.")}
+          {sectionTitle("","מהרשימה לאולם","ב-3 צעדים","בלי לשבור את הראש מי יושב ליד מי. אתם מחליטים, המערכת עושה את העבודה.",{plain:true})}
           <div className="lp-steprow">
             {LP_STORY.map((s,i)=>(
               <div key={i} className="lp-stepcard lp-lift" data-reveal style={{"--d":`${(i*.08).toFixed(2)}s`,"--c":s.c}}>
@@ -3659,7 +3680,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── סיור במערכת: מסך אמיתי לכל יכולת ─── */}
       <section id="tour" className="lp-sheet" style={{background:"#FBF8FF"}}>
         <div className="lp-wrap">
-          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד, עם המסך האמיתי של כל אחד מהם.")}
+          {sectionTitle("","ככה זה נראה","מבפנים","כל הכלים לאירוע במקום אחד, עם המסך האמיתי של כל אחד מהם.",{plain:true})}
           <ProductTour/>
         </div>
       </section>
@@ -3678,7 +3699,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── EVENTS ──────────────────────────────────────────────── */}
       <section id="events" className="lp-sheet" style={{background:"#FFF2E6"}}>
         <div className="lp-wrap">
-          {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה, Sidor-IL מסדרת את כולם.")}
+          {sectionTitle("לכל אירוע","איזה רגע מיוחד","אתם מושיבים?","מ-50 אורחים בברית ועד 600 בחתונה, Sidor-IL מסדרת את כולם.",{plain:true})}
           <div className="lp-ev-grid">
             {[
               {title:"חתונות",desc:"צד חתן, צד כלה, חברים והורים, כל אחד בשולחן הנכון",img:"/img/u/1775476793931-cb484f197760_700.webp"},
@@ -3743,7 +3764,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       {/* ─── שאלות נפוצות (מה שזוגות שואלים לפני שנרשמים) ─── */}
       <section id="faq" className="lp-sheet" style={{background:"#FFF9E6"}}>
         <div className="lp-faq-wrap">
-          {sectionTitle("שאלות נפוצות","יש שאלות?","יש תשובות.","כל מה שכדאי לדעת לפני שמתחילים לסדר את האולם.",{mb:0})}
+          {sectionTitle("שאלות נפוצות","יש שאלות?","יש תשובות.","כל מה שכדאי לדעת לפני שמתחילים לסדר את האולם.",{mb:0,plain:true})}
           <div>
             {[
               ["כמה זה עולה?",`ההרשמה וכל הכלים חינם: אישורי הגעה, הזמנה דיגיטלית, תקציב ומשימות. סידורי הושבה בחינם עד ${FREE_SEATING_LIMIT} מוזמנים, ולאירוע גדול יותר פתיחה חד-פעמית של ₪${BASIC_PRICE}. הודעות SMS ו-WhatsApp נקנות לפי כמות, רק אם צריך.`],
@@ -4548,6 +4569,27 @@ function LandingTestimonials() {
   },[]);
   const showStats=stats&&stats.events>=20;
   if(!items.length&&!showStats)return null;
+  // רק מספרים (עוד אין המלצות): פס אחד רחב — הכותרת בצד אחד והמספרים פרוסים בצד השני, בלי חצי מסך ריק
+  if(!items.length)return(
+    <section id="reviews" aria-label="Sidor-IL במספרים" style={{padding:"34px 2vw 62px"}}>
+      <style>{`.lp-nums{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:28px 48px;flex-wrap:wrap;background:#fff;border-radius:40px;padding:34px 48px;box-shadow:0 30px 60px -44px rgba(91,60,140,.5),inset 0 0 0 1px #F1E9F8}
+        .lp-nums h2{margin:0;font-size:clamp(28px,3.2vw,42px);line-height:1.1;color:#2B1D3F}
+        .lp-nums dl{display:flex;margin:0;flex-wrap:wrap}
+        .lp-nums dl div{padding:4px 34px;text-align:center}
+        .lp-nums dl div+div{box-shadow:inset -1px 0 0 #EFE6F7}
+        .lp-nums dd{margin:0;font:700 clamp(30px,3.4vw,46px)/1.05 'Fredoka','Heebo',sans-serif;color:#7C3AED;font-variant-numeric:tabular-nums}
+        .lp-nums dt{font-size:14px;color:#5F5675;font-weight:700;margin-top:6px}
+        @media(max-width:700px){.lp-nums{padding:26px 14px;border-radius:30px;justify-content:center;text-align:center}.lp-nums dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}.lp-nums dl div{padding:4px 6px}.lp-nums dd{font-size:clamp(20px,6.4vw,28px)}.lp-nums dt{font-size:12px}}`}</style>
+      <div className="lp-nums" data-reveal>
+        <h2>Sidor-IL במספרים</h2>
+        <dl>
+          {[[stats.events,"אירועים נוהלו"],[stats.guests,"אורחים הוזמנו"],[stats.seated,"אורחים הושבו"]].map(([v,l])=>(
+            <div key={l} style={{display:"flex",flexDirection:"column-reverse"}}><dt>{l}</dt><dd>{Number(v).toLocaleString("he-IL")}+</dd></div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
   return(
     <section id="reviews" style={{padding:"70px 6vw",background:"#fff"}}>
       <div style={{maxWidth:1120,margin:"0 auto"}}>
