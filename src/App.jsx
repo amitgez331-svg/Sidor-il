@@ -2753,6 +2753,13 @@ const TOUR_CSS=`
   .lp-pk.auto .lp-pk-t.on .lp-pk-bar u{animation:lpPkBar var(--dur) linear both}
   @keyframes lpPkBar{to{transform:scaleX(1)}}
   .lp-pk-cap{font-size:14px;color:#5F5675;margin-top:18px;text-align:center}
+  .lp-devstrip{margin-top:30px;background:#fff;border-radius:28px;padding:20px 24px;display:flex;align-items:center;gap:18px 28px;flex-wrap:wrap;box-shadow:0 24px 50px -38px rgba(60,35,110,.55),inset 0 0 0 1px #EFE6F7}
+  .lp-devstrip-h{font:700 19px/1.2 'Fredoka','Heebo',sans-serif;color:#2B1D3F;flex:0 0 auto}
+  .lp-devstrip ul{list-style:none;margin:0;padding:0;display:flex;gap:14px 26px;flex:1 1 520px;flex-wrap:wrap}
+  .lp-devstrip li{display:flex;gap:10px;align-items:flex-start;flex:1 1 180px;font-size:13.5px;color:#5F5675;line-height:1.5}
+  .lp-devstrip li i{font-style:normal;font-size:20px;line-height:1}
+  .lp-devstrip li b{display:block;font:700 15px 'Fredoka','Heebo',sans-serif;color:#2B1D3F;margin-bottom:2px}
+  @media(max-width:700px){.lp-devstrip{padding:18px 16px}.lp-devstrip-h{flex-basis:100%}}
   /* מחשב: כל הקוביות בגובה המסך הפתוח (עמודות צרות לצדו) — בלי שטח ריק מתחת לקוביות הקטנות */
   @media(min-width:901px){
     .lp-pk-t{height:416px;background:linear-gradient(180deg,#fff 30%,var(--a))}
@@ -2805,6 +2812,16 @@ function ProductTour(){
         </button>);})}
     </div>
     <div className="lp-pk-cap">מסכים אמיתיים מהמערכת, עם נתוני דוגמה</div>
+    {/* היה מקטע נפרד "האירוע איתכם בכל מכשיר" — עכשיו פס אחד כאן, כדי שהדף יהיה קצר יותר */}
+    <div className="lp-devstrip">
+      <div className="lp-devstrip-h">האירוע איתכם בכל מכשיר</div>
+      <ul>
+        <li><i aria-hidden="true">📲</i><span><b>אפליקציה ישר מהאתר</b>בלי חנות אפליקציות, באייפון, באנדרואיד ובמחשב</span></li>
+        <li><i aria-hidden="true">🔄</i><span><b>הכל נשמר בענן</b>אותו אירוע, מעודכן, בכל מקום שתתחברו</span></li>
+        <li><i aria-hidden="true">👫</i><span><b>ניהול בשניים</b>משתפים את האירוע ועובדים עליו יחד</span></li>
+      </ul>
+      <InstallAppButton label="📲 הורדת האפליקציה" style={{background:"#2B1D3F",color:"#fff",border:"none",borderRadius:999,minHeight:48,padding:"0 22px",fontFamily:"'Fredoka','Heebo',sans-serif",fontSize:15,whiteSpace:"nowrap"}}/>
+    </div>
   </div>);
 }
 
@@ -3686,7 +3703,6 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
       </section>
 
       {/* ─── בכל מכשיר, מכל מקום ─── */}
-      <DevicesSection onStart={()=>onOpenAuth("register")}/>
 
       {/* ─── ספקים ומחירים מהקהילה (פיצ'ר למשתמשים רשומים) ─── */}
       <section id="vendors" className="lp-sheet" style={{background:"#FFF0F6"}}>
@@ -3758,9 +3774,6 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </section>
 
-      {/* ─── המלצות לקוחות (רק מאושרות, מוסתר כשאין) ─── */}
-      <LandingTestimonials/>
-
       {/* ─── שאלות נפוצות (מה שזוגות שואלים לפני שנרשמים) ─── */}
       <section id="faq" className="lp-sheet" style={{background:"#FFF9E6"}}>
         <div className="lp-faq-wrap">
@@ -3783,8 +3796,11 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </section>
 
+      {/* ─── המלצות / מספרים אמיתיים, ומיד אחריהם נקודות האמון — כל ההוכחות במקום אחד ─── */}
+      <LandingTestimonials/>
+
       {/* ─── נקודות אמון לפני הכפתור האחרון (עובדות בלבד, בלי מספרים מומצאים) ─── */}
-      <section aria-label="למה לסמוך עלינו" style={{padding:"70px 6vw 70px"}}>
+      <section aria-label="למה לסמוך עלינו" style={{padding:"10px 6vw 70px"}}>
         <div className="lp-wrap" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:16}}>
           {[
             ["check","#1F7A4D","#E9FBF4","₪0 להתחלה",`בלי כרטיס אשראי, והושבה חינם עד ${FREE_SEATING_LIMIT} מוזמנים.`],
@@ -4269,7 +4285,7 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
 function MobileSeating({ tables, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
-  const [tab,setTab]=useState("guests"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
+  const [tab,setTab]=useState("tables"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const assign=async tableId=>{if(!picked)return;await dropOnTable(tableId,picked.id,picked.table_id||null);setPicked(null);setTab("guests");};
   return(<div style={{display:"flex",flexDirection:"column",flex:1,background:C.bg}}>
     {picked&&<div style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,fontSize:14,flexShrink:0}}>
@@ -4330,6 +4346,8 @@ function MobileSeating({ tables, guests, declined=[], search, setSearch, newGues
       </>}
 
       {tab==="tables"&&<>
+        {/* בזמן שבוחרים שולחן לאורח: רק השולחנות, בלי כפתורי הניהול שדוחפים אותם למטה */}
+        {!picked&&<>
         <button onClick={onAddTable} style={{width:"100%",background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",border:"none",borderRadius:14,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 14px ${C.blueL}44`}}>
           ➕ הוסף שולחן חדש
         </button>
@@ -4342,6 +4360,7 @@ function MobileSeating({ tables, guests, declined=[], search, setSearch, newGues
           ))}
         </div>}
         {onTemplates&&<button onClick={onTemplates} style={{width:"100%",background:C.surface,color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>🏛️ תבניות אולם (שמירה וטעינה)</button>}
+        </>}
 
         {tables.length===0&&<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48}}>🪑</div><p style={{color:C.muted,fontSize:14,marginTop:8}}>אין עדיין שולחנות</p></div>}
 
@@ -5301,6 +5320,40 @@ async function uploadInviteImage(eventId,file){
   const{error}=await sb.storage.from("event-images").upload(path,blob,{upsert:true,contentType:"image/jpeg"});
   if(error)throw error;
   return sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+}
+// "מה חדש מאז הביקור הקודם": מי אישר / ביטל הגעה מאז הפעם הקודמת שהזוג נכנס.
+// בלי שינוי במסד: שומרים בדפדפן את מצב האישורים בסוף כל ביקור (רק באישור עוגיות נוחות) ומשווים בביקור הבא.
+// התמונה של "הביקור הקודם" נקבעת פעם אחת לכל טעינת דף, כדי שהכרטיס לא ייעלם במעבר בין מסכים
+const NEWS_PREV={};
+function HomeNews({ event, guests, onGo, style }) {
+  const key=`sidor_seen_${event.id}`;
+  if(!(event.id in NEWS_PREV)){try{NEWS_PREV[event.id]=JSON.parse(localStorage.getItem(key)||"null");}catch{NEWS_PREV[event.id]=null;}}
+  const prev=NEWS_PREV[event.id];
+  const [hide,setHideS]=useState(()=>!!NEWS_PREV["hide_"+event.id]);
+  const setHide=v=>{NEWS_PREV["hide_"+event.id]=v;setHideS(v);};
+  const sig=guests.map(g=>g.id+":"+(g.rsvp||"pending")).join(",");
+  useEffect(()=>{const t=setTimeout(()=>optSet(key,JSON.stringify({at:Date.now(),r:Object.fromEntries(guests.map(g=>[g.id,g.rsvp||"pending"]))})),1500);return()=>clearTimeout(t);},[sig]);
+  if(hide||!prev?.r)return null;
+  const changed=guests.filter(g=>(g.rsvp==="confirmed"||g.rsvp==="declined")&&prev.r[g.id]!==g.rsvp);
+  if(!changed.length)return null;
+  const conf=changed.filter(g=>g.rsvp==="confirmed"),dec=changed.filter(g=>g.rsvp==="declined");
+  const ppl=l=>l.reduce((s,g)=>s+(g.guest_count||1),0);
+  const names=l=>{const n=l.map(g=>String(g.name||"").split(" ")[0]).filter(Boolean);return n.length>3?`${n.slice(0,3).join(", ")} ועוד ${n.length-3}`:n.join(", ");};
+  const ago=(()=>{const h=Math.round((Date.now()-(prev.at||0))/36e5);const d=Math.round(h/24);return h<1?"לפני פחות משעה":h===1?"לפני שעה":h===2?"לפני שעתיים":h<24?`לפני ${h} שעות`:d===1?"לפני יום":d===2?"לפני יומיים":`לפני ${d} ימים`;})();
+  return(
+    <section role="status" aria-label="מה חדש מאז הביקור הקודם" style={{background:"#fff",borderRadius:24,padding:"16px 18px",boxShadow:"0 18px 40px -30px rgba(91,60,140,.55),inset 0 0 0 1px #F1E9F8",display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap",...style}}>
+      <span aria-hidden="true" style={{width:42,height:42,borderRadius:14,background:"linear-gradient(135deg,#FFE0EE,#E9DDFF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔔</span>
+      <div style={{flex:"1 1 220px",minWidth:0}}>
+        <div style={{font:"700 16px 'Fredoka','Heebo',sans-serif",color:"#2B1D3F",marginBottom:4}}>מאז הביקור הקודם <span style={{fontWeight:500,fontSize:13,color:"#6E6585"}}>({ago})</span></div>
+        {conf.length>0&&<div style={{fontSize:14,color:"#1F6B43",fontWeight:700,lineHeight:1.6}}>✅ {conf.length===1?"אישר/ה הגעה":`${conf.length} אישרו הגעה`} ({ppl(conf)} אנשים): <span style={{fontWeight:500,color:"#3E3555"}}>{names(conf)}</span></div>}
+        {dec.length>0&&<div style={{fontSize:14,color:"#B42318",fontWeight:700,lineHeight:1.6}}>✖️ {dec.length===1?"לא מגיע/ה":`${dec.length} לא מגיעים`}: <span style={{fontWeight:500,color:"#3E3555"}}>{names(dec)}</span></div>}
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginInlineStart:"auto"}}>
+        <button type="button" className="hm-pill g" onClick={()=>onGo("rsvp")} style={{padding:"9px 16px",fontSize:14}}>לרשימת האורחים</button>
+        <button type="button" onClick={()=>setHide(true)} aria-label="הסתרת העדכון" style={{width:36,height:36,borderRadius:"50%",border:"none",background:"#F6F0FF",color:"#4A2C8F",cursor:"pointer",fontSize:14,fontWeight:900}}>✕</button>
+      </div>
+    </section>
+  );
 }
 function EventHomeHero({ event, inviteUrl, checksPct, onGo, noGuests=false }) {
   const [img,setImg]=useState(event.invite_image||"");
@@ -6796,6 +6849,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
         <style>{HOME_CSS}</style>
         <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/></div>
+        <div style={{padding:"0 14px"}}><HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:12}}/></div>
         <section className="hm-sec hm-sec-m" aria-labelledby="hm-nums-m">
           <h2 className="hm-h2" id="hm-nums-m">האירוע במספרים</h2>
           <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
@@ -6897,7 +6951,16 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="import"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <button onClick={()=>setScreen("rsvp")} style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>→ חזרה לניהול אורחים</button>
-            <div style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20}}>
+            {/* בטלפון: הדרכים המהירות קודם — אנשי הקשר שבטלפון והקלדה; אקסל בדרך כלל במחשב */}
+            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:10}}>איך להוסיף את המוזמנים?</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:20}}>
+              {[["📱","מאנשי הקשר בטלפון",()=>setScreen("contacts")],["✍️","הקלדה או הדבקה",()=>{const t=document.getElementById("importText");t?.scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>t?.focus({preventScroll:true}),350);}],["📊","קובץ Excel",()=>document.getElementById("imp-xl")?.scrollIntoView({behavior:"smooth",block:"start"})]].map(([ic,l,fn])=>(
+                <button key={l} type="button" onClick={fn} style={{background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:16,padding:"12px 6px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:6,boxShadow:"0 10px 22px -18px rgba(91,60,140,.55)",minHeight:84}}>
+                  <span aria-hidden="true" style={{fontSize:24}}>{ic}</span>
+                  <span style={{fontSize:13,fontWeight:800,color:C.text,lineHeight:1.3,textAlign:"center"}}>{l}</span>
+                </button>))}
+            </div>
+            <div id="imp-xl" style={{background:C.blueXL,border:`2px dashed ${C.blueL}`,borderRadius:16,padding:24,textAlign:"center",marginBottom:20,scrollMarginTop:70}}>
               <div style={{fontSize:36,marginBottom:8}}>📊</div>
               <div style={{fontSize:15,fontWeight:700,color:C.blue,marginBottom:4}}>ייבוא מ-Excel</div>
               <div style={{fontSize:12,color:C.muted,marginBottom:16}}>המערכת מזהה לבד שם, טלפון, כמות מוזמנים ואישור הגעה. אם משהו לא ברור, נבקש מכם לסמן איזו עמודה היא מה</div>
@@ -6951,7 +7014,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         {screen==="gifts"&&<GiftsScreen event={event} guests={[...guests,...tables.flatMap(t=>t.guests||[])]} onReload={()=>loadAll(true)}/>}
         {screen==="tasks"&&<TasksScreen event={event}/>}
         {screen==="vendors"&&<VendorsScreen user={user} event={event} mobile={mobile}/>}
-        {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{setSaving(true);await sb.from("guests").insert(list.map(c=>({name:c.name,phone:c.phone||null,rsvp:"pending",guest_count:1,event_id:event.id,table_id:null})));await loadAll();setSaving(false);setScreen("add");}}/>}
+        {screen==="contacts"&&<ContactsScreen event={event} onAdd={async(list)=>{
+          // בלי כפילויות: מי שהמספר שלו כבר ברשימה לא נוסף שוב (כמו בייבוא מאקסל)
+          setSaving(true);
+          const res=prepareImport(list.map(c=>({name:c.name,phone:c.phone?formatPhone(c.phone):"",count:1})),[...guests,...tables.flatMap(t=>t.guests||[])],event.id);
+          if(res.toInsert.length)await sb.from("guests").insert(res.toInsert);
+          await loadAll();setSaving(false);
+          if(res.dupes.length)alert(importSummary(res));
+          setScreen("rsvp");}}/>}
         {screen==="settings"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
         {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
@@ -7124,6 +7194,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             <div>
               <style>{HOME_CSS}</style>
               <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/>
+              <HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:16}}/>
               <section className="hm-sec" aria-labelledby="hm-nums">
                 <h2 className="hm-h2" id="hm-nums">האירוע במספרים</h2>
                 <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
