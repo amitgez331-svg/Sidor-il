@@ -3864,6 +3864,9 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
   const [load,setLoad]=useState(false);
   const [googleLoad,setGoogleLoad]=useState(false);
   const [resetSent,setResetSent]=useState(false);
+  // אחרי הרשמה: מסך "בדקו את המייל" במקום הטופס (כדי שלא ילחצו שוב "יצירת חשבון")
+  const [signupSent,setSignupSent]=useState(""),[resent,setResent]=useState("");
+  const resend=async()=>{setResent("…");try{const{error}=await sb.auth.resend({type:"signup",email:signupSent,options:{emailRedirectTo:window.location.origin}});setResent(error?"לא הצלחנו לשלוח שוב. נסו בעוד דקה":"✓ נשלח שוב");}catch{setResent("לא הצלחנו לשלוח שוב. נסו בעוד דקה");}};
 
   const submit=async()=>{
     setErr("");setLoad(true);
@@ -3882,7 +3885,7 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
         if(error)throw error;
         // Supabase מחזיר משתמש בלי identities כשהמייל כבר רשום
         if(data.user&&data.user.identities?.length===0)throw new Error("User already registered");
-        if(!data.session)setErr("✅ נשלח מייל אימות! לחצו על הקישור במייל כדי להפעיל את החשבון.");
+        if(!data.session)setSignupSent(email.trim());
         else onAuth(data.user);
       }
     }catch(e){
@@ -3954,7 +3957,18 @@ function AuthDrawer({ mode:initMode, onClose, onAuth }) {
         <h2>{title[0]} <mark>{title[1]}</mark></h2>
         <div style={{fontSize:15,color:"#5F5675",marginTop:6}}>{sub}</div>
       </div>
-      {mode==="reset"?(
+      {signupSent?(
+        <div role="status" style={{textAlign:"center",padding:"6px 0 6px"}}>
+          <div style={{fontSize:42,marginBottom:10}} aria-hidden="true">📧</div>
+          <div className="ad-f" style={{fontSize:20,fontWeight:700,marginBottom:6}}>כמעט סיימנו! בדקו את המייל</div>
+          <p style={{fontSize:15,color:"#3E3555",margin:"0 0 6px",lineHeight:1.6}}>שלחנו קישור אימות ל-<b dir="ltr">{signupSent}</b>.</p>
+          <p style={{fontSize:14,color:"#5F5675",margin:"0 0 18px",lineHeight:1.6}}>לוחצים על הקישור במייל, והחשבון נפתח. אם המייל לא הגיע תוך כמה דקות, בדקו בתיקיית הספאם.</p>
+          <button type="button" className="ad-go" onClick={()=>{setSignupSent("");setResent("");setMode("login");}}>כבר אישרתי, לכניסה</button>
+          <div style={{marginTop:12,fontSize:14,color:"#5F5675"}}>
+            {resent?<span aria-live="polite">{resent}</span>:<>לא הגיע? <button type="button" onClick={resend} style={{background:"none",border:"none",padding:4,color:"#4A2C8F",fontWeight:700,textDecoration:"underline",textUnderlineOffset:3,cursor:"pointer",fontFamily:"inherit",fontSize:14}}>שליחה חוזרת</button></>}
+          </div>
+        </div>
+      ):mode==="reset"?(
         resetSent?(
           <div style={{textAlign:"center",padding:"10px 0 6px"}}>
             <div style={{fontSize:42,marginBottom:10}} aria-hidden="true">📧</div>
@@ -5150,6 +5164,13 @@ const TOP_CSS=`
 .sx-top [role=tablist]{background:#F3EDFA!important;border:none!important;border-radius:100px!important}
 .sx-top [role=tablist] button{background:transparent!important;color:#4A2C8F!important}
 .sx-top [role=tablist] button[aria-selected=true]{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)!important;color:#fff!important;box-shadow:0 8px 18px -10px rgba(240,96,158,.7)!important}
+/* בורר התצוגה בולט: גדול יותר, עם מסגרת, והאפשרויות הלא פעילות נראות כמו כפתורים */
+.sx-top [role=tablist]{padding:4px!important;box-shadow:inset 0 0 0 1.5px #E2D4F5,0 10px 22px -16px rgba(91,60,140,.55)!important}
+.sx-top [role=tablist] button{padding:9px 18px!important;font-size:14.5px!important}
+.sx-top [role=tablist] button[aria-selected=false]{background:rgba(255,255,255,.7)!important}
+@media(hover:hover) and (pointer:fine){.sx-top [role=tablist] button[aria-selected=false]:hover{background:#fff!important;box-shadow:inset 0 0 0 1.5px #D9C6FF!important}}
+.sx-top .sx-view-lbl{font:700 13px 'Fredoka','Heebo',sans-serif;color:#6E6585;white-space:nowrap}
+@media(max-width:1100px){.sx-top .sx-view-lbl{display:none}}
 .sx-top .sx-count{background:#FFE9F2!important;color:#B4236A!important;font-family:'Fredoka','Heebo',sans-serif;font-size:13px!important}
 .sx-top [role=status] button{background:#fff!important;color:#2B1D3F!important}
 .sx-top button:focus-visible{outline:3px solid #9B6BFF!important;outline-offset:2px}
@@ -5281,7 +5302,7 @@ async function uploadInviteImage(eventId,file){
   if(error)throw error;
   return sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
 }
-function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
+function EventHomeHero({ event, inviteUrl, checksPct, onGo, noGuests=false }) {
   const [img,setImg]=useState(event.invite_image||"");
   const [upBusy,setUpBusy]=useState(false),[upErr,setUpErr]=useState("");
   const cover=coverImgOf(event.event_type,event.template_id);
@@ -5315,11 +5336,15 @@ function EventHomeHero({ event, inviteUrl, checksPct, onGo }) {
         </div>
         {cd?<HmCountdown target={cd.target}/>:<div style={{height:18}}/>}
         {checksPct===100&&<div style={{marginBottom:14,fontSize:15,fontWeight:700,color:"#1F6B43"}}>✓ כל שלבי ההכנה הושלמו</div>}
-        <div className="hm-acts">
+        {/* אירוע חדש בלי מוזמנים: הצעד הבא הוא להוסיף אותם — זה הכפתור הראשי. ההזמנה משנית עד שיש למי לשלוח */}
+        {noGuests?<div className="hm-acts">
+          <button className="hm-pill w" onClick={()=>onGo("import")}>➕ הוספת מוזמנים</button>
+          <button className="hm-pill g" onClick={()=>onGo("invite")}>💌 צפייה בהזמנה</button>
+        </div>:<div className="hm-acts">
           <button className="hm-pill w" onClick={()=>onGo("invite")}>💌 צפייה בהזמנה</button>
           <WaButton event={event} url={inviteUrl} style={{padding:"12px 20px",fontSize:15,borderRadius:100}}/>
           <button className="hm-pill g" onClick={copy}>{copied?"✓ הקישור הועתק":"🔗 העתקת הקישור"}</button>
-        </div>
+        </div>}
       </div>
       <div className="hm-invw">
         <button className="hm-inv" onClick={()=>onGo("invite")} aria-label={img?"ההזמנה הדיגיטלית":"תמונת הפתיחה של ההזמנה"}>
@@ -5837,7 +5862,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [importMap,setImportMap]=useState(null);
-  const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"map"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
+  const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"list"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   // "הזמנה דיגיטלית" נפתחת בתוך פרטי האירוע (אין מסך נפרד)
   useEffect(()=>{if(screen==="invite")setScreen("settings");},[screen]);
   // מעבר למסך אחר (או כניסה לאירוע) תמיד מתחיל מלמעלה — בנייד הגלילה של המסך הקודם נשארה והמסך החדש נפתח באמצע/בתחתית
@@ -6113,6 +6138,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [hall,setHall]=useState(()=>event.settings_json?.hall||{});
   const hallRef=useRef(hall);hallRef.current=hall;
   useEffect(()=>{setHall(event.settings_json?.hall||{});},[event.id]);
+  const prevScreenRef=useRef(screen);
+  useEffect(()=>{if(screen==="seating"&&prevScreenRef.current!=="seating")setView("list");prevScreenRef.current=screen;},[screen]);
   const mapLocked=!!hall.locked;
   // שולחן/במה הוזזו או נוספו (גם יישור ותבנית): האולם משתנה — מתאימים שוב, אלא אם המשתמש עשה זום ידני
   const layoutKey=tables.map(t=>`${t.x},${t.y}`).join("|")+JSON.stringify({...hall,locked:0});
@@ -6768,7 +6795,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <div className={`hm${hmFirst()?" hm-anim":""}`} style={{direction:"rtl",fontFamily:"'Heebo',sans-serif",background:"radial-gradient(760px 520px at 92% 0%,#F8F3FF 0%,rgba(248,243,255,0) 62%),radial-gradient(680px 520px at 4% 40%,#FFF4F9 0%,rgba(255,244,249,0) 62%),#FFFEFC",minHeight:"100vh",paddingBottom:80}}>
 
         <style>{HOME_CSS}</style>
-        <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/></div>
+        <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/></div>
         <section className="hm-sec hm-sec-m" aria-labelledby="hm-nums-m">
           <h2 className="hm-h2" id="hm-nums-m">האירוע במספרים</h2>
           <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
@@ -6968,9 +6995,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       <span className="sx-title" style={{fontWeight:800,fontSize:15,color:"#fff",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{event.name}</span>
       {saving&&<Spinner size={16} color="#9B6BFF"/>}
       {/* בורר תצוגה בולט (מפה / רשימה / אורחים): כפתור פעיל לבן, ובפעם הראשונה בועת הסבר */}
-      {screen==="seating"&&<div style={{position:"relative"}}>
+      {screen==="seating"&&<div style={{position:"relative",display:"flex",alignItems:"center",gap:8}}>
+        <span className="sx-view-lbl" aria-hidden="true">תצוגה:</span>
         <div role="tablist" aria-label="תצוגת ההושבה" style={{display:"flex",gap:3,background:"rgba(0,0,0,.18)",border:"1px solid rgba(255,255,255,.35)",borderRadius:14,padding:3}}>
-          {[["map","🗺️","מפת האולם"],["list","📋","רשימת שולחנות"],["guests","👥","אורחים"]].map(([v,ic,l])=>(
+          {[["list","📋","רשימת שולחנות"],["map","🗺️","מפת האולם"],["guests","👥","אורחים"]].map(([v,ic,l])=>(
             <button key={v} role="tab" aria-selected={view===v} onClick={()=>{setView(v);setViewTip(false);}}
               style={{display:"flex",alignItems:"center",gap:6,background:view===v?"#fff":"transparent",color:view===v?C.blue:"#fff",border:"none",borderRadius:11,padding:"7px 14px",fontSize:13.5,fontWeight:900,cursor:"pointer",fontFamily:"inherit",boxShadow:view===v?"0 4px 12px rgba(0,0,0,.22)":"none",transition:"all .15s",whiteSpace:"nowrap"}}>
               <span style={{fontSize:16}}>{ic}</span>{l}
@@ -7095,7 +7123,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           return(
             <div>
               <style>{HOME_CSS}</style>
-              <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen}/>
+              <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/>
               <section className="hm-sec" aria-labelledby="hm-nums">
                 <h2 className="hm-h2" id="hm-nums">האירוע במספרים</h2>
                 <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
@@ -7312,7 +7340,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{toSeat.length}</b><small>ממתינים</small></div></div>
                 </div>
                 {/* קבוצה 2: עריכת האולם */}
-                <div className="sx-grp" aria-label="עריכת האולם" style={{marginRight:"auto"}}>
+                <div className="sx-grp" aria-label="עריכת האולם" style={{order:4,flex:"1 1 100%"}}>
                 <div style={{position:"relative"}}>
                   <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת...?"
                     style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
@@ -7320,7 +7348,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 </div>
                 <button onClick={()=>saveHall({...hallRef.current,locked:!mapLocked})} className="sx-btn" aria-pressed={mapLocked}
                   title={mapLocked?"המפה נעולה  -  לחצו כדי לאפשר הזזה":"נעילת המפה: שולחנות, במה, בר וכניסה לא יזוזו (גרירת אורחים עדיין עובדת)"}
-                  style={{background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  style={{order:8,marginRight:"auto",background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                   {mapLocked?"🔒 המפה נעולה":"🔓 נעל מפה"}
                 </button>
                 <button disabled={mapLocked} onClick={()=>perfectLayout()} className="sx-btn sx-btn-primary"
@@ -7364,13 +7392,13 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                 {undoBtn()}
                 </div>
                 {/* קבוצה 3: פעולות הושבה */}
-                <div className="sx-grp" aria-label="פעולות הושבה">
+                <div className="sx-grp" aria-label="פעולות הושבה" style={{order:2}}>
                   <button onClick={addTable} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>+ הוספת שולחן</button>
                   <button onClick={()=>setModal("autoSeat")} className="sx-btn sx-btn-primary" style={{background:GRAD,border:"none",color:"#fff",borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>
                   <button onClick={()=>setModal("receipt")} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} title="חיפוש אורח והדפסת פתק עם מספר השולחן">🖨️ פתק שולחן</button>
                 </div>
                 {/* קבוצה 4: תצוגה — הזזת המפה ומסך מלא (הגדלה והקטנה נמצאות על המפה) */}
-                <div className="sx-grp" aria-label="תצוגת המפה">
+                <div className="sx-grp" aria-label="תצוגת המפה" style={{order:3,marginRight:"auto"}}>
                 {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
                 <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
                   {[["→",-140,0,"ימינה"],["↑",0,140,"למעלה"],["↓",0,-140,"למטה"],["←",140,0,"שמאלה"]].map(([ic,dx,dy,l])=>(
@@ -12951,7 +12979,8 @@ const WIZ_CSS=`
 .wz-err{display:block;font-size:13px;color:#B42318;font-weight:700;margin-top:5px}
 .wz-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .wz-row3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px}
-.wz-acts{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px}
+.wz-acts{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;position:sticky;bottom:0;z-index:5;padding:14px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(255,251,247,0),rgba(255,251,247,.96) 28%)}
+/* הכפתורים "חזרה / המשך" תמיד בתחתית החלון — גם בשלב העיצוב, שבו רשת התמונות ארוכה */
 .wz-btn{border:none;border-radius:100px;padding:13px 26px;font-size:16px;font-weight:700;cursor:pointer}
 .wz-btn.p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF);color:#fff;box-shadow:0 14px 28px -14px rgba(240,96,158,.7)}
 .wz-btn.g{background:#fff;color:#4A2C8F;box-shadow:inset 0 0 0 1.5px #E6DDF5}
@@ -14759,7 +14788,8 @@ function CookieNotice() {
   return(
     <div role="region" aria-label="הודעת עוגיות" dir="rtl" className="sx-cookie" style={{position:"fixed",bottom:12,left:12,right:12,zIndex:400,maxWidth:560,margin:"0 auto",background:"#2B1D3F",color:"#fff",borderRadius:16,padding:"12px 16px",boxShadow:"0 10px 30px rgba(0,0,0,.25)",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontFamily:"'Heebo',sans-serif"}}>
       {/* בנייד: מעל כפתורי הוואטסאפ והנגישות שבפינות התחתונות, כדי לא להסתיר אותם */}
-      <style>{`@media(max-width:640px){.sx-cookie{bottom:88px!important}}`}</style>
+      {/* כשחלון פתוח (הרשמה, אשף אירוע וכו') ההודעה מוסתרת עד שהוא נסגר — שלא תסתיר את כפתור "יצירת חשבון" */}
+      <style>{`@media(max-width:640px){.sx-cookie{bottom:88px!important}} body:has([aria-modal="true"]) .sx-cookie{display:none!important}`}</style>
       <div style={{flex:"1 1 240px",fontSize:13,lineHeight:1.6}}>🍪 מה שחיוני להתחברות ולפעולת האתר נשמר תמיד. באישור נשמור גם העדפות נוחות: חזרה למסך האחרון, הגדרות תצוגה ונגישות וקוד הפניה. בלי פרסום ובלי מעקב. <a href="#/privacy" style={{color:"#F9C6DD",fontWeight:700}}>מדיניות הפרטיות</a></div>
       {/* שני הכפתורים באותו גודל ובאותו מקום: דחייה קלה בדיוק כמו אישור */}
       <div style={{display:"flex",gap:8}}>
@@ -15130,7 +15160,7 @@ export default function App() {
 
   const selectEvent=(ev,scr="home")=>{
     // כניסה לאירוע מהרשימה למסך הראשי (או למסך שביקשו, למשל כניסה לאולם מלוח המפיק). שחזור המסך האחרון הוא רק לרענון דף
-    if(ev)optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:typeof scr==="string"?scr:"home",view:readLastScreen(ev.id)?.view||"map"}));
+    if(ev)optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:ev.id,screen:typeof scr==="string"?scr:"home",view:readLastScreen(ev.id)?.view||"list"}));
     setEvent(ev);
     if(ev)optSet("sidor_event_id",ev.id);
     else localStorage.removeItem("sidor_event_id");
