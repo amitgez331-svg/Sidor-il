@@ -11015,6 +11015,11 @@ function CheckinScreen({ event, guests, tables, onReload }) {
   const TableBadge=({g})=>{const t=tableOf(g);return t?<span style={{background:GRAD,color:"#fff",borderRadius:10,padding:"4px 10px",fontWeight:900,fontSize:14,whiteSpace:"nowrap"}}>שולחן {t.num}</span>:<span style={{color:C.muted,fontSize:12}}>בלי שולחן</span>;};
   return(
     <div style={{direction:"rtl",maxWidth:560,margin:"0 auto",padding:16}}>
+      {/* כותרת כמו בשאר המסכים (מתנות, תקציב, אורחים) */}
+      <div style={{marginBottom:16}}>
+        <h1 style={{fontSize:"clamp(26px,2.6vw,34px)",fontWeight:700,color:"#2B1D3F",margin:"0 0 4px"}}>כניסה לאולם</h1>
+        <p style={{fontSize:15,color:"#5E5470",margin:0}}>סורקים את קוד ה-QR של האורח או מחפשים לפי שם, ורואים מיד את מספר השולחן שלו</p>
+      </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
         {[[came.reduce((n,g)=>n+ppl(g),0),"נכנסו (אנשים)"],[confirmed.reduce((n,g)=>n+ppl(g),0),"אישרו הגעה (אנשים)"]].map(([v,l])=>(
           <Card key={l} style={{padding:14,textAlign:"center"}}><div style={{fontSize:26,fontWeight:900,color:C.blue}}>{v}</div><div style={{fontSize:12,color:C.muted}}>{l}</div></Card>
@@ -12327,6 +12332,20 @@ const INVITE_TEMPLATES = {
   ],
 };
 
+// קונפטי בפתיחת ההזמנה: נוצר פעם אחת (לא מחדש בכל הקלדה), יורד פעמיים ונעצר — לא נופל על הטופס בזמן שהאורח ממלא
+function InviteConfetti() {
+  const [pieces]=useState(()=>[...Array(18)].map((_,i)=>({
+    left:`${Math.random()*100}%`,
+    color:["#FFD700","#FF6B6B","#4ECDC4","#A29BFE","#FD79A8","#55EFC4"][i%6],
+    size:`${8+Math.random()*8}px`,
+    delay:`${Math.random()*3}s`,
+    dur:`${3+Math.random()*3}s`,
+    borderRadius:i%3===0?"50%":"2px",
+  })));
+  return <div aria-hidden="true" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9999,overflow:"hidden"}}>
+    {pieces.map((p,i)=><div key={i} style={{position:"absolute",top:-20,left:p.left,width:p.size,height:p.size,background:p.color,borderRadius:p.borderRadius,animation:`confettiFall ${p.dur} ${p.delay} linear 2 both`,opacity:0.8}}/>)}
+  </div>;
+}
 function InvitePage({ code, guestId }) {
   const [event,setEvent]=useState(null);
   const [loading,setLoading]=useState(true);
@@ -12498,19 +12517,7 @@ function InvitePage({ code, guestId }) {
         zIndex={450} onBack={()=>setPhoneDupInv(false)} onUpdate={doUpdate}/>}
 
       {/* אפקט קונפטי */}
-      {(event.settings_json?.confetti??true)&&(()=>{
-        const pieces=[...Array(18)].map((_,i)=>({
-          left:`${Math.random()*100}%`,
-          color:["#FFD700","#FF6B6B","#4ECDC4","#A29BFE","#FD79A8","#55EFC4"][i%6],
-          size:`${8+Math.random()*8}px`,
-          delay:`${Math.random()*3}s`,
-          dur:`${3+Math.random()*3}s`,
-          borderRadius:i%3===0?"50%":"2px",
-        }));
-        return <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9999,overflow:"hidden"}}>
-          {pieces.map((p,i)=><div key={i} style={{position:"absolute",top:-20,left:p.left,width:p.size,height:p.size,background:p.color,borderRadius:p.borderRadius,animation:`confettiFall ${p.dur} ${p.delay} linear infinite`,opacity:0.8}}/>)}
-        </div>;
-      })()}
+      {(event.settings_json?.confetti??true)&&<InviteConfetti/>}
 
       {/* ספירה לאחור */}
       {(event.settings_json?.countdown??true)&&eventDate&&<IvCountdown target={eventDate.getTime()}/>}
