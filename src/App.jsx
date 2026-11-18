@@ -14262,7 +14262,7 @@ function AdminDashboard({ user, onLogout }) {
   };
 
   // כניסה לאירוע של לקוח: נפתח בלשונית חדשה, כמו שהלקוח רואה אותו
-  const openEventAsAdmin=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);sessionStorage.removeItem("sidor_landing");}catch{}window.open("/","_blank");};
+  const openEventAsAdmin=ev=>{try{localStorage.setItem("sidor_event_id",ev.id);localStorage.setItem("sidor_open_now","1");sessionStorage.removeItem("sidor_landing");}catch{}window.open("/","_blank");};
   const q=search.trim().toLowerCase();
   const fUsers=users.filter(u=>!q||(u.email||"").toLowerCase().includes(q)||u.events.some(e=>e.name?.toLowerCase().includes(q)));
   const fEvents=events.filter(e=>!q||e.name?.toLowerCase().includes(q)||emailOf(e.user_id).toLowerCase().includes(q));
@@ -15080,7 +15080,13 @@ export default function App() {
   useEffect(()=>{installFxRipple();},[]);
   const [user,setUser]=useState(null),[event,setEvent]=useState(null),[checking,setChecking]=useState(true),[authMode,setAuthMode]=useState(null);
   // משתמש מחובר שעבר לדף הבית: רענון באותה לשונית נשאר בדף הבית (ולא קופץ לאירועים)
-  const [showLanding,setShowLanding]=useState(()=>{try{return sessionStorage.getItem("sidor_landing")==="1";}catch{return false;}});
+  // כניסה חדשה לאתר (לא רענון באותה לשונית) תמיד בדף הבית — גם למשתמש מחובר ("האירועים שלי" מכניס למערכת).
+  // חוץ מ: האפליקציה המותקנת (נפתחת ישר למערכת), ואדמין שפותח אירוע בלשונית חדשה
+  const [showLanding,setShowLanding]=useState(()=>{try{
+    if(sessionStorage.getItem("sidor_landing")==="1")return true;
+    if(localStorage.getItem("sidor_open_now")){localStorage.removeItem("sidor_open_now");return false;}
+    return FRESH_OPEN&&!isStandalone();
+  }catch{return false;}});
   useEffect(()=>{try{showLanding?sessionStorage.setItem("sidor_landing","1"):sessionStorage.removeItem("sidor_landing");}catch{}},[showLanding]);
   // מעבר בין דף הבית, רשימת האירועים ואירוע — תמיד מלמעלה (אחרת בנייד נשארת הגלילה של הדף הקודם)
   useEffect(()=>{if(window.location.hash.length>1&&showLanding)return;try{window.scrollTo(0,0);}catch{}},[showLanding,event?.id]);
