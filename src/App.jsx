@@ -3659,13 +3659,7 @@ function LandingPage({ onOpenAuth, onLogout, loggedIn=false }) {
         </div>
       </div>
 
-      {/* ─── לפני / אחרי ─── */}
-      <section id="before" className="lp-before">
-        <div className="lp-wrap">
-          {sectionTitle("","מאקסל מבולגן","למפה ברורה","מעלים את הרשימה שכבר יש לכם, ו-Sidor-IL הופכת אותה למפת אולם מסודרת, שבה רואים מי יושב איפה.")}
-          <ExcelToMap/>
-        </div>
-      </section>
+      {/* (המקטע "מאקסל מבולגן למפה ברורה" הוסר — "איך זה עובד" מספר את אותו הדבר) */}
 
       {/* ─── HOW: 3 שלבים בשורה אחת, כל אחד עם המסך שלו ─── */}
       <section id="how" className="lp-sheet" style={{background:"#EEF9F4",marginTop:28}}>
