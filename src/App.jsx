@@ -939,10 +939,11 @@ function TableNode({ table, selected, highlight=false, locked=false, onMouseDown
   const labelBox=(style,big=20)=>(
     <div style={{position:"absolute",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",pointerEvents:"none",gap:1,textAlign:"center",...style}}>
       {tableNum&&<span style={{fontSize:big,fontWeight:900,color:`color-mix(in srgb,${accent} 62%,#2B1D3F)`,lineHeight:1}}>{tableNum}</span>}
-      <span style={{fontSize:10,fontWeight:800,lineHeight:1.2,color:full?C.danger:occupied?C.muted:"#A99FBD",background:full?"#FDECEE":"transparent",borderRadius:100,padding:full?"0 6px":0}}>
+      {/* כמות ושם השולחן בגודל שנקרא גם בזום הפתיחה (היה 10/9 — כ-8 פיקסלים על המסך) */}
+      <span style={{fontSize:13,fontWeight:800,lineHeight:1.2,color:full?C.danger:occupied?"#5F5675":"#8E84A3",background:full?"#FDECEE":"transparent",borderRadius:100,padding:full?"0 6px":0,fontVariantNumeric:"tabular-nums"}}>
         {occupied}/{total}
       </span>
-      {tableName&&<span style={{fontSize:9,fontWeight:800,color:C.text,maxWidth:"80%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{tableName}</span>}
+      {tableName&&<span style={{fontSize:12,fontWeight:800,color:C.text,maxWidth:"84%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",lineHeight:1.25}}>{tableName}</span>}
     </div>
   );
   const selRing=(shape)=>selected&&shape;
@@ -6068,7 +6069,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const el=mapBoxRef.current;if(!el)return;
     manualZoomRef.current=false;
     if(!all){
-      // שוליים: משמאל כפתורי הזום וגודל האולם, למטה כרטיס "מפת האולם" — שלא יסתירו שולחנות
+      // שוליים: משמאל כפתורי הזום וגודל האולם, למטה תווית השמירה — שלא יסתירו שולחנות
       // רגיל: כל האולם (כולל הריבועים הפנויים מסביב) על המסך. מסך מלא: השולחנות והאלמנטים ממלאים את המסך
       const full=mapFullRef.current,[cx0,cy0,cx1,cy1]=full?contentBox():hallRect(),cw=el.clientWidth,ch=el.clientHeight,IL=full?140:0,IR=full?28:0,IT=full?28:0,IB=full?84:0;
       if(cx1>cx0&&cy1>cy0){
@@ -6103,9 +6104,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       if(moved){manualZoomRef.current=true;setPan(p);}else{setSelected(null);setSelItem(null);}};
     window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
   };
+  // המאזינים למטה נרשמים פעם אחת, אז הם קוראים לגרסה העדכנית של פונקציות המצלמה (עם גודל האולם הנוכחי),
+  // ולא לעותק מהרגע שנרשמו — אחרת שינוי גודל חלון/סיבוב טאבלט מתאים את המפה לאולם הישן
+  const camFnRef=useRef({});
+  camFnRef.current={fitZoom,zoomAt,panBy,setCam,minZoom};
   useEffect(()=>{
     if(screen!=="seating"||view!=="map"||!mapBoxRef.current)return;
     const el=mapBoxRef.current;
+    const fitZoom=(...a)=>camFnRef.current.fitZoom(...a),zoomAt=(...a)=>camFnRef.current.zoomAt(...a),panBy=(...a)=>camFnRef.current.panBy(...a),
+      setCam=(...a)=>camFnRef.current.setCam(...a),minZoom=()=>camFnRef.current.minZoom();
     fitZoom();
     // כשהחלון/המסך המלא/התפריט משנים גודל — מתאימים מחדש (אלא אם המשתמש הזיז/הגדיל בעצמו)
     const ro=new ResizeObserver(()=>{setBoxTick(t=>t+1);if(!manualZoomRef.current)fitZoom();});
@@ -6113,7 +6120,9 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     // גלגלת / משטח מגע: הזזת המפה. Ctrl+גלגלת (או צביטה): זום סביב הסמן
     const wheel=e=>{
       e.preventDefault();
-      if(e.ctrlKey||e.metaKey){const r=el.getBoundingClientRect(),d=Math.max(-120,Math.min(120,e.deltaMode===1?e.deltaY*33:e.deltaY));zoomAt(Math.exp(-d*.0025),e.clientX-r.left,e.clientY-r.top);}
+      // גלגלת של עכבר (קפיצות שלמות, בלי תזוזה לצד) = זום, כמו במפות. משטח מגע (תזוזות קטנות) = הזזה, צביטה = זום
+      const mouseWheel=e.deltaMode===1||(e.deltaX===0&&Math.abs(e.deltaY)>=50&&Number.isInteger(e.deltaY));
+      if(e.ctrlKey||e.metaKey||(mouseWheel&&!e.shiftKey)){const r=el.getBoundingClientRect(),d=Math.max(-120,Math.min(120,e.deltaMode===1?e.deltaY*33:e.deltaY));zoomAt(Math.exp(-d*.0025),e.clientX-r.left,e.clientY-r.top);}
       else{const k=e.deltaMode===1?33:1;panBy(-(e.shiftKey?e.deltaY:e.deltaX)*k,-(e.shiftKey?0:e.deltaY)*k);}
     };
     el.addEventListener("wheel",wheel,{passive:false});
@@ -6163,7 +6172,8 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
   const [mapFull,setMapFull]=useState(false);
   const [fullListOpen,setFullListOpen]=useState(true);
   // רשימת האורחים שליד המפה: אפשר לקפל כדי לתת למפה את כל הרוחב (הבחירה נשמרת)
-  const [asideOpen,setAsideOpen]=useState(()=>{try{return localStorage.getItem("sidor_aside")!=="0";}catch{return true;}});
+  // במסך צר (טאבלט) הרשימה מתחילה מקופלת, כדי שהמפה תקבל את הרוחב — אלא אם כבר בחרו אחרת
+  const [asideOpen,setAsideOpen]=useState(()=>{try{const v=localStorage.getItem("sidor_aside");return v==null?window.innerWidth>=1200:v!=="0";}catch{return true;}});
   useEffect(()=>{optSet("sidor_aside",asideOpen?"1":"0");},[asideOpen]);
   // בחירת שולחן פותחת את הרשימה (שם עורכים את היושבים בו)
   useEffect(()=>{if(selected&&!mapFull)setAsideOpen(true);},[selected]);
@@ -6249,7 +6259,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     }
     return best;
   };
-  const [addItemOpen,setAddItemOpen]=useState(false);
+  const [addItemOpen,setAddItemOpen]=useState(false),[toolsOpen,setToolsOpen]=useState(false);
   const addItem=kind=>{
     setAddItemOpen(false);
     const K=HALL_ITEM_KINDS[kind],r=hallRect(),id=kind+"_"+Date.now().toString(36);
@@ -6262,6 +6272,17 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       :findFree([0,0,K.w,K.h],r)||{x:Math.round((r[0]+r[2])/2-K.w/2),y:Math.round((r[1]+r[3])/2-K.h/2)};
     saveItems([...hallItems(),{id,kind,x:p.x,y:p.y,w:K.w,h:K.h}],`הוספת ${K.label}`);
     setSelItem(id);setSelected(null);
+    // אם האלמנט החדש מחוץ לחלק של האולם שעל המסך — מזיזים את המפה כדי שיראו אותו
+    setTimeout(()=>showBox(itemBox({x:p.x,y:p.y,w:K.w,h:K.h})),80);
+  };
+  const showBox=([bx0,by0,bx1,by1])=>{
+    const el=mapBoxRef.current;if(!el)return;
+    const z=zoomRef.current,P=panRef.current,W=el.clientWidth,H=el.clientHeight,m=40;
+    const sx0=bx0*z+P.x,sy0=by0*z+P.y,sx1=bx1*z+P.x,sy1=by1*z+P.y;
+    let dx=0,dy=0;
+    if(sx0<m+70)dx=m+70-sx0;else if(sx1>W-m)dx=W-m-sx1; // משמאל: כפתורי הזום
+    if(sy0<m)dy=m-sy0;else if(sy1>H-m)dy=H-m-sy1;
+    if(dx||dy)setCam({x:P.x+dx,y:P.y+dy});
   };
   // פריסה קלאסית של האלמנטים באולם W×H: במה במרכז למעלה, DJ לידה, רחבה מול הבמה, בר בפינה, כניסה במרכז למטה,
   // חופה בפינה השנייה. שאר האלמנטים נשארים באותו מקום יחסי. [W0,H0] = גודל האולם הקודם
@@ -7223,7 +7244,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
     {/* מסכי תוכן */}
     {/* במסך נמוך (מחשב נייד) המפה מקבלת לפחות ~620px גובה, והדף נגלל למטה — במקום מפה דחוסה מתחת לסרגל הכלים */}
-    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:view==="map"?"0 0 auto":1,overflow:"hidden",height:view==="map"?"max(calc(100vh - 76px), 780px)":"calc(100vh - 76px)",gap:8,padding:8,boxSizing:"border-box",
+    {screen!=="home"&&screen==="seating"&&<div style={{display:"flex",flex:1,overflow:"hidden",height:"calc(100vh - 76px)",gap:8,padding:8,boxSizing:"border-box",
       background:"radial-gradient(circle at 85% 0%,rgba(240,96,158,.10),transparent 40%),radial-gradient(circle at 10% 100%,rgba(155,107,255,.10),transparent 45%),#FBF7FE"}}>
       {/* כותרת המסך לקוראי מסך (במסך עצמו השם מופיע בלשוניות "מפת האולם / רשימת שולחנות") */}
       <h1 style={{position:"absolute",width:1,height:1,overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",margin:-1}}>סידורי הושבה</h1>
@@ -7241,6 +7262,16 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         .sx-grp > div > button[aria-label^="הזז"]{width:34px!important;padding:0!important}
         .sx-grp input{height:34px;box-sizing:border-box;border-radius:100px!important}
         .sx-tbar{align-items:center;padding:6px!important;gap:6px!important;margin:6px 6px 6px!important;flex-wrap:wrap!important}
+        .sx-tbar1{flex-wrap:nowrap!important;gap:8px!important;padding:7px 10px!important;position:relative;z-index:30}
+        .sx-stat1{display:flex;align-items:center;gap:8px;background:#FBF7FE;border-radius:100px;padding:4px 12px 4px 6px!important;min-width:130px;flex:0 0 auto;box-shadow:inset 0 0 0 1px #F1E9F8}
+        .sx-tb{height:36px;border-radius:100px!important;border:1.5px solid #E9DDF7!important;background:#fff!important;color:#4A2C8F!important;padding:0 14px!important;font-size:13px!important;font-weight:800!important;cursor:pointer;font-family:inherit;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;flex:0 0 auto}
+        .sx-tb:disabled{opacity:.45;cursor:not-allowed}
+        .sx-tb-p{background:linear-gradient(120deg,#FF8A65,#F0609E 45%,#9B6BFF)!important;color:#fff!important;border:none!important;box-shadow:0 8px 18px -10px rgba(240,96,158,.7)}
+        .sx-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:41;background:#fff;border:1px solid #EFE6F7;border-radius:16px;box-shadow:0 18px 40px -16px rgba(43,29,63,.35);padding:6px}
+        .sx-mi{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;border-radius:11px;padding:9px 10px;font-size:13px;font-weight:800;color:#2B1D3F;cursor:pointer;font-family:inherit;text-align:right}
+        .sx-mi:hover:not(:disabled),.sx-mi:focus-visible{background:#F6F0FF}
+        .sx-mi:disabled{opacity:.45;cursor:not-allowed}
+        @media(max-width:1250px){.sx-tbar1{flex-wrap:wrap!important;row-gap:6px!important}}
         .sx-tbar .sx-grp{flex-wrap:nowrap!important;flex-shrink:0}
         .sx-tbar .sx-grp[aria-label="נתוני ההושבה"] .sx-stat:not(:first-child){display:none}
         .sx-grp{min-height:42px;padding:3px!important}
@@ -7391,93 +7422,68 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
             const found=q?tables.filter(t=>(t.guests||[]).some(g=>g.name.toLowerCase().includes(q))).length:0;
             const zBtn={width:30,height:30,borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"};
             return(
-              <div role="toolbar" aria-label="כלי המפה" className="sx-tbar">
-                {/* קבוצה 1: נתוני ההושבה */}
-                <div className="sx-grp" aria-label="נתוני ההושבה">
-                <div className="sx-stat" style={{minWidth:200}}>
-                  <span className="sx-ictile" style={{background:"#F1E8FF"}}>🪑</span>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{color:C.text}}>{seated}/{total}</b><small style={{display:"inline"}}>הושבו</small><span style={{marginRight:"auto",fontSize:12,fontWeight:900,color:"#B8306F"}}>{p}%</span></div>
-                    <div style={{height:6,background:"#F1EAF8",borderRadius:100,overflow:"hidden",marginTop:4}}>
-                      <div style={{position:"relative",overflow:"hidden",height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}><span className="sx-shine"/></div>
+              <div role="toolbar" aria-label="כלי המפה" className="sx-tbar sx-tbar1">
+                {/* שורה אחת: מצב ההושבה · פעולות עיקריות · חיפוש · תפריט כלים · ביטול ומסך מלא. (הזזת המפה: גרירה, גלגלת או חיצים במקלדת) */}
+                <div className="sx-stat sx-stat1" title={`${Math.max(allSeats-seated,0)} מקומות פנויים · ${fullTables} שולחנות מלאים · ${toSeat.length} ממתינים להושבה`}>
+                  <span className="sx-ictile" style={{background:"#F1E8FF"}} aria-hidden="true">🪑</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:5,whiteSpace:"nowrap"}}><b style={{color:C.text}}>{seated}/{total}</b><small style={{display:"inline"}}>הושבו</small><span style={{marginRight:"auto",fontSize:12,fontWeight:900,color:"#B8306F"}}>{p}%</span></div>
+                    <div style={{height:5,background:"#F1EAF8",borderRadius:100,overflow:"hidden",marginTop:3}}>
+                      <div style={{height:"100%",width:`${p}%`,background:GRAD,borderRadius:100,transition:"width .5s cubic-bezier(.3,1.3,.5,1)"}}/>
                     </div>
                   </div>
                 </div>
-                <div className="sx-stat"><span className="sx-ictile" style={{background:"#E9FBF4"}}>✨</span><div><b style={{color:"#1F7A4D"}}>{Math.max(allSeats-seated,0)}</b><small>מקומות פנויים</small></div></div>
-                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FDECEE"}}>🔴</span><div><b style={{color:C.danger}}>{fullTables}</b><small>שולחנות מלאים</small></div></div>
-                <div className="sx-stat"><span className="sx-ictile" style={{background:"#FFF4E0"}}>⏳</span><div><b style={{color:"#B07A12"}}>{toSeat.length}</b><small>ממתינים</small></div></div>
-                </div>
-                {/* קבוצה 2: עריכת האולם */}
-                <div className="sx-grp" aria-label="עריכת האולם" style={{order:4,flex:"1 1 100%"}}>
+                <button onClick={addTable} className="sx-btn sx-tb" title="הוספת שולחן חדש למפה">+ שולחן</button>
+                <button onClick={()=>setModal("autoSeat")} className="sx-btn sx-btn-primary sx-tb sx-tb-p" title="המערכת מושיבה את הממתינים לפי קבוצות">🤖 הושבה אוטומטית</button>
+                {/* הוספת אלמנט לאולם: במה, רחבה, בר, כניסה... */}
                 <div style={{position:"relative"}}>
-                  <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת...?"
-                    style={{width:190,background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:10,padding:"7px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit"}}/>
-                  {q&&<span style={{position:"absolute",left:8,top:8,fontSize:11,fontWeight:800,color:found?C.success:C.danger}}>{found?`${found} ✓`:"לא נמצא"}</span>}
-                </div>
-                <button onClick={()=>saveHall({...hallRef.current,locked:!mapLocked})} className="sx-btn" aria-pressed={mapLocked}
-                  title={mapLocked?"המפה נעולה  -  לחצו כדי לאפשר הזזה":"נעילת המפה: שולחנות, במה, בר וכניסה לא יזוזו (גרירת אורחים עדיין עובדת)"}
-                  style={{order:8,marginRight:"auto",background:mapLocked?"#FFF4E0":"#fff",border:`1.5px solid ${mapLocked?C.gold:C.border}`,color:mapLocked?"#8A5A00":C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
-                  {mapLocked?"🔒 המפה נעולה":"🔓 נעל מפה"}
-                </button>
-                <button disabled={mapLocked} onClick={()=>perfectLayout()} className="sx-btn sx-btn-primary"
-                  title={mapLocked?"המפה נעולה":"מסדר את כל השולחנות בשורות מושלמות לפי המספר, מסביב לבמה, לרחבה ולשאר האלמנטים"}
-                  style={{background:GRAD,border:"none",color:"#fff",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
-                  ✨ סידור מושלם
-                </button>
-                <button disabled={mapLocked} onClick={alignTables} className="sx-btn"
-                  title={mapLocked?"המפה נעולה":"מיישר את השולחנות לשורות ועמודות ישרות, קרוב למקום שבו הנחתם אותם"}
-                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1}}>
-                  📐 יישר
-                </button>
-                <button onClick={()=>saveHall({...hallRef.current,grid:!gridOn()})} className="sx-btn" aria-pressed={gridOn()}
-                  title={gridOn()?"ריבועים פעילים: שולחן שגוררים נכנס לריבוע. לחצו לכיבוי (גרירה חופשית)":"גרירה חופשית. לחצו כדי ששולחן ייכנס לריבוע"}
-                  style={{background:gridOn()?"#F6F0FF":"#fff",border:`1.5px solid ${gridOn()?C.blueM:C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
-                  {gridOn()?"▦ ריבועים":"▢ חופשי"}
-                </button>
-                <button disabled={mapLocked} onClick={openTemplates} className="sx-btn"
-                  title={mapLocked?"המפה נעולה":"תבניות אולם מוכנות, או אולם ששמרתם"}
-                  style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
-                  🏛️ תבניות
-                </button>
-                {/* הוספת אלמנט לאולם */}
-                <div style={{position:"relative"}}>
-                  <button disabled={mapLocked} onClick={()=>setAddItemOpen(o=>!o)} className="sx-btn" aria-expanded={addItemOpen}
-                    style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:900,cursor:mapLocked?"not-allowed":"pointer",fontFamily:"inherit",opacity:mapLocked?.45:1,whiteSpace:"nowrap"}}>
-                    ➕ הוסף לאולם
+                  <button disabled={mapLocked} onClick={()=>{setAddItemOpen(o=>!o);setToolsOpen(false);}} className="sx-btn sx-tb" aria-expanded={addItemOpen} aria-haspopup="menu" title={mapLocked?"המפה נעולה":"במה, רחבה, בר, כניסה ועוד"}>
+                    ➕ הוסף לאולם ▾
                   </button>
                   {addItemOpen&&<>
                     <div onClick={()=>setAddItemOpen(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
-                    <div role="menu" style={{position:"absolute",top:"calc(100% + 6px)",right:0,zIndex:41,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,boxShadow:"0 18px 40px -16px rgba(43,29,63,.35)",padding:8,display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,width:300}}>
+                    <div role="menu" className="sx-menu" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,width:300}}>
                       {Object.entries(HALL_ITEM_KINDS).map(([k,K])=>(
-                        <button key={k} role="menuitem" onClick={()=>addItem(k)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",borderRadius:10,padding:"8px 10px",fontSize:13,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"inherit",textAlign:"right"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="#F6F0FF"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                          <span style={{fontSize:18}}>{K.icon}</span>{K.label}
+                        <button key={k} role="menuitem" onClick={()=>addItem(k)} className="sx-mi">
+                          <span style={{fontSize:18}} aria-hidden="true">{K.icon}</span>{K.label}
                         </button>
                       ))}
                     </div>
                   </>}
                 </div>
-                {undoBtn()}
+                <div style={{position:"relative",flex:"0 1 170px",minWidth:120}}>
+                  <input value={mapFind} onChange={e=>setMapFind(e.target.value)} placeholder="🔍 איפה יושב/ת?" aria-label="חיפוש אורח במפה"
+                    style={{width:"100%",boxSizing:"border-box",background:C.blueXL,border:`1.5px solid ${q&&!found?C.danger:C.border}`,borderRadius:100,padding:"8px 12px",fontSize:13,color:C.text,outline:"none",fontFamily:"inherit",height:36}}/>
+                  {q&&<span style={{position:"absolute",left:10,top:10,fontSize:11,fontWeight:800,color:found?C.success:C.danger}}>{found?`${found} ✓`:"לא נמצא"}</span>}
                 </div>
-                {/* קבוצה 3: פעולות הושבה */}
-                <div className="sx-grp" aria-label="פעולות הושבה" style={{order:2}}>
-                  <button onClick={addTable} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>+ הוספת שולחן</button>
-                  <button onClick={()=>setModal("autoSeat")} className="sx-btn sx-btn-primary" style={{background:GRAD,border:"none",color:"#fff",borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🤖 הושבה אוטומטית</button>
-                  <button onClick={()=>setModal("receipt")} className="sx-btn" style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:100,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} title="חיפוש אורח והדפסת פתק עם מספר השולחן">🖨️ פתק שולחן</button>
+                {/* כל כלי הסידור בתפריט אחד */}
+                <div style={{position:"relative"}}>
+                  <button onClick={()=>{setToolsOpen(o=>!o);setAddItemOpen(false);}} className="sx-btn sx-tb" aria-expanded={toolsOpen} aria-haspopup="menu">🛠 כלים{mapLocked?" · 🔒":""} ▾</button>
+                  {toolsOpen&&<>
+                    <div onClick={()=>setToolsOpen(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
+                    <div role="menu" className="sx-menu" style={{width:290,right:"auto",left:0}}>
+                      {[
+                        ["✨","סידור מושלם","שולחנות בשורות ישרות מסביב לבמה ולרחבה",()=>perfectLayout(),mapLocked],
+                        ["📐","יישור","מיישר לשורות, קרוב למקום שבו הנחתם",alignTables,mapLocked],
+                        [gridOn()?"▦":"▢",gridOn()?"ריבועים: פעיל":"ריבועים: כבוי",gridOn()?"שולחן נכנס למרכז ריבוע. לחיצה: גרירה חופשית":"גרירה חופשית. לחיצה: ריבועים",()=>saveHall({...hallRef.current,grid:!gridOn()}),false],
+                        ["🏛️","תבניות אולם","אולם מוכן, או אולם ששמרתם",openTemplates,mapLocked],
+                        ["🖨️","פתק שולחן","חיפוש אורח והדפסת פתק עם מספר השולחן",()=>setModal("receipt"),false],
+                        [mapLocked?"🔓":"🔒",mapLocked?"שחרור המפה":"נעילת המפה",mapLocked?"אפשר שוב להזיז שולחנות ואלמנטים":"שולחנות ואלמנטים לא יזוזו (אורחים כן)",()=>saveHall({...hallRef.current,locked:!mapLocked}),false],
+                      ].map(([ic,l,d,fn,dis])=>(
+                        <button key={l} role="menuitem" disabled={dis} onClick={()=>{setToolsOpen(false);fn();}} className="sx-mi" title={dis?"המפה נעולה":undefined}>
+                          <span style={{fontSize:18,width:24,textAlign:"center"}} aria-hidden="true">{ic}</span>
+                          <span style={{display:"flex",flexDirection:"column",gap:1,minWidth:0}}><b style={{fontSize:13.5}}>{l}</b><small style={{fontSize:12,color:"#6E6585",fontWeight:500}}>{d}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                  </>}
                 </div>
-                {/* קבוצה 4: תצוגה — הזזת המפה ומסך מלא (הגדלה והקטנה נמצאות על המפה) */}
-                <div className="sx-grp" aria-label="תצוגת המפה" style={{order:3,marginRight:"auto"}}>
-                {/* הזזת המפה: חיצים (גם במקלדת), גרירת הרקע או גלגלת */}
-                <div style={{display:"flex",alignItems:"center",gap:3}} title="הזזת המפה · אפשר גם לגרור את הרקע או להשתמש בחיצים במקלדת">
-                  {[["→",-140,0,"ימינה"],["↑",0,140,"למעלה"],["↓",0,-140,"למטה"],["←",140,0,"שמאלה"]].map(([ic,dx,dy,l])=>(
-                    <button key={l} style={zBtn} onClick={()=>panBy(dx,dy)} aria-label={`הזז את המפה ${l}`}>{ic}</button>
-                  ))}
-                </div>
-                <button onClick={()=>setMapFull(f=>!f)} className={mapFull?"sx-btn":"sx-btn sx-btn-primary"}
-                  title={mapFull?"יציאה ממסך מלא (Esc)":"פתיחת המפה על כל המסך"}
-                  style={{background:mapFull?"#fff":GRAD,color:mapFull?C.blue:"#fff",border:mapFull?`1.5px solid ${C.border}`:"none",borderRadius:10,padding:"7px 14px",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:mapFull?"none":`0 6px 16px -6px ${C.blueM}`}}>
-                  {mapFull?"✕ יציאה ממסך מלא":"⛶ מסך מלא"}
-                </button>
+                <div style={{display:"flex",gap:6,marginRight:"auto",alignItems:"center"}}>
+                  {undoBtn({maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",height:36,borderRadius:100})}
+                  <button onClick={()=>setMapFull(f=>!f)} className={mapFull?"sx-btn sx-tb":"sx-btn sx-btn-primary sx-tb sx-tb-p"}
+                    title={mapFull?"יציאה ממסך מלא (Esc)":"פתיחת המפה על כל המסך"}>
+                    {mapFull?"✕ יציאה":"⛶ מסך מלא"}
+                  </button>
                 </div>
               </div>
             );
@@ -7670,19 +7676,15 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
                     );
                   })}
                 </div>
-                {/* כותרת המפה — כמו בהדגמה בדף הבית */}
-                <div dir="rtl" style={{position:"absolute",right:26,bottom:22,zIndex:15,pointerEvents:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.94)",borderRadius:16,padding:"8px 14px",border:"1px solid #EFE8F7",boxShadow:"0 10px 24px -16px rgba(91,60,140,.4)"}}>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:900,color:LP.ink,lineHeight:1.2}}>מפת האולם</div>
-                    <div style={{fontSize:11,color:LP.muted,fontWeight:600}}>{event.name} · {guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} אורחים</div>
-                  </div>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:5,background:"#E9FBF4",color:"#17694F",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
-                </div>
+                {/* מצב השמירה: תווית קטנה בפינה, כדי שלא תסתיר שולחנות */}
+                <span role="status" style={{position:"absolute",right:14,bottom:12,zIndex:15,pointerEvents:"none",display:"inline-flex",alignItems:"center",gap:5,background:"rgba(233,251,244,.95)",color:"#17694F",borderRadius:100,padding:"3px 10px",fontSize:12,fontWeight:800,boxShadow:"0 4px 12px -8px rgba(23,105,79,.5)"}}><span style={{width:7,height:7,borderRadius:"50%",background:LP.mint}}/>{saving?"שומר...":"נשמר"}</span>
                 {/* כפתורי זום צפים על המפה (נוחים גם במסך מלא ובטאבלט) */}
                 <div onMouseDown={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} style={{position:"absolute",left:14,top:14,zIndex:20,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
                 <div style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(255,255,255,.92)",border:`1px solid ${C.border}`,borderRadius:14,padding:6,boxShadow:"0 10px 24px -12px rgba(91,60,140,.4)"}}>
-                  {[["+","הגדלה",()=>zoomBy(1)],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom(true)]].map(([ic,l,fn])=>(
-                    <button key={l} onClick={fn} title={l} aria-label={l} style={{width:40,height:40,borderRadius:10,border:"none",background:ic==="+"||ic==="−"?"#F4EEFC":"#fff",color:C.blue,fontSize:ic==="+"||ic==="−"?22:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{ic}</button>
+                  {[["+","הגדלה",()=>zoomBy(1)],["%","חזרה לתצוגה הרגילה",()=>fitZoom()],["−","הקטנה",()=>zoomBy(-1)],["⤢","כל האולם על המסך",()=>fitZoom(true)]].map(([ic,l,fn])=>(
+                    ic==="%"
+                      ?<button key={l} onClick={fn} title={l} aria-label={`זום ${Math.round(zoom*100)}%. ${l}`} style={{width:40,height:24,borderRadius:8,border:"none",background:"transparent",color:"#5F5675",fontSize:11.5,fontWeight:800,cursor:"pointer",fontFamily:"inherit",fontVariantNumeric:"tabular-nums",padding:0}}>{Math.round(zoom*100)}%</button>
+                      :<button key={l} onClick={fn} title={l} aria-label={l} style={{width:40,height:40,borderRadius:10,border:"none",background:ic==="+"||ic==="−"?"#F4EEFC":"#fff",color:C.blue,fontSize:ic==="+"||ic==="−"?22:16,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{ic}</button>
                   ))}
                 </div>
                 {/* גודל האולם: עוד שורה/עמודה של ריבועים ריקים בכל לחיצה (ביטול עם ↩) */}
@@ -7710,9 +7712,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               );
             })()}
           </div>
-          <div style={{padding:"7px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:"4px 14px",fontSize:12,color:"#4A4060",flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
-            {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
-            <span style={{marginRight:"auto"}}>💡 גררו אורח מהרשימה אל שולחן · גררו שולחן כדי להזיז · גלגלת או גרירת הרקע = הזזה · Ctrl+גלגלת או ＋ − = זום</span>
+          {/* מקרא בשורה אחת (לא גונב גובה מהמפה) */}
+          <div style={{padding:"6px 16px",background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",gap:"4px 14px",fontSize:12,color:"#4A4060",flexShrink:0,flexWrap:"nowrap",alignItems:"center",overflow:"hidden",whiteSpace:"nowrap"}}>
+            {Object.entries(RELATION_COLORS).map(([k,c])=><span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:700,flexShrink:0}}><span style={{width:10,height:10,borderRadius:3,background:c}}/>{k}</span>)}
+            <span style={{marginRight:"auto",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}} title="גוררים אורח מהרשימה אל שולחן · גוררים שולחן כדי להזיז · גלגלת העכבר = זום · גרירת הרקע = הזזה">💡 גוררים אורח לשולחן · גלגלת = זום · גרירת הרקע = הזזה</span>
           </div>
           {celebrate&&(
             <div className="sx-anim" style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:600,overflow:"hidden"}}>
