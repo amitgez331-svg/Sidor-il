@@ -5401,27 +5401,19 @@ function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
 function HomeAutoSend({ event, records, onGo, style }) {
   const d0=event.date?new Date(event.date):null;
   const when=off=>{if(!d0)return "לפי תאריך האירוע";const d=new Date(d0);d.setDate(d.getDate()+off);return d.toLocaleDateString("he-IL",{day:"numeric",month:"short"});};
-  const waEst=records>0?fmtShekel(Math.round(records*WA_RECORD_PRICE*100)/100):null;
+  // רק מה יישלח ומתי. המחירים במסך החבילות
+  const sm={background:"#fff",border:"1.5px solid #E9DDF7",color:"#3A2464",borderRadius:100,padding:"9px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"};
   return(
     <section className="hm-auto" aria-labelledby="hm-auto-h" style={style}>
-      <h2 id="hm-auto-h">⏰ שליחה מתוזמנת</h2>
-      <p>בוחרים חבילה, וההודעות יוצאות לבד במועדים האלה:</p>
+      <h2 id="hm-auto-h">⏰ שליחה אוטומטית</h2>
+      <p>ההודעות לאורחים יכולות לצאת לבד, במועדים האלה:</p>
       <div className="hm-auto-tl">
         {SCHEDULE_DEFAULTS.map(r=>(<div key={r.id}><i aria-hidden="true">{r.icon}</i><b>{r.desc}</b><small>{r.label} · {when(r.offset)}</small></div>))}
       </div>
-      <div className="hm-auto-opts">
-        <button type="button" className="hm-auto-opt" style={{"--b":"#BDEBD0","--bg":"#F2FBF6","--c":"#167A3E"}} onClick={()=>onGo("packages")}>
-          <span className="top">💬 WhatsApp אוטומטי<em>4 סבבים</em></span>
-          <span className="pr">{fmtShekel(WA_RECORD_PRICE)} <small>לרשומה</small></span>
-          <span className="d">4 הודעות אוטומטיות לכל אורח, מההזמנה ועד התודה.{waEst?<> לאירוע שלכם, {records} רשומות: כ-{waEst}.</>:null}</span>
-          <span className="go">בחירת החבילה</span>
-        </button>
-        <button type="button" className="hm-auto-opt" style={{"--b":"#DCCBFF","--bg":"#F8F4FF","--c":"#6339CC"}} onClick={()=>onGo("packages")}>
-          <span className="top">📱 SMS בתזמון<em>אתם קובעים</em></span>
-          <span className="pr">{fmtShekel(SMS_UNIT_PRICE)} <small>להודעה</small></span>
-          <span className="d">קונים כמה הודעות שצריך, ובוחרים במסך ה-SMS מתי כל סבב יוצא.</span>
-          <span className="go">בחירת החבילה</span>
-        </button>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
+        <button type="button" style={sm} onClick={()=>onGo("whatsapp")}>💬 WhatsApp אוטומטי</button>
+        <button type="button" style={sm} onClick={()=>onGo("sms")}>📱 תזמון SMS</button>
+        <button type="button" style={{...sm,border:"none",background:"none",color:"#9147D6"}} onClick={()=>onGo("packages")}>חבילות ומחירים ←</button>
       </div>
     </section>
   );
@@ -5443,12 +5435,56 @@ function HomeRsvpDonut({ confirmed, declined, pending, total, onOpen }) {
     </section>
   );
 }
-function HomeSteps({ checks, nextStep, onGo }) {
+// תחתית מסך הבית: קישורי מתנה ודירוג — מקופלים, כדי שלא יפריעו לעבודה השוטפת
+function HomeMore({ event, children, style }) {
+  const biz=eventWords(event).type==="business";
+  return(
+    <details className="hm-more" style={{marginTop:22,background:"#fff",border:"1px solid #EFE6F7",borderRadius:20,padding:"4px 18px",boxShadow:"0 2px 12px rgba(155,107,255,.06)",...style}}>
+      <summary style={{cursor:"pointer",padding:"14px 0",fontSize:15,fontWeight:800,color:"#3A2464"}}>{biz?"⭐ דרגו אותנו":"💝 קישורי מתנה ודירוג"}</summary>
+      <div style={{display:"grid",gap:14,paddingBottom:16}}>{children}</div>
+    </details>
+  );
+}
+// "הצעד הבא": פעולה אחת שכדאי לעשות עכשיו. רשימת השלבים המלאה מקופלת בתוכו.
+// אחרי שכל השלבים הושלמו: תזכורת למי שעוד לא ענה (אם יש)
+function HomeNext({ checks, nextStep, pending, hasGuests, onGo, style }) {
+  const done=checks.filter(c=>c.done).length;
+  const box={background:"linear-gradient(135deg,#FFF6FA,#F5EEFF)",border:"1.5px solid #EADCF8",borderRadius:22,padding:"18px 20px",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",...style};
+  const go={background:GRAD,color:"#fff",border:"none",borderRadius:100,padding:"11px 20px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"};
+  if(nextStep)return(
+    <section aria-labelledby="hm-next-h" style={{...box,display:"block"}}>
+      <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+        <span aria-hidden="true" style={{width:44,height:44,borderRadius:14,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,boxShadow:"0 6px 14px -10px rgba(91,60,140,.5)"}}>👉</span>
+        <div style={{flex:"1 1 200px",minWidth:0}}>
+          <h2 id="hm-next-h" style={{margin:0,fontSize:13,fontWeight:800,color:"#9147D6"}}>הצעד הבא · {done} מתוך {checks.length} שלבים הושלמו</h2>
+          <div style={{fontSize:18,fontWeight:900,color:"#2B1D3F",marginTop:2}}>{nextStep.label}</div>
+        </div>
+        {nextStep.go&&<button type="button" className="sx-btn sx-btn-primary" onClick={()=>onGo(nextStep.go)} style={go}>להמשיך ←</button>}
+      </div>
+      <details style={{marginTop:12}}>
+        <summary style={{cursor:"pointer",fontSize:14,fontWeight:700,color:"#5E5470"}}>כל השלבים</summary>
+        <div style={{marginTop:8}}><HomeSteps checks={checks} nextStep={nextStep} onGo={onGo} bare/></div>
+      </details>
+    </section>
+  );
+  if(hasGuests&&pending>0)return(
+    <section aria-labelledby="hm-next-h" style={box}>
+      <span aria-hidden="true" style={{width:44,height:44,borderRadius:14,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>⏳</span>
+      <div style={{flex:"1 1 200px",minWidth:0}}>
+        <h2 id="hm-next-h" style={{margin:0,fontSize:13,fontWeight:800,color:"#9147D6"}}>הצעד הבא</h2>
+        <div style={{fontSize:18,fontWeight:900,color:"#2B1D3F",marginTop:2}}>{pending} אורחים עוד לא ענו</div>
+      </div>
+      <button type="button" className="sx-btn sx-btn-primary" onClick={()=>onGo("sms")} style={go}>שליחת תזכורת ←</button>
+    </section>
+  );
+  return null;
+}
+function HomeSteps({ checks, nextStep, onGo, bare=false }) {
   const done=checks.filter(c=>c.done).length;
   return(
-    <section className="hm-steps" aria-labelledby="hm-steps-h">
-      <h2 id="hm-steps-h">השלמת האירוע</h2>
-      <div style={{fontSize:14,color:"#5E5470",fontWeight:600}}>{done} מתוך {checks.length} שלבים הושלמו</div>
+    <section className={`hm-steps${bare?" hm-steps-bare":""}`} aria-labelledby={bare?undefined:"hm-steps-h"} aria-label={bare?"שלבי השלמת האירוע":undefined}>
+      {!bare&&<><h2 id="hm-steps-h">השלמת האירוע</h2>
+      <div style={{fontSize:14,color:"#5E5470",fontWeight:600}}>{done} מתוך {checks.length} שלבים הושלמו</div></>}
       {checks.map((c,i)=>{const n=c===nextStep;return(
         <button key={i} className={`hm-step${c.done?" d":n?" n":""}`} disabled={c.done} onClick={()=>!c.done&&c.go&&onGo(c.go)}>
           <i aria-hidden="true">{c.done?"✓":i+1}</i>{c.label}{n&&<em>הצעד הבא</em>}
@@ -5474,7 +5510,7 @@ function PostEventCard({ event, onGo, style }) {
         <a href={waShareUrl(text)} target="_blank" rel="noopener noreferrer" style={{...btn,background:"#25D366",color:"#fff",border:"none"}}><WaIcon size={15}/> שליחה בוואטסאפ</a>
         <button onClick={copy} style={btn}>{copied?"✓ הועתק":"📋 העתקת הנוסח"}</button>
         {!biz&&<button onClick={()=>onGo("gifts")} style={btn}>🎁 רישום מתנות</button>}
-        <button onClick={()=>document.querySelector(".rt")?.scrollIntoView({behavior:"smooth",block:"center"})} style={btn}>⭐ דרגו אותנו</button>
+        <button onClick={()=>{document.querySelectorAll(".hm-more").forEach(d=>{d.open=true;});setTimeout(()=>document.querySelector(".hm-more .rt, .rt")?.scrollIntoView({behavior:"smooth",block:"center"}),50);}} style={btn}>⭐ דרגו אותנו</button>
       </div>
     </div>
   );
@@ -6816,21 +6852,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
         <style>{HOME_CSS}</style>
         <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/></div>
         <div style={{padding:"0 14px"}}><HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:12}}/></div>
-        <section className="hm-sec hm-sec-m" aria-labelledby="hm-nums-m">
-          <h2 className="hm-h2" id="hm-nums-m">האירוע במספרים</h2>
-          <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-        </section>
-        <div style={{padding:"0 14px"}}><HomeAutoSend event={event} records={allG.length} onGo={setScreen}/></div>
-        <div style={{padding:"14px 14px 0",display:"grid",gap:12}}>
+        {/* סדר המסך כמו במחשב: מה לעשות עכשיו ← אישורי הגעה ← פעולות ← משימות ← שליחה אוטומטית ← השאר (מקופל) */}
+        <div style={{padding:"12px 14px 0",display:"grid",gap:12}}>
+          <PostEventCard event={event} onGo={setScreen}/>
+          <HomeNext checks={checks} nextStep={nextStep} pending={pending} hasGuests={allG.length>0} onGo={setScreen}/>
           <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-          {checksPct<100&&<HomeSteps checks={checks} nextStep={nextStep} onGo={setScreen}/>}
         </div>
-        <div className="hm-cardw" style={{paddingTop:12}}>
-        <PostEventCard event={event} onGo={setScreen} style={{margin:"0 14px 12px"}}/>
-        <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{margin:"0 14px 12px"}}/>
-        <GiftLinksCard key={event.id} event={event} style={{margin:"0 14px 12px"}}/>
-        </div>
-        <div style={{padding:"0 14px 4px"}}><TestimonialCard user={user} event={event}/></div>
 
         {/* ─── תפריט מהיר ─── */}
         <div className="hm-sec hm-sec-m">
@@ -6862,6 +6889,14 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               </div>
             ))}
           </div>
+        </div>
+        <div className="hm-cardw" style={{padding:"0 14px",display:"grid",gap:12}}>
+          <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")}/>
+          <HomeAutoSend event={event} records={allG.length} onGo={setScreen} style={{margin:0}}/>
+          <HomeMore event={event} style={{marginTop:0}}>
+            <GiftLinksCard key={event.id} event={event} style={{margin:0,padding:0,boxShadow:"none"}}/>
+            <TestimonialCard user={user} event={event}/>
+          </HomeMore>
         </div>
       </div>
     );};
@@ -7159,29 +7194,26 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           return(
             <div>
               <style>{HOME_CSS}</style>
+              {/* סדר המסך: מה האירוע ← מה לעשות עכשיו ← איפה עומדים ← לאן להיכנס ← שליחה אוטומטית ← השאר (מקופל) */}
               <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/>
               <HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:16}}/>
-              <section className="hm-sec" aria-labelledby="hm-nums">
-                <h2 className="hm-h2" id="hm-nums">האירוע במספרים</h2>
-                <EventHomeStats confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-              </section>
+              <PostEventCard event={event} onGo={setScreen} style={{marginTop:16,padding:"22px 24px"}}/>
+              <HomeNext checks={checks} nextStep={nextStep} pending={pending} hasGuests={allG.length>0} onGo={setScreen} style={{marginTop:16}}/>
+              <div className="hm-grid">
+                <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
+                <div className="hm-cardw" style={{display:"grid"}}>
+                  <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px"}}/>
+                </div>
+              </div>
               <section className="hm-sec" aria-labelledby="hm-short">
                 <h2 className="hm-h2" id="hm-short">קיצורי דרך</h2>
                 <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
               </section>
               <HomeAutoSend event={event} records={allG.length} onGo={setScreen}/>
-              <div className="hm-grid">
-                <div style={{display:"grid",gap:18}}>
-                  <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
-                  {checksPct<100&&<HomeSteps checks={checks} nextStep={nextStep} onGo={setScreen}/>}
-                </div>
-                <div className="hm-cardw" style={{display:"grid",gap:18}}>
-                  <PostEventCard event={event} onGo={setScreen} style={{padding:"22px 24px"}}/>
-                  <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")} style={{padding:"22px 24px"}}/>
-                  <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
-                  <TestimonialCard user={user} event={event}/>
-                </div>
-              </div>
+              <HomeMore event={event}>
+                <GiftLinksCard key={event.id} event={event} style={{padding:"22px 24px",margin:0}}/>
+                <TestimonialCard user={user} event={event}/>
+              </HomeMore>
 
             </div>
           );
