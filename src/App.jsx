@@ -4371,6 +4371,8 @@ function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, f
   </>);
 }
 
+// מפת האולם בטלפון (לשונית "מפה"): כבויה כרגע לבקשת בעל האתר — לא עבדה טוב בטלפון. true = מחזיר אותה
+const PHONE_MAP=false;
 function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapTable, lockedIds, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
   const [tab,setTab]=useState("tables"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const [sheet,setSheet]=useState(null); // שולחן שנפתח מהמפה
@@ -4391,7 +4393,7 @@ function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapT
     </div>}
 
     <div style={{display:"flex",background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-      {[["guests",`👥 אורחים (${guests.length})`],["tables",`🪑 שולחנות (${tables.length})`],["map","🗺️ מפה"]].map(([v,l])=>(
+      {[["guests",`👥 אורחים (${guests.length})`],["tables",`🪑 שולחנות (${tables.length})`],...(PHONE_MAP?[["map","🗺️ מפה"]]:[])].map(([v,l])=>(
         <button key={v} onClick={()=>setTab(v)} aria-pressed={tab===v} style={{flex:1,padding:"14px 0",border:"none",borderBottom:`3px solid ${tab===v?C.blueL:"transparent"}`,background:"none",color:tab===v?C.blue:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>
       ))}
     </div>
@@ -4441,7 +4443,7 @@ function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapT
         </div>
       </>}
 
-      {tab==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:900,background:C.bg,padding:"calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))",display:"flex",flexDirection:"column"}:undefined}>
+      {PHONE_MAP&&tab==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:900,background:C.bg,padding:"calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))",display:"flex",flexDirection:"column"}:undefined}>
         {picked&&mapFull&&<div style={{background:GRAD,color:"#fff",borderRadius:12,padding:"9px 12px",marginBottom:8,fontSize:14,fontWeight:800,display:"flex",alignItems:"center",gap:8}}>
           <span style={{flex:1}}>{picked.name}: בחרו שולחן</span><button type="button" onClick={()=>setPicked(null)} style={{background:"rgba(255,255,255,.22)",border:"none",color:"#fff",borderRadius:8,padding:"5px 10px",fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>ביטול</button></div>}
         {!picked&&<MobileMapBar tools={mapTools} onAddTable={onAddTable} onPrint={onPrint} onPrintCards={onPrintCards} onTemplates={onTemplates} full={mapFull} setFull={setMapFull}/>}
