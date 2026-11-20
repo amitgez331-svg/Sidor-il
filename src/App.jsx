@@ -4178,15 +4178,48 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
 // מפת האולם בטלפון: אותם מיקומים שסידרו במחשב, מוקטנים לרוחב המסך. זום בכפתורים, הזזה בגלילה רגילה,
 // נגיעה בשולחן פותחת אותו (או מושיבה את האורח שנבחר)
-function MobileHallMap({ tables, items=[], picked, onTable }) {
+// הזזת שולחן: לחיצה ארוכה על השולחן ואז גרירה (החלקה רגילה גוללת את המפה). עכבר: גרירה רגילה.
+// צביטה בשתי אצבעות מגדילה ומקטינה את המפה עצמה
+function MobileHallMap({ tables, items=[], picked, onTable, onMoveTable, snapTable, lockedIds }) {
   const boxRef=useRef(null);
   const [w,setW]=useState(340),[z,setZ]=useState(1);
+  const [drag,setDrag]=useState(null); // {id,x,y} — מיקום זמני בזמן גרירה
+  const dragRef=useRef(null),pressRef=useRef(null),pinchRef=useRef(null),noClick=useRef(false),sRef=useRef(1),zRef=useRef(1);
   useEffect(()=>{const el=boxRef.current;if(!el)return;const ro=new ResizeObserver(()=>setW(el.clientWidth));ro.observe(el);setW(el.clientWidth);return()=>ro.disconnect();},[]);
+  zRef.current=z;
+  const canMove=t=>!!onMoveTable&&!picked&&!(lockedIds&&lockedIds.has(t.id));
+  const startDrag=(t,cx,cy)=>{const x=t.x||0,y=t.y||0;dragRef.current={t,sx:cx,sy:cy,x,y,nx:x,ny:y};setDrag({id:t.id,x,y});try{navigator.vibrate?.(15);}catch{}};
+  const moveDrag=(cx,cy)=>{const d=dragRef.current;if(!d)return;const S=sRef.current;let nx=d.x+(cx-d.sx)/S,ny=d.y+(cy-d.sy)/S;
+    const p=snapTable?snapTable(d.t,nx,ny):{x:Math.round(nx),y:Math.round(ny)};d.nx=p.x;d.ny=p.y;setDrag({id:d.t.id,x:p.x,y:p.y});};
+  const endDrag=()=>{const d=dragRef.current;dragRef.current=null;setDrag(null);if(!d)return;noClick.current=true;setTimeout(()=>{noClick.current=false;},350);
+    if(d.nx!==d.x||d.ny!==d.y)onMoveTable(d.t,d.nx,d.ny);};
+  // מגע: נרשם ישירות (לא דרך React) כדי שאפשר יהיה לעצור את הגלילה בזמן גרירה או צביטה
+  useEffect(()=>{const el=boxRef.current;if(!el)return;
+    const dist=ts=>Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
+    const cancelPress=()=>{if(pressRef.current){clearTimeout(pressRef.current.timer);pressRef.current=null;}};
+    const ts=e=>{if(e.touches.length===2){cancelPress();if(dragRef.current)endDrag();pinchRef.current={d0:dist(e.touches),z0:zRef.current};}};
+    const tm=e=>{
+      if(pinchRef.current&&e.touches.length===2){e.preventDefault();const p=pinchRef.current;setZ(Math.min(3,Math.max(1,+(p.z0*dist(e.touches)/p.d0).toFixed(2))));return;}
+      const tc=e.touches[0];
+      if(dragRef.current){e.preventDefault();moveDrag(tc.clientX,tc.clientY);return;}
+      const pr=pressRef.current;if(pr&&Math.hypot(tc.clientX-pr.x,tc.clientY-pr.y)>10)cancelPress(); // החלקה = גלילה
+    };
+    const te=e=>{if(e.touches.length<2)pinchRef.current=null;cancelPress();if(dragRef.current&&!e.touches.length)endDrag();};
+    el.addEventListener("touchstart",ts,{passive:true});el.addEventListener("touchmove",tm,{passive:false});
+    el.addEventListener("touchend",te);el.addEventListener("touchcancel",te);
+    return()=>{el.removeEventListener("touchstart",ts);el.removeEventListener("touchmove",tm);el.removeEventListener("touchend",te);el.removeEventListener("touchcancel",te);};
+  });
+  const tableTouch=(t,e)=>{if(!canMove(t)||e.touches.length!==1)return;const tc=e.touches[0];
+    const pr={x:tc.clientX,y:tc.clientY,timer:0};pr.timer=setTimeout(()=>{if(pressRef.current===pr){pressRef.current=null;startDrag(t,pr.x,pr.y);}},380);pressRef.current=pr;};
+  const tableMouse=(t,e)=>{if(e.pointerType!=="mouse"||e.button!==0||!canMove(t))return;const sx=e.clientX,sy=e.clientY;let on=false;
+    const mv=me=>{if(!on&&Math.hypot(me.clientX-sx,me.clientY-sy)>4){on=true;startDrag(t,sx,sy);}if(on)moveDrag(me.clientX,me.clientY);};
+    const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);if(on)endDrag();};
+    window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);};
   const tb=t=>t.type==="knight"?[t.x-16,t.y-16,t.x+196,t.y+76]:t.type==="rect"?[t.x-18,t.y-18,t.x+128,t.y+98]:[t.x,t.y,t.x+158,t.y+158];
   const boxes=[...tables.map(t=>tb({...t,x:t.x||0,y:t.y||0})),...items.map(i=>[i.x,i.y,i.x+i.w,i.y+i.h])];
   if(!boxes.length)return <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:14}}>אין עדיין שולחנות במפה</div>;
   const P=30,x0=Math.min(...boxes.map(b=>b[0]))-P,y0=Math.min(...boxes.map(b=>b[1]))-P,x1=Math.max(...boxes.map(b=>b[2]))+P,y1=Math.max(...boxes.map(b=>b[3]))+P;
-  const S=(w/(x1-x0))*z;
+  const S=(w/(x1-x0))*z;sRef.current=S;
   const zoomBtn={width:40,height:40,borderRadius:12,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,fontSize:20,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 14px -8px rgba(91,60,140,.45)"};
   return(<div style={{position:"relative"}}>
     <div ref={boxRef} style={{overflow:"auto",borderRadius:18,background:"#FFFCFE",border:`1px solid ${C.border}`,maxHeight:"calc(100dvh - 300px)",minHeight:Math.min(300,(y1-y0)*S+4),display:"flex",WebkitOverflowScrolling:"touch"}}>
@@ -4198,15 +4231,18 @@ function MobileHallMap({ tables, items=[], picked, onTable }) {
             <span>{K.icon}</span>{i.h*S>=18&&i.w*S>=60&&<span dir="rtl">{i.label||K.label}</span>}
           </div>);})}
         {/* סימון שולחן לטלפון: בגודל שנוח לגעת בו, והטקסט בגודל קבוע וקריא (לא מוקטן עם המפה) */}
-        {tables.map(t=>{
+        {tables.map(t0=>{
+          const moving=drag&&drag.id===t0.id,t=moving?{...t0,x:drag.x,y:drag.y}:t0;
           const n=(t.guests||[]).length,full=n>=t.seats,dim=picked&&full,round=!t.type||t.type==="round";
           const [bx0,by0,bx1,by1]=tb({...t,x:t.x||0,y:t.y||0}),cx=((bx0+bx1)/2-x0)*S,cy=((by0+by1)/2-y0)*S;
           const dw=Math.max(54,(bx1-bx0)*S*.78),dh=round?dw:Math.max(42,(by1-by0)*S*.7);
           const tint=tableTint(t,String(t.num||"")),ring=full?C.danger:n===0?"#D9CCEA":tint;
           return(
-          <button key={t.id} type="button" onClick={()=>!dim&&onTable(t)} aria-label={`שולחן ${t.num||""}${String(t.name||"").replace(/^\s*(שולחן\s*)?\d+\s*/,"")?" "+String(t.name).replace(/^\s*(שולחן\s*)?\d+\s*/,""):""}, ${n} מתוך ${t.seats}${picked?(full?", מלא":", להושבה כאן"):""}`}
-            style={{position:"absolute",left:cx-dw/2,top:cy-dh/2,width:dw,height:dh,padding:0,borderRadius:round?"50%":14,cursor:dim?"not-allowed":"pointer",opacity:dim?.35:1,
-              background:picked&&!full?"#FFF0F7":"#fff",border:`3px solid ${ring}`,boxShadow:picked&&!full?`0 0 0 4px ${C.blueM}33`:"0 6px 14px -8px rgba(91,60,140,.45)",
+          <button key={t.id} type="button" onClick={()=>{if(noClick.current)return;!dim&&onTable(t0);}}
+            onTouchStart={e=>tableTouch(t0,e)} onPointerDown={e=>tableMouse(t0,e)} onContextMenu={e=>e.preventDefault()} aria-label={`שולחן ${t.num||""}${String(t.name||"").replace(/^\s*(שולחן\s*)?\d+\s*/,"")?" "+String(t.name).replace(/^\s*(שולחן\s*)?\d+\s*/,""):""}, ${n} מתוך ${t.seats}${picked?(full?", מלא":", להושבה כאן"):""}`}
+            style={{position:"absolute",left:cx-dw/2,top:cy-dh/2,width:dw,height:dh,padding:0,borderRadius:round?"50%":14,cursor:dim?"not-allowed":moving?"grabbing":"pointer",opacity:dim?.35:1,
+              zIndex:moving?5:1,transform:moving?"scale(1.12)":"none",transition:"transform 120ms ease-out",WebkitTouchCallout:"none",userSelect:"none",
+              background:picked&&!full?"#FFF0F7":"#fff",border:`3px solid ${ring}`,boxShadow:moving?`0 16px 28px -10px rgba(91,60,140,.6)`:picked&&!full?`0 0 0 4px ${C.blueM}33`:"0 6px 14px -8px rgba(91,60,140,.45)",
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:1.1,fontFamily:"inherit"}}>
             <b style={{fontSize:17,color:C.text}}>{t.num||""}</b>
             <span style={{fontSize:12,fontWeight:700,color:full?C.danger:"#5F5675",fontVariantNumeric:"tabular-nums"}}>{n}/{t.seats}</span>
@@ -4221,7 +4257,7 @@ function MobileHallMap({ tables, items=[], picked, onTable }) {
   </div>);
 }
 
-function MobileSeating({ tables, items=[], guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
+function MobileSeating({ tables, items=[], onMoveTable, snapTable, lockedIds, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
   const [tab,setTab]=useState("tables"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const [sheet,setSheet]=useState(null); // שולחן שנפתח מהמפה
   const lastSeat=useRef("tables"); // בחירת אורח מחזירה לתצוגה האחרונה: רשימת שולחנות או מפה
@@ -4288,8 +4324,8 @@ function MobileSeating({ tables, items=[], guests, declined=[], search, setSearc
       </>}
 
       {tab==="map"&&<>
-        {!picked&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>נוגעים בשולחן כדי לראות מי יושב בו. כדי להושיב: בוחרים אורח בלשונית "אורחים" ואז שולחן במפה.</div>}
-        <MobileHallMap tables={tables} items={items} picked={picked} onTable={t=>picked?assign(t.id):setSheet(t.id)}/>
+        {!picked&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>נגיעה בשולחן: מי יושב בו. לחיצה ארוכה וגרירה: הזזת השולחן. שתי אצבעות: הגדלה והקטנה.</div>}
+        <MobileHallMap tables={tables} items={items} picked={picked} onTable={t=>picked?assign(t.id):setSheet(t.id)} onMoveTable={onMoveTable} snapTable={snapTable} lockedIds={lockedIds}/>
       </>}
 
       {tab==="tables"&&<>
@@ -5096,6 +5132,15 @@ const HOME_CSS=`
 .hm-step em{font-style:normal;margin-inline-start:auto;font-size:12px;font-weight:700;border-radius:100px;padding:3px 10px;background:#fff;color:#B4236A}
 .hm-pill:focus-visible,.hm-stat:focus-visible,.hm-tile:focus-visible,.hm-step:focus-visible,.hm-inv:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
 @media(max-width:1100px){.hm-stats,.hm-tiles{grid-template-columns:repeat(2,1fr)}.hm-grid{grid-template-columns:1fr}}
+/* טלפון: אותם כרטיסי קיצורי דרך כמו במחשב, מותאמים לרוחב צר; ושאר הפעולות כרטיסים קטנים באותו סגנון */
+@media(max-width:600px){.hm-tiles{gap:10px}.hm-tile{border-radius:22px;padding:8px 8px 12px}.hm-tile .art.ph{height:96px;border-radius:16px;margin-bottom:8px}.hm-tile .art.ph i{width:36px;height:36px;font-size:18px}
+  .hm-tile .row{padding:0 4px;gap:4px}.hm-tile .row span{font-size:15px}.hm-tile .row b{font-size:15px}.hm-tile small{padding:3px 4px 0;font-size:12px;line-height:1.35}.hm-tile .bar{margin:8px 4px 0}}
+.hm-minis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.hm-mini{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #EADFF6;border-radius:20px;padding:10px 12px;cursor:pointer;font-family:inherit;text-align:right;box-shadow:0 16px 30px -24px rgba(91,60,140,.6);transition:scale 120ms ease}
+.hm-mini:active{scale:.97}
+.hm-mini i{font-style:normal;width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.hm-mini span{font-family:'Fredoka','Heebo',sans-serif;font-size:14px;font-weight:700;color:#2B1D3F;line-height:1.25}
+.hm-mini:focus-visible{outline:3px solid #9B6BFF;outline-offset:3px}
 @media(max-width:700px){.hm-hero{grid-template-columns:1fr;padding:24px 20px;border-radius:28px}.hm-inv{display:none}.hm-invw{flex-direction:row;justify-content:flex-start}.hm-cd div{min-width:64px}.hm-acts > *{flex:1 1 100%;justify-content:center}.hm-rsvp{grid-template-columns:1fr;justify-items:center}.hm-leg{width:100%}.hm-stat b{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.hm-pill,.hm-stat,.hm-tile{transition:none}}
 @media(prefers-reduced-motion:no-preference){
@@ -6202,6 +6247,33 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const{error}=await sb.from("events").update({settings_json:settings}).eq("id",event.id);
     if(error&&!silent)alert("❌ פריסת האולם לא נשמרה: "+error.message);
   };
+  // ─── סנכרון בין מכשירים: מה שהוזז בטלפון מופיע במחשב (ולהפך) ───
+  // חוזרים לחלון/ללשונית, או כל 30 שניות כשמסך ההושבה פתוח: טוענים מחדש שולחנות, אורחים ופריסת האולם.
+  // לא בזמן גרירה (אצבע/עכבר לחוצים) ולא בזמן שמירה, כדי ששום דבר לא יקפוץ מתחת ליד
+  const savingRef=useRef(false);savingRef.current=saving;
+  useEffect(()=>{
+    if(screen!=="seating")return;
+    let down=false,last=Date.now(),busy=false;
+    const pd=()=>{down=true;},pu=()=>{down=false;};
+    const sync=async(force)=>{
+      if(busy||down||savingRef.current||document.visibilityState!=="visible")return;
+      if(!force&&Date.now()-last<25000)return;
+      busy=true;last=Date.now();
+      try{
+        const [{data:ev}]=await Promise.all([sb.from("events").select("settings_json").eq("id",event.id).maybeSingle(),loadAll(true)]);
+        const h=ev?.settings_json?.hall;
+        if(h&&!down&&JSON.stringify(h)!==JSON.stringify(hallRef.current||{})){event.settings_json={...(event.settings_json||{}),hall:h};setHall(h);hallRef.current=h;}
+      }catch{}finally{busy=false;}
+    };
+    const onBack=()=>{if(document.visibilityState==="visible")sync(true);};
+    const iv=setInterval(()=>sync(false),30000);
+    document.addEventListener("pointerdown",pd,true);document.addEventListener("pointerup",pu,true);document.addEventListener("pointercancel",pu,true);
+    document.addEventListener("touchstart",pd,{capture:true,passive:true});document.addEventListener("touchend",pu,true);
+    window.addEventListener("focus",onBack);document.addEventListener("visibilitychange",onBack);
+    return()=>{clearInterval(iv);document.removeEventListener("pointerdown",pd,true);document.removeEventListener("pointerup",pu,true);document.removeEventListener("pointercancel",pu,true);
+      document.removeEventListener("touchstart",pd,{capture:true});document.removeEventListener("touchend",pu,true);
+      window.removeEventListener("focus",onBack);document.removeEventListener("visibilitychange",onBack);};
+  },[screen,event.id]);
   // ─── עריכת האולם: גודל ואלמנטים ───
   const [selItem,setSelItem]=useState(null);
   const sizeKey=()=>{const s=(hallRef.current||{}).size;if(HALL_SIZES[s])return s;const [W,H]=hallDims("auto");return HALL_SIZE_ORDER.find(k=>HALL_SIZES[k][0]>=W&&HALL_SIZES[k][1]>=H)||"xl";};
@@ -6859,13 +6931,12 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
           <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
         </div>
 
-        {/* ─── תפריט מהיר ─── */}
-        <div className="hm-sec hm-sec-m">
-          <h2 className="hm-h2">פעולות מהירות</h2>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {/* ─── קיצורי דרך: אותם כרטיסים עם תמונה כמו במחשב, ומתחתם שאר הפעולות באותו סגנון ─── */}
+        <section className="hm-sec hm-sec-m" aria-labelledby="hm-short-m">
+          <h2 className="hm-h2" id="hm-short-m">קיצורי דרך</h2>
+          <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
+          <div className="hm-minis">
             {[
-              {icon:"🪑",label:"סידורי הושבה",nav:"seating",bg:"#FFF1F6",color:"#9147D6"},
-              {icon:"💌",label:"הזמנה דיגיטלית",nav:"invite",bg:"#E6F0FF",color:"#3B6BF5"},
               {icon:"➕",label:"הוסף אורח",nav:"add",bg:"#FFF6EF",color:"#1a8c5a"},
               {icon:"📱",label:"הודעות SMS",nav:"sms",bg:"#FFF5E6",color:"#B45309"},
               {icon:"💬",label:"WhatsApp",nav:"whatsapp",bg:"#FFF6EF",color:"#1a8c5a"},
@@ -6873,23 +6944,16 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
               {icon:"💰",label:"תקציב",nav:"budget",bg:"#FFFBE6",color:"#B48009"},
               {icon:"📷",label:"כניסה לאולם",nav:"checkin",bg:"#EEF7FF",color:"#2B6CB0"},
               {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
-              {icon:"✅",label:"משימות",nav:"tasks",bg:"#F0FFF4",color:"#276749"},
               {icon:"💡",label:"ספקים ומחירים",nav:"vendors",bg:"#F4EEFF",color:"#7C3AED"},
               {icon:"📋",label:"פרטי האירוע",nav:"settings",bg:"#F4EEFC",color:"#5B3C8C"},
               {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
             ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))&&!producerOnly(item.nav)).map(item=>(
-              <div key={item.nav} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}
-                style={{background:"#fff",borderRadius:22,padding:"14px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,boxShadow:"0 14px 30px -22px rgba(91,60,140,.55)",transition:"transform .2s"}}
-                onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"}
-                onTouchEnd={e=>e.currentTarget.style.transform="none"}>
-                <div style={{width:40,height:40,borderRadius:"50%",background:item.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>
-                  {item.icon}
-                </div>
-                <span style={{fontSize:13,fontWeight:700,color:"#2B1D3F"}}>{item.label}</span>
-              </div>
+              <button key={item.nav} type="button" className="hm-mini" style={{"--bg":item.bg}} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}>
+                <i aria-hidden="true">{item.icon}</i><span>{item.label}</span>
+              </button>
             ))}
           </div>
-        </div>
+        </section>
         <div className="hm-cardw" style={{padding:"0 14px",display:"grid",gap:12}}>
           <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")}/>
           <HomeAutoSend event={event} records={allG.length} onGo={setScreen} style={{margin:0}}/>
@@ -6920,7 +6984,10 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
 
       <div className={["whatsapp","gifts","tasks","checkin","vendors","packages","user_settings","invite","import","contacts","add"].includes(screen)?"ap":undefined} style={{flex:1,overflow:"auto"}}>
         {screen==="home"&&<HomeScreen/>}
-        {screen==="seating"&&<MobileSeating tables={tablesNum} items={hallItems()} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
+        {screen==="seating"&&<MobileSeating tables={tablesNum} items={hallItems()}
+          onMoveTable={mapLocked?null:(t,x,y)=>{const bx=t.x||0,by=t.y||0;moveTablePos(t.id,x,y);saveTablePos(t.id,x,y);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}}
+          snapTable={(t,x,y)=>{if(!gridOn())return{x:Math.round(x),y:Math.round(y)};const r=snapToGrid(t,x,y,hallRect());return{x:r.x,y:r.y};}}
+          lockedIds={lockedTables} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
         {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
