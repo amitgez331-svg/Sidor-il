@@ -4291,23 +4291,24 @@ function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onItem, onM
 }
 
 // סרגל המפה בטלפון: הוספת שולחן, הוספה לאולם, כלים (כמו במחשב) ומסך מלא. התפריטים נפתחים כגיליון מלמטה
-function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, full, setFull, landscape=false, onExit }) {
+function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, full, onEnterFull, onExitFull, compact=false }) {
   const [open,setOpen]=useState(null); // "add" | "tools" | null
   const T=tools||{},locked=!!T.locked;
-  const chip={display:"inline-flex",alignItems:"center",gap:5,height:38,padding:"0 13px",borderRadius:100,border:"1.5px solid #E9DDF7",background:"#fff",color:"#4A2C8F",fontSize:13.5,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0};
+  // במסך מלא הסרגל נמוך יותר, כדי שלמפה יישאר כמה שיותר מקום
+  const chip={display:"inline-flex",alignItems:"center",gap:5,height:compact?32:38,padding:compact?"0 11px":"0 13px",borderRadius:100,border:"1.5px solid #E9DDF7",background:"#fff",color:"#4A2C8F",fontSize:compact?13:13.5,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0};
   const prim={...chip,border:"none",background:GRAD,color:"#fff"};
   const row={display:"flex",alignItems:"center",gap:12,width:"100%",background:"none",border:"none",borderRadius:12,padding:"11px 10px",fontFamily:"inherit",textAlign:"right",cursor:"pointer",color:"#2B1D3F"};
   const go=fn=>()=>{setOpen(null);fn&&fn();};
   const ex=T.extra||{w:0,h:0};
   const sizeBtn=dis=>({width:38,height:38,borderRadius:10,border:"none",background:dis?"#F7F4FA":"#F4EEFC",color:C.blue,fontSize:20,fontWeight:900,cursor:dis?"default":"pointer",opacity:dis?.4:1,fontFamily:"inherit"});
   return(<>
-    <div role="toolbar" aria-label="כלי המפה" style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 0 10px",scrollbarWidth:"none"}}>
+    <div role="toolbar" aria-label="כלי המפה" style={{display:"flex",gap:compact?6:8,overflowX:"auto",padding:compact?"0 0 6px":"2px 0 10px",scrollbarWidth:"none"}}>
       <button type="button" style={prim} onClick={onAddTable}>+ שולחן</button>
       <button type="button" style={{...chip,opacity:locked?.5:1}} disabled={locked} onClick={()=>setOpen("add")} aria-haspopup="dialog">➕ הוסף לאולם</button>
       <button type="button" style={chip} onClick={()=>setOpen("tools")} aria-haspopup="dialog">🛠 כלים{locked?" · 🔒":""}</button>
-      {/* טלפון שוכב: המסך המלא אוטומטי, יוצאים ממנו בסיבוב הטלפון חזרה */}
-      {!landscape&&<button type="button" style={chip} onClick={()=>setFull(!full)} aria-pressed={full}>{full?"✕ יציאה":"⛶ מסך מלא"}</button>}
-      {landscape&&onExit&&<button type="button" style={chip} onClick={onExit}>✕ לרשימת השולחנות</button>}
+      {full
+        ?<button type="button" style={chip} onClick={onExitFull}>✕ יציאה</button>
+        :<button type="button" style={chip} onClick={onEnterFull}>⛶ מסך מלא</button>}
     </div>
     {open&&<div onClick={()=>setOpen(null)} style={{position:"fixed",inset:0,background:"rgba(43,29,63,.35)",zIndex:1100,display:"flex",alignItems:"flex-end"}}>
       <div role="dialog" aria-modal="true" aria-label={open==="add"?"הוספה לאולם":"כלי המפה"} onClick={e=>e.stopPropagation()}
@@ -4367,8 +4368,20 @@ function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapT
   const [land,setLand]=useState(()=>{try{return window.matchMedia(lsQ).matches;}catch{return false;}});
   useEffect(()=>{let mq;try{mq=window.matchMedia(lsQ);}catch{return;}const f=()=>setLand(mq.matches);mq.addEventListener?.("change",f);window.addEventListener("resize",f);return()=>{mq.removeEventListener?.("change",f);window.removeEventListener("resize",f);};},[]);
   const full=mapFull||(land&&tab==="map");
-  useEffect(()=>{if(tab!=="map")setMapFull(false);},[tab]);
-  useEffect(()=>{if(!mapFull)return;const k=e=>{if(e.key==="Escape")setMapFull(false);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[mapFull]);
+  // "מסך מלא": מנסים להעביר את הטלפון למסך מלא אמיתי ולנעול לרוחב (אנדרואיד). באייפון אי אפשר לנעול מהאתר —
+  // אז מופיעה בקשה לסובב את הטלפון, וברגע שהוא שוכב המפה מתפרסת על כל המסך
+  const enterFull=async()=>{setMapFull(true);
+    try{const d=document.documentElement;if(d.requestFullscreen&&!document.fullscreenElement)await d.requestFullscreen({navigationUI:"hide"});}catch{}
+    try{await screen.orientation?.lock?.("landscape");}catch{}};
+  const exitFull=()=>{setMapFull(false);try{screen.orientation?.unlock?.();}catch{}try{if(document.fullscreenElement)document.exitFullscreen?.();}catch{}
+    if(land&&!mapFull)setTab("tables");}; // טלפון שוכב בלי "מסך מלא": יציאה = חזרה לרשימת השולחנות
+  useEffect(()=>{if(tab!=="map"&&mapFull)exitFull();},[tab]);
+  useEffect(()=>{if(!mapFull)return;const k=e=>{if(e.key==="Escape")exitFull();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[mapFull]);
+  // אחרי הזזה בטלפון: הודעה קצרה שהשינוי נשמר ויופיע גם במחשב
+  const [savedTip,setSavedTip]=useState(false);const tipT=useRef(0);
+  const flashSaved=()=>{setSavedTip(true);clearTimeout(tipT.current);tipT.current=setTimeout(()=>setSavedTip(false),2200);};
+  const moveTableP=onMoveTable&&((t,x,y)=>{onMoveTable(t,x,y);flashSaved();});
+  const moveItemP=mapTools?.moveItem&&((i,x,y)=>{mapTools.moveItem(i,x,y);flashSaved();});
   const lastSeat=useRef("tables"); // בחירת אורח מחזירה לתצוגה האחרונה: רשימת שולחנות או מפה
   useEffect(()=>{if(tab!=="guests")lastSeat.current=tab;},[tab]);
   const sheetT=sheet&&tables.find(t=>t.id===sheet);
@@ -4435,11 +4448,15 @@ function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapT
       {PHONE_MAP&&tab==="map"&&<div style={full?{position:"fixed",inset:0,zIndex:900,background:C.bg,padding:`calc(${land?6:10}px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(${land?6:10}px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))`,display:"flex",flexDirection:"column"}:undefined}>
         {picked&&full&&<div style={{background:GRAD,color:"#fff",borderRadius:12,padding:"7px 12px",marginBottom:6,fontSize:14,fontWeight:800,display:"flex",alignItems:"center",gap:8}}>
           <span style={{flex:1}}>{picked.name}: בחרו שולחן</span><button type="button" onClick={()=>setPicked(null)} style={{background:"rgba(255,255,255,.22)",border:"none",color:"#fff",borderRadius:8,padding:"5px 10px",fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>ביטול</button></div>}
-        {!picked&&<MobileMapBar tools={mapTools} onAddTable={onAddTable} onPrint={onPrint} onPrintCards={onPrintCards} onTemplates={onTemplates} full={full} setFull={setMapFull} landscape={land} onExit={()=>setTab("tables")}/>}
-        {!picked&&!full&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>📱 סובבו את הטלפון לרוחב — המפה תתפרס על כל המסך. נגיעה בשולחן: מי יושב בו. לחיצה ארוכה וגרירה: הזזה. שתי אצבעות: זום.</div>}
-        <MobileHallMap tables={tables} items={items} hallBox={hallBox} picked={picked} onTable={t=>picked?assign(t.id):setSheet(t.id)} onItem={i=>setItemSheet(i.id)}
-          onMoveTable={onMoveTable} onMoveItem={mapTools?.moveItem} snapTable={snapTable} lockedIds={lockedIds}
-          fitBoth={full} maxH={full?`calc(100dvh - ${(picked?44:50)+(land?14:22)}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`:"calc(100dvh - 330px)"}/>
+        {!picked&&<MobileMapBar tools={mapTools} onAddTable={onAddTable} onPrint={onPrint} onPrintCards={onPrintCards} onTemplates={onTemplates} full={full} onEnterFull={enterFull} onExitFull={exitFull} compact={full}/>}
+        {/* מסך מלא כשהטלפון עדיין עומד (אייפון): בקשה לסובב */}
+        {full&&!land&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,background:"#F4EEFC",color:"#3A2464",borderRadius:14,padding:"10px 12px",marginBottom:8,fontSize:14,fontWeight:800}}>
+          <span aria-hidden="true" style={{fontSize:24,display:"inline-block",transform:"rotate(90deg)"}}>📱</span>סובבו את הטלפון לרוחב — המפה תתפרס על כל המסך בגדול</div>}
+        {!picked&&!full&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>📱 "מסך מלא" או סיבוב הטלפון לרוחב — המפה על כל המסך. נגיעה בשולחן: מי יושב בו. לחיצה ארוכה וגרירה: הזזה. שתי אצבעות: זום.</div>}
+        <MobileHallMap tables={tables} items={items} hallBox={full?null:hallBox} picked={picked} onTable={t=>picked?assign(t.id):setSheet(t.id)} onItem={i=>setItemSheet(i.id)}
+          onMoveTable={moveTableP} onMoveItem={moveItemP} snapTable={snapTable} lockedIds={lockedIds}
+          fitBoth={full} maxH={full?`calc(100dvh - ${(picked?44:38)+(land?12:20)+(!land?52:0)}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`:"calc(100dvh - 330px)"}/>
+        {savedTip&&<div role="status" style={{position:"fixed",left:"50%",bottom:"calc(18px + env(safe-area-inset-bottom))",transform:"translateX(-50%)",zIndex:1200,background:"#2B1D3F",color:"#fff",borderRadius:100,padding:"9px 16px",fontSize:13.5,fontWeight:800,boxShadow:"0 12px 24px -12px rgba(43,29,63,.6)",whiteSpace:"nowrap"}}>✓ נשמר · מופיע גם במחשב</div>}
       </div>}
 
       {tab==="tables"&&<>
@@ -6380,7 +6397,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     if(error&&!silent)alert("❌ פריסת האולם לא נשמרה: "+error.message);
   };
   // ─── סנכרון בין מכשירים: מה שהוזז בטלפון מופיע במחשב (ולהפך) ───
-  // חוזרים לחלון/ללשונית, או כל 30 שניות כשמסך ההושבה פתוח: טוענים מחדש שולחנות, אורחים ופריסת האולם.
+  // חוזרים לחלון/ללשונית, או כל 10 שניות כשמסך ההושבה פתוח: טוענים מחדש שולחנות, אורחים ופריסת האולם.
   // לא בזמן גרירה (אצבע/עכבר לחוצים) ולא בזמן שמירה, כדי ששום דבר לא יקפוץ מתחת ליד
   const savingRef=useRef(false);savingRef.current=saving;
   useEffect(()=>{
@@ -6389,7 +6406,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
     const pd=()=>{down=true;},pu=()=>{down=false;};
     const sync=async(force)=>{
       if(busy||down||savingRef.current||document.visibilityState!=="visible")return;
-      if(!force&&Date.now()-last<25000)return;
+      if(!force&&Date.now()-last<8000)return;
       busy=true;last=Date.now();
       try{
         const [{data:ev}]=await Promise.all([sb.from("events").select("settings_json").eq("id",event.id).maybeSingle(),loadAll(true)]);
@@ -6398,7 +6415,7 @@ function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) {
       }catch{}finally{busy=false;}
     };
     const onBack=()=>{if(document.visibilityState==="visible")sync(true);};
-    const iv=setInterval(()=>sync(false),30000);
+    const iv=setInterval(()=>sync(false),10000); // כל 10 שניות: מה שסודר בטלפון מופיע במחשב תוך רגע
     document.addEventListener("pointerdown",pd,true);document.addEventListener("pointerup",pu,true);document.addEventListener("pointercancel",pu,true);
     document.addEventListener("touchstart",pd,{capture:true,passive:true});document.addEventListener("touchend",pu,true);
     window.addEventListener("focus",onBack);document.addEventListener("visibilitychange",onBack);
