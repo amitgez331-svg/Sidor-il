@@ -4178,35 +4178,28 @@ function EditTableModal({ table, onSave, onDelete, onClose }) {
 // ─── MOBILE SEATING ───────────────────────────────────────────────────────────
 // מפת האולם בטלפון: אותם מיקומים שסידרו במחשב, מוקטנים לרוחב המסך. זום בכפתורים, הזזה בגלילה רגילה,
 // נגיעה בשולחן פותחת אותו (או מושיבה את האורח שנבחר)
-// מפת האולם בטלפון. הזזה: לחיצה ארוכה על שולחן או על אלמנט (במה, בר...) ואז גרירה — החלקה רגילה גוללת את המפה.
-// עכבר: גרירה רגילה. צביטה בשתי אצבעות = זום. ⟳ = סיבוב המפה על הצד. hallBox = גבולות האולם כמו במחשב (כולל "גודל האולם")
-function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onItem, onMoveTable, onMoveItem, snapTable, lockedIds, maxH="calc(100dvh - 300px)" }) {
+// מפת האולם בטלפון — זום אמיתי: כל המפה (שולחנות, כיתוב, במה) גדלה וקטנה יחד, המיקומים לא זזים ושום דבר לא עולה על משהו אחר.
+// בפתיחה כל האולם נכנס למסגרת (ברוחב ובגובה). טלפון שוכב = המפה על כל המסך (ב-MobileSeating).
+// הזזה: לחיצה ארוכה על שולחן או על אלמנט ואז גרירה (החלקה רגילה גוללת). עכבר: גרירה רגילה. צביטה בשתי אצבעות = זום
+function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onItem, onMoveTable, onMoveItem, snapTable, lockedIds, maxH="calc(100dvh - 300px)", fitBoth=false }) {
   const boxRef=useRef(null);
-  const [w,setW]=useState(340),[z,setZ]=useState(1);
-  // סיבוב המפה על הצד (90° עם כיוון השעון): אולם רחב נפרש לאורך הטלפון והשולחנות גדולים יותר. הכיתוב נשאר ישר.
-  // הבחירה נשמרת במכשיר
-  // null = אוטומטי: אולם רחב (ברוחב יותר מפי 1.15 מהאורך) נפתח על הצד, כי ככה השולחנות גדולים ולא עולים זה על זה
-  const [rotPick,setRotRaw]=useState(()=>{try{const v=localStorage.getItem("sidor_map_rot");return v==="1"?true:v==="0"?false:null;}catch{return null;}});
-  const setRot=v=>{setRotRaw(v);setZ(1);optSet("sidor_map_rot",v?"1":"0");};
-  let rot=!!rotPick;
-  const ZMIN=.5,ZMAX=3; // אפשר להקטין עד חצי מ"כל האולם ברוחב המסך"
+  const [size,setSize]=useState({w:340,h:300}),[z,setZ]=useState(1);
+  const ZMIN=1,ZMAX=4; // 1 = כל האולם בתוך המסגרת
   const [drag,setDrag]=useState(null); // {key,x,y} — מיקום זמני בזמן גרירה
-  const dragRef=useRef(null),pressRef=useRef(null),pinchRef=useRef(null),noClick=useRef(false),sRef=useRef(1),zRef=useRef(1),rotRef=useRef(rot);
-  rotRef.current=rot;zRef.current=z;
-  const centerRef=useRef(null);
-  useEffect(()=>{const el=boxRef.current;if(!el)return;const ro=new ResizeObserver(()=>setW(el.clientWidth));ro.observe(el);setW(el.clientWidth);return()=>ro.disconnect();},[]);
-  // גלילה למרכז השולחנות כשהמפה נפתחת, מסתובבת או משנה זום (לא בכל גרירה)
-  useEffect(()=>{const el=boxRef.current,c=centerRef.current,inner=el?.firstElementChild;if(!el||!c||!inner)return;
-    const ox=inner.offsetLeft,oy=inner.offsetTop;
-    el.scrollTo({left:Math.max(0,ox+c[0]-el.clientWidth/2),top:Math.max(0,oy+c[1]-el.clientHeight/2)});
-  },[rotPick,z,w,maxH,tables.length,hallBox&&hallBox.join(",")]);
+  const dragRef=useRef(null),pressRef=useRef(null),pinchRef=useRef(null),noClick=useRef(false),sRef=useRef(1),zRef=useRef(1),anchorRef=useRef(null);
+  zRef.current=z;
+  useEffect(()=>{const el=boxRef.current;if(!el)return;const upd=()=>setSize({w:el.clientWidth,h:el.clientHeight});const ro=new ResizeObserver(upd);ro.observe(el);upd();return()=>ro.disconnect();},[]);
+  // זום סביב מרכז המסגרת: שומרים איזו נקודה במפה הייתה באמצע, ואחרי הזום גוללים כך שהיא נשארת באמצע
+  const zoomTo=nz=>{const el=boxRef.current;nz=Math.min(ZMAX,Math.max(ZMIN,+nz.toFixed(3)));if(nz===zRef.current)return;
+    if(el)anchorRef.current={fx:(el.scrollLeft+el.clientWidth/2)/Math.max(1,el.scrollWidth),fy:(el.scrollTop+el.clientHeight/2)/Math.max(1,el.scrollHeight)};
+    setZ(nz);};
+  useLayoutEffect(()=>{const el=boxRef.current,a=anchorRef.current;if(!el||!a)return;anchorRef.current=null;
+    el.scrollLeft=a.fx*el.scrollWidth-el.clientWidth/2;el.scrollTop=a.fy*el.scrollHeight-el.clientHeight/2;},[z]);
   // what: {kind:"t"|"i", o: השולחן/האלמנט}
   const canMove=what=>!picked&&(what.kind==="t"?!!onMoveTable&&!(lockedIds&&lockedIds.has(what.o.id)):!!onMoveItem&&!what.o.locked);
   const keyOf=what=>what.kind+":"+what.o.id;
   const startDrag=(what,cx,cy)=>{const x=what.o.x||0,y=what.o.y||0;dragRef.current={what,sx:cx,sy:cy,x,y,nx:x,ny:y};setDrag({key:keyOf(what),x,y});try{if(navigator.userActivation?.hasBeenActive!==false)navigator.vibrate?.(15);}catch{}};
-  const moveDrag=(cx,cy)=>{const d=dragRef.current;if(!d)return;const S=sRef.current,dx=(cx-d.sx)/S,dy=(cy-d.sy)/S;
-    // במפה מסובבת: תזוזה למטה במסך = ימינה באולם, תזוזה ימינה במסך = למעלה באולם
-    const nx=rotRef.current?d.x+dy:d.x+dx,ny=rotRef.current?d.y-dx:d.y+dy;
+  const moveDrag=(cx,cy)=>{const d=dragRef.current;if(!d)return;const S=sRef.current,nx=d.x+(cx-d.sx)/S,ny=d.y+(cy-d.sy)/S;
     const p=d.what.kind==="t"&&snapTable?snapTable(d.what.o,nx,ny):{x:Math.round(nx),y:Math.round(ny)};
     d.nx=p.x;d.ny=p.y;setDrag({key:keyOf(d.what),x:p.x,y:p.y});};
   const endDrag=()=>{const d=dragRef.current;dragRef.current=null;setDrag(null);if(!d)return;noClick.current=true;setTimeout(()=>{noClick.current=false;},350);
@@ -4218,7 +4211,7 @@ function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onItem, onM
     const cancelPress=()=>{if(pressRef.current){clearTimeout(pressRef.current.timer);pressRef.current=null;}};
     const ts=e=>{if(e.touches.length===2){cancelPress();if(dragRef.current)endDrag();pinchRef.current={d0:dist(e.touches),z0:zRef.current};}};
     const tm=e=>{
-      if(pinchRef.current&&e.touches.length===2){e.preventDefault();const p=pinchRef.current;setZ(Math.min(ZMAX,Math.max(ZMIN,+(p.z0*dist(e.touches)/p.d0).toFixed(2))));return;}
+      if(pinchRef.current&&e.touches.length===2){e.preventDefault();const p=pinchRef.current;zoomTo(p.z0*dist(e.touches)/p.d0);return;}
       const tc=e.touches[0];
       if(dragRef.current){e.preventDefault();moveDrag(tc.clientX,tc.clientY);return;}
       const pr=pressRef.current;if(pr&&Math.hypot(tc.clientX-pr.x,tc.clientY-pr.y)>10)cancelPress(); // החלקה = גלילה
@@ -4236,80 +4229,69 @@ function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onItem, onM
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);};
   const tb=t=>t.type==="knight"?[t.x-16,t.y-16,t.x+196,t.y+76]:t.type==="rect"?[t.x-18,t.y-18,t.x+128,t.y+98]:[t.x,t.y,t.x+158,t.y+158];
   const boxes=[...tables.map(t=>tb({...t,x:t.x||0,y:t.y||0})),...items.map(i=>[i.x,i.y,i.x+i.w,i.y+i.h])];
-  if(!boxes.length)return <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:14}}>אין עדיין שולחנות במפה. מוסיפים שולחן בכפתור "+ שולחן".</div>;
   // הגבולות: האולם כמו במחשב (כולל ההרחבה), ולפחות כל מה שיש בו
-  const P=30;let x0=Math.min(...boxes.map(b=>b[0]))-P,y0=Math.min(...boxes.map(b=>b[1]))-P,x1=Math.max(...boxes.map(b=>b[2]))+P,y1=Math.max(...boxes.map(b=>b[3]))+P;
+  const P=30;let x0=0,y0=0,x1=1000,y1=600;
+  if(boxes.length){x0=Math.min(...boxes.map(b=>b[0]))-P;y0=Math.min(...boxes.map(b=>b[1]))-P;x1=Math.max(...boxes.map(b=>b[2]))+P;y1=Math.max(...boxes.map(b=>b[3]))+P;}
   if(hallBox){x0=Math.min(x0,hallBox[0]);y0=Math.min(y0,hallBox[1]);x1=Math.max(x1,hallBox[2]);y1=Math.max(y1,hallBox[3]);}
   const HW=x1-x0,HH=y1-y0;
-  if(rotPick===null){
-    // אוטומטי: מסובבים רק כשבמצב הרגיל השולחנות היו צפופים מדי לקריאה (פחות מ-60px בין מרכזים) והסיבוב נותן יותר מקום
-    const cs=tables.map(t=>{const b=tb({...t,x:t.x||0,y:t.y||0});return[(b[0]+b[2])/2,(b[1]+b[3])/2];});
-    let dmin=Infinity;for(let a=0;a<cs.length;a++)for(let b=a+1;b<cs.length;b++)dmin=Math.min(dmin,Math.hypot(cs[a][0]-cs[b][0],cs[a][1]-cs[b][1]));
-    rot=HW>HH&&dmin*(w/HW)<60;
-  }
-  rotRef.current=rot;
-  // "כל האולם ברוחב המסך" = 1. במצב מסובב, גובה האולם הוא שנפרש לרוחב
-  const S=(w/(rot?HH:HW))*z;sRef.current=S;
-  const mapW=(rot?HH:HW)*S,mapH=(rot?HW:HH)*S;
-  const pt=(x,y)=>rot?[(y1-y)*S,(x-x0)*S]:[(x-x0)*S,(y-y0)*S]; // נקודה באולם ← נקודה במסך
-  // מרכז מה שיש באולם (לא כולל ריבועים ריקים): בפתיחה, בסיבוב ובזום המפה נגללת אליו
-  const cb=[Math.min(...boxes.map(b=>b[0])),Math.min(...boxes.map(b=>b[1])),Math.max(...boxes.map(b=>b[2])),Math.max(...boxes.map(b=>b[3]))];
-  centerRef.current=pt((cb[0]+cb[2])/2,(cb[1]+cb[3])/2);
+  // z=1: כל האולם בתוך המסגרת. מכאן רק הזום משתנה — הכל גדל וקטן באותו יחס
+  // מסך מלא / טלפון שוכב: כל האולם בתוך המסך (רוחב וגובה). טלפון עומד: ברוחב המסך, והמסגרת בגובה האולם (בלי פס ריק)
+  const S=(fitBoth?Math.min(size.w/HW,size.h/HH):size.w/HW)*z;sRef.current=S;
+  const mapW=HW*S,mapH=HH*S;
+  const pt=(x,y)=>[(x-x0)*S,(y-y0)*S]; // נקודה באולם ← נקודה במסך
   const zoomBtn={width:40,height:40,borderRadius:12,border:`1px solid ${C.border}`,background:"#fff",color:C.blue,fontSize:20,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 14px -8px rgba(91,60,140,.45)"};
   return(<div style={{position:"relative"}}>
-    <div ref={boxRef} style={{overflow:"auto",borderRadius:18,background:"#FFFCFE",border:`1px solid ${C.border}`,maxHeight:maxH,minHeight:Math.min(300,mapH+4),display:"flex",WebkitOverflowScrolling:"touch"}}>
-      <div dir="ltr" style={{position:"relative",margin:"auto",flexShrink:0,width:mapW,height:mapH,backgroundImage:"radial-gradient(#E9DDF7 1px,transparent 1px)",backgroundSize:`${24*S}px ${24*S}px`}}>
+    <div ref={boxRef} style={{overflow:"auto",borderRadius:18,background:"#FFFCFE",border:`1px solid ${C.border}`,...(fitBoth?{height:maxH}:{maxHeight:maxH,height:boxes.length?mapH+2:160}),display:"flex",WebkitOverflowScrolling:"touch"}}>
+      {!boxes.length&&<div style={{margin:"auto",textAlign:"center",color:C.muted,fontSize:14,padding:20}}>אין עדיין שולחנות במפה. מוסיפים שולחן בכפתור "+ שולחן".</div>}
+      {boxes.length>0&&<div dir="ltr" style={{position:"relative",margin:"auto",flexShrink:0,width:mapW,height:mapH,backgroundImage:"radial-gradient(#E9DDF7 1px,transparent 1px)",backgroundSize:`${40*S}px ${40*S}px`}}>
         {items.map(i0=>{
           const what={kind:"i",o:i0},moving=drag&&drag.key===keyOf(what),i=moving?{...i0,x:drag.x,y:drag.y}:i0;
           const K=HALL_ITEM_KINDS[i.kind]||{},label=i.label||K.label||"";
-          const [cx,cy]=pt(i.x+i.w/2,i.y+i.h/2),iw=Math.max(34,(rot?i.h:i.w)*S),ih=Math.max(30,(rot?i.w:i.h)*S);
+          const [cx,cy]=pt(i.x+i.w/2,i.y+i.h/2),iw=i.w*S,ih=i.h*S,fs=Math.min(14,Math.max(5,Math.min(ih*.42,iw*.16)));
           return(
           <button key={i.id} type="button" onClick={()=>{if(noClick.current||picked)return;onItem&&onItem(i0);}}
             onTouchStart={e=>onTouch(what,e)} onPointerDown={e=>onMouse(what,e)} onContextMenu={e=>e.preventDefault()}
             aria-label={`${label}${i.locked?", נעול":""}`} tabIndex={picked?-1:0}
-            style={{position:"absolute",left:cx-iw/2,top:cy-ih/2,width:iw,height:ih,padding:"0 4px",borderRadius:Math.min(14,Math.min(iw,ih)/2),cursor:picked?"default":moving?"grabbing":"pointer",
+            style={{position:"absolute",left:cx-iw/2,top:cy-ih/2,width:iw,height:ih,padding:0,borderRadius:Math.min(ih/2,40*S),cursor:picked?"default":moving?"grabbing":"pointer",
               zIndex:moving?5:0,transform:moving?"scale(1.06)":"none",transition:"transform 120ms ease-out",WebkitTouchCallout:"none",userSelect:"none",fontFamily:"inherit",
-              background:i.kind==="dance"?"linear-gradient(135deg,#FFE3EF,#EDE2FF)":i.kind==="stage"?"linear-gradient(135deg,#FCE7F3,#E9DDFF)":"#fff",border:`1px ${i.locked?"solid #C9B6E4":"solid #EADFF5"}`,
+              background:i.kind==="dance"?"linear-gradient(135deg,#FFE3EF,#EDE2FF)":i.kind==="stage"?"linear-gradient(135deg,#FCE7F3,#E9DDFF)":"#fff",border:`1px solid ${i.locked?"#C9B6E4":"#EADFF5"}`,
               boxShadow:moving?"0 14px 26px -10px rgba(91,60,140,.55)":"none",
-              display:"flex",flexDirection:ih>iw*1.4?"column":"row",alignItems:"center",justifyContent:"center",gap:4,fontSize:12,fontWeight:800,color:"#4A2C8F",overflow:"hidden",whiteSpace:"nowrap",textAlign:"center"}}>
-            <span aria-hidden="true">{K.icon}</span>{ih>=18&&iw>=60&&<span dir="rtl" style={{overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>}
-            {i.locked&&<span aria-hidden="true" style={{fontSize:10}}>🔒</span>}
+              display:"flex",alignItems:"center",justifyContent:"center",gap:fs*.3,fontSize:fs,fontWeight:800,color:"#4A2C8F",overflow:"hidden",whiteSpace:"nowrap",textAlign:"center",lineHeight:1}}>
+            <span aria-hidden="true">{K.icon}</span>{iw>fs*5&&<span dir="rtl" style={{overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>}
+            {i.locked&&<span aria-hidden="true" style={{fontSize:fs*.8}}>🔒</span>}
           </button>);})}
-        {/* סימון שולחן לטלפון: בגודל שנוח לגעת בו, והטקסט בגודל קבוע וקריא (לא מוקטן עם המפה) */}
+        {/* שולחן: הגודל, המסגרת והכיתוב יחסיים לזום — כמו ציור, כך שבשום זום שולחנות לא עולים זה על זה */}
         {tables.map(t0=>{
           const what={kind:"t",o:t0},moving=drag&&drag.key===keyOf(what),t=moving?{...t0,x:drag.x,y:drag.y}:t0;
           const n=(t.guests||[]).length,full=n>=t.seats,dim=picked&&full,round=!t.type||t.type==="round";
           const [bx0,by0,bx1,by1]=tb({...t,x:t.x||0,y:t.y||0}),[cx,cy]=pt((bx0+bx1)/2,(by0+by1)/2);
-          const bw=rot?by1-by0:bx1-bx0,bh=rot?bx1-bx0:by1-by0;
-          const dw=Math.max(54,bw*S*.78),dh=round?dw:Math.max(42,bh*S*.7);
+          const dw=(bx1-bx0)*S*.8,dh=round?dw:(by1-by0)*S*.72,u=Math.min(dw,round?dw:dh*1.25); // u = יחידת גודל לכיתוב
           const tint=tableTint(t,String(t.num||"")),ring=full?C.danger:n===0?"#D9CCEA":tint;
           const nm=String(t.name||"").replace(/^\s*(שולחן\s*)?\d+\s*/,"");
           return(
           <button key={t.id} type="button" onClick={()=>{if(noClick.current)return;!dim&&onTable(t0);}}
             onTouchStart={e=>onTouch(what,e)} onPointerDown={e=>onMouse(what,e)} onContextMenu={e=>e.preventDefault()}
             aria-label={`שולחן ${t.num||""}${nm?" "+nm:""}, ${n} מתוך ${t.seats}${picked?(full?", מלא":", להושבה כאן"):""}`}
-            style={{position:"absolute",left:cx-dw/2,top:cy-dh/2,width:dw,height:dh,padding:0,borderRadius:round?"50%":14,cursor:dim?"not-allowed":moving?"grabbing":"pointer",opacity:dim?.35:1,
-              zIndex:moving?5:1,transform:moving?"scale(1.12)":"none",transition:"transform 120ms ease-out",WebkitTouchCallout:"none",userSelect:"none",
-              background:picked&&!full?"#FFF0F7":"#fff",border:`3px solid ${ring}`,boxShadow:moving?`0 16px 28px -10px rgba(91,60,140,.6)`:picked&&!full?`0 0 0 4px ${C.blueM}33`:"0 6px 14px -8px rgba(91,60,140,.45)",
-              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:1.1,fontFamily:"inherit"}}>
-            <b style={{fontSize:17,color:C.text}}>{t.num||""}</b>
-            <span style={{fontSize:12,fontWeight:700,color:full?C.danger:"#5F5675",fontVariantNumeric:"tabular-nums"}}>{n}/{t.seats}</span>
-            {lockedIds&&lockedIds.has(t.id)&&<span aria-hidden="true" style={{position:"absolute",top:-6,left:-6,fontSize:11}}>🔒</span>}
-            {nm&&<span dir="rtl" style={{position:"absolute",top:"100%",marginTop:3,maxWidth:Math.max(dw+20,90),fontSize:12,fontWeight:700,color:"#4A4060",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",background:"rgba(255,252,254,.9)",borderRadius:6,padding:"0 4px"}}>{nm}</span>}
+            style={{position:"absolute",left:cx-dw/2,top:cy-dh/2,width:dw,height:dh,padding:0,borderRadius:round?"50%":Math.min(14,u*.2),cursor:dim?"not-allowed":moving?"grabbing":"pointer",opacity:dim?.35:1,
+              zIndex:moving?5:1,transform:moving?"scale(1.1)":"none",transition:"transform 120ms ease-out",WebkitTouchCallout:"none",userSelect:"none",
+              background:picked&&!full?"#FFF0F7":"#fff",border:`${Math.max(1.5,u*.05)}px solid ${ring}`,boxShadow:moving?`0 16px 28px -10px rgba(91,60,140,.6)`:picked&&!full?`0 0 0 ${Math.max(2,u*.06)}px ${C.blueM}33`:"0 4px 10px -6px rgba(91,60,140,.45)",
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:1.05,fontFamily:"inherit"}}>
+            <b style={{fontSize:u*.3,color:C.text}}>{t.num||""}</b>
+            <span style={{fontSize:u*.19,fontWeight:700,color:full?C.danger:"#5F5675",fontVariantNumeric:"tabular-nums"}}>{n}/{t.seats}</span>
+            {lockedIds&&lockedIds.has(t.id)&&<span aria-hidden="true" style={{position:"absolute",top:-u*.08,left:-u*.08,fontSize:u*.18}}>🔒</span>}
+            {nm&&<span dir="rtl" style={{position:"absolute",top:"100%",marginTop:u*.04,maxWidth:dw*1.35,fontSize:u*.17,fontWeight:700,color:"#4A4060",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",background:"rgba(255,252,254,.9)",borderRadius:4,padding:`0 ${u*.04}px`}}>{nm}</span>}
           </button>);})}
-      </div>
+      </div>}
     </div>
     <div style={{position:"absolute",left:10,bottom:10,display:"flex",flexDirection:"column",gap:6}}>
-      <button type="button" onClick={()=>setZ(v=>Math.min(ZMAX,+(v*1.35).toFixed(2)))} aria-label="הגדלת המפה" style={zoomBtn}>+</button>
-      <button type="button" onClick={()=>setZ(v=>Math.max(ZMIN,+(v/1.35).toFixed(2)))} aria-label="הקטנת המפה" disabled={z<=ZMIN} style={{...zoomBtn,opacity:z<=ZMIN?.45:1}}>−</button>
-      <button type="button" onClick={()=>setRot(!rot)} aria-label={rot?"החזרת המפה למצב רגיל":"סיבוב המפה על הצד"} aria-pressed={rot} title={rot?"החזרת המפה":"סיבוב המפה"}
-        style={{...zoomBtn,fontSize:19,background:rot?"#F1E8FF":"#fff"}}>⟳</button>
+      <button type="button" onClick={()=>zoomTo(z*1.35)} aria-label="הגדלת המפה" disabled={z>=ZMAX} style={{...zoomBtn,opacity:z>=ZMAX?.45:1}}>+</button>
+      <button type="button" onClick={()=>zoomTo(z/1.35)} aria-label="הקטנת המפה" disabled={z<=ZMIN} style={{...zoomBtn,opacity:z<=ZMIN?.45:1}}>−</button>
     </div>
   </div>);
 }
 
 // סרגל המפה בטלפון: הוספת שולחן, הוספה לאולם, כלים (כמו במחשב) ומסך מלא. התפריטים נפתחים כגיליון מלמטה
-function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, full, setFull }) {
+function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, full, setFull, landscape=false, onExit }) {
   const [open,setOpen]=useState(null); // "add" | "tools" | null
   const T=tools||{},locked=!!T.locked;
   const chip={display:"inline-flex",alignItems:"center",gap:5,height:38,padding:"0 13px",borderRadius:100,border:"1.5px solid #E9DDF7",background:"#fff",color:"#4A2C8F",fontSize:13.5,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0};
@@ -4323,7 +4305,9 @@ function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, f
       <button type="button" style={prim} onClick={onAddTable}>+ שולחן</button>
       <button type="button" style={{...chip,opacity:locked?.5:1}} disabled={locked} onClick={()=>setOpen("add")} aria-haspopup="dialog">➕ הוסף לאולם</button>
       <button type="button" style={chip} onClick={()=>setOpen("tools")} aria-haspopup="dialog">🛠 כלים{locked?" · 🔒":""}</button>
-      <button type="button" style={chip} onClick={()=>setFull(!full)} aria-pressed={full}>{full?"✕ יציאה":"⛶ מסך מלא"}</button>
+      {/* טלפון שוכב: המסך המלא אוטומטי, יוצאים ממנו בסיבוב הטלפון חזרה */}
+      {!landscape&&<button type="button" style={chip} onClick={()=>setFull(!full)} aria-pressed={full}>{full?"✕ יציאה":"⛶ מסך מלא"}</button>}
+      {landscape&&onExit&&<button type="button" style={chip} onClick={onExit}>✕ לרשימת השולחנות</button>}
     </div>
     {open&&<div onClick={()=>setOpen(null)} style={{position:"fixed",inset:0,background:"rgba(43,29,63,.35)",zIndex:1100,display:"flex",alignItems:"flex-end"}}>
       <div role="dialog" aria-modal="true" aria-label={open==="add"?"הוספה לאולם":"כלי המפה"} onClick={e=>e.stopPropagation()}
@@ -4371,13 +4355,18 @@ function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTemplates, f
   </>);
 }
 
-// מפת האולם בטלפון (לשונית "מפה"): כבויה כרגע לבקשת בעל האתר — לא עבדה טוב בטלפון. true = מחזיר אותה
-const PHONE_MAP=false;
+// מפת האולם בטלפון (לשונית "מפה"). false = מסתיר אותה (נשארות רשימת האורחים והשולחנות)
+const PHONE_MAP=true;
 function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapTable, lockedIds, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
   const [tab,setTab]=useState("tables"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const [sheet,setSheet]=useState(null); // שולחן שנפתח מהמפה
   const [itemSheet,setItemSheet]=useState(null),[mapFull,setMapFull]=useState(false); // אלמנט באולם שנפתח מהמפה · מפה על כל המסך
   const itemT=itemSheet&&items.find(i=>i.id===itemSheet);
+  // טלפון שוכב (מסך נמוך לרוחב): המפה נפתחת על כל המסך, בלי הכותרת והלשוניות שתופסות את רוב הגובה
+  const lsQ="(orientation: landscape) and (max-height: 560px)";
+  const [land,setLand]=useState(()=>{try{return window.matchMedia(lsQ).matches;}catch{return false;}});
+  useEffect(()=>{let mq;try{mq=window.matchMedia(lsQ);}catch{return;}const f=()=>setLand(mq.matches);mq.addEventListener?.("change",f);window.addEventListener("resize",f);return()=>{mq.removeEventListener?.("change",f);window.removeEventListener("resize",f);};},[]);
+  const full=mapFull||(land&&tab==="map");
   useEffect(()=>{if(tab!=="map")setMapFull(false);},[tab]);
   useEffect(()=>{if(!mapFull)return;const k=e=>{if(e.key==="Escape")setMapFull(false);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[mapFull]);
   const lastSeat=useRef("tables"); // בחירת אורח מחזירה לתצוגה האחרונה: רשימת שולחנות או מפה
@@ -4443,14 +4432,14 @@ function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapT
         </div>
       </>}
 
-      {PHONE_MAP&&tab==="map"&&<div style={mapFull?{position:"fixed",inset:0,zIndex:900,background:C.bg,padding:"calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))",display:"flex",flexDirection:"column"}:undefined}>
-        {picked&&mapFull&&<div style={{background:GRAD,color:"#fff",borderRadius:12,padding:"9px 12px",marginBottom:8,fontSize:14,fontWeight:800,display:"flex",alignItems:"center",gap:8}}>
+      {PHONE_MAP&&tab==="map"&&<div style={full?{position:"fixed",inset:0,zIndex:900,background:C.bg,padding:`calc(${land?6:10}px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(${land?6:10}px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))`,display:"flex",flexDirection:"column"}:undefined}>
+        {picked&&full&&<div style={{background:GRAD,color:"#fff",borderRadius:12,padding:"7px 12px",marginBottom:6,fontSize:14,fontWeight:800,display:"flex",alignItems:"center",gap:8}}>
           <span style={{flex:1}}>{picked.name}: בחרו שולחן</span><button type="button" onClick={()=>setPicked(null)} style={{background:"rgba(255,255,255,.22)",border:"none",color:"#fff",borderRadius:8,padding:"5px 10px",fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>ביטול</button></div>}
-        {!picked&&<MobileMapBar tools={mapTools} onAddTable={onAddTable} onPrint={onPrint} onPrintCards={onPrintCards} onTemplates={onTemplates} full={mapFull} setFull={setMapFull}/>}
-        {!picked&&!mapFull&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>נגיעה בשולחן: מי יושב בו. לחיצה ארוכה וגרירה: הזזה (גם במה, בר וכו'). שתי אצבעות: זום. ⟳ סיבוב.</div>}
+        {!picked&&<MobileMapBar tools={mapTools} onAddTable={onAddTable} onPrint={onPrint} onPrintCards={onPrintCards} onTemplates={onTemplates} full={full} setFull={setMapFull} landscape={land} onExit={()=>setTab("tables")}/>}
+        {!picked&&!full&&<div style={{fontSize:13,color:"#5F5675",marginBottom:10,lineHeight:1.5}}>📱 סובבו את הטלפון לרוחב — המפה תתפרס על כל המסך. נגיעה בשולחן: מי יושב בו. לחיצה ארוכה וגרירה: הזזה. שתי אצבעות: זום.</div>}
         <MobileHallMap tables={tables} items={items} hallBox={hallBox} picked={picked} onTable={t=>picked?assign(t.id):setSheet(t.id)} onItem={i=>setItemSheet(i.id)}
           onMoveTable={onMoveTable} onMoveItem={mapTools?.moveItem} snapTable={snapTable} lockedIds={lockedIds}
-          maxH={mapFull?`calc(100dvh - ${picked?150:110}px)`:"calc(100dvh - 330px)"}/>
+          fitBoth={full} maxH={full?`calc(100dvh - ${(picked?44:50)+(land?14:22)}px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`:"calc(100dvh - 330px)"}/>
       </div>}
 
       {tab==="tables"&&<>
