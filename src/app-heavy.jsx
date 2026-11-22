@@ -1700,31 +1700,79 @@ export function EventPicker({ user, onSelect, onLogout, onBackToLanding }) {
 }
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-export function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false }) {
+// ─── תפריט הטלפון: גיליון מלמטה. "msgs" = הודעות לאורחים, "more" = כל המסכים לפי נושא ───
+export const MNAV_GROUPS={
+  msgs:[{t:"הודעות לאורחים",items:[
+    {id:"sms",ic:"📱",l:"הודעות SMS",d:"הזמנה, תזכורת, מספר שולחן ותודה",bg:"#FFF5E6"},
+    {id:"whatsapp",ic:"💬",l:"WhatsApp",d:"הודעה אישית לכל אורח",bg:"#E9F7EF"},
+    {id:"invite",ic:"💌",l:"הזמנה דיגיטלית",d:"העיצוב והקישור שהאורחים מקבלים",bg:"#FFE9DC"},
+  ]}],
+  more:[
+    {t:"האירוע",items:[
+      {id:"settings",ic:"📋",l:"פרטי האירוע",bg:"#F4EEFC"},{id:"invite",ic:"💌",l:"הזמנה דיגיטלית",bg:"#FFE9DC"},
+      {id:"tasks",ic:"✅",l:"משימות",bg:"#E9F7EF"},{id:"budget",ic:"💰",l:"תקציב",bg:"#FFFBE6"},{id:"gifts",ic:"🎁",l:"מתנות",bg:"#FFF0F6"}]},
+    {t:"אורחים והושבה",items:[
+      {id:"rsvp",ic:"👥",l:"ניהול אורחים",bg:"#EFE6FF"},{id:"add",ic:"➕",l:"הוספת אורח",bg:"#FFF6EF"},
+      {id:"import",ic:"📊",l:"ייבוא מאקסל",bg:"#E9F7EF"},{id:"seating",ic:"🪑",l:"סידורי הושבה",bg:"#FFE3EE"},{id:"checkin",ic:"📷",l:"כניסה לאולם",bg:"#EEF7FF"}]},
+    {t:"הודעות לאורחים",items:[{id:"sms",ic:"📱",l:"הודעות SMS",bg:"#FFF5E6"},{id:"whatsapp",ic:"💬",l:"WhatsApp",bg:"#E9F7EF"}]},
+    {t:"החשבון",items:[
+      {id:"packages",ic:"📦",l:"חבילות",bg:"#FFF0FB"},{id:"vendors",ic:"💡",l:"ספקים ומחירים",bg:"#F4EEFF"},{id:"user_settings",ic:"⚙️",l:"הגדרות",bg:"#F5F5F5"}]},
+  ],
+};
+// visible(id): האם המסך מוצג לחשבון הזה · go(id): מעבר (כולל בדיקת נעילה) · onAllEvents: חזרה לרשימת האירועים
+export function MobileNavSheet({ kind, active, visible=()=>true, go, onClose, onAllEvents }) {
+  const groups=(MNAV_GROUPS[kind]||[]).map(g=>({...g,items:g.items.filter(it=>visible(it.id))})).filter(g=>g.items.length);
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(43,29,63,.38)",zIndex:1050,display:"flex",alignItems:"flex-end"}}>
+      <div role="dialog" aria-modal="true" aria-label={kind==="msgs"?"הודעות לאורחים":"כל המסכים"} className="mnav-sheet" onClick={e=>e.stopPropagation()}>
+        <div aria-hidden="true" style={{width:44,height:5,borderRadius:9,background:"#E4DAF0",margin:"0 auto 6px"}}/>
+        {groups.map(g=>(
+          <div key={g.t}>
+            <div className="mnav-grp">{g.t}</div>
+            <div className="mnav-grid" style={kind==="msgs"?{gridTemplateColumns:"1fr"}:undefined}>
+              {g.items.map(it=>(
+                <button key={g.t+it.id} type="button" className={`mnav-it${active===it.id?" on":""}`} style={{"--bg":it.bg}} onClick={()=>{onClose();go(it.id);}} aria-current={active===it.id?"page":undefined}>
+                  <i aria-hidden="true">{it.ic}</i><span>{it.l}{it.d&&<small>{it.d}</small>}</span>
+                </button>))}
+            </div>
+          </div>))}
+        {kind==="more"&&onAllEvents&&<button type="button" className="mnav-it" style={{width:"100%",marginTop:14,justifyContent:"center"}} onClick={()=>{onClose();onAllEvents();}}>→ כל האירועים שלי</button>}
+        <button type="button" onClick={onClose} style={{width:"100%",marginTop:10,background:"none",border:"none",color:"#6E6585",fontSize:14,fontWeight:800,padding:"10px",cursor:"pointer",fontFamily:"inherit"}}>סגירה</button>
+      </div>
+    </div>
+  );
+}
+
+// סרגל תחתון בטלפון: ראשי · אורחים · הושבה · הודעות · עוד (הודעות ועוד נפתחים כגיליון)
+export function BottomNav({ active, onChange, userPackages=[], totalGuests=0, trialExpired=false, onSheet, sheet, showMsgs=true }) {
   // totalGuests = מספר המוזמנים (סכום guest_count): הושבה חינם עד FREE_SEATING_LIMIT
+  const msgsOn=["sms","whatsapp"].includes(active),moreOn=!["home","rsvp","seating","sms","whatsapp"].includes(active);
   const items=[
     {id:"home",icon:"🏠",label:"ראשי"},
-    {id:"seating",icon:"🪑",label:"הושבה",locked:screenLocked("seating",userPackages,totalGuests)},
     {id:"rsvp",icon:"👥",label:"אורחים"},
-    {id:"add",icon:"➕",label:"הוסף"},
-    {id:"user_settings",icon:"⚙️",label:"הגדרות"},
-  ];
+    {id:"seating",icon:"🪑",label:"הושבה",locked:screenLocked("seating",userPackages,totalGuests)},
+    ...(showMsgs?[{id:"msgs",icon:"💬",label:"הודעות",sheet:true,on:msgsOn||sheet==="msgs"}]:[]),
+    {id:"more",icon:"☰",label:"עוד",sheet:true,on:moreOn||sheet==="more"},
+  ].map(it=>({...it,on:it.on??(active===it.id&&!sheet)}));
   return(
     <nav aria-label="תפריט ראשי" style={{position:"fixed",bottom:0,right:0,left:0,zIndex:80,background:C.surface,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",height:"calc(64px + env(safe-area-inset-bottom))",paddingBottom:"env(safe-area-inset-bottom)",boxSizing:"border-box",boxShadow:"0 -4px 20px rgba(91,60,140,0.08)"}}>
       {items.map(item=>(
-        <button key={item.id} onClick={()=>{
+        <button key={item.id} type="button" aria-haspopup={item.sheet?"dialog":undefined} aria-current={item.on&&!item.sheet?"page":undefined} onClick={()=>{
+          if(item.sheet){onSheet&&onSheet(sheet===item.id?null:item.id);return;}
           if(item.locked){
             alert(`🔒 סידורי הושבה בחינם עד ${FREE_SEATING_LIMIT} מוזמנים. לאירוע גדול יותר: פתיחה חד-פעמית של ₪${BASIC_PRICE}.`);
             onChange("packages");
             return;
           }
+          onSheet&&onSheet(null);
           onChange(item.id);
         }}
           style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,border:"none",background:"none",cursor:"pointer",fontFamily:"inherit",padding:"6px 0",position:"relative",opacity:item.locked?.5:1}}>
-          <span style={{fontSize:20,lineHeight:1,filter:active===item.id?"none":"grayscale(1)",opacity:active===item.id?1:.5}}>{item.icon}</span>
-          <span style={{fontSize:12,fontWeight:700,color:active===item.id?C.blue:C.muted}}>{item.label}</span>
+          <span style={{fontSize:20,lineHeight:1,filter:item.on?"none":"grayscale(1)",opacity:item.on?1:.5,color:item.on?C.blue:C.muted}}>{item.icon}</span>
+          <span style={{fontSize:12,fontWeight:700,color:item.on?C.blue:C.muted}}>{item.label}</span>
           {item.locked&&<span style={{position:"absolute",top:4,left:"50%",transform:"translateX(-50%)",fontSize:8,background:"#FEF3C7",color:"#B45309",borderRadius:4,padding:"1px 4px",fontWeight:800}}>🔒</span>}
-          {active===item.id&&<div style={{position:"absolute",bottom:0,width:32,height:3,borderRadius:"3px 3px 0 0",background:`linear-gradient(90deg,${C.blueM},${C.blueL})`}}/>}
+          {item.on&&<div style={{position:"absolute",bottom:0,width:32,height:3,borderRadius:"3px 3px 0 0",background:`linear-gradient(90deg,${C.blueM},${C.blueL})`}}/>}
         </button>
       ))}
     </nav>
@@ -2761,6 +2809,19 @@ export const HOME_CSS=`
 @media(max-width:600px){.hm-tiles{gap:10px}.hm-tile{border-radius:22px;padding:8px 8px 12px}.hm-tile .art.ph{height:96px;border-radius:16px;margin-bottom:8px}.hm-tile .art.ph i{width:36px;height:36px;font-size:18px}
   .hm-tile .row{padding:0 4px;gap:4px}.hm-tile .row span{font-size:15px}.hm-tile .row b{font-size:15px}.hm-tile small{padding:3px 4px 0;font-size:12px;line-height:1.35}.hm-tile .bar{margin:8px 4px 0}}
 .hm-minis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+/* כרטיס ברוחב מלא (בטלפון: "הודעות לאורחים" בראש קיצורי הדרך) */
+.hm-tile-wide{grid-column:1/-1}
+.hm-tile-wide .art.ph{height:120px}
+.hm-tile-wide .art.ph img{object-position:center 40%}
+/* תפריט הטלפון (הודעות / עוד): גיליון מלמטה */
+.mnav-sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));max-height:82dvh;overflow-y:auto;direction:rtl;font-family:'Heebo',sans-serif;box-shadow:0 -20px 40px -20px rgba(43,29,63,.35)}
+.mnav-grp{font-size:13px;font-weight:800;color:#6E6585;margin:14px 4px 6px}
+.mnav-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mnav-it{display:flex;align-items:center;gap:10px;background:#FBF8FE;border:1.5px solid #F0E8F8;border-radius:16px;padding:11px 12px;cursor:pointer;font-family:inherit;text-align:right;color:#2B1D3F;font-size:14.5px;font-weight:800;min-height:52px}
+.mnav-it.on{background:#F4EEFC;border-color:#D9C6FF}
+.mnav-it i{font-style:normal;width:34px;height:34px;border-radius:50%;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mnav-it small{display:block;font-size:12px;font-weight:600;color:#6E6585;margin-top:1px}
+.mnav-it:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
 .hm-mini{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #EADFF6;border-radius:20px;padding:10px 12px;cursor:pointer;font-family:inherit;text-align:right;box-shadow:0 16px 30px -24px rgba(91,60,140,.6);transition:scale 120ms ease}
 .hm-mini:active{scale:.97}
 .hm-mini i{font-style:normal;width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
@@ -3046,7 +3107,7 @@ export function EventHomeStats({ confirmed, declined, pending, total, onOpen }) 
     </div>
   );
 }
-export function EventHomeTiles({ event, seated, total, people, tablesCount, onGo }) {
+export function EventHomeTiles({ event, seated, total, people, tablesCount, onGo, lead=[] }) {
   const list=taskList(event),done=list.filter(t=>t.done).length,late=list.filter(t=>taskLate(t,event)).length;
   const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):0;
   const tiles=[
@@ -3055,12 +3116,13 @@ export function EventHomeTiles({ event, seated, total, people, tablesCount, onGo
     {go:"invite",ic:"💌",img:"/img/u/1515934751635-c81c6bc9a2d8_640x360.webp",l:"הזמנה דיגיטלית",v:event.invite_image?"מוכנה":"לעיצוב",s:"עיצוב, נוסח וקישור לאורחים",bg:"#FFE9DC",c:"#FF8A65"},
     {go:"tasks",ic:"📋",img:"/img/u/1506784983877-45594efa4cbe_640x360.webp",l:"משימות",v:`${done}/${list.length}`,s:late?`${late} באיחור`:"הכול בזמן",bg:"#DFF6EC",c:"#3CC8A0",bar:pct(done,list.length)},
   ];
+  // lead: כרטיסים נוספים בראש (בטלפון: "הודעות לאורחים" ברוחב מלא)
   return(
     <div className="hm-tiles">
-      {tiles.map(t=>(
-        <button key={t.go} className="hm-tile" style={{"--bg":t.bg,"--c":t.c}} onClick={()=>onGo(t.go)}>
+      {[...lead,...tiles].map(t=>(
+        <button key={t.go} className={`hm-tile${t.wide?" hm-tile-wide":""}`} style={{"--bg":t.bg,"--c":t.c}} onClick={()=>onGo(t.go)}>
           <div className="art ph" aria-hidden="true"><img src={t.img} alt="" loading="lazy" decoding="async"/><i>{t.ic}</i></div>
-          <div className="row"><span>{t.l}</span><b><CountUp value={t.v}/></b></div>
+          <div className="row"><span>{t.l}</span>{t.v!==undefined&&t.v!==""&&<b><CountUp value={t.v}/></b>}</div>
           <small style={t.go==="tasks"&&late?{color:"#B42318"}:undefined}>{t.s}</small>
           {t.bar!==undefined&&<div className="bar" aria-hidden="true"><u style={{width:`${t.bar}%`}}/></div>}
         </button>))}
@@ -3555,6 +3617,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
   const updateEvent=async(raw)=>{const data=eventRow(raw);const{error}=await sb.from("events").update(data).eq("id",event.id);if(error){alert("השמירה נכשלה: "+error.message);return;}onUpdate?.(data);};
   const logout=onLogout||(async()=>{await sb.auth.signOut();});
   const [importMap,setImportMap]=useState(null);
+  const [navSheet,setNavSheet]=useState(null); // טלפון: גיליון "הודעות" / "עוד" פתוח
   const [tables,setTables]=useState([]),[guests,setGuests]=useState([]),[selected,setSelected]=useState(null),[view,setView]=useState(()=>readLastScreen(event.id)?.view||"list"),[screen,setScreen]=useState(()=>readLastScreen(event.id)?.screen||"home"),[modal,setModal]=useState(null),[editGuestData,setEditGuestData]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[search,setSearch]=useState(""),[newGuest,setNewGuest]=useState(""),[mobile,setMobile]=useState(isMobile());
   // "הזמנה דיגיטלית" נפתחת בתוך פרטי האירוע (אין מסך נפרד)
   useEffect(()=>{if(screen==="invite")setScreen("settings");},[screen]);
@@ -4215,6 +4278,8 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
   const couple=memberRole==="couple";
   const producerOnly=id=>PRODUCER_ONLY.includes(id)&&(couple||!isProducerPkg(userPackages));
   const lockedFor=id=>screenLocked(id,userPackages,guestPeople([...guests,...tables.flatMap(t=>t.guests||[])]))||(couple&&COUPLE_HIDDEN.includes(id));
+  // תפריט הטלפון מציג רק מסכים שמתאימים לחשבון (כמו הכרטיסים הקטנים שהיו בדף האירוע)
+  const navVisible=id=>!(couple&&COUPLE_HIDDEN.includes(id))&&!producerOnly(id);
 
   useEffect(()=>{
     const last=readLastScreen(event.id);
@@ -4544,28 +4609,13 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
           <HomeRsvpDonut confirmed={confirmed} declined={declined} pending={pending} total={totalG} onOpen={()=>setScreen("rsvp")}/>
         </div>
 
-        {/* ─── קיצורי דרך: אותם כרטיסים עם תמונה כמו במחשב, ומתחתם שאר הפעולות באותו סגנון ─── */}
+        {/* ─── קיצורי דרך: כולם כרטיסים עם תמונה (כמו במחשב). "הודעות לאורחים" בראש, ברוחב מלא.
+             שאר המסכים: בסרגל התחתון ← "עוד" ─── */}
         <section className="hm-sec hm-sec-m" aria-labelledby="hm-short-m">
           <h2 className="hm-h2" id="hm-short-m">קיצורי דרך</h2>
-          <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length} onGo={setScreen}/>
-          <div className="hm-minis">
-            {[
-              {icon:"➕",label:"הוסף אורח",nav:"add",bg:"#FFF6EF",color:"#1a8c5a"},
-              {icon:"📱",label:"הודעות SMS",nav:"sms",bg:"#FFF5E6",color:"#B45309"},
-              {icon:"💬",label:"WhatsApp",nav:"whatsapp",bg:"#FFF6EF",color:"#1a8c5a"},
-              {icon:"📦",label:"חבילות",nav:"packages",bg:"#FFF0FB",color:"#B03A8C"},
-              {icon:"💰",label:"תקציב",nav:"budget",bg:"#FFFBE6",color:"#B48009"},
-              {icon:"📷",label:"כניסה לאולם",nav:"checkin",bg:"#EEF7FF",color:"#2B6CB0"},
-              {icon:"🎁",label:"מתנות",nav:"gifts",bg:"#FFF0F6",color:"#B03A8C"},
-              {icon:"💡",label:"ספקים ומחירים",nav:"vendors",bg:"#F4EEFF",color:"#7C3AED"},
-              {icon:"📋",label:"פרטי האירוע",nav:"settings",bg:"#F4EEFC",color:"#5B3C8C"},
-              {icon:"⚙️",label:"הגדרות",nav:"user_settings",bg:"#F5F5F5",color:"#555"},
-            ].filter(item=>!(couple&&COUPLE_HIDDEN.includes(item.nav))&&!producerOnly(item.nav)).map(item=>(
-              <button key={item.nav} type="button" className="hm-mini" style={{"--bg":item.bg}} onClick={()=>lockedFor(item.nav)?setModal(couple&&COUPLE_HIDDEN.includes(item.nav)?null:"locked"):setScreen(item.nav)}>
-                <i aria-hidden="true">{item.icon}</i><span>{item.label}</span>
-              </button>
-            ))}
-          </div>
+          <EventHomeTiles event={event} seated={seated} total={total} people={totalG} tablesCount={tables.length}
+            onGo={id=>id==="msgs"?setNavSheet("msgs"):setScreen(id)}
+            lead={navVisible("sms")||navVisible("whatsapp")?[{go:"msgs",ic:"💬",img:"/img/u/messages_640x360.jpg",l:"הודעות לאורחים",s:"SMS ו-WhatsApp: הזמנה, תזכורת, מספר שולחן ותודה",bg:"#E9F7EF",c:"#25A55F",wide:true}]:[]}/>
         </section>
         <div className="hm-cardw" style={{padding:"0 14px",display:"grid",gap:12}}>
           <UpcomingTasks event={event} onOpen={()=>setScreen("tasks")}/>
@@ -4716,7 +4766,10 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
         {screen==="user_settings"&&<MobileSettingsScreen user={user} event={event} sb={sb} setGuests={setGuests} setScreen={setScreen}/>}
         {screen==="settings_event"&&<EventDetailsScreen event={event} sb={sb} user={user} onLogout={logout} onUpdate={updateEvent}/>}
       </div>
-      <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} trialExpired={trialExpired}/>
+      <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} trialExpired={trialExpired}
+        sheet={navSheet} onSheet={setNavSheet} showMsgs={navVisible("sms")||navVisible("whatsapp")}/>
+      {navSheet&&<MobileNavSheet kind={navSheet} active={screen} visible={navVisible} onClose={()=>setNavSheet(null)} onAllEvents={onBack}
+        go={id=>lockedFor(id)?setModal(couple&&COUPLE_HIDDEN.includes(id)?null:"locked"):setScreen(id)}/>}
       {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
       {autoSeatModal}{templatesModal}
