@@ -7692,7 +7692,9 @@ export function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   const eventEmoji=ew.emoji, eventName=ew.name, coupleRef=ew.hosts;
   const gift=giftLine(event), giftAdd=t=>gift&&!t.includes(giftLink(event))?`${t}\n${gift}`:t;
 
-  const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
+  // הנוסחים ברבים ("מוזמנים… נשמח לראותכם"): רשומה אחת היא לרוב זוג או משפחה, ורבים מתאים גם לאדם אחד.
+  // אותם נוסחים בשרת (sms-scheduler/engine.ts) — לשנות בשני המקומות
+  const defaultSmsInviteText=`שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותכם ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue||"יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
   const smsInviteText=giftAdd(event.welcome_text?.trim()||defaultSmsInviteText);
 
   const BASE_TEMPLATES = [
@@ -7704,17 +7706,17 @@ export function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
     {
       id:"reminder",
       label:"🔔 תזכורת לממתינים",
-      text:`שלום {שם}! עוד לא אישרת הגעה ל${eventName}.\nנשמח לדעת אם תגיע 🙏\nלאישור הגעה: {קישור}`,
+      text:`שלום {שם}! עוד לא אישרתם הגעה ל${eventName}.\nנשמח לדעת אם תגיעו 🙏\nלאישור הגעה: {קישור}`,
     },
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:giftAdd(`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`),
+      text:giftAdd(`שלום {שם}! מחכים לכם ב${eventName}! 🎊\nהשולחן שלכם: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue||""}`),
     },
     {
       id:"thanks",
       label:"💙 תודה אחרי האירוע",
-      text:`שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
+      text:`שלום {שם}! תודה רבה שהגעתם ל${eventName}! 💙\nשמחנו לחגוג איתכם.\nבאהבה, ${coupleRef} ${eventEmoji}`,
     },
   ];
   const [TEMPLATES,saveText]=useSavedTexts(event,"sms_texts",BASE_TEMPLATES);
@@ -8128,7 +8130,8 @@ export function WhatsAppScreen({ event, guests, userPackages=[] }) {
   const eventEmoji=ew.emoji, eventName=ew.name, coupleRef=ew.hosts, greeting=ew.greeting;
   const gift=giftLine(event), giftAdd=t=>gift&&!t.includes(giftLink(event))?`${t}\n\n${gift}`:t;
 
-  const defaultInviteText=`שלום {שם}! 💌\n\nמוזמנים ל${eventName}! ${eventEmoji}\n\nנרגשים להזמין אותך ${greeting} ונשמח מאוד לראותך!\n\n📅 תאריך: ${eventDate}\n📍 מקום: ${event.venue||"יפורסם בקרוב"}\n\n👇 לאישור הגעה לחץ כאן:\n{קישור}\n\nבאהבה,\n${coupleRef} ${eventEmoji}`;
+  // ברבים, כמו ב-SMS (אותם נוסחים בשרת: wa-scheduler/runner.ts)
+  const defaultInviteText=`שלום {שם}! 💌\n\nמוזמנים ל${eventName}! ${eventEmoji}\n\nנרגשים להזמין אתכם ${greeting} ונשמח מאוד לראותכם!\n\n📅 תאריך: ${eventDate}\n📍 מקום: ${event.venue||"יפורסם בקרוב"}\n\n👇 לאישור הגעה לחצו כאן:\n{קישור}\n\nבאהבה,\n${coupleRef} ${eventEmoji}`;
   const inviteText=giftAdd(event.welcome_text?.trim()||defaultInviteText);
 
   const BASE_TEMPLATES = [
@@ -8140,17 +8143,17 @@ export function WhatsAppScreen({ event, guests, userPackages=[] }) {
     {
       id:"reminder",
       label:"🔔 תזכורת לממתינים",
-      text:`שלום {שם}! 👋\n\nעוד לא אישרת הגעה ל${eventName}.\nנשמח מאוד לדעת אם תוכל להגיע 🙏\n\n📅 ${eventDate}\n\n👇 לאישור הגעה לחץ כאן:\n{קישור}\n\nמחכים לך! 💙`,
+      text:`שלום {שם}! 👋\n\nעוד לא אישרתם הגעה ל${eventName}.\nנשמח מאוד לדעת אם תוכלו להגיע 🙏\n\n📅 ${eventDate}\n\n👇 לאישור הגעה לחצו כאן:\n{קישור}\n\nמחכים לכם! 💙`,
     },
     {
       id:"table",
       label:"🪑 מספר שולחן",
-      text:giftAdd(`שלום {שם}! 🎊\n\nמחכים לך היום ב${eventName}!\n\n🪑 השולחן שלך: מספר {שולחן}\n\n📅 ${eventDate}\n📍 ${event.venue||""}\n\n👇 לפרטים נוספים:\n{קישור}\n\nנתראה בקרוב! 🥂`),
+      text:giftAdd(`שלום {שם}! 🎊\n\nמחכים לכם היום ב${eventName}!\n\n🪑 השולחן שלכם: מספר {שולחן}\n\n📅 ${eventDate}\n📍 ${event.venue||""}\n\n👇 לפרטים נוספים:\n{קישור}\n\nנתראה בקרוב! 🥂`),
     },
     {
       id:"thanks",
       label:"💙 תודה אחרי האירוע",
-      text:`שלום {שם}! 💙\n\nתודה רבה שהגעת ל${eventName}!\nשמחנו כל כך לחגוג איתך את היום המיוחד הזה 🥰\n\nבאהבה רבה,\n${coupleRef} ${eventEmoji}`,
+      text:`שלום {שם}! 💙\n\nתודה רבה שהגעתם ל${eventName}!\nשמחנו כל כך לחגוג איתכם את היום המיוחד הזה 🥰\n\nבאהבה רבה,\n${coupleRef} ${eventEmoji}`,
     },
   ];
   const [TEMPLATES,saveText]=useSavedTexts(event,"wa_texts",BASE_TEMPLATES);
@@ -8680,7 +8683,7 @@ export function printSeatSlip(event,g,t){
     .t{font-size:14px}.n{font-size:20px;font-weight:900;margin:8px 0 4px}.l{font-size:13px}.num{font-size:64px;font-weight:900;line-height:1}.sub{font-size:13px}
     hr{border:0;border-top:1px dashed #000;margin:10px 0}
   </style></head><body><div class="t">${esc(title)}</div><hr><div class="n">${esc(g.name)}</div>${
-    t?`<div class="l">השולחן שלך</div><div class="num">${esc(t.num)}</div>${tname?`<div class="sub">${esc(tname)}</div>`:""}`:`<div class="l">גשו בבקשה לצוות הקבלה</div>`
+    t?`<div class="l">השולחן שלכם</div><div class="num">${esc(t.num)}</div>${tname?`<div class="sub">${esc(tname)}</div>`:""}`:`<div class="l">גשו בבקשה לצוות הקבלה</div>`
   }<hr><div class="t">ברוכים הבאים! 🎉</div></body></html>`);d.close();
   setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch{}setTimeout(()=>f.remove(),1500);},300);
 }
@@ -8764,7 +8767,7 @@ export function KioskMode({ event, guests, tables, onPick, autoPrint, showPrint,
         <div onClick={()=>{setShown(null);inputRef.current?.focus();}} style={{textAlign:"center",cursor:"pointer",animation:"fadeUp .3s ease both"}}>
           <div style={{fontSize:"clamp(24px,4vw,40px)",fontWeight:800,marginBottom:12}}>שלום {String(shown.name).split(" ")[0]}! 🎉</div>
           {tableOf(shown)?<>
-            <div style={{fontSize:"clamp(18px,2.6vw,26px)",opacity:.85}}>השולחן שלך</div>
+            <div style={{fontSize:"clamp(18px,2.6vw,26px)",opacity:.85}}>השולחן שלכם</div>
             <div style={{fontSize:"clamp(90px,18vw,200px)",fontWeight:900,lineHeight:1}}>{tableOf(shown).num}</div>
             {String(tableOf(shown).name||"").replace(/^\s*\d+\s*/,"").trim()&&<div style={{fontSize:"clamp(16px,2.4vw,24px)",opacity:.8}}>{String(tableOf(shown).name).replace(/^\s*\d+\s*/,"").trim()}</div>}
           </>:<div style={{fontSize:"clamp(20px,3vw,30px)",background:"rgba(255,255,255,.15)",borderRadius:16,padding:"16px 24px"}}>גשו בבקשה לצוות הקבלה 🙏</div>}

@@ -33,7 +33,8 @@ export const childOf=e=>{const v=e?.child_gender||e?.settings_json?.childGender;
 export const eventWords=e=>{
   const t=EVENT_KINDS[e?.event_type]?e.event_type:"wedding";
   const g=String(e?.groom_name||"").trim(),b=String(e?.bride_name||"").trim(),n=String(e?.name||"").trim();
-  const name=t==="wedding"?(g&&b?`חתונת ${g} ו${b}`:g||b?`חתונת ${g||b}`:"חתונתנו")
+  // "חתונה של" (ולא "חתונת"): קורא נכון בכל משפט — "מוזמנים לחתונה של…", "מחכים לכם בחתונה של…"
+  const name=t==="wedding"?(g&&b?`חתונה של ${g} ו${b}`:g||b?`חתונה של ${g||b}`:"חתונתנו")
     :t==="bar_mitzvah"?(g?`${childOf(e)==="f"?"בת המצווה":childOf(e)==="m"?"בר המצווה":"שמחת המצווה"} של ${g}`:n||"שמחת המצווה")
     :t==="brit"?(g?`${childOf(e)==="f"?"שמחת הבת":"ברית המילה"} של ${g}`:n||(childOf(e)==="f"?"שמחת הבת":"ברית המילה"))
     :(n||"האירוע שלנו");
@@ -377,9 +378,10 @@ export function InvitePage({ code, guestId }) {
         <div style={{position:"absolute",inset:0,backgroundImage:`url(${tmpl.img})`,backgroundSize:"cover",backgroundPosition:"center",opacity:.3}}/>
         <div style={{position:"relative",zIndex:1,textAlign:"center",color:"#fff"}}>
           <div style={{fontSize:80,marginBottom:20,animation:"float 3s ease-in-out infinite"}}>{rsvp==="confirmed"?"🎉":"💙"}</div>
-          <div style={{fontSize:28,fontWeight:900,marginBottom:12}}>{rsvp==="confirmed"?"תודה! מחכים לך!":"תודה על העדכון"}</div>
+          {/* ברבים, כמו בהודעות (רשומה אחת היא לרוב זוג או משפחה) */}
+          <div style={{fontSize:28,fontWeight:900,marginBottom:12}}>{rsvp==="confirmed"?"תודה! מחכים לכם!":"תודה על העדכון"}</div>
           <div style={{fontSize:16,color:"rgba(255,255,255,.8)",lineHeight:1.8,maxWidth:300,margin:"0 auto"}}>
-            {rsvp==="confirmed"?`${firstName}, האישור שלך התקבל!\nנשמח לראותך באירוע 🥂`:`${firstName}, קיבלנו את עדכונך 💙`}
+            {rsvp==="confirmed"?`${firstName}, האישור התקבל!\nנשמח לראותכם באירוע 🥂`:`${firstName}, קיבלנו את העדכון 💙`}
           </div>
           {rsvp==="confirmed"&&knownGuest?.id&&<div style={{marginTop:22}}><GuestQR code={code} guestId={knownGuest.id}/></div>}
         </div>
@@ -439,7 +441,7 @@ export function InvitePage({ code, guestId }) {
           {/* מספר שולחן  -  מוצג אם האורח אישר הגעה ויש לו שולחן */}
           {(event.settings_json?.tableNum??true)&&knownGuest?.table_id&&knownGuest?.rsvp==="confirmed"&&(
             <div style={{marginTop:12,background:"linear-gradient(135deg,#1B3A8C,#2952C8)",color:"#fff",borderRadius:12,padding:"10px 16px",display:"inline-block"}}>
-              <span style={{fontSize:13,fontWeight:700}}>🪑 השולחן שלך: </span>
+              <span style={{fontSize:13,fontWeight:700}}>🪑 השולחן שלכם: </span>
               {(()=>{const num=event.settings_json?.table_nums?.[knownGuest.table_id];const nm=String(knownGuest.table_name||"").replace(/^\s*\d+\s*/,"").trim();
                 return num?<><span style={{fontSize:20,fontWeight:900}}>מספר {num}</span>{nm&&nm!==`שולחן ${num}`&&<span style={{fontSize:13,fontWeight:700,opacity:.9}}> · {nm}</span>}</>
                   :<span style={{fontSize:16,fontWeight:900}}>{knownGuest.table_name||"—"}</span>;})()}

@@ -15,7 +15,7 @@ const EMOJI: Record<string, string> = { wedding: "💍", bar_mitzvah: "✡️", 
 export function eventWords(e: any) {
   const t = EMOJI[e?.event_type] ? e.event_type : "wedding";
   const g = String(e?.groom_name || "").trim(), b = String(e?.bride_name || "").trim(), n = String(e?.name || "").trim();
-  const name = t === "wedding" ? (g && b ? `חתונת ${g} ו${b}` : g || b ? `חתונת ${g || b}` : "חתונתנו")
+  const name = t === "wedding" ? (g && b ? `חתונה של ${g} ו${b}` : g || b ? `חתונה של ${g || b}` : "חתונתנו")
     : t === "bar_mitzvah" ? (g ? `שמחת המצווה של ${g}` : n || "שמחת המצווה")
     : t === "brit" ? (g ? `ברית המילה של ${g}` : n || "ברית המילה")
     : (n || "האירוע שלנו");
@@ -40,12 +40,13 @@ export function buildTemplates(event: any): Record<string, string> {
   const eventEmoji = ew.emoji, eventName = ew.name, coupleRef = ew.hosts;
   const link = giftLink(event);
   const giftAdd = (t: string) => link && !t.includes(link) ? `${t}\n💝 למתנה: ${link}` : t;
-  const defaultInvite = `שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותך ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue || "יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
+  // ברבים ("מוזמנים… נשמח לראותכם") — רשומה אחת היא לרוב זוג או משפחה
+  const defaultInvite = `שלום {שם}! 💌\nמוזמנים ל${eventName}! ${eventEmoji}\nנשמח לראותכם ביום המיוחד.\n📅 ${eventDate}\n📍 ${event.venue || "יפורסם בקרוב"}\nלאישור הגעה: {קישור}`;
   return {
     invite: giftAdd(String(event.welcome_text || "").trim() || defaultInvite),
-    reminder: `שלום {שם}! עוד לא אישרת הגעה ל${eventName}.\nנשמח לדעת אם תגיע 🙏\nלאישור הגעה: {קישור}`,
-    table: giftAdd(`שלום {שם}! מחכים לך ב${eventName}! 🎊\nהשולחן שלך: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue || ""}`),
-    thanks: `שלום {שם}! תודה רבה שהגעת ל${eventName}! 💙\nשמחנו לחגוג איתך.\nבאהבה, ${coupleRef} ${eventEmoji}`,
+    reminder: `שלום {שם}! עוד לא אישרתם הגעה ל${eventName}.\nנשמח לדעת אם תגיעו 🙏\nלאישור הגעה: {קישור}`,
+    table: giftAdd(`שלום {שם}! מחכים לכם ב${eventName}! 🎊\nהשולחן שלכם: מספר {שולחן}\n📅 ${eventDate}\n📍 ${event.venue || ""}`),
+    thanks: `שלום {שם}! תודה רבה שהגעתם ל${eventName}! 💙\nשמחנו לחגוג איתכם.\nבאהבה, ${coupleRef} ${eventEmoji}`,
   };
 }
 

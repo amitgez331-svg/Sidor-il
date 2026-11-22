@@ -26,7 +26,7 @@ const EMOJI: Record<string, string> = { wedding: "💍", bar_mitzvah: "✡️", 
 function eventWords(e: any) {
   const t = EMOJI[e?.event_type] ? e.event_type : "wedding";
   const g = String(e?.groom_name || "").trim(), b = String(e?.bride_name || "").trim(), n = String(e?.name || "").trim();
-  const name = t === "wedding" ? (g && b ? `חתונת ${g} ו${b}` : g || b ? `חתונת ${g || b}` : "חתונתנו")
+  const name = t === "wedding" ? (g && b ? `חתונה של ${g} ו${b}` : g || b ? `חתונה של ${g || b}` : "חתונתנו")
     : t === "bar_mitzvah" ? (g ? `שמחת המצווה של ${g}` : n || "שמחת המצווה")
     : t === "brit" ? (g ? `ברית המילה של ${g}` : n || "ברית המילה") : (n || "האירוע שלנו");
   const hosts = t === "wedding" ? (g && b ? `${g} ו${b}` : g || b || n) : (t === "bar_mitzvah" || t === "brit") ? (String(e?.groom_father || "").trim() || g || n) : (g || n);
@@ -37,9 +37,10 @@ export function defaultText(ev: any, tid: string) {
   const d = ev?.date ? new Date(ev.date) : null;
   const date = d ? d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "בקרוב";
   const venue = ev?.venue || "";
-  if (tid === "reminder") return `שלום {שם}! 👋\n\nעוד לא אישרת הגעה ל${w.name}.\nנשמח מאוד לדעת אם תוכל להגיע 🙏\n\n📅 ${date}\n\n👇 לאישור הגעה:\n{קישור}`;
-  if (tid === "table") return `שלום {שם}! 🎊\n\nמחכים לך היום ב${w.name}!\n\n🪑 השולחן שלך: מספר {שולחן}\n\n📍 ${venue}\n\n{קישור}`;
-  if (tid === "thanks") return `שלום {שם}! 💙\n\nתודה רבה על ${w.name}!\nשמחנו כל כך לחגוג איתך 🥰\n\nבאהבה,\n${w.hosts} ${w.emoji}`;
+  // ברבים, כמו במסך הוואטסאפ באתר
+  if (tid === "reminder") return `שלום {שם}! 👋\n\nעוד לא אישרתם הגעה ל${w.name}.\nנשמח מאוד לדעת אם תוכלו להגיע 🙏\n\n📅 ${date}\n\n👇 לאישור הגעה:\n{קישור}`;
+  if (tid === "table") return `שלום {שם}! 🎊\n\nמחכים לכם היום ב${w.name}!\n\n🪑 השולחן שלכם: מספר {שולחן}\n\n📍 ${venue}\n\n{קישור}`;
+  if (tid === "thanks") return `שלום {שם}! 💙\n\nתודה רבה שהגעתם ל${w.name}!\nשמחנו כל כך לחגוג איתכם 🥰\n\nבאהבה,\n${w.hosts} ${w.emoji}`;
   return String(ev?.welcome_text || "").trim() || `שלום {שם}! 💌\n\nמוזמנים ל${w.name}! ${w.emoji}\n\n📅 ${date}\n📍 ${venue || "יפורסם בקרוב"}\n\n👇 לאישור הגעה:\n{קישור}\n\nבאהבה,\n${w.hosts} ${w.emoji}`;
 }
 // הנוסח לכל שפה: מה שמסך הוואטסאפ שמר באירוע (wa_texts_auto), ובעברית גם נוסח אישי (wa_texts) או ברירת מחדל
