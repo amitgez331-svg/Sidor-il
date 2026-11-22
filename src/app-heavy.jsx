@@ -1719,12 +1719,24 @@ export const MNAV_GROUPS={
       {id:"packages",ic:"📦",l:"חבילות",bg:"#FFF0FB"},{id:"vendors",ic:"💡",l:"ספקים ומחירים",bg:"#F4EEFF"},{id:"user_settings",ic:"⚙️",l:"הגדרות",bg:"#F5F5F5"}]},
   ],
 };
+// העיצוב של התפריט נמצא כאן (ולא בעיצוב של דף הבית), כי התפריט נפתח מכל מסך — גם כשדף הבית לא מוצג
+const MNAV_CSS=`
+.mnav-sheet{background:#fff;width:100%;box-sizing:border-box;border-radius:24px 24px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));max-height:82vh;max-height:82dvh;overflow-y:auto;direction:rtl;font-family:'Heebo',sans-serif;box-shadow:0 -20px 40px -20px rgba(43,29,63,.35)}
+.mnav-grp{font-size:13px;font-weight:800;color:#6E6585;margin:14px 4px 6px}
+.mnav-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mnav-it{display:flex;align-items:center;gap:10px;background:#FBF8FE;border:1.5px solid #F0E8F8;border-radius:16px;padding:11px 12px;cursor:pointer;font-family:inherit;text-align:right;color:#2B1D3F;font-size:14.5px;font-weight:800;min-height:52px;box-sizing:border-box;width:100%;line-height:1.25}
+.mnav-it.on{background:#F4EEFC;border-color:#D9C6FF}
+.mnav-it i{font-style:normal;width:34px;height:34px;border-radius:50%;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mnav-it span{min-width:0}
+.mnav-it small{display:block;font-size:12px;font-weight:600;color:#6E6585;margin-top:1px}
+.mnav-it:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}`;
 // visible(id): האם המסך מוצג לחשבון הזה · go(id): מעבר (כולל בדיקת נעילה) · onAllEvents: חזרה לרשימת האירועים
 export function MobileNavSheet({ kind, active, visible=()=>true, go, onClose, onAllEvents }) {
   const groups=(MNAV_GROUPS[kind]||[]).map(g=>({...g,items:g.items.filter(it=>visible(it.id))})).filter(g=>g.items.length);
   useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(43,29,63,.38)",zIndex:1050,display:"flex",alignItems:"flex-end"}}>
+      <style>{MNAV_CSS}</style>
       <div role="dialog" aria-modal="true" aria-label={kind==="msgs"?"הודעות לאורחים":"כל המסכים"} className="mnav-sheet" onClick={e=>e.stopPropagation()}>
         <div aria-hidden="true" style={{width:44,height:5,borderRadius:9,background:"#E4DAF0",margin:"0 auto 6px"}}/>
         {groups.map(g=>(
@@ -2813,15 +2825,6 @@ export const HOME_CSS=`
 .hm-tile-wide{grid-column:1/-1}
 .hm-tile-wide .art.ph{height:120px}
 .hm-tile-wide .art.ph img{object-position:center 40%}
-/* תפריט הטלפון (הודעות / עוד): גיליון מלמטה */
-.mnav-sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));max-height:82dvh;overflow-y:auto;direction:rtl;font-family:'Heebo',sans-serif;box-shadow:0 -20px 40px -20px rgba(43,29,63,.35)}
-.mnav-grp{font-size:13px;font-weight:800;color:#6E6585;margin:14px 4px 6px}
-.mnav-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.mnav-it{display:flex;align-items:center;gap:10px;background:#FBF8FE;border:1.5px solid #F0E8F8;border-radius:16px;padding:11px 12px;cursor:pointer;font-family:inherit;text-align:right;color:#2B1D3F;font-size:14.5px;font-weight:800;min-height:52px}
-.mnav-it.on{background:#F4EEFC;border-color:#D9C6FF}
-.mnav-it i{font-style:normal;width:34px;height:34px;border-radius:50%;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.mnav-it small{display:block;font-size:12px;font-weight:600;color:#6E6585;margin-top:1px}
-.mnav-it:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}
 .hm-mini{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #EADFF6;border-radius:20px;padding:10px 12px;cursor:pointer;font-family:inherit;text-align:right;box-shadow:0 16px 30px -24px rgba(91,60,140,.6);transition:scale 120ms ease}
 .hm-mini:active{scale:.97}
 .hm-mini i{font-style:normal;width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
