@@ -135,8 +135,9 @@ export function IvCountdown({ target }){
     </div>);
 }
 export const DEFAULT_MEALS=["רגיל","צמחוני","טבעוני","ללא גלוטן"];
-export const rsvpQOf=event=>({meal:false,mealOptions:DEFAULT_MEALS,kids:false,allergies:false,transport:false,...(event?.settings_json?.rsvpQ||{})});
-export const anyRsvpQ=q=>q.meal||q.kids||q.allergies||q.transport;
+// gender: אירוע בהפרדה — האורח בוחר כמה גברים וכמה נשים (rsvp_extra.men / rsvp_extra.women), ומספר המגיעים = הסכום
+export const rsvpQOf=event=>({meal:false,mealOptions:DEFAULT_MEALS,kids:false,allergies:false,transport:false,gender:false,...(event?.settings_json?.rsvpQ||{})});
+export const anyRsvpQ=q=>q.meal||q.kids||q.allergies||q.transport||q.gender;
 // סיכום מכל מי שאישר הגעה: מנות לפי סוג, ילדים, הסעה, ורשימת אלרגיות
 export function GuestQR({ code, guestId }) {
   const [src,setSrc]=useState("");
@@ -231,6 +232,7 @@ export function InvitePage({ code, guestId }) {
   const [loading,setLoading]=useState(true);
   const [firstName,setFirstName]=useState("");
   const [giftCopied,setGiftCopied]=useState(null); // "bit" / "paybox" אחרי העתקת מספר הטלפון
+  const [navOpen,setNavOpen]=useState(false); // בחירת אפליקציית ניווט
   const [lastName,setLastName]=useState("");
   const [phoneState,setPhone]=useState("");
   const [guestCount,setGuestCount]=useState(1);
@@ -281,6 +283,7 @@ export function InvitePage({ code, guestId }) {
         ...(rsvpQOf(event).kids?{kids:Math.min(+extra.kids||0,guestCount)}:{}),
         ...(rsvpQOf(event).allergies?{allergies:String(extra.allergies||"").slice(0,300)}:{}),
         ...(rsvpQOf(event).transport?{transport:!!extra.transport}:{}),
+        ...(rsvpQOf(event).gender?{men:Math.max(0,+extra.men||0),women:Math.max(0,+extra.women||0)}:{}),
       }}:{}),
     });
     if(error||!data||["no_invite","no_name"].includes(data.status)){
@@ -323,13 +326,30 @@ export function InvitePage({ code, guestId }) {
     if(navigator.share){navigator.share({title:event.name,text,url});}
     else{navigator.clipboard.writeText(url);}
   };
-  const navigate=(app)=>{const addr=encodeURIComponent(event.venue_address||event.venue||"");if(app==="waze")window.open(`https://waze.com/ul?q=${addr}`,"_blank");else window.open(`https://maps.google.com/?q=${addr}`,"_blank");};
+  // ניווט באפליקציה שהאורח בוחר: Waze / Google Maps / Apple Maps
+  const navigate=(app)=>{const addr=encodeURIComponent(event.venue_address||event.venue||"");
+    const url=app==="waze"?`https://waze.com/ul?q=${addr}&navigate=yes`:app==="apple"?`https://maps.apple.com/?q=${addr}`:`https://www.google.com/maps/search/?api=1&query=${addr}`;
+    window.open(url,"_blank","noopener");setNavOpen(false);};
+  const isApple=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  // יומן: באייפון — קובץ יומן (נפתח ישר ביומן של אפל), בשאר — Google Calendar
   const addCalendar=()=>{
     if(!eventDate)return;
     const d=event.date.replace(/-/g,"");
     const t=(event.event_time||"19:00").replace(":","").padEnd(6,"0");
-    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${d}T${t}/${d}T${t}&location=${encodeURIComponent(event.venue_address||"")}`,"_blank");
+    const loc=[event.venue,event.venue_address].filter(Boolean).join(", ");
+    if(isApple){
+      const [h,m]=(event.event_time||"19:00").split(":").map(Number);
+      const end=`${String(Math.min(23,(h||19)+4)).padStart(2,"0")}${String(m||0).padStart(2,"0")}00`;
+      const esc=s=>String(s||"").replace(/[\\;,]/g,c=>"\\"+c).replace(/\n/g,"\\n");
+      const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Sidor-IL//HE","BEGIN:VEVENT",`UID:${event.invite_code||d}@sidoril.com`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
+        `DTSTART:${d}T${t}`,`DTEND:${d}T${end}`,`SUMMARY:${esc(event.name)}`,loc&&`LOCATION:${esc(loc)}`,`URL:${window.location.href.split("?")[0]}`,"END:VEVENT","END:VCALENDAR"].filter(Boolean).join("\r\n");
+      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download="event.ics";document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);return;
+    }
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${d}T${t}/${d}T${t}&location=${encodeURIComponent(loc)}`,"_blank","noopener");
   };
+  // התקשרות לבעלי האירוע — רק אם הפעילו "כפתור התקשרות" (אחרת השרת לא מחזיר את הנייד בכלל)
+  const hostTel=event.settings_json?.callBtn?String(event.host_phone||"").replace(/[^\d+]/g,""):"";
 
   // ── מודל כפילות ──
   const DupModal=()=>(
@@ -452,17 +472,26 @@ export function InvitePage({ code, guestId }) {
 
         {/* הכפתורים ממלאים את השורה לפי כמה שיש (2 או 3), במקום שלוש עמודות קבועות עם תא ריק */}
         {(()=>{const acts=[
-            event.venue_address&&["🚗","נווט לאירוע",()=>navigate("waze")],
+            (event.venue_address||event.venue)&&["🚗","נווט לאירוע",()=>setNavOpen(o=>!o),navOpen],
             eventDate&&["📅","הוסף ליומן",addCalendar],
-            (event.settings_json?.shareBtn??true)&&["🔗","שתפו את האירוע",share],
+            hostTel&&["📞","התקשרו",()=>{window.location.href=`tel:${hostTel}`;}],
+            (event.settings_json?.shareBtn??true)&&["🔗","שתפו",share],
           ].filter(Boolean);
+          const cols=acts.length===4?2:acts.length;
           return acts.length>0&&(
-          <div style={{display:"grid",gridTemplateColumns:`repeat(${acts.length},1fr)`,gap:10,marginBottom:24}}>
-            {acts.map(([ic,l,fn])=>(
-              <button key={l} onClick={fn} className="sx-btn iv-act" style={{background:"#fff",border:"1px solid #DDD6E6",borderRadius:12,padding:"12px 6px",minHeight:64,cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+          <div style={{marginBottom:24}}>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${cols},1fr)`,gap:10}}>
+            {acts.map(([ic,l,fn,open])=>(
+              <button key={l} onClick={fn} aria-expanded={open===undefined?undefined:!!open} className="sx-btn iv-act" style={{background:open?"#F4EEFC":"#fff",border:`1px solid ${open?"#B9A3E0":"#DDD6E6"}`,borderRadius:12,padding:"12px 6px",minHeight:64,cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
                 <span style={{fontSize:22}} aria-hidden="true">{ic}</span><span style={{fontSize:13,color:"#333",fontWeight:700}}>{l}</span>
               </button>
             ))}
+          </div>
+          {/* בחירת אפליקציית ניווט */}
+          {navOpen&&<div role="group" aria-label="בחירת אפליקציית ניווט" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:10}}>
+            {[["waze","Waze","#33CCFF"],["google","Google Maps","#34A853"],["apple","Apple Maps","#555"]].map(([k,l,c])=>(
+              <button key={k} type="button" onClick={()=>navigate(k)} style={{background:"#fff",border:`1.5px solid ${c}`,color:"#222",borderRadius:12,padding:"11px 4px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>))}
+          </div>}
           </div>);})()}
 
         {/* כפתורי מתנה  -  Bit / Paybox */}
@@ -506,6 +535,26 @@ export function InvitePage({ code, guestId }) {
             <input value={phoneState} onChange={e=>setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" style={{...fld,textAlign:"right"}}/></label>
           </>);})()}
 
+          {/* אירוע בהפרדה: שני מונים (גברים / נשים) במקום מונה אחד, ומספר המגיעים הוא הסכום */}
+          {rsvpQOf(event).gender&&rsvp!=="declined"?(()=>{
+            const men=Math.max(0,+extra.men||0),women=Math.max(0,+extra.women||0);
+            const setG=(k,v)=>setExtra(x=>{const n={...x,[k]:Math.max(0,Math.min(30,v))};setGuestCount(Math.max(1,(+n.men||0)+(+n.women||0)));return n;});
+            const btn={width:44,height:44,borderRadius:"50%",background:"#fff",border:"1px solid #CFC8D9",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontFamily:"inherit"};
+            const row=(k,label,v)=>(
+              <div role="group" aria-label={`${label}: ${v}`} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1,background:"#fff",border:"1px solid #E6E0EE",borderRadius:14,padding:"12px 8px"}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#333"}}>{label}</div>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <button type="button" onClick={()=>setG(k,v-1)} disabled={v<=0} aria-label={`פחות ${label}`} style={{...btn,opacity:v<=0?.4:1,cursor:v<=0?"default":"pointer"}}>−</button>
+                  <span aria-live="polite" style={{fontSize:24,fontWeight:900,color:"#111",minWidth:26,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{v}</span>
+                  <button type="button" onClick={()=>setG(k,v+1)} aria-label={`יותר ${label}`} style={btn}>+</button>
+                </div>
+              </div>);
+            return(
+            <div style={{marginBottom:16,textAlign:"center"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#444",marginBottom:10}}>כמה תגיעו? בחרו כמה גברים וכמה נשים</div>
+              <div style={{display:"flex",gap:10}}>{row("men","גברים",men)}{row("women","נשים",women)}</div>
+              {men+women>0&&<div style={{fontSize:13,color:"#6E6585",marginTop:8}}>סה״כ {men+women} מגיעים</div>}
+            </div>);})():
           <div style={{textAlign:"center",marginBottom:16}}>
             <div id="inv-count-l" style={{fontSize:14,fontWeight:700,color:"#444",marginBottom:10}}>כמה תגיעו?</div>
             <div role="group" aria-labelledby="inv-count-l" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
@@ -513,7 +562,7 @@ export function InvitePage({ code, guestId }) {
               <span aria-live="polite" style={{fontSize:26,fontWeight:900,color:"#111",minWidth:32,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{guestCount}</span>
               <button onClick={()=>setGuestCount(c=>c+1)} aria-label="יותר אורחים" style={{width:44,height:44,borderRadius:"50%",background:"#fff",border:"1px solid #CFC8D9",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
             </div>
-          </div>
+          </div>}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
             <button onClick={()=>setRsvp("confirmed")} aria-pressed={rsvp==="confirmed"} className="iv-yes" style={{background:rsvp==="confirmed"?"#1F7A4D":"#fff",color:rsvp==="confirmed"?"#fff":"#1F7A4D",border:"2px solid #1F7A4D",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -525,7 +574,7 @@ export function InvitePage({ code, guestId }) {
           </div>
 
           {/* שאלות נוספות שבעל האירוע הפעיל — מוצגות מיד, ונעלמות רק כשבוחרים "לא מגיעים" (נשמרות רק עם "מגיעים") */}
-          {rsvp!=="declined"&&anyRsvpQ(rsvpQOf(event))&&(()=>{const q=rsvpQOf(event),picked=Object.values(extra.meals||{}).reduce((a,b)=>a+(+b||0),0);
+          {rsvp!=="declined"&&(q=>q.meal||q.kids||q.allergies||q.transport)(rsvpQOf(event))&&(()=>{const q=rsvpQOf(event),picked=Object.values(extra.meals||{}).reduce((a,b)=>a+(+b||0),0);
             const step=(v,set,max)=>(<div style={{display:"flex",alignItems:"center",gap:10}}>
               <button type="button" onClick={()=>set(Math.max(0,v-1))} aria-label="פחות" style={{width:30,height:30,borderRadius:"50%",background:"#fff",border:"1px solid #ddd",fontSize:17,cursor:"pointer",fontWeight:700}}>−</button>
               <span style={{minWidth:22,textAlign:"center",fontWeight:900,fontSize:16}}>{v}</span>
@@ -557,10 +606,11 @@ export function InvitePage({ code, guestId }) {
 
           {saveError&&<div role="alert" style={{background:"#FDECEE",color:"#C53030",border:"1px solid #F9D2D8",borderRadius:12,padding:"10px 12px",fontSize:13,fontWeight:700,marginBottom:10,textAlign:"center"}}>⚠️ {saveError}</div>}
           {/* כפתור לא זמין נשאר קריא ואומר מה חסר (קודם: לבן על אפור בהיר, 1.6:1, בלי הסבר) */}
-          {(()=>{const ready=firstName.trim()&&rsvp;return(
+          {(()=>{const noSplit=rsvp==="confirmed"&&rsvpQOf(event).gender&&!((+extra.men||0)+(+extra.women||0));
+            const ready=firstName.trim()&&rsvp&&!noSplit;return(
           <button onClick={submit} disabled={!ready||submitting} className="iv-send"
             style={{width:"100%",background:ready?"#1B3A8C":"#ECE8F1",color:ready?"#fff":"#4A4060",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,cursor:ready?"pointer":"default",fontFamily:"inherit",transition:"all .15s"}}>
-            {submitting?"שולח...":ready?"שלח אישור ←":!firstName.trim()?"נא למלא שם פרטי":"בחרו מגיעים או לא מגיעים"}
+            {submitting?"שולח...":ready?"שלח אישור ←":!firstName.trim()?"נא למלא שם פרטי":noSplit?"בחרו כמה גברים וכמה נשים מגיעים":"בחרו מגיעים או לא מגיעים"}
           </button>);})()}
           {/* הודעה לפי סעיף 11 לחוק הגנת הפרטיות (תיקון 13): חובה / מטרה / בעל השליטה / מי מקבל / עיון ותיקון */}
           <p style={{fontSize:12,color:"#5F5675",textAlign:"center",lineHeight:1.6,marginTop:10}}>

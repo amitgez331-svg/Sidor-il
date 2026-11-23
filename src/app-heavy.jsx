@@ -764,7 +764,9 @@ export function TableNode({ table, selected, highlight=false, locked=false, onMo
   };
   const tableNum=table.num?String(table.num):(table.name?.match(/\d+/)?.[0]||"");
   const tableName=table.name?.replace(/^\d+\s*/,"").trim()||"";
-  const tip=`${table.name} · ${occupied}/${total}`+(guests.length?"\n"+guests.map(g=>"• "+g.name).join("\n"):"");
+  // אירוע בהפרדה: יושב בשולחן "גברים" מישהו שסימן נשים (או להפך)
+  const genderClash=!!table.gender&&guests.some(g=>{const x=g.rsvp_extra||{};return table.gender==="m"?+x.women>0:+x.men>0;});
+  const tip=`${table.name} · ${occupied}/${total}`+(table.gender?` · ${table.gender==="m"?"גברים":"נשים"}`:"")+(genderClash?" · ⚠️ יושבים כאן אורחים מהמין השני":"")+(guests.length?"\n"+guests.map(g=>"• "+g.name).join("\n"):"");
   const glow=over?(full?`drop-shadow(0 0 14px ${C.danger}aa)`:`drop-shadow(0 0 16px ${C.blueM}cc)`)
     :highlight?`drop-shadow(0 0 16px ${C.gold})`
     :selected?`drop-shadow(0 8px 22px ${C.blueL}88)`:"drop-shadow(0 4px 10px rgba(58,36,100,.14))";
@@ -790,6 +792,10 @@ export function TableNode({ table, selected, highlight=false, locked=false, onMo
         {occupied}/{total}
       </span>
       {tableName&&<span style={{fontSize:12,fontWeight:800,color:C.text,maxWidth:"84%",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",lineHeight:1.25}}>{tableName}</span>}
+      {/* אירוע בהפרדה: למי השולחן. אדום = יושבים בו מהמין השני */}
+      {table.gender&&<span style={{fontSize:11,fontWeight:900,lineHeight:1.3,borderRadius:100,padding:"1px 7px",marginTop:1,
+        background:genderClash?"#FDECEE":table.gender==="m"?"#E8F1FF":"#FDECF4",color:genderClash?C.danger:table.gender==="m"?"#1B3A8C":"#A3245E"}}>
+        {table.gender==="m"?"גברים":"נשים"}{genderClash?" ⚠️":""}</span>}
     </div>
   );
   const selRing=(shape)=>selected&&shape;
@@ -915,7 +921,7 @@ export function GuestChip({ guest, tableId, onRemove }) {
 }
 
 // ─── ADD/EDIT GUEST MODAL ─────────────────────────────────────────────────────
-export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false, onUpdateExisting }) {
+export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false, onUpdateExisting, onSplit }) {
   const [name,setName]=useState(guest?.name||"");
   const [phone,setPhone]=useState(guest?.phone||"");
   const [rsvp,setRsvp]=useState(guest?.rsvp||"pending");
@@ -1074,6 +1080,15 @@ export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[],
             </div>
           )}
         </div>
+
+        {/* אירוע בהפרדה: אורח שסימן גם גברים וגם נשים — אפשר לפצל לשתי רשומות כדי להושיב כל חלק בשולחן שלו */}
+        {isEdit&&onSplit&&(()=>{const x=guest.rsvp_extra||{},m=+x.men||0,w=+x.women||0;if(!(m>0&&w>0))return null;return(
+          <div style={{background:"#F7F3FB",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:4}}>👨 {m} גברים · 👩 {w} נשים</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:8}}>כדי להושיב את הגברים ואת הנשים בשולחנות נפרדים, מפצלים לשתי רשומות. ההודעות ימשיכו להגיע לנייד פעם אחת בלבד.</div>
+            <button type="button" disabled={busy} onClick={async()=>{setBusy(true);await onSplit(guest);setBusy(false);}}
+              style={{width:"100%",background:"#fff",border:`1.5px solid ${C.border}`,borderRadius:12,padding:"10px",fontSize:14,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"inherit"}}>{busy?"מפצל...":"✂️ פיצול לגברים ולנשים"}</button>
+          </div>);})()}
 
         <button onClick={handleSave} disabled={!name.trim()}
           style={{width:"100%",background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#F6F0FF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:14,padding:"14px",fontSize:16,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
@@ -1794,11 +1809,12 @@ export function BottomNav({ active, onChange, userPackages=[], totalGuests=0, tr
 }
 
 // ─── EDIT TABLE MODAL ─────────────────────────────────────────────────────────
-export function EditTableModal({ table, onSave, onDelete, onClose }) {
+export function EditTableModal({ table, onSave, onDelete, onClose, genderOn=false }) {
   const [name,setName]=useState(table.name);
   const [type,setType]=useState(table.type);
   const [seats,setSeats]=useState(table.seats);
   const [num,setNum]=useState(table.num||"");
+  const [gender,setGender]=useState(table.gender||"");
   return(
     <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(13,27,75,.5)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 40px",width:"100%",maxWidth:480,direction:"rtl"}}>
@@ -1836,9 +1852,19 @@ export function EditTableModal({ table, onSave, onDelete, onClose }) {
           <button onClick={()=>setSeats(s=>s+1)} style={{width:32,height:32,borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
         </div>
 
+        {/* אירוע בהפרדה: למי השולחן */}
+        {genderOn&&<div role="radiogroup" aria-label="השולחן מיועד ל" style={{marginBottom:18}}>
+          <div style={{fontSize:12,fontWeight:800,color:C.muted,marginBottom:6}}>השולחן מיועד ל</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            {[["","מעורב","#F6F0FF",C.text],["m","👨 גברים","#E8F1FF","#1B3A8C"],["w","👩 נשים","#FDECF4","#A3245E"]].map(([k,l,bg,fg])=>(
+              <button key={k||"mix"} type="button" role="radio" aria-checked={gender===k} onClick={()=>setGender(k)}
+                style={{background:gender===k?fg:bg,color:gender===k?"#fff":fg,border:"none",borderRadius:12,padding:"11px 6px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>))}
+          </div>
+        </div>}
+
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>onDelete(table.id)} style={{background:"#FEF2F2",color:C.danger,border:`1px solid ${C.danger}30`,borderRadius:12,padding:"12px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>🗑️ מחק</button>
-          <button onClick={()=>name.trim()&&onSave(table.id,name,type,seats,parseInt(num,10)||null)} disabled={!name.trim()} style={{flex:1,background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#F6F0FF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
+          <button onClick={()=>name.trim()&&onSave(table.id,name,type,seats,parseInt(num,10)||null,genderOn?gender:undefined)} disabled={!name.trim()} style={{flex:1,background:name.trim()?`linear-gradient(135deg,${C.blueM},${C.blueL})`:"#F6F0FF",color:name.trim()?"#fff":C.muted,border:"none",borderRadius:12,padding:"12px",fontSize:15,fontWeight:700,cursor:name.trim()?"pointer":"default",fontFamily:"inherit"}}>
             שמור שינויים ✓
           </button>
         </div>
@@ -1943,7 +1969,7 @@ export function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onIt
           return(
           <button key={t.id} type="button" onClick={()=>{if(noClick.current)return;!dim&&onTable(t0);}}
             onTouchStart={e=>onTouch(what,e)} onPointerDown={e=>onMouse(what,e)} onContextMenu={e=>e.preventDefault()}
-            aria-label={`שולחן ${t.num||""}${nm?" "+nm:""}, ${n} מתוך ${t.seats}${picked?(full?", מלא":", להושבה כאן"):""}`}
+            aria-label={`שולחן ${t.num||""}${nm?" "+nm:""}${t.gender?(t.gender==="m"?", גברים":", נשים"):""}, ${n} מתוך ${t.seats}${picked?(full?", מלא":", להושבה כאן"):""}`}
             style={{position:"absolute",left:cx-dw/2,top:cy-dh/2,width:dw,height:dh,padding:0,borderRadius:round?"50%":Math.min(14,u*.2),cursor:dim?"not-allowed":moving?"grabbing":"pointer",opacity:dim?.35:1,
               zIndex:moving?5:1,transform:moving?"scale(1.1)":"none",transition:"transform 120ms ease-out",WebkitTouchCallout:"none",userSelect:"none",
               background:picked&&!full?"#FFF0F7":"#fff",border:`${Math.max(1.5,u*.05)}px solid ${ring}`,boxShadow:moving?`0 16px 28px -10px rgba(91,60,140,.6)`:picked&&!full?`0 0 0 ${Math.max(2,u*.06)}px ${C.blueM}33`:"0 4px 10px -6px rgba(91,60,140,.45)",
@@ -1951,6 +1977,9 @@ export function MobileHallMap({ tables, items=[], hallBox, picked, onTable, onIt
             <b style={{fontSize:u*.3,color:C.text}}>{t.num||""}</b>
             <span style={{fontSize:u*.19,fontWeight:700,color:full?C.danger:"#5F5675",fontVariantNumeric:"tabular-nums"}}>{n}/{t.seats}</span>
             {lockedIds&&lockedIds.has(t.id)&&<span aria-hidden="true" style={{position:"absolute",top:-u*.08,left:-u*.08,fontSize:u*.18}}>🔒</span>}
+            {/* אירוע בהפרדה: שולחן גברים / נשים */}
+            {t.gender&&<span aria-hidden="true" style={{position:"absolute",top:-u*.1,right:-u*.1,width:u*.34,height:u*.34,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:u*.2,
+              background:t.gender==="m"?"#E8F1FF":"#FDECF4",border:`1.5px solid ${t.gender==="m"?"#1B3A8C":"#A3245E"}`}}>{t.gender==="m"?"👨":"👩"}</span>}
             {nm&&<span dir="rtl" style={{position:"absolute",top:"100%",marginTop:u*.04,maxWidth:dw*1.35,fontSize:u*.17,fontWeight:700,color:"#4A4060",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",background:"rgba(255,252,254,.9)",borderRadius:4,padding:`0 ${u*.04}px`}}>{nm}</span>}
           </button>);})}
       </div>}
@@ -2030,7 +2059,7 @@ export function MobileMapBar({ tools, onAddTable, onPrint, onPrintCards, onTempl
 
 // מפת האולם בטלפון (לשונית "מפה"). false = מסתיר אותה (נשארות רשימת האורחים והשולחנות)
 export const PHONE_MAP=true;
-export function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable, snapTable, lockedIds, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
+export function MobileSeating({ genderOn=false, tables, items=[], hallBox, mapTools, onMoveTable, snapTable, lockedIds, guests, declined=[], search, setSearch, newGuest, setNewGuest, addGuest, dropOnTable, removeFromTable, onAddTable, onEditTable, onDeleteTable, onEditGuest, onPrint, onPrintCards, onTemplates }) {
   const [tab,setTab]=useState("tables"),[picked,setPicked]=useState(null),[expanded,setExpanded]=useState(null),[editTable,setEditTable]=useState(null),[showDeclined,setShowDeclined]=useState(false);
   const [sheet,setSheet]=useState(null); // שולחן שנפתח מהמפה
   const [itemSheet,setItemSheet]=useState(null),[mapFull,setMapFull]=useState(false); // אלמנט באולם שנפתח מהמפה · מפה על כל המסך
@@ -2161,7 +2190,7 @@ export function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable
                   </div>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:800,fontSize:15,color:C.text}}>{String(t.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${t.num}`}</div>
-                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>{TABLE_TYPES[t.type]?.label} · {t.seats-(t.guests||[]).length} פנויים</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>{t.gender&&<b style={{color:t.gender==="m"?"#1B3A8C":"#A3245E"}}>{t.gender==="m"?"👨 גברים":"👩 נשים"} · </b>}{TABLE_TYPES[t.type]?.label} · {t.seats-(t.guests||[]).length} פנויים</div>
                   </div>
                   {picked
                     ?isFull?<span style={{fontSize:12,color:C.danger,fontWeight:700}}>מלא</span>:<span style={{background:`linear-gradient(135deg,${C.blueM},${C.blueL})`,color:"#fff",borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:700}}>שבץ +</span>
@@ -2214,7 +2243,7 @@ export function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable
           <div style={{width:46,height:46,borderRadius:13,background:GRAD,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900,flexShrink:0}}>{sheetT.num||""}</div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:800,fontSize:16,color:C.text}}>{String(sheetT.name||"").replace(/^\s*\d+\s*/,"")||`שולחן ${sheetT.num}`}</div>
-            <div style={{fontSize:13,color:"#5F5675"}}>{(sheetT.guests||[]).length} מתוך {sheetT.seats} · {Math.max(0,sheetT.seats-(sheetT.guests||[]).length)} פנויים</div>
+            <div style={{fontSize:13,color:"#5F5675"}}>{sheetT.gender&&<b style={{color:sheetT.gender==="m"?"#1B3A8C":"#A3245E"}}>{sheetT.gender==="m"?"👨 גברים":"👩 נשים"} · </b>}{(sheetT.guests||[]).length} מתוך {sheetT.seats} · {Math.max(0,sheetT.seats-(sheetT.guests||[]).length)} פנויים</div>
           </div>
           <button onClick={()=>{setEditTable(sheetT);setSheet(null);}} aria-label="עריכת השולחן" style={{background:C.blueXL,border:`1px solid ${C.border}`,borderRadius:10,width:38,height:38,cursor:"pointer",fontSize:15}}>✏️</button>
         </div>
@@ -2231,8 +2260,8 @@ export function MobileSeating({ tables, items=[], hallBox, mapTools, onMoveTable
       </div>
     </div>}
 
-    {editTable&&<EditTableModal table={editTable} onClose={()=>setEditTable(null)}
-      onSave={async(id,name,type,seats)=>{await onEditTable(id,name,type,seats);setEditTable(null);}}
+    {editTable&&<EditTableModal table={editTable} genderOn={genderOn} onClose={()=>setEditTable(null)}
+      onSave={async(...a)=>{await onEditTable(...a);setEditTable(null);}}
       onDelete={async(id)=>{await onDeleteTable(id);setEditTable(null);}}
     />}
   </div>);
@@ -3358,17 +3387,18 @@ export function HomeRsvpCard({ confirmed, declined, pending, total, onOpen, onSh
 // ─── שאלות נוספות באישור ההגעה (מנות, ילדים, אלרגיות, הסעה) ───
 // ההגדרה: settings_json.rsvpQ · התשובה של כל אורח: guests.rsvp_extra
 export const rsvpExtrasSummary=(event,guests)=>{
-  const q=rsvpQOf(event),meals={},allergies=[];let kids=0,transport=0,people=0,answered=0;
+  const q=rsvpQOf(event),meals={},allergies=[];let kids=0,transport=0,people=0,answered=0,men=0,women=0;
   guests.filter(g=>g.rsvp==="confirmed").forEach(g=>{
     const n=g.guest_count||1,x=g.rsvp_extra||{};people+=n;
     if(g.rsvp_extra)answered++;
+    men+=Math.max(0,+x.men||0);women+=Math.max(0,+x.women||0);
     let picked=0;Object.entries(x.meals||{}).forEach(([k,v])=>{const c=Math.max(0,+v||0);if(c){meals[k]=(meals[k]||0)+c;picked+=c;}});
     if(q.meal&&picked<n)meals["לא צוין"]=(meals["לא צוין"]||0)+(n-picked);
     kids+=Math.max(0,+x.kids||0);
     if(x.transport)transport+=n;
     if(String(x.allergies||"").trim())allergies.push({name:g.name,text:String(x.allergies).trim()});
   });
-  return {q,meals,kids,transport,allergies,people,answered};
+  return {q,meals,kids,transport,allergies,people,answered,men,women,genderUnknown:Math.max(0,people-men-women)};
 };
 export function printCateringReport(event,guests){
   const s=rsvpExtrasSummary(event,guests);
@@ -3384,6 +3414,7 @@ export function printCateringReport(event,guests){
   <h1>דוח לקייטרינג ולאולם · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · הודפס ${new Date().toLocaleDateString("he-IL")}</div>
   <div class="big">${s.people} אנשים אישרו הגעה${s.q.kids?` · מתוכם ${s.kids} ילדים`:""}</div>
   ${s.q.meal?`<h2>מנות</h2><table><tr><th>סוג מנה</th><th>כמות</th></tr>${Object.entries(s.meals).map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${v}</b></td></tr>`).join("")}</table>`:""}
+  ${s.q.gender?`<h2>גברים ונשים</h2><table><tr><th>גברים</th><th>נשים</th>${s.genderUnknown?"<th>לא צוין</th>":""}</tr><tr><td><b>${s.men}</b></td><td><b>${s.women}</b></td>${s.genderUnknown?`<td>${s.genderUnknown}</td>`:""}</tr></table>`:""}
   ${s.q.transport?`<h2>הסעה</h2><div>${s.transport} אנשים צריכים הסעה</div>`:""}
   ${s.q.allergies?`<h2>אלרגיות והערות (${s.allergies.length})</h2>${s.allergies.length?`<table><tr><th>אורח</th><th>אלרגיה / הערה</th></tr>${s.allergies.map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.text)}</td></tr>`).join("")}</table>`:"<div>אין</div>"}`:""}
   </body></html>`);
@@ -3402,6 +3433,7 @@ export function RsvpExtrasCard({ event, guests, style }) {
       </div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         {s.q.meal&&Object.entries(s.meals).map(([k,v])=><span key={k} style={chip}>{k}: {v}</span>)}
+        {s.q.gender&&<><span style={{...chip,background:"#E8F1FF",color:"#1B3A8C"}}>👨 גברים: {s.men}</span><span style={{...chip,background:"#FDECF4",color:"#A3245E"}}>👩 נשים: {s.women}</span>{s.genderUnknown>0&&<span style={chip}>לא צוין: {s.genderUnknown}</span>}</>}
         {s.q.kids&&<span style={chip}>👶 ילדים: {s.kids}</span>}
         {s.q.transport&&<span style={chip}>🚌 הסעה: {s.transport}</span>}
         {s.q.allergies&&<span style={{...chip,background:s.allergies.length?"#FFF5F5":"#F7F3FB",color:s.allergies.length?"#C53030":"#2B1D3F"}}>⚠️ אלרגיות: {s.allergies.length}</span>}
@@ -3443,7 +3475,7 @@ export function printRsvpList(event,allGuests,tables,only="all"){
   w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
 }
 
-export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport }) {
+export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport, onSplit }) {
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
   const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -3529,6 +3561,15 @@ export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTabl
             </div>
           </div>
 
+          {/* אירוע בהפרדה: פיצול משפחה לגברים ולנשים (כמו בחלון עריכת האורח בהושבה) */}
+          {onSplit&&(()=>{const x=editModal.rsvp_extra||{},m=+x.men||0,w=+x.women||0;if(!(m>0&&w>0))return null;return(
+            <div style={{background:"#F7F3FB",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:13,fontWeight:800,color:"#2B1D3F",marginBottom:4}}>👨 {m} גברים · 👩 {w} נשים</div>
+              <div style={{fontSize:12,color:"#5F5675",lineHeight:1.5,marginBottom:8}}>כדי להושיב את הגברים ואת הנשים בשולחנות נפרדים, מפצלים לשתי רשומות. ההודעות ימשיכו להגיע לנייד פעם אחת בלבד.</div>
+              <button type="button" onClick={async()=>{await onSplit(editModal);setEditModal(null);}}
+                style={{width:"100%",background:"#fff",border:"1.5px solid #E4DAF0",borderRadius:12,padding:"10px",fontSize:14,fontWeight:800,color:"#2B1D3F",cursor:"pointer",fontFamily:"inherit"}}>✂️ פיצול לגברים ולנשים</button>
+            </div>);})()}
+
           {/* כפתורים */}
           <button onClick={saveEdit}
             style={{width:"100%",background:"#3D5475",color:"#fff",border:"none",borderRadius:12,padding:"13px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
@@ -3591,7 +3632,7 @@ export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTabl
             <button onClick={()=>openEdit(g)} style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:10,background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"right"}}>
               <span style={{width:32,height:32,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#9B8CB5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{ini(g.name)}</span>
               <span style={{minWidth:0}}>
-                <span style={{display:"block",fontSize:14,fontWeight:700,color:"#1F1730",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}{(g.guest_count||1)>1&&<span style={{fontWeight:500,color:"#5F5675"}}> · {g.guest_count} אורחים</span>}</span>
+                <span style={{display:"block",fontSize:14,fontWeight:700,color:"#1F1730",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}{(g.guest_count||1)>1&&<span style={{fontWeight:500,color:"#5F5675"}}> · {g.guest_count} אורחים</span>}{(+g.rsvp_extra?.men||+g.rsvp_extra?.women)?<span style={{fontWeight:600,color:"#5F5675"}} aria-label={`${+g.rsvp_extra.men||0} גברים, ${+g.rsvp_extra.women||0} נשים`}> · {+g.rsvp_extra.men>0&&`👨${+g.rsvp_extra.men}`}{+g.rsvp_extra.men>0&&+g.rsvp_extra.women>0?" ":""}{+g.rsvp_extra.women>0&&`👩${+g.rsvp_extra.women}`}</span>:null}</span>
                 <span style={{display:"block",fontSize:12,color:"#5F5675",direction:"ltr",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{g.phone||"—"}</span>
               </span>
             </button>
@@ -4195,7 +4236,19 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     if(other)cur[other]=old;
     cur[id]=n;saveTableNums(cur);
   };
-  const tablesNum=[...tables].map(t=>({...t,num:numOf(t)})).sort((a,b)=>(a.num||999)-(b.num||999));
+  // ─── אירוע בהפרדה: שולחן מסומן "גברים" / "נשים" (settings_json.table_gender = {tableId:"m"|"w"}) ───
+  const genderOn=!!rsvpQOf(event).gender;
+  const [tableGender,setTableGender]=useState(()=>event.settings_json?.table_gender||{});
+  useEffect(()=>{setTableGender(event.settings_json?.table_gender||{});},[event.id]);
+  const genderOf=t=>genderOn?(tableGender[t?.id]||""):"";
+  const saveTableGender=async(id,g)=>{
+    const next={...tableGender};if(g)next[id]=g;else delete next[id];
+    setTableGender(next);
+    const settings={...(event.settings_json||{}),table_gender:next};
+    event.settings_json=settings;
+    await sb.from("events").update({settings_json:settings}).eq("id",event.id);
+  };
+  const tablesNum=[...tables].map(t=>({...t,num:numOf(t),gender:genderOf(t)})).sort((a,b)=>(a.num||999)-(b.num||999));
   // הדפסת סידור ההושבה: לפי שולחנות + אינדקס אורחים לפי א-ב (לכניסה לאולם)
   const printSeating=()=>{
     const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -4437,7 +4490,8 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     setSaving(false);
   };
   const removeFromTable=async(tid,guest)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("id",guest.id);pushUndo(`הוצאת ${guest.name}`,()=>restoreGuests([{id:guest.id,table_id:tid}]));setTables(ts=>ts.map(t=>t.id===tid?{...t,guests:(t.guests||[]).filter(g=>g.id!==guest.id)}:t));setGuests(gs=>{const already=gs.some(g=>g.id===guest.id);return already?gs:[...gs,{...guest,table_id:null}];});setSaving(false);};
-  const editTable=async(id,name,type,seats,num)=>{if(num&&Number(num)!==Number(tableNumsRef.current[id]))setTableNum(id,num);setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
+  const editTable=async(id,name,type,seats,num,gender)=>{if(num&&Number(num)!==Number(tableNumsRef.current[id]))setTableNum(id,num);
+    if(gender!==undefined&&(gender||"")!==(tableGender[id]||""))saveTableGender(id,gender);setSaving(true);await sb.from("tables").update({name,type,seats}).eq("id",id);setTables(ts=>ts.map(t=>t.id===id?{...t,name,type,seats}:t));setSaving(false);};
   const deleteTable=async(id)=>{setSaving(true);await sb.from("guests").update({table_id:null}).eq("table_id",id);await sb.from("tables").delete().eq("id",id);const freed=tables.find(t=>t.id===id)?.guests||[];setTables(ts=>ts.filter(t=>t.id!==id));setGuests(gs=>[...gs,...freed.map(g=>({...g,table_id:null}))]);setSaving(false);};
   const addGuest=async(data)=>{
     const sp=splitNamePhone(data?.name||newGuest,data?.phone);
@@ -4450,6 +4504,20 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     const{data:d}=await insertGuestRow(row);
     if(d)setGuests(gs=>[...gs,{relation:row.relation,...d}]);
     setNewGuest("");setSaving(false);
+  };
+  // אירוע בהפרדה: פיצול אורח (משפחה) לשתי רשומות — גברים ונשים — כדי להושיב כל חלק בשולחן שלו.
+  // הרשומה המקורית נשארת עם הנייד (גברים); החדשה בלי נייד, כדי שההודעות לא יישלחו פעמיים
+  const splitGuest=async g=>{
+    const x=g.rsvp_extra||{},m=+x.men||0,w=+x.women||0;if(!(m>0&&w>0))return;
+    const base=String(g.name||"").replace(/\s*\((גברים|נשים)\)\s*$/,"");
+    setSaving(true);
+    const{error:e1}=await sb.from("guests").update({name:`${base} (גברים)`,guest_count:m,rsvp_extra:{...x,men:m,women:0}}).eq("id",g.id);
+    const row={event_id:event.id,name:`${base} (נשים)`,phone:null,rsvp:g.rsvp||"confirmed",guest_count:w,rsvp_extra:{...x,men:0,women:w}};
+    let{error:e2}=e1?{error:e1}:await sb.from("guests").insert(g.relation?{...row,relation:g.relation}:row);
+    if(e2&&g.relation&&/relation/i.test(e2.message||""))({error:e2}=await sb.from("guests").insert(row)); // מסד ישן בלי עמודת קטגוריה
+    setSaving(false);
+    if(e1||e2){alert("❌ הפיצול לא הצליח: "+(e1||e2).message);return;}
+    setEditGuestData(null);await loadAll(true);
   };
   const editGuest=async(id,data)=>{
     data={...data,...splitNamePhone(data.name,data.phone)};
@@ -4709,8 +4777,8 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
           }}
           onMoveTable={mapLocked?null:(t,x,y)=>{const bx=t.x||0,by=t.y||0;moveTablePos(t.id,x,y);saveTablePos(t.id,x,y);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}}
           snapTable={(t,x,y)=>{if(!gridOn())return{x:Math.round(x),y:Math.round(y)};const r=snapToGrid(t,x,y,hallRect());return{x:r.x,y:r.y};}}
-          lockedIds={lockedTables} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)}/>}
-        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
+          lockedIds={lockedTables} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)} genderOn={genderOn}/>}
+        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <div style={{fontSize:13,color:C.muted,marginBottom:20}}>הוסף אורחים אחד אחד עם כל הפרטים</div>
@@ -4737,7 +4805,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
         )}
         {modal==="addGuest"&&(<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
         )}
-        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")}/>}
+        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")} onSplit={genderOn?splitGuest:undefined}/>}
         {screen==="import"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <button onClick={()=>setScreen("rsvp")} style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>→ חזרה לניהול אורחים</button>
@@ -5426,7 +5494,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
                         {/* כניסה מדורגת של השולחנות כשהמפה נפתחת */}
                         <div className="sx-anim" style={{position:"absolute",left:0,top:0,animation:`sxPopIn .55s cubic-bezier(.3,1.4,.5,1) ${Math.min(ti,12)*.07}s both`}}>
                         {/* המיקום נקבע ע"י העוטף  -  השולחן עצמו מצויר ביחס אליו */}
-                        <TableNode table={{...t,x:0,y:0,num:numOf(t)}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
+                        <TableNode table={{...t,x:0,y:0,num:numOf(t),gender:genderOf(t)}} selected={selected===t.id} highlight={hit} locked={mapLocked} onMouseDown={hmd}
                           onDrop={e=>{const gid=e.dataTransfer.getData("guestId");const f=e.dataTransfer.getData("fromTable")||null;if(gid)dropOnTable(t.id,gid,f);}}/>
                         </div>
                         {lockedTables.has(t.id)&&selected!==t.id&&<span aria-label="שולחן נעול" style={{position:"absolute",top:-8,left:-8,zIndex:30,width:22,height:22,borderRadius:"50%",background:"#FFF4E0",border:"2px solid #fff",boxShadow:"0 2px 6px rgba(0,0,0,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,pointerEvents:"none"}}>🔒</span>}
@@ -5716,11 +5784,11 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     </div>}
 
     {/* GuestModal לדסקטופ */}
-    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}}/>}
+    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined}/>}
 
     {/* EditTableModal לדסקטופ  -  נפתח מכפתור עריכה במפה */}
-    {editTableData&&<EditTableModal table={{...editTableData,num:numOf(editTableData)}} onClose={()=>setEditTableData(null)}
-      onSave={async(id,name,type,seats,num)=>{await editTable(id,name,type,seats,num);setEditTableData(null);}}
+    {editTableData&&<EditTableModal table={{...editTableData,num:numOf(editTableData),gender:genderOf(editTableData)}} genderOn={genderOn} onClose={()=>setEditTableData(null)}
+      onSave={async(id,name,type,seats,num,gender)=>{await editTable(id,name,type,seats,num,gender);setEditTableData(null);}}
       onDelete={async(id)=>{await deleteTable(id);setEditTableData(null);setSelected(null);}}
     />}
 
@@ -5882,6 +5950,7 @@ export function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
     hebrewDate: event.settings_json?.hebrewDate??true,
     countdown: event.settings_json?.countdown??true,
     shareBtn: event.settings_json?.shareBtn??true,
+    callBtn: event.settings_json?.callBtn??false,
     inviteStyle: inviteStyleOf(event),
     rsvpQ: rsvpQOf(event),
   });
@@ -6205,6 +6274,7 @@ export function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
           {key:"kids",label:"כמה ילדים",desc:"מתוך המגיעים"},
           {key:"allergies",label:"אלרגיות והערות",desc:"טקסט חופשי לקייטרינג"},
           {key:"transport",label:"צריכים הסעה",desc:"כן / לא"},
+          {key:"gender",label:"גברים ונשים (אירוע בהפרדה)",desc:"האורחים בוחרים כמה גברים וכמה נשים מגיעים, ובהושבה רואים את החלוקה"},
         ].map(item=>(
           <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #F7FAFC"}}>
             <div><div style={{fontSize:14,fontWeight:700,color:"#1A202C"}}>{item.label}</div><div style={{fontSize:12,color:"#5F6B7D",marginTop:2}}>{item.desc}</div></div>
@@ -6235,6 +6305,7 @@ export function EventDetailsScreen({ event, sb, user, onLogout, onUpdate }) {
           {key:"hebrewDate",label:"תאריך עברי",desc:"מציג תאריך עברי בהזמנה לפי התאריך הלועזי"},
           {key:"countdown",label:"ספירה לאחור",desc:"מציג מונה ספירת ימים ושעות לקראת האירוע"},
           {key:"shareBtn",label:"כפתור שיתוף",desc:"מציג כפתור עם אפשרויות לשיתוף ההזמנה"},
+          {key:"callBtn",label:"כפתור התקשרות",desc:"האורחים יכולים להתקשר לנייד שהזנתם בפרטי האירוע. כבוי: הנייד לא מוצג בהזמנה"},
         ].map(item=>(
           <div key={item.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid #F7FAFC"}}>
             <div>
