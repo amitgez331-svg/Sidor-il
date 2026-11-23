@@ -9,6 +9,14 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 const ADMIN_EMAIL = "amitgez331@gmail.com";
+// רמת האימות של ההתחברות (aal2 = עבר גם קוד מאפליקציית האימות). הטוקן עצמו כבר אומת ב-getUser
+const aalOf = (req: Request) => {
+  try {
+    const p = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").split(".")[1] || "";
+    const b64 = p.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(p.length / 4) * 4, "=");
+    return String(JSON.parse(atob(b64)).aal || "");
+  } catch { return ""; }
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -19,6 +27,7 @@ Deno.serve(async (req) => {
     });
     const { data: { user } } = await userClient.auth.getUser();
     if (!user || (user.email || "").toLowerCase() !== ADMIN_EMAIL) return json({ error: "אדמין בלבד" }, 403);
+    if (aalOf(req) !== "aal2") return json({ error: "נדרש אימות דו־שלבי" }, 403);
 
     const username = Deno.env.get("SMS019_USERNAME");
     const token = Deno.env.get("SMS019_TOKEN");

@@ -12,6 +12,14 @@ const json = (body: unknown, status = 200) =>
 const ADMIN_EMAIL = "amitgez331@gmail.com";
 const PACKAGES = ["basic", "sms", "auto", "staff", "kiosk", "producer"]; // כמו ALL_PACKAGES ב-App.jsx
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// רמת האימות של ההתחברות (aal2 = עבר גם קוד מאפליקציית האימות). הטוקן עצמו כבר אומת ב-getUser
+const aalOf = (req: Request) => {
+  try {
+    const p = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").split(".")[1] || "";
+    const b64 = p.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(p.length / 4) * 4, "=");
+    return String(JSON.parse(atob(b64)).aal || "");
+  } catch { return ""; }
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -22,6 +30,7 @@ Deno.serve(async (req) => {
     });
     const { data: { user } } = await userClient.auth.getUser();
     if (!user || (user.email || "").toLowerCase() !== ADMIN_EMAIL) return json({ error: "אדמין בלבד" }, 403);
+    if (aalOf(req) !== "aal2") return json({ error: "נדרש אימות דו־שלבי. היכנסו שוב למסך האדמין והקלידו את הקוד" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const password = String(body.password || "");
