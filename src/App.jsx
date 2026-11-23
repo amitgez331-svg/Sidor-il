@@ -3176,7 +3176,8 @@ const loadHeavy=()=>import("./app-heavy.jsx");
 const heavyPart=name=>{const L=lazy(()=>loadHeavy().then(m=>({default:m[name]})));return function HeavyPart(props){return <Suspense fallback={<HeavyLoading/>}><L {...props}/></Suspense>;};};
 function HeavyLoading(){return <div style={{minHeight:"60vh",display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner size={36}/></div>;}
 const SeatingApp=heavyPart("SeatingApp");
-const AdminDashboard=heavyPart("AdminDashboard");
+// מסך האדמין עובר קודם דרך אימות דו־שלבי (AdminSecure), ורק אחריו מוצג AdminDashboard
+const AdminSecure=heavyPart("AdminSecure");
 const CreateEventScreen=heavyPart("CreateEventScreen");
 const SupplierHome=heavyPart("SupplierHome");
 const AdminLogin=heavyPart("AdminLogin");
@@ -3318,7 +3319,7 @@ export default function App() {
       <AdminLogin onSuccess={u=>{setUser(u);}} onClose={()=>window.location.hash=""}/>
     );
     return(<><style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <AdminDashboard user={user} onLogout={logout}/>
+      <AdminSecure user={user} onLogout={logout}/>
     </>);
   }
 

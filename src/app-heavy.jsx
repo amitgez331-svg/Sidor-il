@@ -3380,14 +3380,14 @@ export function printCateringReport(event,guests){
     body{font-family:Heebo,Arial,sans-serif;color:#2B1D3F;margin:24px}h1{margin:0;font-size:24px}.sub{color:#6E6585;margin:4px 0 18px;font-size:13px}
     h2{font-size:16px;margin:20px 0 8px;border-bottom:2px solid #2B1D3F;padding-bottom:4px}table{border-collapse:collapse;font-size:14px;min-width:300px}td,th{border-bottom:1px solid #EEE6F7;padding:6px 10px;text-align:right}th{background:#F4EEFC}
     .big{font-size:22px;font-weight:900}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}@media print{.bar{display:none}body{margin:10mm}}
-  </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+  </style></head><body><div class="bar"><button id="sx-print">🖨️ הדפסה</button></div>
   <h1>דוח לקייטרינג ולאולם · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · הודפס ${new Date().toLocaleDateString("he-IL")}</div>
   <div class="big">${s.people} אנשים אישרו הגעה${s.q.kids?` · מתוכם ${s.kids} ילדים`:""}</div>
   ${s.q.meal?`<h2>מנות</h2><table><tr><th>סוג מנה</th><th>כמות</th></tr>${Object.entries(s.meals).map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${v}</b></td></tr>`).join("")}</table>`:""}
   ${s.q.transport?`<h2>הסעה</h2><div>${s.transport} אנשים צריכים הסעה</div>`:""}
   ${s.q.allergies?`<h2>אלרגיות והערות (${s.allergies.length})</h2>${s.allergies.length?`<table><tr><th>אורח</th><th>אלרגיה / הערה</th></tr>${s.allergies.map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.text)}</td></tr>`).join("")}</table>`:"<div>אין</div>"}`:""}
   </body></html>`);
-  w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+  w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
 }
 // כרטיס הסיכום במסך אישורי הגעה (רק אם הופעלה לפחות שאלה אחת)
 export function RsvpExtrasCard({ event, guests, style }) {
@@ -3436,11 +3436,11 @@ export function printRsvpList(event,allGuests,tables,only="all"){
     table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #EEE6F7;padding:5px 8px;text-align:right}th{background:#F4EEFC}td.c,th.c{text-align:center}tr{break-inside:avoid}
     .empty{color:#8A7FA0;font-size:12px}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}
     @media print{.bar{display:none}body{margin:10mm}}
-  </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+  </style></head><body><div class="bar"><button id="sx-print">🖨️ הדפסה</button></div>
   <h1>אישורי הגעה · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · הודפס ${new Date().toLocaleDateString("he-IL")}</div>
   <div class="sum"><div><b>${sum("confirmed")}</b>מגיעים</div><div><b>${sum("pending")}</b>ממתינים</div><div><b>${sum("declined")}</b>לא מגיעים</div><div><b>${allGuests.reduce((n,g)=>n+ppl(g),0)}</b>סה״כ מוזמנים</div></div>
   ${sections}</body></html>`);
-  w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+  w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
 }
 
 export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport }) {
@@ -4220,12 +4220,12 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
       .empty,.wait{color:#8A7FA0;font-size:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #EEE6F7;padding:5px 8px;text-align:right}th{background:#F4EEFC}td.c{text-align:center}
       .idx{columns:2;column-gap:24px}.idx table{break-inside:auto}.bar{margin-bottom:14px}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer}
       @media print{.bar{display:none}body{margin:10mm}.grid{grid-template-columns:repeat(3,1fr)}h2{break-after:avoid}.pb{break-before:page}}
-    </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button></div>
+    </style></head><body><div class="bar"><button id="sx-print">🖨️ הדפסה</button></div>
     <h1>סידור הושבה · ${title}</h1><div class="sub">${date}${event.venue?` · ${esc(event.venue)}`:""} · ${tablesNum.length} שולחנות · ${seated} מתוך ${total} הושבו</div>
     <h2>לפי שולחנות</h2><div class="grid">${cards}</div>
     <h2 class="pb">לפי שם אורח (א-ב)</h2><div class="idx"><table><thead><tr><th>שם</th><th>אורחים</th><th>שולחן</th><th>שם השולחן</th></tr></thead><tbody>${idx}</tbody></table></div>
     ${waiting}</body></html>`);
-    w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+    w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
   };
   // הדפסת כרטיסים: "tables" = כרטיס מספר לכל שולחן (מתקפל לאוהל), "names" = כרטיס שם לכל אורח עם מספר השולחן
   const printCards=kind=>{
@@ -4256,8 +4256,8 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
       *{box-sizing:border-box}body{font-family:Heebo,Arial,sans-serif;margin:16px}
       .bar{margin-bottom:12px;font-size:13px;color:#6E6585}.bar button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:none;background:#2B1D3F;color:#fff;cursor:pointer;margin-left:10px}
       ${css}@media print{.bar{display:none}body{margin:8mm}}
-    </style></head><body><div class="bar"><button onclick="print()">🖨️ הדפסה</button>${kind==="tables"?"כרטיס לכל עמוד · מקפלים לאורך הקו המקווקו":"גוזרים לאורך הקווים המקווקווים"}</div>${body}</body></html>`);
-    w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
+    </style></head><body><div class="bar"><button id="sx-print">🖨️ הדפסה</button>${kind==="tables"?"כרטיס לכל עמוד · מקפלים לאורך הקו המקווקו":"גוזרים לאורך הקווים המקווקווים"}</div>${body}</body></html>`);
+    w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
   };
   const [userPackages,setUserPackages]=useState([]);
   // מדריך הצעדים הראשונים במסך הבית: כל צעד פותח את המסך שלו, והצעד הבא מודגש
@@ -10754,6 +10754,83 @@ export function AdminLogin({ onSuccess, onClose }) {
         <button onClick={onClose} style={{background:"none",border:"none",color:"#6E6585",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
           חזרה לאתר
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── אימות דו־שלבי לאדמין (TOTP): קוד מאפליקציית אימות בטלפון, בנוסף לסיסמה ───
+// בפעם הראשונה: חיבור אפליקציית האימות (סריקת QR / קישור). אחר כך: קוד בן 6 ספרות בכל כניסה.
+// השרת דורש את זה בעצמו (is_admin בודק aal2), כך שגם בלי המסך הזה אין גישה לנתוני האדמין עם סיסמה בלבד
+export function AdminSecure({ user, onLogout }) {
+  const [st,setSt]=useState("checking"); // checking | enroll | verify | ok | error
+  const [factor,setFactor]=useState(null); // {id, qr, secret, uri}
+  const [code,setCode]=useState(""),[err,setErr]=useState(""),[busy,setBusy]=useState(false),[showKey,setShowKey]=useState(false);
+  const start=async()=>{
+    setErr("");
+    try{
+      const{data:aal,error:e1}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(e1)throw e1;
+      if(aal?.currentLevel==="aal2"){setSt("ok");return;}
+      const{data:f,error:e2}=await sb.auth.mfa.listFactors();
+      if(e2)throw e2;
+      const ok=(f?.totp||[]).find(x=>x.status==="verified");
+      if(ok){setFactor({id:ok.id});setSt("verify");return;}
+      // חיבור שהתחיל ולא הושלם: מוחקים ומתחילים מחדש
+      for(const x of (f?.all||[]).filter(x=>x.status!=="verified"))await sb.auth.mfa.unenroll({factorId:x.id}).catch(()=>{});
+      const{data:en,error:e3}=await sb.auth.mfa.enroll({factorType:"totp",friendlyName:"Sidor-IL Admin",issuer:"Sidor-IL"});
+      if(e3)throw e3;
+      setFactor({id:en.id,qr:en.totp?.qr_code,secret:en.totp?.secret,uri:en.totp?.uri});setSt("enroll");
+    }catch(e){setErr(e?.message||"שגיאה");setSt("error");}
+  };
+  useEffect(()=>{start();},[]);
+  const verify=async()=>{
+    const c=code.replace(/\D/g,"");
+    if(c.length!==6){setErr("הקוד צריך להיות 6 ספרות");return;}
+    setBusy(true);setErr("");
+    const{error}=await sb.auth.mfa.challengeAndVerify({factorId:factor.id,code:c});
+    setBusy(false);
+    if(error){setErr(/invalid|expired/i.test(error.message||"")?"הקוד לא נכון או שפג תוקפו. נסו את הקוד הנוכחי באפליקציה":error.message);setCode("");return;}
+    setSt("ok");
+  };
+  if(st==="ok")return <AdminDashboard user={user} onLogout={onLogout}/>;
+  const box={background:"#161B22",border:"1px solid #30363D",borderRadius:20,padding:"32px 26px",width:"92%",maxWidth:400,textAlign:"center",color:"#E6EDF3"};
+  const muted={fontSize:13,color:"#9AA4B2",lineHeight:1.65};
+  const link={background:"none",border:"none",color:"#9AA4B2",fontSize:13,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline",padding:6};
+  return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0D1117",direction:"rtl",fontFamily:"'Heebo',sans-serif",padding:"24px 0"}}>
+      <div style={box}>
+        <div style={{fontSize:44,marginBottom:10}} aria-hidden="true">🛡️</div>
+        <h1 style={{fontSize:21,fontWeight:900,color:"#fff",margin:"0 0 6px"}}>{st==="enroll"?"הפעלת אימות דו־שלבי":"אימות דו־שלבי"}</h1>
+        {st==="checking"&&<div style={muted}>בודק...</div>}
+        {st==="error"&&<>
+          <div style={{...muted,color:"#F85149",marginBottom:14}}>לא הצלחנו לבדוק את האימות: {err}</div>
+          <button onClick={start} style={{background:"#3A2464",color:"#fff",border:"none",borderRadius:12,padding:"12px 22px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>ניסיון נוסף</button>
+        </>}
+        {st==="enroll"&&<>
+          <div style={{...muted,marginBottom:16}}>פעם אחת בלבד: מחברים אפליקציית אימות (Google Authenticator או Microsoft Authenticator). מעכשיו הכניסה לאדמין תדרוש גם קוד מהאפליקציה.</div>
+          {factor?.uri&&<a href={factor.uri} style={{display:"block",background:"#238636",color:"#fff",borderRadius:12,padding:"12px",fontSize:15,fontWeight:800,textDecoration:"none",marginBottom:10}}>📲 פתיחה באפליקציית האימות (בטלפון)</a>}
+          {factor?.qr&&<div style={{background:"#fff",borderRadius:14,padding:12,width:196,margin:"6px auto 8px"}}><img src={factor.qr} alt="קוד QR לחיבור אפליקציית האימות" width="172" height="172" style={{display:"block",width:172,height:172}}/></div>}
+          <div style={{...muted,fontSize:12}}>במחשב: סורקים את הקוד באפליקציה. בטלפון: לוחצים על הכפתור הירוק.</div>
+          <button type="button" onClick={()=>setShowKey(v=>!v)} style={link}>{showKey?"הסתרת המפתח":"אין סריקה? הקלדת מפתח ידנית"}</button>
+          {showKey&&factor?.secret&&<div dir="ltr" style={{fontFamily:"ui-monospace,monospace",fontSize:14,letterSpacing:1,background:"#21262D",borderRadius:10,padding:"10px",wordBreak:"break-all",userSelect:"all",marginBottom:6}}>{factor.secret}</div>}
+          <div style={{...muted,margin:"14px 0 8px",color:"#E6EDF3",fontWeight:700}}>הקלידו את הקוד בן 6 הספרות שמופיע באפליקציה:</div>
+        </>}
+        {st==="verify"&&<div style={{...muted,marginBottom:16}}>פתחו את אפליקציית האימות והקלידו את הקוד בן 6 הספרות של Sidor-IL.</div>}
+        {(st==="enroll"||st==="verify")&&<>
+          <input value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,"").slice(0,6));setErr("");}} onKeyDown={e=>e.key==="Enter"&&verify()}
+            inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="קוד אימות בן 6 ספרות" autoFocus dir="ltr" placeholder="••••••"
+            style={{width:"100%",background:"#21262D",border:`1.5px solid ${err?"#F85149":"#30363D"}`,borderRadius:12,padding:"13px 16px",fontSize:26,letterSpacing:10,color:"#fff",outline:"none",fontFamily:"ui-monospace,monospace",textAlign:"center",boxSizing:"border-box"}}/>
+          {err&&<div role="alert" style={{fontSize:13,color:"#F85149",marginTop:8}}>{err}</div>}
+          <button onClick={verify} disabled={busy||code.length!==6}
+            style={{width:"100%",marginTop:14,background:code.length===6?"#3A2464":"#21262D",color:"#fff",border:"none",borderRadius:12,padding:"14px",fontSize:16,fontWeight:800,cursor:code.length===6?"pointer":"default",fontFamily:"inherit"}}>
+            {busy?"בודק...":st==="enroll"?"הפעלה וכניסה":"כניסה"}
+          </button>
+        </>}
+        <div style={{marginTop:14,display:"flex",justifyContent:"center",gap:10,flexWrap:"wrap"}}>
+          <button type="button" onClick={()=>{window.location.hash="";window.location.reload();}} style={link}>חזרה לאתר</button>
+          <button type="button" onClick={onLogout} style={link}>יציאה</button>
+        </div>
       </div>
     </div>
   );
