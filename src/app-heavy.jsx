@@ -4295,6 +4295,51 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
   },[event.id]);
   // שמירת המסך הנוכחי לרענון הבא
   useEffect(()=>{optSet(LAST_SCREEN_KEY,JSON.stringify({eventId:event.id,screen,view}));},[event.id,screen,view]);
+  // ─── כפתור "אחורה" של הטלפון (והדפדפן): חוזר למסך הקודם באירוע, סוגר חלון/גיליון פתוח, ורק מהמסך הראשי יוצא ───
+  // כל מעבר מסך נרשם בהיסטוריה של הדפדפן ({sxEv,sx}); גיליון "הודעות"/"עוד" פתוח נרשם כרשומה נוספת ({sheet:1})
+  const histRef=useRef({first:true,pop:false,screen,overlay:false});
+  histRef.current.screen=screen;
+  histRef.current.overlay=!!(modal||editGuestData||editTableData);
+  histRef.current.closeOverlays=()=>{setModal(null);setEditGuestData(null);setEditTableData(null);};
+  useEffect(()=>{
+    const h=histRef.current,st=window.history.state||{};
+    if(h.pop){h.pop=false;return;}
+    const entry={sxEv:event.id,sx:screen};
+    try{
+      if(h.first||st.sxEv!==event.id){
+        h.first=false;h.at=Date.now();
+        // נפתח ישר על מסך פנימי (רענון / חזרה לאפליקציה): "אחורה" יוביל קודם לראשי
+        if(screen!=="home"){window.history.replaceState({...st,sxEv:event.id,sx:"home"},"");window.history.pushState(entry,"");}
+        else window.history.replaceState({...st,...entry},"");
+        return;
+      }
+      // מעבר מסך מתוך הגיליון: הגיליון מתחלף במסך החדש.
+      // מסך שמעביר מיד למסך אחר (למשל "הזמנה" בטלפון ← הגדרות): מחליפים את הרשומה, אחרת "אחורה" היה נתקע בלולאה
+      if(st.sheet||(st.sx!==screen&&Date.now()-(h.at||0)<350))window.history.replaceState(entry,"");
+      else if(st.sx!==screen)window.history.pushState(entry,"");
+      h.at=Date.now();
+    }catch{}
+  },[screen,event.id]);
+  useEffect(()=>{
+    try{
+      if(navSheet){if(!window.history.state?.sheet)window.history.pushState({sxEv:event.id,sx:histRef.current.screen,sheet:1},"");}
+      // הגיליון נסגר בלי מעבר מסך: מורידים את הרשומה שלו (אחרי שמעבר מסך, אם היה, כבר החליף אותה)
+      else setTimeout(()=>{try{if(window.history.state?.sheet&&window.history.state.sxEv===event.id)window.history.back();}catch{}},0);
+    }catch{}
+  },[navSheet]);
+  useEffect(()=>{
+    const onPop=e=>{
+      const h=histRef.current,s=e.state;
+      if(!s||s.sxEv!==event.id)return;
+      if(s.sheet){setNavSheet(null);return;} // "קדימה" לגיליון — לא פותחים אותו שוב
+      setNavSheet(null);
+      // חלון פתוח (עריכת אורח/שולחן וכו'): "אחורה" סוגר אותו ונשארים באותו מסך
+      if(h.overlay){h.closeOverlays();try{window.history.pushState({sxEv:event.id,sx:h.screen},"");}catch{}return;}
+      if(s.sx&&s.sx!==h.screen){h.pop=true;h.at=Date.now();setScreen(s.sx);}
+    };
+    window.addEventListener("popstate",onPop);
+    return()=>window.removeEventListener("popstate",onPop);
+  },[event.id]);
   // מסך נעול (למשל הושבה כשעברו את מגבלת המוזמנים בחינם): להושבה — למסך החבילות, לשאר — לראשי
   useEffect(()=>{if(!loading&&lockedFor(screen))setScreen(screen==="seating"||screen==="ai"?"packages":"home");},[loading,userPackages,memberRole,screen,guests,tables]);
   const loadAll=async(silent=false)=>{if(silent!==true)setLoading(true);const [{data:tData},{data:gData},{data:pkgData}]=await Promise.all([sb.from("tables").select("*").eq("event_id",event.id).order("created_at"),sb.from("guests").select("*").eq("event_id",event.id).order("created_at"),event.user_id&&event.user_id!==user.id
