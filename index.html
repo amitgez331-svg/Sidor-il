@@ -87,6 +87,78 @@
     </style>
   </head>
   <body>
+    <!-- ─── פתיחת האפליקציה (רק כשנפתחת מהמסך הראשי): האורחים "עפים" לכיסאות סביב השולחן, ואז נכנסים לאולם.
+         CSS בלבד, כדי שיתחיל מיד — עוד לפני שהאתר נטען — ומסתיר את זמן הטעינה. נגיעה מדלגת ─── -->
+    <style>
+      #sx-intro{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+        background:linear-gradient(140deg,#FF8A65 0%,#F0609E 52%,#9B6BFF 100%);color:#fff;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+      #sx-intro .si-b{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 70%);animation:siDrift 6s ease-in-out infinite alternate}
+      #sx-intro .si-mark{position:relative;width:min(58vw,240px);aspect-ratio:1;overflow:visible}
+      #sx-intro svg{width:100%;height:100%;overflow:visible}
+      #sx-intro svg *{transform-box:fill-box;transform-origin:center}
+      #sx-intro .si-t{animation:siTable .62s .08s cubic-bezier(.23,1,.32,1) both}
+      #sx-intro .si-f{animation:siFill .5s 1.05s cubic-bezier(.23,1,.32,1) both}
+      #sx-intro .si-c{animation:siFly .66s var(--d) cubic-bezier(.2,.9,.3,1.25) both}
+      #sx-intro .si-p{opacity:0;animation:siPing .55s calc(var(--d) + .5s) cubic-bezier(.23,1,.32,1) forwards}
+      #sx-intro .si-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,.7);animation:siRing 1s 1.1s cubic-bezier(.23,1,.32,1) both}
+      #sx-intro .si-w{overflow:hidden;padding:0 6px;line-height:1.15}
+      #sx-intro .si-w span{display:block;font:700 clamp(34px,9vw,46px)/1.15 'Fredoka','Heebo',sans-serif;letter-spacing:.5px;animation:siUp .6s .95s cubic-bezier(.23,1,.32,1) both}
+      #sx-intro .si-s{font:500 16px/1.4 'Heebo',sans-serif;opacity:.95;animation:siFade .55s 1.2s cubic-bezier(.23,1,.32,1) both}
+      #sx-intro.si-out{animation:siOut .45s cubic-bezier(.23,1,.32,1) forwards;pointer-events:none}
+      #sx-intro.si-out .si-mark{animation:siZoom .45s cubic-bezier(.23,1,.32,1) forwards}
+      @keyframes siTable{from{opacity:0;transform:scale(.35)}}
+      @keyframes siFill{from{opacity:0;transform:scale(.3)}}
+      @keyframes siFly{0%{opacity:0;transform:translate(var(--x),var(--y)) scale(.35)}40%{opacity:1}100%{opacity:1;transform:none}}
+      @keyframes siPing{0%{opacity:.9;transform:scale(.7)}100%{opacity:0;transform:scale(2.3)}}
+      @keyframes siRing{0%{opacity:0;transform:scale(.55)}25%{opacity:1}100%{opacity:0;transform:scale(2.6)}}
+      @keyframes siUp{from{transform:translateY(110%)}}
+      @keyframes siFade{from{opacity:0;transform:translateY(8px)}}
+      @keyframes siDrift{to{transform:translate(var(--mx),var(--my)) scale(1.15)}}
+      @keyframes siOut{to{opacity:0}}
+      @keyframes siZoom{to{transform:scale(1.9)}}
+      @media (prefers-reduced-motion:reduce){#sx-intro *,#sx-intro *::before{animation:none!important}#sx-intro.si-out{animation:siOut .3s ease forwards}}
+    </style>
+    <div id="sx-intro" aria-hidden="true">
+      <div class="si-b" style="width:46vmax;height:46vmax;top:-14vmax;right:-12vmax;--mx:-4vmax;--my:5vmax"></div>
+      <div class="si-b" style="width:34vmax;height:34vmax;bottom:-10vmax;left:-10vmax;opacity:.7;--mx:5vmax;--my:-4vmax;animation-duration:7s"></div>
+      <div class="si-b" style="width:16vmax;height:16vmax;top:18%;left:8%;opacity:.5;--mx:3vmax;--my:3vmax;animation-duration:5s"></div>
+      <div class="si-mark">
+        <div class="si-ring"></div>
+        <svg viewBox="0 0 512 512">
+          <circle class="si-f" cx="256" cy="256" r="80" fill="rgba(255,255,255,.38)"/>
+          <circle class="si-t" cx="256" cy="256" r="88" fill="none" stroke="#fff" stroke-width="18"/>
+          <g fill="none" stroke="#fff" stroke-width="5">
+            <circle class="si-p" style="--d:.30s" cx="404" cy="256" r="31"/><circle class="si-p" style="--d:.37s" cx="330" cy="384" r="31"/>
+            <circle class="si-p" style="--d:.44s" cx="182" cy="384" r="31"/><circle class="si-p" style="--d:.51s" cx="108" cy="256" r="31"/>
+            <circle class="si-p" style="--d:.58s" cx="182" cy="128" r="31"/><circle class="si-p" style="--d:.65s" cx="330" cy="128" r="31"/>
+          </g>
+          <g fill="#fff">
+            <circle class="si-c" style="--d:.30s;--x:640px;--y:-60px" cx="404" cy="256" r="31"/><circle class="si-c" style="--d:.37s;--x:420px;--y:620px" cx="330" cy="384" r="31"/>
+            <circle class="si-c" style="--d:.44s;--x:-380px;--y:640px" cx="182" cy="384" r="31"/><circle class="si-c" style="--d:.51s;--x:-640px;--y:40px" cx="108" cy="256" r="31"/>
+            <circle class="si-c" style="--d:.58s;--x:-420px;--y:-620px" cx="182" cy="128" r="31"/><circle class="si-c" style="--d:.65s;--x:400px;--y:-640px" cx="330" cy="128" r="31"/>
+          </g>
+        </svg>
+      </div>
+      <div class="si-w"><span>Sidor-IL</span></div>
+      <div class="si-s">כל אורח במקום שלו</div>
+    </div>
+    <script>
+      (function(){
+        var el=document.getElementById('sx-intro'); if(!el) return;
+        var forced=/[?&]intro=1/.test(location.search);
+        var app=false; try{app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}
+        var guest=/^\/(invite|i)\//i.test(location.pathname)||/^#\/invite\//i.test(location.hash);
+        var seen=false; try{seen=!!sessionStorage.getItem('sidor_intro')}catch(e){}
+        if(!forced&&(!app||guest||seen)){el.parentNode.removeChild(el);return}
+        try{sessionStorage.setItem('sidor_intro','1')}catch(e){}
+        var reduce=false; try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+        var min=reduce?500:1950, t0=Date.now(), gone=false;
+        function out(){ if(gone) return; gone=true; el.className='si-out'; setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el) },470) }
+        function ready(){ var r=document.getElementById('root'); return r&&r.childElementCount>0 }
+        (function tick(){ if(gone) return; var t=Date.now()-t0; if((t>=min&&ready())||t>4500) out(); else setTimeout(tick,100) })();
+        el.addEventListener('pointerdown',out);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
