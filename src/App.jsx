@@ -26,7 +26,7 @@ const openJoin=()=>openContact(JOIN_TEXT,"הצטרפות ספק / מפיק ל-Si
 // "all" = אישור · "essential" = דחייה · כל ערך אחר = עוד לא נבחר (כמו דחייה: לא שומרים דברים לא חיוניים).
 // חיוני תמיד: ההתחברות, הבחירה הזו, ומצב הניווט בלשונית. לא חיוני: הפניה, חזרה למסך האחרון, הגדרות תצוגה ונגישות.
 const COOKIE_KEY="sidor_cookie_ok";
-const OPTIONAL_STORAGE=["sidor_ref","sidor_a11y","sidor_aside","sidor_event_id","sidor_last_screen","sidor_events_view","sidor_view_tip"];
+const OPTIONAL_STORAGE=["sidor_ref","sidor_a11y","sidor_aside","sidor_event_id","sidor_last_screen","sidor_events_view","sidor_view_tip","sidor_push_ask"];
 const REF_PENDING="sidor_ref_pending"; // קוד הפניה עד שהגולש בוחר (בלשונית בלבד, נמחק עם סגירתה)
 function cookieChoice(){try{const v=localStorage.getItem(COOKIE_KEY);return v==="all"||v==="essential"?v:null;}catch{return null;}}
 export function optSet(k,v){if(cookieChoice()!=="all")return;try{localStorage.setItem(k,v);}catch{}}
@@ -2410,6 +2410,76 @@ const b64ToBytes=s=>{const p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/
 const bytesToB64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
 export const isStandalone=()=>window.matchMedia?.("(display-mode: standalone)").matches||navigator.standalone===true;
+const pushSupported=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+// הפעלת התראות במכשיר הנוכחי: "on" / "denied" / "off" (המשתמש לא אישר). זורק אם השרת לא זמין
+async function enablePush(){
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted")return perm==="denied"?"denied":"off";
+  const reg=await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+  const{data,error}=await sb.functions.invoke("push-notify",{body:{action:"key"}});
+  if(error||!data?.publicKey)throw new Error("לא הצלחנו להתחבר לשרת ההתראות");
+  const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(data.publicKey)});
+  const{error:e2}=await sb.from("push_subscriptions").upsert({endpoint:sub.endpoint,p256dh:bytesToB64(sub.getKey("p256dh")),auth:bytesToB64(sub.getKey("auth")),user_agent:navigator.userAgent.slice(0,200)});
+  if(e2)throw e2;
+  return "on";
+}
+// ─── הצעה במסך הבית של האירוע: "לקבל התראה כשאורח מאשר?" ───
+// מופיעה רק כשהמכשיר תומך, ההתראות עוד לא הופעלו בו ולא נחסמו. "לא עכשיו" מסתיר ל-14 יום
+const PUSH_ASK_KEY="sidor_push_ask";
+const PUSH_ASK_CSS=`
+.pa{position:relative;display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #EDE4F7;border-radius:18px;padding:14px 16px;box-shadow:0 10px 28px -18px rgba(91,60,140,.45);overflow:hidden}.pa-ic{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(140deg,#FFE9E1,#FCE1EE 55%,#EFE6FF)}
+.pa-ic span{display:inline-block;transform-origin:50% 8%}
+@media (prefers-reduced-motion:no-preference){.pa{animation:paIn .42s cubic-bezier(.23,1,.32,1) both}.pa-ic span{animation:paRing 1.1s .5s ease-in-out 2}}
+@keyframes paIn{from{opacity:0;transform:translateY(8px)}}
+@keyframes paRing{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}35%{transform:rotate(-14deg)}55%{transform:rotate(9deg)}75%{transform:rotate(-5deg)}}
+.pa-tx{flex:1 1 200px;min-width:0}
+.pa-t{font-size:15px;font-weight:800;color:#2B1D3F;line-height:1.4}
+.pa-d{font-size:13px;color:#5E5470;line-height:1.5;margin-top:2px}
+.pa-bt{display:flex;gap:8px;flex-wrap:wrap}
+.pa-go{border:none;border-radius:100px;padding:10px 18px;font:800 14px/1 'Heebo',sans-serif;color:#fff;cursor:pointer;background:linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF);min-height:40px}
+.pa-no{border:none;background:none;border-radius:100px;padding:10px 12px;font:700 13px/1 'Heebo',sans-serif;color:#6E6585;cursor:pointer;min-height:40px}
+.pa-go:disabled{opacity:.6;cursor:default}
+.pa-go:focus-visible,.pa-no:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}`;
+export function PushAsk({ style }) {
+  const [show,setShow]=useState(false),[busy,setBusy]=useState(false),[msg,setMsg]=useState("");
+  useEffect(()=>{let off=false;(async()=>{
+    try{
+      if(!pushSupported()||Notification.permission==="denied")return;
+      const until=Number(localStorage.getItem(PUSH_ASK_KEY)||0);if(until>Date.now()||sessionStorage.getItem(PUSH_ASK_KEY))return;
+      const reg=await navigator.serviceWorker.getRegistration("/sw.js").catch(()=>null);
+      const sub=await reg?.pushManager.getSubscription().catch(()=>null);
+      if(!sub&&!off)setShow(true);
+    }catch{}
+  })();return()=>{off=true;};},[]);
+  if(!show)return null;
+  // בלי הסכמה לשמירה במכשיר: מוסתר רק עד סגירת האפליקציה
+  const later=()=>{optSet(PUSH_ASK_KEY,String(Date.now()+14*864e5));try{sessionStorage.setItem(PUSH_ASK_KEY,"1");}catch{}setShow(false);};
+  const go=async()=>{
+    setBusy(true);setMsg("");
+    try{
+      const r=await enablePush();
+      if(r==="on"){setMsg("✅ ההתראות הופעלו. מעכשיו תקבלו כאן עדכון על כל אישור הגעה");setTimeout(()=>setShow(false),3500);}
+      else if(r==="denied"){setMsg("ההתראות נחסמו בטלפון. אפשר לאפשר אותן בהגדרות הטלפון ← אפליקציות ← Sidor-IL ← התראות");}
+      else later();
+    }catch(e){setMsg("❌ "+(e.message||"ההפעלה לא הצליחה, נסו שוב"));}
+    setBusy(false);
+  };
+  return(
+    <div className="pa" role="region" aria-label="התראות" style={style}>
+      <style>{PUSH_ASK_CSS}</style>
+      <div className="pa-ic" aria-hidden="true"><span>🔔</span></div>
+      <div className="pa-tx">
+        <div className="pa-t">{msg||"לקבל התראה כשאורח מאשר הגעה?"}</div>
+        {!msg&&<div className="pa-d">ישר לטלפון, גם כשהאפליקציה סגורה. אפשר לכבות בכל רגע בהגדרות.</div>}
+      </div>
+      {!msg.startsWith("✅")&&<div className="pa-bt">
+        <button type="button" className="pa-go" onClick={go} disabled={busy}>{busy?"מפעיל...":"הפעלת התראות"}</button>
+        <button type="button" className="pa-no" onClick={later}>לא עכשיו</button>
+      </div>}
+    </div>
+  );
+}
 export function PushDevice() {
   const supported="serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
   const [state,setState]=useState("checking"); // checking | unsupported | ios | denied | off | on
@@ -2424,15 +2494,8 @@ export function PushDevice() {
   const enable=async()=>{
     setBusy(true);setMsg("");
     try{
-      const perm=await Notification.requestPermission();
-      if(perm!=="granted"){setState(perm==="denied"?"denied":"off");setBusy(false);return;}
-      const reg=await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
-      const{data,error}=await sb.functions.invoke("push-notify",{body:{action:"key"}});
-      if(error||!data?.publicKey)throw new Error("לא הצלחנו להתחבר לשרת ההתראות");
-      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(data.publicKey)});
-      const{error:e2}=await sb.from("push_subscriptions").upsert({endpoint:sub.endpoint,p256dh:bytesToB64(sub.getKey("p256dh")),auth:bytesToB64(sub.getKey("auth")),user_agent:navigator.userAgent.slice(0,200)});
-      if(e2)throw e2;
+      const r=await enablePush();
+      if(r!=="on"){setState(r);setBusy(false);return;}
       setState("on");setMsg("✅ ההתראות הופעלו במכשיר הזה");
     }catch(e){setMsg("❌ "+(e.message||"ההפעלה נכשלה"));}
     setBusy(false);

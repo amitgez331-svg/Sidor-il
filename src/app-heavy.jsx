@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect, Fragment } f
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_KEY, sb, C, GRAD, ini, EVENT_KINDS, childOf, eventWords, normPhone, formatPhone, parseGuestLine, splitNamePhone, PhoneExistsDialog, Spinner, cdParts, useTick, IvCountdown, DEFAULT_MEALS, rsvpQOf, anyRsvpQ, GuestQR, INVITE_TEMPLATES, InviteConfetti, InvitePage, INVITE_STYLES, inviteStyleOf, INVITE_STYLE_CSS, ShortLinkRedirect, InviteRoute, inviteRouteMatch, shortRouteMatch } from "./invite-core.jsx";
 
-import { WaIcon, SMS_UNIT_PRICE, SMS_BUY_MIN, SMS_BUY_SLIDER_MAX, SMS_BUY_MAX, BASIC_PRICE, FREE_SEATING_LIMIT, CountUp, contactUrl, SUPPORT_WA, SUPPORT_MAIL, SUPPORT_PHONE, LP, isStandalone, InstallAppButton, lpMotionOK, LP_STORY, Stars, myRefCode, PushDevice, optSet, PENDING_SCREEN, readLastScreen, LAST_SCREEN_KEY, AccessibilityWidget, openContact, CONTACT_BY, waLink, isFeatured, SUPPLIER_CATS, SUPPLIER_REGIONS, SupplierCard, SupplierDetails, SUPPLIER_CAT, PublicPage, setPendingScreen, PRODUCER_ENTRY_KEY, SidorLogo, ADMIN_EMAIL, authErrorText, isAdminUser, SUPPLIER_REGION } from "./App.jsx";
+import { WaIcon, SMS_UNIT_PRICE, SMS_BUY_MIN, SMS_BUY_SLIDER_MAX, SMS_BUY_MAX, BASIC_PRICE, FREE_SEATING_LIMIT, CountUp, contactUrl, SUPPORT_WA, SUPPORT_MAIL, SUPPORT_PHONE, LP, isStandalone, PushAsk, InstallAppButton, lpMotionOK, LP_STORY, Stars, myRefCode, PushDevice, optSet, PENDING_SCREEN, readLastScreen, LAST_SCREEN_KEY, AccessibilityWidget, openContact, CONTACT_BY, waLink, isFeatured, SUPPLIER_CATS, SUPPLIER_REGIONS, SupplierCard, SupplierDetails, SUPPLIER_CAT, PublicPage, setPendingScreen, PRODUCER_ENTRY_KEY, SidorLogo, ADMIN_EMAIL, authErrorText, isAdminUser, SUPPLIER_REGION } from "./App.jsx";
 
 export const WA_GREEN="#15803D"; // ירוק כהה מספיק לטקסט לבן (ניגודיות 5:1, תקן נגישות)
 // הודעת ההזמנה לשליחה ידנית בוואטסאפ: באותו סגנון של הזמנת ה-SMS, אבל בלי שם (נשלחת לכולם אותו דבר)
@@ -4649,7 +4649,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
 
         <style>{HOME_CSS}</style>
         <div style={{padding:"12px 14px 0"}}><EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/></div>
-        <div style={{padding:"0 14px"}}><HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:12}}/></div>
+        <div style={{padding:"0 14px"}}><HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:12}}/><PushAsk style={{marginTop:12}}/></div>
         {/* סדר המסך כמו במחשב: מה לעשות עכשיו ← אישורי הגעה ← פעולות ← משימות ← שליחה אוטומטית ← השאר (מקופל) */}
         <div style={{padding:"12px 14px 0",display:"grid",gap:12}}>
           <PostEventCard event={event} onGo={setScreen}/>
@@ -4987,6 +4987,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
               {/* סדר המסך: מה האירוע ← מה לעשות עכשיו ← איפה עומדים ← לאן להיכנס ← שליחה אוטומטית ← השאר (מקופל) */}
               <EventHomeHero event={event} inviteUrl={inviteUrl} checksPct={checksPct} onGo={setScreen} noGuests={!allG.length}/>
               <HomeNews event={event} guests={allG} onGo={setScreen} style={{marginTop:16}}/>
+              <PushAsk style={{marginTop:16}}/>
               <PostEventCard event={event} onGo={setScreen} style={{marginTop:16,padding:"22px 24px"}}/>
               <HomeNext checks={checks} nextStep={nextStep} pending={pending} hasGuests={allG.length>0} onGo={setScreen} style={{marginTop:16}}/>
               <div className="hm-grid">
