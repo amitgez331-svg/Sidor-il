@@ -71,9 +71,13 @@ Deno.serve(async (req) => {
     const { data: items, error } = await admin.rpc("claim_notify_outbox");
     if (error) throw error;
     for (const it of items || []) {
-      const { data: ids } = await admin.rpc("event_recipient_ids", { p_event: it.event_id });
-      const userIds = (ids || []).map((r: any) => (typeof r === "string" ? r : r.event_recipient_ids)).filter(Boolean);
-      const sent = await sendTo(userIds, { title: it.title, body: it.body || "", url: "/" });
+      // kind='admin' (הרשמה, בקשת רכישה, ספק חדש...): למכשירים של האדמין, ולחיצה פותחת את מסך האדמין
+      const toAdmin = it.kind === "admin";
+      const { data: ids } = toAdmin
+        ? await admin.rpc("admin_recipient_ids")
+        : await admin.rpc("event_recipient_ids", { p_event: it.event_id });
+      const userIds = (ids || []).map((r: any) => (typeof r === "string" ? r : r.admin_recipient_ids || r.event_recipient_ids)).filter(Boolean);
+      const sent = await sendTo(userIds, { title: it.title, body: it.body || "", url: toAdmin ? "/#/admin" : "/" });
       await admin.from("notify_outbox").update({ sent_count: sent }).eq("id", it.id);
     }
     return json({ processed: (items || []).length });

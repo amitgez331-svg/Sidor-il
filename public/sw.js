@@ -12,12 +12,20 @@ self.addEventListener("push", e => {
   }));
 });
 
-// לחיצה על ההתראה: עוברים לחלון פתוח של האתר, או פותחים חדש
+// לחיצה על ההתראה: עוברים לחלון פתוח של האתר, או פותחים חדש.
+// התראה עם כתובת מסוימת (למשל מסך האדמין "/#/admin"): החלון הפתוח עובר אליה
 self.addEventListener("notificationclick", e => {
   e.notification.close();
   const target = (e.notification.data && e.notification.data.url) || "/";
-  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(ws => {
-    for (const w of ws) if ("focus" in w) return w.focus();
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(async ws => {
+    for (const w of ws) {
+      if (!("focus" in w)) continue;
+      if (target !== "/" && "navigate" in w) { try { const n = await w.navigate(target); if (n) return n.focus(); } catch {} return clients.openWindow(target); }
+      return w.focus();
+    }
     return clients.openWindow(target);
   }));
 });
+// גרסה חדשה של הקובץ נכנסת לפעולה מיד (בלי לחכות שכל החלונות ייסגרו)
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", e => e.waitUntil(clients.claim()));
