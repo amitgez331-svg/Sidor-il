@@ -94,3 +94,6 @@ exception when others then return new;
 end $$;
 drop trigger if exists admin_on_sms_failed on public.sms_schedule_runs;
 create trigger admin_on_sms_failed after update of status on public.sms_schedule_runs for each row execute function public.admin_on_sms_failed();
+
+-- פונקציות הטריגר לא נקראות ישירות מבחוץ
+revoke execute on function public.admin_on_signup(), public.admin_on_sms_request(), public.admin_on_wa_request(), public.admin_on_vendor(), public.admin_on_producer(), public.admin_on_sms_failed() from public, anon, authenticated;

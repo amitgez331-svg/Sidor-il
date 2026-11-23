@@ -1731,7 +1731,7 @@ const MNAV_CSS=`
 .mnav-it small{display:block;font-size:12px;font-weight:600;color:#6E6585;margin-top:1px}
 .mnav-it:focus-visible{outline:3px solid #9B6BFF;outline-offset:2px}`;
 // visible(id): האם המסך מוצג לחשבון הזה · go(id): מעבר (כולל בדיקת נעילה) · onAllEvents: חזרה לרשימת האירועים
-export function MobileNavSheet({ kind, active, visible=()=>true, go, onClose, onAllEvents }) {
+export function MobileNavSheet({ kind, active, visible=()=>true, go, onClose, onAllEvents, onAdmin }) {
   const groups=(MNAV_GROUPS[kind]||[]).map(g=>({...g,items:g.items.filter(it=>visible(it.id))})).filter(g=>g.items.length);
   useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]);
   return(
@@ -1750,6 +1750,8 @@ export function MobileNavSheet({ kind, active, visible=()=>true, go, onClose, on
             </div>
           </div>))}
         {kind==="more"&&onAllEvents&&<button type="button" className="mnav-it" style={{width:"100%",marginTop:14,justifyContent:"center"}} onClick={()=>{onClose();onAllEvents();}}>→ כל האירועים שלי</button>}
+        {/* רק לאדמין (לפי המייל). ההרשאה האמיתית נבדקת בשרת — כאן זה רק קיצור דרך */}
+        {kind==="more"&&onAdmin&&<button type="button" className="mnav-it" style={{width:"100%",marginTop:8,justifyContent:"center",background:"#2B1D3F",color:"#fff"}} onClick={()=>{onClose();onAdmin();}}>🛡️ ניהול האתר (אדמין)</button>}
         <button type="button" onClick={onClose} style={{width:"100%",marginTop:10,background:"none",border:"none",color:"#6E6585",fontSize:14,fontWeight:800,padding:"10px",cursor:"pointer",fontFamily:"inherit"}}>סגירה</button>
       </div>
     </div>
@@ -4816,7 +4818,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
       </div>
       <BottomNav active={screen} onChange={setScreen} userPackages={userPackages} totalGuests={guestPeople([...guests,...tables.flatMap(t=>t.guests||[])])} trialExpired={trialExpired}
         sheet={navSheet} onSheet={setNavSheet} showMsgs={navVisible("sms")||navVisible("whatsapp")}/>
-      {navSheet&&<MobileNavSheet kind={navSheet} active={screen} visible={navVisible} onClose={()=>setNavSheet(null)} onAllEvents={onBack}
+      {navSheet&&<MobileNavSheet kind={navSheet} active={screen} visible={navVisible} onClose={()=>setNavSheet(null)} onAllEvents={onBack} onAdmin={isAdminUser(user)?()=>{try{window.history.replaceState(null,"","/#/admin");}catch{}window.location.reload();}:undefined}
         go={id=>lockedFor(id)?setModal(couple&&COUPLE_HIDDEN.includes(id)?null:"locked"):setScreen(id)}/>}
       {modal==="receipt"&&<ReceiptModal tables={tablesNum} onClose={()=>setModal(null)}/>}
       {modal==="addTable"&&<AddTableModal onConfirm={doAddTable} onClose={()=>setModal(null)}/>}
