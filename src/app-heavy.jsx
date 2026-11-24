@@ -921,7 +921,24 @@ export function GuestChip({ guest, tableId, onRemove }) {
 }
 
 // ─── ADD/EDIT GUEST MODAL ─────────────────────────────────────────────────────
-export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false, onUpdateExisting, onSplit }) {
+// כפתורי "שליחת הודעה" לאורח אחד (SMS / וואטסאפ) — בחלונות עריכת האורח
+export function GuestMsgButtons({ channels, onPick }) {
+  const L={mywa:["💬","מהוואטסאפ שלי","חינם · נפתח עם הודעה מוכנה"],sms:["📱","SMS","מהיתרה · בוחרים נוסח"]};
+  return(
+    <div style={{marginBottom:12}}>
+      <div style={{fontSize:12,fontWeight:800,color:"#5F5675",marginBottom:6}}>שליחת הודעה לאורח הזה</div>
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${channels.length},1fr)`,gap:8}}>
+        {channels.map(ch=>(
+          <button key={ch} type="button" onClick={()=>onPick(ch)}
+            style={{background:ch==="mywa"?"#E9FBF0":"#F3EEFF",color:ch==="mywa"?"#1F7A4D":"#5B3CC4",border:"none",borderRadius:12,padding:"10px 8px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2,minHeight:56}}>
+            <span style={{fontSize:14,fontWeight:800}}><span aria-hidden="true">{L[ch][0]}</span> {L[ch][1]}</span>
+            <span style={{fontSize:11,fontWeight:600,opacity:.85}}>{L[ch][2]}</span>
+          </button>))}
+      </div>
+    </div>
+  );
+}
+export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[], desktop=false, onUpdateExisting, onSplit, channels=[], onMessage }) {
   const [name,setName]=useState(guest?.name||"");
   const [phone,setPhone]=useState(guest?.phone||"");
   const [rsvp,setRsvp]=useState(guest?.rsvp||"pending");
@@ -1080,6 +1097,9 @@ export function GuestModal({ guest, eventId, onSave, onClose, existingGuests=[],
             </div>
           )}
         </div>
+
+        {/* שליחת הודעה לאורח הזה בלבד */}
+        {isEdit&&onMessage&&channels.length>0&&guest.phone&&<GuestMsgButtons channels={channels} onPick={ch=>onMessage(guest,ch)}/>}
 
         {/* אירוע בהפרדה: אורח שסימן גם גברים וגם נשים — אפשר לפצל לשתי רשומות כדי להושיב כל חלק בשולחן שלו */}
         {isEdit&&onSplit&&(()=>{const x=guest.rsvp_extra||{},m=+x.men||0,w=+x.women||0;if(!(m>0&&w>0))return null;return(
@@ -3475,7 +3495,8 @@ export function printRsvpList(event,allGuests,tables,only="all"){
   w.document.close();w.document.getElementById("sx-print")?.addEventListener("click",()=>w.print());setTimeout(()=>{try{w.focus();w.print();}catch{}},600);
 }
 
-export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport, onSplit }) {
+export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTables, setModal, onImport, onSplit, channels=[], onMessage, onPickMany }) {
+  const [selMode,setSelMode]=useState(false),[sel,setSel]=useState([]);
   const allGuests=[...guests,...tables.flatMap(t=>t.guests||[])];
   const confirmed=allGuests.filter(g=>g.rsvp==="confirmed").reduce((s,g)=>s+(g.guest_count||1),0);
   const declined=allGuests.filter(g=>g.rsvp==="declined").reduce((s,g)=>s+(g.guest_count||1),0);
@@ -3561,6 +3582,9 @@ export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTabl
             </div>
           </div>
 
+          {/* שליחת הודעה לאורח הזה בלבד */}
+          {onMessage&&channels.length>0&&editModal.phone&&<GuestMsgButtons channels={channels} onPick={ch=>{const g=editModal;setEditModal(null);onMessage(g,ch);}}/>}
+
           {/* אירוע בהפרדה: פיצול משפחה לגברים ולנשים (כמו בחלון עריכת האורח בהושבה) */}
           {onSplit&&(()=>{const x=editModal.rsvp_extra||{},m=+x.men||0,w=+x.women||0;if(!(m>0&&w>0))return null;return(
             <div style={{background:"#F7F3FB",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
@@ -3623,14 +3647,27 @@ export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTabl
         {onImport&&<button onClick={onImport} style={{flexShrink:0,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>📊 ייבוא</button>}
         <button onClick={()=>printRsvpList(event,allGuests,tables)} aria-label="הדפסת אישורי הגעה" style={{flexShrink:0,background:"#fff",color:C.blue,border:`1.5px solid ${C.border}`,borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>🖨️ הדפס</button>
       </div>
+      {/* בחירת כמה אורחים לשליחת הודעה */}
+      {onPickMany&&<div style={{padding:"0 16px 10px",display:"flex",gap:8,alignItems:"center"}}>
+        <button onClick={()=>{setSelMode(m=>!m);setSel([]);}} aria-pressed={selMode}
+          style={{background:selMode?"#5B3CC4":"#F3EEFF",color:selMode?"#fff":"#5B3CC4",border:"none",borderRadius:50,padding:"8px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+          {selMode?"✓ מצב בחירה":"☑️ בחירת אורחים לשליחה"}</button>
+        {selMode&&(()=>{const ph=filtered.filter(g=>g.phone),all=ph.length>0&&ph.every(g=>sel.includes(g.id));return(
+          <button onClick={()=>setSel(all?sel.filter(id=>!ph.some(g=>g.id===id)):[...new Set([...sel,...ph.map(g=>g.id)])])}
+            style={{background:"none",border:"none",color:"#5B3CC4",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>
+            {all?"ביטול הכל":search?"סימון כל התוצאות":"סימון הכל"}</button>);})()}
+      </div>}
 
       {/* טבלה */}
       <div style={{background:"#fff",margin:"0 12px",borderRadius:14,overflow:"hidden",border:"1px solid #eee",boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
         {/* שורה בשתי שורות טקסט: השם ומספר האורחים, והטלפון מתחת (במקום עמודה צרה של 10px); הסטטוס בצד */}
-        {filtered.map((g,i)=>(
-          <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",minHeight:56,borderBottom:i<filtered.length-1?"1px solid #F2EEF6":"none"}}>
-            <button onClick={()=>openEdit(g)} style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:10,background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"right"}}>
-              <span style={{width:32,height:32,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#9B8CB5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{ini(g.name)}</span>
+        {filtered.map((g,i)=>{const picked=sel.includes(g.id),noPhone=selMode&&!g.phone;return(
+          <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",minHeight:56,borderBottom:i<filtered.length-1?"1px solid #F2EEF6":"none",background:picked?"#FAF6FF":"#fff",opacity:noPhone?.5:1}}>
+            <button onClick={()=>{if(!selMode){openEdit(g);return;}if(!g.phone)return;setSel(s=>s.includes(g.id)?s.filter(x=>x!==g.id):[...s,g.id]);}}
+              role={selMode?"checkbox":undefined} aria-checked={selMode?picked:undefined} aria-disabled={noPhone||undefined}
+              style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:10,background:"none",border:"none",padding:0,cursor:noPhone?"default":"pointer",fontFamily:"inherit",textAlign:"right"}}>
+              {selMode?<span aria-hidden="true" style={{width:32,height:32,borderRadius:"50%",border:`2px solid ${picked?"#5B3CC4":"#CFC6DC"}`,background:picked?"#5B3CC4":"#fff",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,flexShrink:0}}>{picked?"✓":""}</span>
+              :<span style={{width:32,height:32,borderRadius:"50%",background:RELATION_COLORS[g.relation]||"#9B8CB5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{ini(g.name)}</span>}
               <span style={{minWidth:0}}>
                 <span style={{display:"block",fontSize:14,fontWeight:700,color:"#1F1730",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}{(g.guest_count||1)>1&&<span style={{fontWeight:500,color:"#5F5675"}}> · {g.guest_count} אורחים</span>}{(+g.rsvp_extra?.men||+g.rsvp_extra?.women)?<span style={{fontWeight:600,color:"#5F5675"}} aria-label={`${+g.rsvp_extra.men||0} גברים, ${+g.rsvp_extra.women||0} נשים`}> · {+g.rsvp_extra.men>0&&`👨${+g.rsvp_extra.men}`}{+g.rsvp_extra.men>0&&+g.rsvp_extra.women>0?" ":""}{+g.rsvp_extra.women>0&&`👩${+g.rsvp_extra.women}`}</span>:null}</span>
                 <span style={{display:"block",fontSize:12,color:"#5F5675",direction:"ltr",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{g.phone||"—"}</span>
@@ -3639,10 +3676,17 @@ export function MobileRsvpScreen({ guests, tables, event, sb, setGuests, setTabl
             <button onClick={()=>setStatusModal(g)} aria-label={`שינוי מצב ההגעה של ${g.name}`} style={{flex:"none",background:"none",border:"none",padding:"6px 0",cursor:"pointer",fontFamily:"inherit"}}>
               {(()=>{const st=rsvpStage(g);return <span style={{fontSize:12,fontWeight:700,color:st.c,background:st.bg,borderRadius:50,padding:"4px 10px",whiteSpace:"nowrap"}}>{st.t}</span>;})()}
             </button>
-          </div>
-        ))}
+          </div>);})}
         {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:"#5F5675",fontSize:14}}>לא נמצאו אורחים</div>}
       </div>
+      {/* סרגל שליחה לנבחרים — צף מעל התפריט התחתון */}
+      {selMode&&<div role="region" aria-label="שליחה לאורחים שנבחרו" style={{position:"fixed",left:12,right:12,bottom:"calc(76px + env(safe-area-inset-bottom))",zIndex:60,background:"#2B1D3F",color:"#fff",borderRadius:18,padding:"10px 12px 10px 14px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 14px 30px -10px rgba(43,29,63,.6)"}}>
+        <span style={{flex:1,fontSize:14,fontWeight:800}} aria-live="polite">{sel.length?`נבחרו ${sel.length}`:"סמנו אורחים"}</span>
+        <button disabled={!sel.length} onClick={()=>{onPickMany(sel);setSelMode(false);setSel([]);}}
+          style={{background:sel.length?"linear-gradient(120deg,#FF8A65,#F0609E,#9B6BFF)":"#4A3D60",color:"#fff",border:"none",borderRadius:12,padding:"10px 14px",fontSize:14,fontWeight:800,cursor:sel.length?"pointer":"default",fontFamily:"inherit"}}>📱 שליחת SMS</button>
+        <button onClick={()=>{setSelMode(false);setSel([]);}} aria-label="סגירת מצב בחירה" style={{background:"none",border:"none",color:"#fff",fontSize:18,cursor:"pointer",padding:6}}>✕</button>
+      </div>}
+      {selMode&&<div style={{height:70}} aria-hidden="true"/>}
       <div style={{textAlign:"center",fontSize:13,color:"#5F5675",margin:"8px 0 16px"}}>{filtered.length} מתוך {allGuests.length} רשומות</div>
     </div>
   );
@@ -4505,6 +4549,21 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     if(d)setGuests(gs=>[...gs,{relation:row.relation,...d}]);
     setNewGuest("");setSaving(false);
   };
+  // שליחת הודעה לאורח אחד: פותחים את מסך ה-SMS / וואטסאפ כשהאורח כבר מסומן ב"אורחים מסוימים"
+  // "mywa" = מהוואטסאפ של בעל האירוע (קישור wa.me עם הודעה מוכנה) — חינם, בלי יתרה ובלי ספק, מתאים לאורח בודד
+  const msgChannels=["mywa",...["sms"].filter(id=>navVisible(id)&&!lockedFor(id))];
+  const messageGuest=(g,ch)=>{
+    if(!g?.phone){alert("לאורח הזה אין מספר טלפון");return;}
+    if(ch==="mywa"){
+      let d=String(g.phone).replace(/\D/g,"");if(d.startsWith("0"))d="972"+d.slice(1);
+      const ew=eventWords(event),first=String(g.name||"").trim().split(" ")[0];
+      const link=g.short_code?`https://${SHORT_LINK_HOST}${g.short_code}`:`${window.location.origin}/#/invite/${event.invite_code||""}?g=${g.id}`;
+      const text=g.rsvp==="confirmed"?`שלום ${first}! מחכים לכם ב${ew.name} ${ew.emoji}\nכל הפרטים כאן: ${link}`
+        :`שלום ${first}! 💌\nמוזמנים ל${ew.name} ${ew.emoji}\nלאישור הגעה: ${link}`;
+      window.open(`https://wa.me/${d}?text=${encodeURIComponent(text)}`,"_blank","noopener");return;
+    }
+    PICK_GUESTS.ids=[g.id];setEditGuestData(null);setScreen(ch);
+  };
   // אירוע בהפרדה: פיצול אורח (משפחה) לשתי רשומות — גברים ונשים — כדי להושיב כל חלק בשולחן שלו.
   // הרשומה המקורית נשארת עם הנייד (גברים); החדשה בלי נייד, כדי שההודעות לא יישלחו פעמיים
   const splitGuest=async g=>{
@@ -4778,7 +4837,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
           onMoveTable={mapLocked?null:(t,x,y)=>{const bx=t.x||0,by=t.y||0;moveTablePos(t.id,x,y);saveTablePos(t.id,x,y);pushUndo(`הזזת ${t.name}`,()=>restoreTablePos([{id:t.id,x:bx,y:by}]));}}
           snapTable={(t,x,y)=>{if(!gridOn())return{x:Math.round(x),y:Math.round(y)};const r=snapToGrid(t,x,y,hallRect());return{x:r.x,y:r.y};}}
           lockedIds={lockedTables} onPrint={printSeating} onPrintCards={printCards} onTemplates={openTemplates} guests={toSeat} declined={declinedGuests} search={search} setSearch={setSearch} newGuest={newGuest} setNewGuest={setNewGuest} addGuest={addGuest} dropOnTable={dropOnTable} removeFromTable={removeFromTable} onAddTable={()=>setModal("addTable")} onEditTable={editTable} onDeleteTable={deleteTable} onEditGuest={g=>setEditGuestData(g)} genderOn={genderOn}/>}
-        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined}/>}
+        {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined} channels={msgChannels} onMessage={messageGuest}/>}
         {screen==="add"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <div style={{fontSize:13,color:C.muted,marginBottom:20}}>הוסף אורחים אחד אחד עם כל הפרטים</div>
@@ -4805,7 +4864,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
         )}
         {modal==="addGuest"&&(<GuestModal eventId={event.id} onClose={()=>setModal(null)} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onSave={async(data)=>{await addGuest(data);setModal(null);}}/>
         )}
-        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")} onSplit={genderOn?splitGuest:undefined}/>}
+        {screen==="rsvp"&&<MobileRsvpScreen guests={guests} tables={tables} event={event} sb={sb} setGuests={setGuests} setTables={setTables} setModal={setModal} onImport={()=>setScreen("import")} onSplit={genderOn?splitGuest:undefined} channels={msgChannels} onMessage={messageGuest} onPickMany={msgChannels.includes("sms")?ids=>{PICK_GUESTS.ids=ids;setScreen("sms");}:undefined}/>}
         {screen==="import"&&(
           <div style={{padding:20,direction:"rtl",fontFamily:"'Heebo',sans-serif"}}>
             <button onClick={()=>setScreen("rsvp")} style={{background:"#fff",border:`1.5px solid ${C.border}`,color:C.blue,borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>→ חזרה לניהול אורחים</button>
@@ -5784,7 +5843,7 @@ export function SeatingApp({ user, event, onBack, onUpdate, onLogout, onHome }) 
     </div>}
 
     {/* GuestModal לדסקטופ */}
-    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined}/>}
+    {editGuestData&&<GuestModal guest={editGuestData} eventId={event.id} existingGuests={[...guests,...tables.flatMap(t=>t.guests||[])]} onUpdateExisting={async(g,c)=>{await editGuest(g.id,{name:g.name,phone:g.phone,rsvp:g.rsvp,guest_count:c});setModal(null);setEditGuestData(null);}} onClose={()=>setEditGuestData(null)} onSave={async(data)=>{await editGuest(editGuestData.id,data);setEditGuestData(null);}} onSplit={genderOn?splitGuest:undefined} channels={msgChannels} onMessage={messageGuest}/>}
 
     {/* EditTableModal לדסקטופ  -  נפתח מכפתור עריכה במפה */}
     {editTableData&&<EditTableModal table={{...editTableData,num:numOf(editTableData),gender:genderOf(editTableData)}} genderOn={genderOn} onClose={()=>setEditTableData(null)}
@@ -7730,7 +7789,12 @@ export const rsvpStage=g=>g.rsvp==="confirmed"?{t:"✓ מגיע",c:"#276749",bg:
 export const RSVP_STAGES=[["invite","💌 הזמנה ראשונה"],["reminder","🔔 תזכורת"],["confirmed","✓ מגיע"],["declined","✗ לא מגיע"]];
 export const stageOf=g=>g.rsvp==="confirmed"||g.rsvp==="declined"?g.rsvp:g.last_msg==="reminder"||g.last_msg==="invite"?g.last_msg:"";
 export const stagePatch=v=>v==="confirmed"||v==="declined"?{rsvp:v}:{rsvp:"pending",last_msg:v,last_msg_at:new Date().toISOString()};
-export const pickRecipients=(withPhone,sel,tid)=>{
+// "אורחים מסוימים": sel=["pick"] + רשימת מזהים שסומנו. בחירה ידנית נשלחת כמו שסומנה (גם תזכורת — המשתמש בחר במפורש)
+// PICK_GUESTS: אורחים שנבחרו מחוץ למסך (כפתור "שליחת הודעה" באורח) — מסך ההודעות לוקח אותם בפתיחה
+export const PICK_GUESTS={ids:null};
+export const takePickedGuests=()=>{const ids=PICK_GUESTS.ids;PICK_GUESTS.ids=null;return Array.isArray(ids)?ids:[];};
+export const pickRecipients=(withPhone,sel,tid,picked=[])=>{
+  if(sel.includes("pick"))return withPhone.filter(g=>picked.includes(g.id));
   const groups=RECIPIENT_GROUPS.filter(f=>sel.includes(f.v));
   const list=groups.length?withPhone.filter(g=>groups.some(f=>f.match(g))):[];
   return tid==="reminder"?list.filter(RECIPIENT_GROUPS[1].match):list;
@@ -7771,9 +7835,19 @@ export function TemplateTextBar({ tpl, text, onSave, onReset, accent, autoNote }
   );
 }
 // "כולם" מחליף את כל השאר; קבוצה ספציפית מבטלת את "כולם"
-export const toggleRecipient=(sel,v)=>sel.includes(v)?sel.filter(x=>x!==v):v==="all"?["all"]:[...sel.filter(x=>x!=="all"),v];
-export function RecipientPicker({ withPhone, value, onChange }) {
+// "אורחים מסוימים" (pick) מחליף את הקבוצות, וקבוצה מבטלת אותו
+export const toggleRecipient=(sel,v)=>sel.includes(v)?sel.filter(x=>x!==v):v==="all"||v==="pick"?[v]:[...sel.filter(x=>x!=="all"&&x!=="pick"),v];
+const PICK_C="#7C3AED";
+export function RecipientPicker({ withPhone, value, onChange, picked=[], onPicked }) {
+  const pickOn=value.includes("pick");
+  const [q,setQ]=useState("");
+  const qn=q.trim().toLowerCase(),qd=q.replace(/\D/g,"");
+  const shown=withPhone.filter(g=>!qn||String(g.name||"").toLowerCase().includes(qn)||(qd.length>=3&&String(g.phone||"").replace(/\D/g,"").includes(qd)));
+  const toggle=id=>onPicked&&onPicked(picked.includes(id)?picked.filter(x=>x!==id):[...picked,id]);
+  const allShown=shown.length>0&&shown.every(g=>picked.includes(g.id));
+  const stage=g=>rsvpStage(g);
   return(
+    <div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
       {RECIPIENT_GROUPS.map(f=>{
         const on=value.includes(f.v);
@@ -7786,6 +7860,37 @@ export function RecipientPicker({ withPhone, value, onChange }) {
           </button>
         );
       })}
+      {onPicked&&<button onClick={()=>onChange(toggleRecipient(value,"pick"))} aria-pressed={pickOn} aria-expanded={pickOn} aria-controls="rcp-pick"
+        style={{background:pickOn?PICK_C:"#fff",color:pickOn?"#fff":PICK_C,border:`2px solid ${PICK_C}`,borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+        {pickOn?"✓ ":""}👤 אורחים מסוימים{picked.length?` (${picked.length})`:""}
+      </button>}
+    </div>
+    {/* בחירה ידנית: חיפוש לפי שם או טלפון וסימון אורח אחד או כמה */}
+    {pickOn&&onPicked&&<div id="rcp-pick" style={{marginTop:10,border:`1.5px solid #E4DAF0`,borderRadius:14,overflow:"hidden",background:"#fff"}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",borderBottom:"1px solid #F1EAF8",flexWrap:"wrap"}}>
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="חיפוש לפי שם או טלפון..." aria-label="חיפוש אורח"
+          style={{flex:"1 1 160px",minWidth:0,border:"1.5px solid #E4DAF0",borderRadius:10,padding:"9px 12px",fontSize:16,fontFamily:"inherit",outline:"none"}}/>
+        <button type="button" onClick={()=>onPicked(allShown?picked.filter(id=>!shown.some(g=>g.id===id)):[...new Set([...picked,...shown.map(g=>g.id)])])} disabled={!shown.length}
+          style={{background:"#F6F0FF",color:PICK_C,border:"none",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+          {allShown?"ביטול סימון":qn?"סימון כל התוצאות":"סימון הכל"}</button>
+        {picked.length>0&&<button type="button" onClick={()=>onPicked([])} style={{background:"none",color:"#5F5675",border:"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>ניקוי</button>}
+      </div>
+      <div role="group" aria-label="בחירת אורחים" style={{maxHeight:280,overflowY:"auto"}}>
+        {shown.length===0&&<div style={{padding:"16px",fontSize:13,color:"#5F5675",textAlign:"center"}}>{withPhone.length?"לא נמצא אורח עם טלפון בשם הזה":"אין אורחים עם מספר טלפון"}</div>}
+        {shown.map(g=>{const on=picked.includes(g.id),s=stage(g);return(
+          <label key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderBottom:"1px solid #F7F3FB",cursor:"pointer",background:on?"#FAF6FF":"#fff",minHeight:44}}>
+            <input type="checkbox" checked={on} onChange={()=>toggle(g.id)} style={{width:18,height:18,accentColor:PICK_C,flexShrink:0}}/>
+            <span style={{flex:1,minWidth:0}}>
+              <span style={{display:"block",fontSize:14,fontWeight:700,color:"#2B1D3F",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</span>
+              <span dir="ltr" style={{display:"block",fontSize:12,color:"#5F5675",textAlign:"right"}}>{g.phone}</span>
+            </span>
+            <span style={{fontSize:11,fontWeight:700,color:s.c,background:s.bg,border:`1px solid ${s.b}`,borderRadius:100,padding:"2px 8px",whiteSpace:"nowrap",flexShrink:0}}>{s.t}</span>
+          </label>);})}
+      </div>
+      <div style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:picked.length?PICK_C:"#5F5675",background:"#FBF9FD"}}>
+        {picked.length?`נבחרו ${picked.length} אורחים`:"סמנו אורח אחד או כמה"}
+      </div>
+    </div>}
     </div>
   );
 }
@@ -7842,7 +7947,9 @@ export function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
-  const [sendTo,setSendTo]=useState([]);
+  // אורחים שנבחרו מבחוץ ("שליחת הודעה" באורח) נפתחים כבר מסומנים ב"אורחים מסוימים"
+  const [picked,setPicked]=useState(takePickedGuests);
+  const [sendTo,setSendTo]=useState(()=>picked.length?["pick"]:[]);
   const [sending,setSending]=useState(false);
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
@@ -7885,7 +7992,7 @@ export function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
   },[event.id]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
+  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate,picked);
   const langsUsed=Object.entries(withPhone.reduce((m,g)=>{const l=guestLangOf(event,g);m[l]=(m[l]||0)+1;return m;},{he:0})).sort((a,b)=>a[0]==="he"?-1:b[0]==="he"?1:b[1]-a[1]);
   const byLang=list=>Object.entries(list.reduce((m,g)=>{const l=guestLangOf(event,g);(m[l]||=[]).push(g);return m;},{}));
 
@@ -8116,7 +8223,7 @@ export function SMSScreen({ event, guests, tables=[], userPackages=[] }) {
           {/* פילטר */}
           <div className="sm-card" style={{"--t":"#DFF6EC"}}>
             <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>3. למי לשלוח?</h2>
-            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
+            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo} picked={picked} onPicked={setPicked}/>
             <div style={{fontSize:13,color:"#5F5675",marginTop:8}}>
               {sendTo.length?`${toSend.length} אורחים, ${totalSmsNeeded} הודעות`:"עוד לא נבחרו נמענים"}
               {selectedTemplate==="reminder"&&<div style={{color:"#7A4E00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
@@ -8279,7 +8386,9 @@ export function WhatsAppScreen({ event, guests, userPackages=[] }) {
 
   const [selectedTemplate,setSelectedTemplate]=useState(TEMPLATES[0].id);
   const [msgText,setMsgText]=useState(TEMPLATES[0].text);
-  const [sendTo,setSendTo]=useState([]);
+  // אורחים שנבחרו מבחוץ ("שליחת הודעה" באורח) נפתחים כבר מסומנים ב"אורחים מסוימים"
+  const [picked,setPicked]=useState(takePickedGuests);
+  const [sendTo,setSendTo]=useState(()=>picked.length?["pick"]:[]);
   const [sending,setSending]=useState(false);
   const [progress,setProgress]=useState(0);
   const [results,setResults]=useState(null);
@@ -8303,7 +8412,7 @@ export function WhatsAppScreen({ event, guests, userPackages=[] }) {
   },[guests]);
 
   const withPhone=guests.filter(g=>g.phone&&g.phone.trim().length>6);
-  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate);
+  const toSend=pickRecipients(withPhone,sendTo,selectedTemplate,picked);
   const langsUsed=Object.entries(withPhone.reduce((m,g)=>{const l=guestLangOf(event,g);m[l]=(m[l]||0)+1;return m;},{he:0})).sort((a,b)=>a[0]==="he"?-1:b[0]==="he"?1:b[1]-a[1]);
   const byLang=list=>Object.entries(list.reduce((m,g)=>{const l=guestLangOf(event,g);(m[l]||=[]).push(g);return m;},{}));
 
@@ -8541,7 +8650,7 @@ export function WhatsAppScreen({ event, guests, userPackages=[] }) {
           {/* פילטר */}
           <div className="sm-card" style={{"--t":"#FFE3EE"}}>
             <h2 style={{fontSize:15,fontWeight:800,color:C.text,margin:"0 0 12px"}}>3. למי לשלוח?</h2>
-            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo}/>
+            <RecipientPicker withPhone={withPhone} value={sendTo} onChange={setSendTo} picked={picked} onPicked={setPicked}/>
             <div style={{fontSize:12,color:C.muted,marginTop:8}}>
               {sendTo.length?`${toSend.length} אורחים`:"לא נבחרו נמענים  -  לא יישלח כלום"}
               {selectedTemplate==="reminder"&&<div style={{color:"#8A5A00",fontWeight:700,marginTop:3}}>🔔 תזכורת נשלחת רק לממתינים. מי שכבר אישר או סירב לא יקבל.</div>}
